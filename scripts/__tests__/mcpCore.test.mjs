@@ -99,6 +99,17 @@ describe("validate", () => {
     }
   });
 
+  it("flags an unsafe id that scaffold would refuse — validate and scaffold agree (panel r13)", () => {
+    // Sans props, rien n'interpole l'id dans un chemin : c'est bien l'id LUI-MÊME qui
+    // doit être jugé. Un agent qui pré-vérifie avec validate ne doit pas recevoir un
+    // feu vert que scaffold dément ensuite.
+    const plan = { ...soundPlan("unsafe"), id: "../escape", archetypes: [], props: [] };
+    plan.gameplay.windowWeights = {};
+    const codes = validate({ plan }).issues.map((i) => i.code);
+    expect(codes).toContain("scaffold/invalid-id");
+    expect(scaffold({ plan }, { rootDir: repoRoot() }).issues[0].code).toBe("scaffold/invalid-id");
+  });
+
   it("resolves a sound plan to no issues", () => {
     expect(validate({ plan: soundPlan("mcpvalidatesound") })).toEqual({ issues: [] });
   });

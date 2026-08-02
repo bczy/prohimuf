@@ -119,8 +119,14 @@ function resolveInputPlan(input, plans) {
  * has not been scaffolded yet) and run `validateLevel(planToLevelConfig(plan))`,
  * which assumes a structurally sound plan and would throw on a malformed one. This
  * ordering is also what keeps a rejected plan's archetypes OUT of the process-wide
- * registry (panel §6.2 m3) — no pollution across levels validated in the same
- * server process.
+ * registry (panel §6.2 m3) — but say the guarantee EXACTLY (panel r13): it holds for a
+ * plan/catalogue-level rejection, which short-circuits above. A plan those two accept
+ * and `validateLevel` then rejects HAS already registered its archetypes; likewise a
+ * plan validated but never scaffolded leaves its last probed variant in the map. Both
+ * self-heal (a later validate/scaffold of the real plan re-registers, and the
+ * namespace rule keeps a foreign level from referencing the kind), and neither is
+ * reachable today — `planToLevelConfig` sets no author-controlled field `validateLevel`
+ * rejects. Written down rather than implied, so the day it changes it is not a surprise.
  *
  * Known angle case (documented, not coded around): a plan aggregated into
  * `index.ts` from a file that is not named `<id>.ts` escapes `scaffold`'s own
@@ -136,7 +142,15 @@ export function validate(input, { plans = GENERATED_PLANS } = {}) {
   // `plan/malformed` short-circuits BEFORE the upsert join: the join dereferences
   // `plan.id`, so a malformed plan (null, non-object, bad id) must be reported by
   // `validateLevelPlan` first — `core.validate` inherits its never-throws contract.
-  const planIssues = validateLevelPlan(plan);
+  const planIssues = [...validateLevelPlan(plan)];
+  // The id's FILESYSTEM safety is checked here too, from the very same function
+  // `scaffold` uses (panel r13 MAJEUR). It is a disk rule, not a game rule, so it
+  // stays in this module rather than moving into `src/game` — but `validate` and
+  // `scaffold` must not disagree: an agent that pre-flights a candidate through
+  // `validate`, the workflow the spec advertises, was getting a clean verdict for an
+  // id like "../escape" that `scaffold` then refused.
+  const idIssue = scaffoldIdIssue(plan?.id);
+  if (idIssue !== null) planIssues.push(idIssue);
   if (planIssues.some((i) => i.code === "plan/malformed")) return { issues: planIssues };
 
   const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];

@@ -93,6 +93,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] **Panel CI — round 12 : PASS** sur `69d0f69e` — **0 BLOQUANT, 0 MAJEUR, 0 MINEUR,
       aucun finding confirmé**. Le merge gate de l'ADR-0063 est SATISFAIT ; les 13 check
       runs de la PR sont verts (panel-verdict, lint/typecheck/test, e2e, art, preview).
+- [x] **Panel CI — round 13 : CONDITIONAL** sur `c9735826` (1 MAJEUR, 4 MINEUR) — MAJEUR
+      traité ; **et surtout : le verdict du panel n'est pas déterministe**, voir §8.
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -1138,3 +1140,59 @@ seulement pour celle-ci :
   quota ou le token. Hand-off ouvert côté `dev-tooling-assets`.
 
 Reste dû, et à Bertrand seul : **le merge**.
+
+### Round 13 — `c9735826` : CONDITIONAL (0 BLOQUANT, 1 MAJEUR, 4 MINEUR)
+
+**Le fait le plus important de toute la série, et il est mesuré, pas supposé.** Le diff
+entre le HEAD qui a rendu **PASS** (`69d0f69e`) et celui qui rend ici 5 findings
+(`c9735826`) est :
+
+```
+$ git diff --stat 69d0f69e c9735826
+ docs/handoffs/story-mcp-level-editor.md | 35 +++++++++++++++++++++++++++++++++
+ $ git diff --name-only 69d0f69e c9735826 | grep -v '^docs/'   → AUCUN
+```
+
+**35 lignes de prose, zéro ligne de code.** Le MAJEUR de ce round et ses quatre MINEUR
+portent tous sur du code identique à l'octet près à celui que le panel venait de déclarer
+sans aucun finding. Conséquence à écrire noir sur blanc pour la suite :
+
+> **« Itérer jusqu'au PASS » n'est pas un processus convergent sur un diff de cette
+> taille.** Le panel échantillonne une grande surface avec des reviewers LLM ; deux runs
+> sur le même code rendent des verdicts différents. Le PASS du round 12 était un tirage,
+> pas une preuve. Symétriquement, un CONDITIONAL n'est pas la preuve d'une dégradation.
+
+Ce qu'il faut en retenir : le panel reste excellent pour DÉCOUVRIR des défauts (il en a
+trouvé de vrais, dont `index.ts` écrasable et la traversée de chemin), et mauvais comme
+critère d'ARRÊT. L'arrêt doit venir d'un jugement humain sur la valeur des findings
+restants, pas de l'obtention d'un PASS.
+
+Traité malgré tout, parce que réel et vérifié par probe :
+
+- **[MAJEUR] `validate` et `scaffold` en désaccord sur un id dangereux** — probe :
+  `validate({plan:{id:"../escape", …sain par ailleurs, sans props}})` rendait `[]` pendant
+  que `scaffold` refusait en `scaffold/invalid-id`. Un agent qui pré-vérifie avec
+  `validate` — le workflow que la spec annonce — recevait un feu vert démenti ensuite.
+  Les deux partagent désormais **une seule** définition d'id sûr (`scaffoldIdIssue`,
+  appelée aussi par `validate`). Choix d'implantation assumé : la règle reste dans
+  `core.mjs` et ne monte pas dans `src/game` — c'est une règle de DISQUE, pas de jeu ; la
+  frontière d'ADR-0081 D3 est respectée puisque `validate` la porte, pas le serveur.
+- **[MINEUR] le commentaire de non-pollution du registre surestimait sa portée** — juste,
+  et c'est mon commentaire : la garantie ne vaut que pour un rejet plan/catalogue. Un plan
+  accepté puis rejeté par `validateLevel`, ou validé sans jamais être scaffoldé, laisse
+  bien ses archétypes enregistrés. Les deux s'auto-réparent et aucun n'est atteignable
+  aujourd'hui — mais c'est désormais écrit exactement, plutôt que sous-entendu.
+
+Non actionnés, et pourquoi :
+
+- **[MINEUR] shard flyer porté par cette PR** — troisième passage du même point (r3, r10,
+  r13), décision inchangée et divulguée. Le déplacer au moment du merge coûterait plus que
+  le bénéfice de forme.
+- **[MINEUR] registre pollué par un plan accepté-mais-jamais-scaffoldé** — réel,
+  auto-limité, correctement décrit désormais dans le commentaire. Le corriger proprement
+  suppose d'injecter un registre jetable dans `validateLevel` : un changement de signature
+  côté `src/game` pour un cas non atteignable, à faire dans une story qui en a besoin
+  (SP2 valide plusieurs levels dans le même process — c'est là que ça comptera).
+- **[MINEUR] le masque NIVEAU…VAGUE trompé par un nom contenant « vague »** — même classe
+  que le cas « Armentières »/ARME déjà fermé, non atteignable aujourd'hui (seul level
+  enregistré : `fixture`). Noté pour la première story qui nomme un level ainsi.
