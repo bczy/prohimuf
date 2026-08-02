@@ -106,7 +106,8 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
 
 **Ce qui MANQUE, nommé plutôt que sous-entendu :**
 
-- **Gate `lead-art` — PASSÉ, avec une réserve BLOQUANTE.** Réclamé par moi auprès de
+- **Gate `lead-art` — PASSÉ. Verdict final : PASS sur les cinq**, réserve bloquante levée
+  après rework.** Réclamé par moi auprès de
   Bertrand à la fusion, puis indépendamment par le panel, puis demandé par Bertrand.
   Verdict : [`docs/art-direction/decision-flyer-crew-emblems.md`](../art-direction/decision-flyer-crew-emblems.md).
   Quatre emblèmes sur cinq passent ; **`halftone` (NADIR 94) est refusé** — le champ de
@@ -116,7 +117,23 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
   **Arbitré par Bertrand** : voie (b), remplacer par une marque d'encre pleine — la trame
   devient un **fil à plomb** (`plumb`), nadir = le point le plus bas, masse pleine et trou
   de visée percé comme les yeux du smiley. Les cinq marques sont désormais homogènes, ce
-  qui referme le grief de famille. Re-gate `lead-art` en cours sur le rework.
+  qui referme le grief de famille. **Re-gate : R1 LEVÉE\*\* — la loi de famille est refermée,
+  la marque tient à trois mètres y compris sous le filtre de verrouillage (une masse pleine
+  encaisse là où un aplat tonal se dissolvait), le trou de visée reste ouvert à ~100 px, et
+  la silhouette axiale est la seule du mur qui pointe. `lead-art` juge l'attribution « la
+  mieux fondée du mur avec la spirale » : un fil à plomb est l'instrument qui DÉFINIT le
+  point le plus bas, donc la marque ne décore pas le nom, elle le démontre. Les 5°
+  d'inclinaison sur un instrument dont la fonction est la verticale sont conservés à sa
+  demande — ce n'est pas le plomb qui penche, c'est le tampon tapé à la main.
+
+  Deux corrections de prose demandées au passage et faites : des commentaires décrivaient
+  encore la trame supprimée (« un commentaire qui décrit une forme disparue est précisément
+  par où une trame reviendrait »), et l'ancrage de l'invader défendait par une absence
+  d'anachronisme — ce qui l'aurait justifié sur n'importe quel mur postérieur à 1978 —
+  au lieu du bon motif : Invader carrelait Paris à partir de 1998, même ville, même année,
+  même geste que le joueur. Refinement facultatif non appliqué, noté dans la note : abaisser
+  le point le plus large de la masse d'un dixième de hauteur.
+
 - **Pas de spec `game-designer` / `narrative-designer` — SEUL POINT ENCORE OUVERT.**
   L'attribution crew→emblème est un choix d'identité : la spirale de SPIRALE 23 découle du
   nom, l'invader de L'Éden est une citation, le fil à plomb de NADIR 94 vient du sens du

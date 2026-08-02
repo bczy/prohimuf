@@ -36,7 +36,9 @@ Deux remarques de cadrage, qui **jouent en faveur** de ce lot :
   sanctionné en §2bis.1, appliqué ici à un tampon plutôt qu'à une ellipse de marqueur.
 - **Une seule série d'impression (§2 loi 2).** Même encre, même filtre d'usure, même
   fantôme, tailles volontairement inégales — le mur se lit comme cinq machines d'une même
-  époque, pas comme cinq traitements. C'est juste, **sauf pour un des cinq** (voir R1).
+  époque, pas comme cinq traitements. Vrai pour quatre pièces sur cinq au premier
+  passage — la cinquième (la trame) cassait la règle et a été refaite ; **conforme sur les
+  cinq depuis le fil à plomb** (R1 puis R1-bis).
 - **Le mur ne clignote pas d'information.** `aria-hidden`, décor pur, aucun état porté par
   l'emblème : la couleur sémantique reste au tampon de difficulté. Bon partage.
 
@@ -127,6 +129,52 @@ tire l'emblème vers la valeur du dot-screen du papier lui-même. Les masses ple
 Ce que je ne veux pas : garder la trame en la fonçant ou en l'agrandissant. Le problème
 n'est pas la densité, c'est l'absence de sujet.
 
+### R1-bis — le fil à plomb : **R1 LEVÉE**
+
+Bertrand a tranché voie (b). Livré : `PlumbPath` — barre de suspension, fil, masse pleine
+au trou de visée percé — sur le slot `hero` de la feuille NADIR 94, taille et inclinaison
+inchangées. Jugé sur les deux captures du build (la feuille seule en gros plan, puis le
+mur des cinq). Les quatre questions posées, dans l'ordre :
+
+1. **§2 loi 2 refermée — oui.** Cinq encres pleines, un seul tirage. Il ne reste aucune
+   pièce tonale : la valeur d'un emblème ne dépend plus que de l'opacité de sa rangée, et
+   non plus de la densité interne de sa forme. C'est ce qui manquait, c'est réglé.
+2. **Lecture à trois mètres, verrouillée comprise — oui.** Sur la feuille grise, sous
+   `opacity: .5` × `--flyer-lock-filter`, la masse tient : elle encaisse le double
+   affaiblissement exactement comme l'invader, parce qu'elle est pleine. C'était le
+   symptôme aggravant de R1, il disparaît avec sa cause.
+3. **Le trou de visée tient à ~100 px — oui, franchement ouvert.** Percé en even-odd
+   comme les yeux du smiley : c'est un trou dans l'encre, pas un rond peint par-dessus —
+   sur une photocopieuse l'un survit et l'autre boue. Il donne au passage à la masse le
+   seul accident dont elle avait besoin pour ne pas se lire comme une simple flèche.
+4. **Silhouette distincte des quatre autres — oui, et le set y gagne.** Le mur était
+   trois marques rondes plus une masse blocky large ; le plomb est la **seule marque
+   axiale verticale**, et la seule qui pointe. R2 n'est pas aggravée, elle est même un peu
+   desserrée : le voisin des anneaux n'est plus un aplat indécis mais une forme
+   d'orientation opposée.
+
+Bénéfice non demandé, noté parce qu'il compte : incliner de 5° un instrument dont la
+fonction _est_ la verticale n'est pas une faute, c'est le meilleur argument de la pièce —
+ce n'est pas le plomb qui est de travers, c'est le tampon qui a été tapé à la main.
+Garder les 5°.
+
+**Réserves nées de ce passage — aucune bloquante :**
+
+- **R1b-1, forme (facultatif).** La masse est un cerf-volant symétrique ; un vrai plomb a
+  l'épaule ronde et son point le plus large **sous** son sommet. Tel quel, la pièce lorgne
+  vers la plume à dessin / le fer de lance. Ça ne gêne pas la lecture — tout tire vers le
+  bas, ce qui est le sens voulu — mais si quelqu'un y repasse : descendre le point le plus
+  large d'environ un dixième de la hauteur et arrondir un peu les épaules verrouillerait
+  « plomb » plutôt que « pointe ». Facultatif, pas une condition du PASS.
+- **R1b-2, commentaires de code périmés — à nettoyer, ce n'est pas une reprise d'art.**
+  Deux endroits de `FlyerMotif.tsx` parlent encore de la trame supprimée : le bloc de
+  documentation posé juste **au-dessus** de `PlumbPath` décrit toujours « Coarse halftone
+  lozenge — a photo screened down to dots », et la borne de taille de `FlyerEmblem`
+  justifie encore son plancher par « the halftone reads as mud below ~70px ». Le corps de
+  `PlumbPath`, lui, porte le bon raisonnement. Un commentaire qui décrit une forme
+  disparue est précisément par où une trame reviendrait : à corriger par la lane
+  `dev-r3f-render`. Aucune conséquence visuelle, donc pas de re-gate — la capture fait foi.
+
 ### R2 — voisinage spirale/anneaux : **non bloquante, à surveiller**
 
 Formellement, spirale et anneaux sont cousins : même masse ronde, même graisse de trait,
@@ -137,17 +185,33 @@ se retrouvent adjacents sur des stocks proches, il faudra écarter les deux form
 (graisse ou nombre de tours). À rejuger au moment d'un éventuel repli de la pile
 (la passe de pile différée de §2bis.2 pt5), pas maintenant.
 
-### R3 — note d'intention de l'invader : **non bloquante**
+### R3 — ancrage de l'invader : **non bloquante, reformulée au 2ᵉ passage**
 
-Réancrer le commentaire sur Invader / Paris 1998 (cf. plus haut) plutôt que sur l'âge du
-sprite d'arcade. Ce n'est pas un détail de doc : la prochaine personne qui hésitera à
-garder ce motif tranchera sur la raison écrite, et « c'était déjà vieux » ne défend rien.
+L'attribution est validée ; c'est sa **justification écrite** que je refuse. Le
+commentaire actuel défend le motif par son âge (« le sprite d'arcade avait déjà 20 ans en
+1998 »), c'est-à-dire par une absence d'anachronisme. Une absence de faute n'est pas une
+raison : elle rendrait le motif valable sur n'importe quel mur de n'importe quel jeu situé
+après 1978, donc elle ne le rattache pas à celui-ci. C'est exactement l'argument avec
+lequel on décroche un motif six mois plus tard en le prenant pour un clin d'œil geek.
 
-Note d'exécution associée : les deux antennes ne touchent le corps qu'**en diagonale, par
-un coin**. C'est fidèle au sprite d'arcade et je ne le refuse pas — mais le déplacement
-d'usure (`scale=2.1`) peut rompre ce contact et faire lire les deux carrés hauts comme des
-salissures de toner à petite taille. Si un jour l'emblème descend sous ~60 px, souder les
-diagonales d'un cheveu.
+**La raison à inscrire est parisienne et locale :** Invader a commencé à carreler les murs
+de Paris en 1998 — l'année du jeu, la ville du jeu, et le même geste que celui du joueur,
+poser de nuit quelque chose sur un mur qui ne vous appartient pas. Sur le dernier niveau,
+la nuit du 31 décembre 1999, la forme porte en plus « invasion / fin de partie » sans
+qu'on ait à l'écrire. Un motif défendu par ce qu'il partage avec la fiction se garde ;
+un motif défendu par sa date de naissance se perd.
+
+Rédaction demandée à la lane `dev-r3f-render`, à substituer au commentaire d'`InvaderPath`
+(même passage que R1b-2, un seul aller-retour) : _« NADIR de la rue : Invader carrelait
+Paris à partir de 1998 — même ville, même année, même geste que le joueur. Et une grille
+de carrés pleins est ce qu'un pochoir ou une photocopieuse tient le mieux. »_ — à
+reformuler en anglais comme le reste du fichier, le sens prime sur la lettre.
+
+Note d'exécution associée (inchangée) : les deux antennes ne touchent le corps qu'**en
+diagonale, par un coin**. C'est fidèle au sprite d'arcade et je ne le refuse pas — mais le
+déplacement d'usure (`scale=2.1`) peut rompre ce contact et faire lire les deux carrés
+hauts comme des salissures de toner à petite taille. Si l'emblème descend un jour sous
+~60 px, souder les diagonales d'un cheveu.
 
 ## Ce que ce lot ajoute au bible
 
@@ -162,19 +226,36 @@ Deux dispositifs introduits ici ne figuraient pas dans `docs/art-direction.md`. 
 2. **Un emblème de crew est une marque, pas une texture.** Il doit se reconnaître à trois
    mètres et se distinguer de ses voisins sur le mur ; la texture du papier n'est jamais
    un emblème. C'est la loi « silhouette d'abord » (§2 loi 3) transposée aux surfaces
-   imprimées. R1 en découle directement.
+   imprimées. R1 en découle directement, et le fil à plomb est ce que la règle produit
+   quand on la suit.
 
 Report dans `docs/art-direction.md` à faire par `tech-writer`, sur ce texte-ci, sans le
 reformuler.
 
 ## Verdict
 
-**PASS avec réserves — une bloquante.**
+### 1ᵉʳ passage (set d'origine) — PASS avec réserves, une bloquante
 
-Quatre emblèmes sur cinq passent la gate d'asset et partent tels quels : `spiral`,
-`smiley`, `rings`, `invader`. Le cinquième, `halftone` / NADIR 94, est **FAIL (rework)**
-au titre de §2 loi 2 et de la règle inscrite ci-dessus : il ne se lit pas comme une
-marque et il fait tomber la cohérence du tirage. R2 et R3 ne bloquent rien.
+Quatre emblèmes sur cinq passaient la gate d'asset tels quels : `spiral`, `smiley`,
+`rings`, `invader`. Le cinquième, `halftone` / NADIR 94, **FAIL (rework)** au titre de
+§2 loi 2 et de la règle « une marque, pas une texture » : il ne se lisait pas comme une
+marque et faisait tomber la cohérence du tirage. R2 et R3 ne bloquaient rien.
 
-Le rework de R1 ne nécessite aucune génération : il se rejuge sur une capture réelle de
-l'écran NIVEAUX, comme celui-ci. Verdict à reporter dans `docs/agent-handoffs.md`.
+### 2ᵉ passage (après rework, voie b) — **PASS**
+
+**R1 est levée.** Le fil à plomb referme la loi de famille : cinq encres pleines, un seul
+tirage, aucune pièce tonale. Il se lit à trois mètres sur feuille verrouillée comme
+déverrouillée, son trou de visée reste franchement ouvert à ~100 px, et sa silhouette
+axiale est la plus distincte du mur. Il vaut mieux que ce qu'il remplace, et pas seulement
+parce qu'il est conforme : c'est l'attribution la mieux fondée du lot avec la spirale.
+
+**Le set des cinq emblèmes passe la gate d'asset.** Rien ne bloque le merge de ce côté.
+
+Réserves ouvertes, toutes non bloquantes et sans conséquence visuelle : **R1b-1** (épaule
+du plomb, facultatif), **R1b-2** (deux commentaires périmés dans `FlyerMotif.tsx`),
+**R2** (voisinage spirale/anneaux, conditionnel à un futur repli de la pile), **R3**
+(réancrer la note d'intention de l'invader — texte fourni). R1b-2 et R3 touchent le même
+fichier : un seul aller-retour `dev-r3f-render` les solde, et **aucun ne redemande mon
+verdict**, puisque aucun ne change un pixel.
+
+Verdicts (les deux passages) à reporter dans `docs/agent-handoffs.md`.

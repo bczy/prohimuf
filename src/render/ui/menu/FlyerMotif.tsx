@@ -36,8 +36,8 @@ export interface FlyerEmblem {
   offsetY: number;
   /** Deliberately UNEVEN across sheets: five crews printing on five machines never land the
    *  same stamp at the same size, and a uniform size is the tell that gives away a template.
-   *  Bounded by what the sheet hosts — the halftone reads as mud below ~70px, and past ~100
-   *  it crowds the info block on a narrow column. */
+   *  Bounded by what the sheet hosts — punched detail inside a mark closes up below ~70px,
+   *  and past ~100 it crowds the info block on a narrow column. */
   sizePx: number;
   /** A stamp banged on by hand is never square to the sheet (cf. FLYER_REST_ROTATION_DEG). */
   tiltDeg: number;
@@ -127,11 +127,7 @@ function RingsPath(): JSX.Element {
   );
 }
 
-/**
- * Coarse halftone lozenge — a photo screened down to dots so a copier could reproduce
- * it at all. Dot RADIUS carries the tone, which is exactly how a halftone works; the
- * grid is deliberately coarse, like a cheap repro shop's screen.
- */
+/** NADIR 94's plumb bob — see the reasoning in the body. */
 function PlumbPath(): JSX.Element {
   // NADIR 94's mark: a plumb bob — the lowest point, literally, which is what a nadir is.
   // Solid ink like the other four (lead-art, PR #145: the halftone field it replaces read as
@@ -155,9 +151,13 @@ function PlumbPath(): JSX.Element {
 }
 
 /**
- * Space Invader. Not an anachronism — the arcade sprite was already 20 years old in
- * 1998 — and the ideal cheap-print motif: a grid of solid squares is the simplest thing
- * a stencil or a photocopier can hold.
+ * Space Invader — and the anchor is Paris, not the arcade. Invader was tiling the city's
+ * walls from 1998: same city, same year, same gesture as the player's. Defending it as
+ * "the sprite was already 20 years old" would justify the motif on any wall after 1978,
+ * which is an absence of anachronism rather than a reason (lead-art, PR #145).
+ *
+ * It is also the ideal cheap-print motif: a grid of solid squares is the simplest thing a
+ * stencil or a photocopier can hold.
  */
 const INVADER_ROWS: readonly string[] = [
   "..X.....X..",
