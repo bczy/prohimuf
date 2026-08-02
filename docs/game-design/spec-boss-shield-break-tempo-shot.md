@@ -12,8 +12,16 @@ each window from a pure damage-read into a **strategic choice of pace** (vital /
 only the _target_ moved from "his lowered shield-arm/plate" to "a persistent cover prop he crouches
 behind". See §0 and §6-A for the retarget; §7 for the decoupled-ship + art hand-off.
 **Author:** `game-designer` (Sacha) · **Date:** 2026-07-21
-**Status:** DRAFT (Rev. 2) — **needs `lead-game-designer` (Karim) design-gate PASS** before it reaches
-`senior-architect` (TECH PLAN) and any dev implements it. This spec is the AC1 deliverable of
+**Status:** **GATED (ADR-0060) — SHIPPED.** `lead-game-designer` (Karim) passed this spec with
+corrections (`story-boss-shield-tempo-shot.md` §2); `senior-architect` ratified it into
+`docs/adr/0060-boss-qte-shield-break-tempo-lever.md`; lever 6 is live in
+`src/game/systems/bossQteSystem.ts` + `src/game/types/bossQte.ts` (`BOSS_SHIELD_POINT`,
+`BOSS_SHIELD_DAMAGE`, `SHIELD_BREAK_LULL_CUT`, the floor-margin assert, `shieldBreakPending`).
+Corrections to this doc land as numbered, dated amendments (own series, §8) — never a silent
+edit — per the same gate protocol as `spec-boss-qte-differentiation.md`'s AMENDMENT A2.
+**Doc↔code fix applied 2026-08-02 per `tech-writer` (Otis), routed by the photo-QTE tech plan
+(`techplan-photo-qte.md` §"Doc↔code coherence bug found here") and the photo design gate
+(`design-gate-photo-qte.md` E-4).** This spec was the AC1 deliverable of
 `_bmad-output/planning-artifacts/story-boss-shield-tempo-shot.md`: it explicitly defines the shield
 point's **placement/size, damage, lull-compression amount, and live phases/states** (story AC1),
 holds the lull compression to the asserted floors (AC2), keeps the ignore-it-byte-identical law
@@ -434,6 +442,37 @@ Sacha reports PASS/deviations to `lead-game-designer` before `senior-architect`'
 stage-5 verify read-tune, no longer a disjointness risk); the pending-cut data shape + the extends-in-place ADR
 (`senior-architect`); a compressed-lull read surface (`ux-designer`, only if proposed); the
 shield-down pose read (`lead-art`).
+
+---
+
+## 8. Amendments (post-gate, own series — this spec is GATED, never silently edited)
+
+### AMENDMENT A1 — composition with the photo-proof lull multiplier — 2026-08-02
+
+_Source: `spec-photo-qte-paparazzi.md` §D7.2 (Rev. 2), design gate `design-gate-photo-qte.md`
+K-3. Transcribed verbatim by `tech-writer` (Otis) per the gate protocol (no re-gate on a
+verbatim transcription — same precedent as `spec-boss-qte-differentiation.md`'s AMENDMENT A2).
+Amends §6-B and the §6-B headroom table. No decision of this spec is reversed._
+
+> 1. The Niveau Final `bossQteSpec` gains an authored **`rewardMultiplier`** (`×1.00` default),
+>    applied to `shieldedLull` in **phases 1 and 2 only**; phase 3 is always `×1.00`. Belliard
+>    is untouched.
+> 2. **Order of operations is fixed:** `lull_effective = rewardMultiplier × shieldedLull`, THEN
+>    `SHIELD_BREAK_LULL_CUT` is subtracted from that value, THEN the existing
+>    `shieldedLull > telegraphLeadSeconds` clamp applies. The multiplier never bypasses the
+>    clamp and the clamp never bypasses the multiplier.
+> 3. **New compound floor, asserted in code against the runtime row** (not trusted from data):
+>    `rewardMultiplier × shieldedLull(p) − SHIELD_BREAK_LULL_CUT ≥ telegraphLeadSeconds(p) +
+LULL_RESIDUAL_FLOOR`, with **`LULL_RESIDUAL_FLOOR = 0.35 s`** — pinned to the worst
+>    headroom this spec's own §6-B table already ships (phase 3: `0.70 − 0.35`). This is the
+>    assert that keeps the −0.5 s cut from ever being silently eaten by the clamp.
+> 4. Legal `rewardMultiplier` values are therefore `≥ ×0.781` (phase 2 binds). Shipped tiers:
+>    ×1.00 / ×0.90 / ×0.80.
+> 5. §6-B's "at the shipped table values the floor never binds" remains true **at ×1.00** and
+>    must be re-read as "never binds at any legal `rewardMultiplier`" once point 3 ships.
+
+**No re-gate of this spec was required** — the transcription is verbatim (gate protocol, same
+as AMENDMENT A2 of `spec-boss-qte-differentiation.md`, 2026-07-20).
 
 **Requesting:** design-gate `VERDICT:` (PASS / PASS-WITH-CORRECTIONS / FAIL), explicitly covering story
 AC1 (all four values defined), AC2 (floor), and AC6 (legibility parity), before this reaches `pm`

@@ -18,6 +18,7 @@ import {
 import type { GameState } from "@game/types/gameState";
 import { isOnScreen } from "@game/systems/viewport";
 import type { BossQte } from "@game/types/bossQte";
+import type { PhotoCta } from "@game/types/photoQte";
 import { fastForwardDeliveryState } from "@render/scene/deliveryHarness";
 import type { DeliveryHarnessTarget } from "@render/scene/deliveryHarness";
 import type { FacadeMap } from "@game/types/map";
@@ -243,6 +244,26 @@ export interface ImpactChannel {
 export interface PlayerHitChannel {
   readonly queue: PlayerHitEvent[];
   resetNonce: number;
+}
+
+/**
+ * Render→bridge transport for the photo set-piece's inputs that have no keyboard/mouse home
+ * (techplan §3.1) — the mirror of {@link ImpactChannel}, reversed. Created by the render
+ * lane, written by the DOM controls, READ and drained by the bridge, which turns it into the
+ * device-neutral `PhotoInput` the pure layer consumes (D-B). `src/game` never sees this type.
+ */
+export interface PhotoControlChannel {
+  /**
+   * Mobile posture LATCH (tap-to-toggle, T-2). The button writes it; the bridge reads it.
+   * The bridge CLEARS it on the frame `paused` goes true, so both devices resume `LOWERED`
+   * with the focal retained (T-5 / UX A9(b)) — desktop is free (Space is not held behind an
+   * overlay), mobile costs this one line.
+   */
+  raiseToggle: boolean;
+  /** One-shot contact-sheet CTA press, drained by the bridge on the next tick. */
+  pendingCta: PhotoCta | null;
+  /** One-shot briefing skip, drained by the bridge on the next tick. */
+  pendingSkip: boolean;
 }
 
 export function useGameLoop(
