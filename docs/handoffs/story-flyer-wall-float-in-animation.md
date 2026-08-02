@@ -80,6 +80,47 @@ pour qu'un contributeur ultérieur les trouve au lieu de les redéduire du CSS.
   reste juste sur le fond), mais elle ne vaut PAS dérogation : c'est la double signature
   de lane qui autorise le merge, pas elle.
 
+## Élargissement de périmètre — les emblèmes de crew (demandé par Bertrand)
+
+**Ce n'est pas un débordement subi : c'est une décision de Bertrand, prise en cours de PR**
+(« non mais c'était cool mets ça dans la branche sur le menu existant »). La branche
+`claude/flyer-motifs` a donc été fusionnée ici, `d4cba804` → merge `051d6400`.
+
+**Quoi.** Un emblème SVG par flyer, propre à son crew : spirale pour SPIRALE 23 (son
+homonyme littéral), trame pour NADIR 94, anneaux pour KANAL SYSTEM, invader pour L'Éden,
+smiley pour le tutoriel. Nouveau `FlyerMotif.tsx`, table `FLYER_EMBLEMS`, lignes CSS et
+suite de tests dédiée. SVG inline, aucune dépendance, aucun asset généré.
+
+**Genèse.** Les dessins viennent du spike R3F (`claude/spike-r3f-flyers`), où ils étaient
+rasterisés sur des textures canvas ; Bertrand les a itérés en direct pendant la session
+(nombre de spirales, largeur des fentes, taille des trous, ajout de l'invader) puis a
+demandé leur report sur les flyers DOM. Le style — imprimé pauvre, une couleur, formes
+grasses lisibles à la photocopie — suit la même intention que le reste du mur.
+
+**Ce qui MANQUE, nommé plutôt que sous-entendu :**
+
+- **Gate `lead-art` non repassé.** Bertrand a validé les dessins à l'œil pendant la session,
+  ce qui n'est pas une signature de lane sur le bible d'art. Relevé par moi auprès de lui au
+  moment de la fusion, puis indépendamment par le panel. **Reste dû** — c'est le seul gate
+  manquant de cette story.
+- **Pas de spec `game-designer` / `narrative-designer`.** L'attribution crew→emblème est un
+  choix d'identité visuelle : la spirale de SPIRALE 23 découle du nom, l'invader de L'Éden
+  est une citation. Aucune fiction n'a été inventée, mais aucune n'a été validée non plus.
+
+**Défaut trouvé à la fusion, corrigé ici** — NADIR 94 n'affichait AUCUN emblème : placée en
+slot `hero`, la seule feuille conçue pour attaquer par son image, alors que la mise en page
+verrouillée ne rendait que `mid` et `body`. Verrouillé, c'est l'essentiel du mur à la
+première visite. Corrigé côté mise en page (`0992563d`), test sur les deux états de chaque
+niveau, puis étendu au troisième rendu (tutoriel) sur relevé du panel.
+
+**Structure durcie après le panel.** Les cinq tables parallèles indexées par `levelId`
+(`MOTIF_BY_LEVEL_ID`/`_PLACEMENT`/`_SIZE_PX`/`_TILT_DEG`/`_WEAR_SEED`) — la forme exacte qui
+a produit le bug NADIR 94 — sont fusionnées en une seule, `FLYER_EMBLEMS`, typée
+`FlyerEmblem` : une entrée à moitié remplie est désormais une erreur de compilation, là où
+un attribut oublié retombait silencieusement sur un défaut. Relevé en PROPOSÉ par la passe
+`simplify`, tranché par le panel, appliqué à rendu inchangé (tailles d'emblèmes mesurées
+identiques avant/après sur une capture réelle).
+
 ## Débordements de périmètre, déclarés
 
 Deux changements de ce diff sortent de « une animation d'entrée », et méritent d'être

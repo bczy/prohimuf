@@ -21,19 +21,57 @@ import type { JSX } from "react";
 
 export type MotifKind = "spiral" | "smiley" | "rings" | "halftone" | "invader";
 
+/** WHERE the stamp landed on the sheet — vertically. `hero` prints it above the masthead
+ *  (the sheet whose front IS the image, type pushed under it), `mid` between the difficulty
+ *  row and the slogan, `body` after the info lines. Horizontally every emblem stays CENTRED:
+ *  a stamp that wandered sideways fought the flyer's centred masthead and left ragged white
+ *  on one flank, so the variety lives on the vertical axis. */
+export type MotifSlot = "hero" | "mid" | "body";
+
+export interface FlyerEmblem {
+  /** Which crew's mark. UNIQUE across the wall — repeating one turns a signature into wallpaper. */
+  kind: MotifKind;
+  slot: MotifSlot;
+  /** Per-sheet vertical nudge in px, so two sheets sharing a slot still don't line up. */
+  offsetY: number;
+  /** Deliberately UNEVEN across sheets: five crews printing on five machines never land the
+   *  same stamp at the same size, and a uniform size is the tell that gives away a template.
+   *  Bounded by what the sheet hosts — the halftone reads as mud below ~70px, and past ~100
+   *  it crowds the info block on a narrow column. */
+  sizePx: number;
+  /** A stamp banged on by hand is never square to the sheet (cf. FLYER_REST_ROTATION_DEG). */
+  tiltDeg: number;
+  /** feTurbulence seed — explicit, since the filter is deterministic only with one, and
+   *  varied so no two emblems break up the same way. */
+  wearSeed: number;
+}
+
 /**
- * Which crew stamped what. Deliberately UNIQUE across the wall: the spiral belongs to
- * SPIRALE 23 (Belliard) and nowhere else — repeating a crew's signature on every sheet
- * would turn an emblem into wallpaper. Keyed by level id; a level absent from this map
- * simply shows no motif, which is why the type is a partial record rather than an
- * exhaustive one (a new level must not fail the build over decoration).
+ * The complete emblem spec per level — ONE table, not one per attribute. Five parallel maps
+ * keyed by the same id is how NADIR 94 shipped with no emblem at all: every attribute needs
+ * an entry in its own map, and a forgotten one degrades to a silent fallback instead of a
+ * compile error. Here a level is either fully specified or absent, and `FlyerEmblem` makes
+ * a half-filled entry a type error. Every value is indexed by id and fixed — never
+ * Math.random — so the wall is identical on every render.
+ *
+ * A level absent from this map simply shows no motif: decoration must never turn a new
+ * level into a broken slot.
  */
-export const MOTIF_BY_LEVEL_ID: Readonly<Partial<Record<string, MotifKind>>> = {
-  tutorial: "smiley",
-  belliard: "spiral",
-  stalingrad: "rings",
-  vitry: "halftone",
-  "niveau-final": "invader",
+export const FLYER_EMBLEMS: Readonly<Partial<Record<string, FlyerEmblem>>> = {
+  tutorial: { kind: "smiley", slot: "mid", offsetY: 14, sizePx: 76, tiltDeg: -4, wearSeed: 7 },
+  belliard: { kind: "spiral", slot: "body", offsetY: -6, sizePx: 96, tiltDeg: 3, wearSeed: 21 },
+  stalingrad: { kind: "rings", slot: "mid", offsetY: -10, sizePx: 84, tiltDeg: -2, wearSeed: 13 },
+  // The one sheet that leads with its image: NADIR 94's halftone runs across the top and
+  // the lettering starts below it.
+  vitry: { kind: "halftone", slot: "hero", offsetY: 0, sizePx: 100, tiltDeg: 5, wearSeed: 34 },
+  "niveau-final": {
+    kind: "invader",
+    slot: "body",
+    offsetY: 18,
+    sizePx: 88,
+    tiltDeg: -3,
+    wearSeed: 3,
+  },
 };
 
 /** Archimedean spiral — Spiral Tribe's emblem, and literally SPIRALE 23's namesake. */

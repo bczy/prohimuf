@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LEVELS } from "@game/levels/levels";
-import { FlyerMotif, MOTIF_BY_LEVEL_ID } from "../FlyerMotif";
+import { FlyerMotif, FLYER_EMBLEMS } from "../FlyerMotif";
 import { LevelFlyer } from "../LevelFlyer";
 import type { MotifKind } from "../FlyerMotif";
 
@@ -76,9 +76,9 @@ describe("FlyerMotif", () => {
   it("assigns a distinct motif to every level that has one", () => {
     // The spiral is SPIRALE 23's signature; reusing any emblem across sheets would turn
     // a crew's mark into wallpaper.
-    const assigned = Object.values(MOTIF_BY_LEVEL_ID).filter(
-      (k): k is MotifKind => k !== undefined,
-    );
+    const assigned = Object.values(FLYER_EMBLEMS)
+      .filter((e) => e !== undefined)
+      .map((e) => e.kind);
     expect(new Set(assigned).size).toBe(assigned.length);
   });
 
@@ -89,7 +89,7 @@ describe("FlyerMotif", () => {
     // Asserting both states for EVERY mapped level catches the next omission without
     // anyone having to remember which slots each branch happens to offer.
     for (const level of LEVELS) {
-      if (MOTIF_BY_LEVEL_ID[level.id] === undefined) continue;
+      if (FLYER_EMBLEMS[level.id] === undefined) continue;
       for (const unlocked of [true, false]) {
         const markup = renderToStaticMarkup(
           createElement(LevelFlyer, {
@@ -117,7 +117,7 @@ describe("FlyerMotif", () => {
     // Guards the rename case: a level id changed in game data would otherwise leave a
     // dangling motif entry that silently stops rendering.
     const ids = new Set(LEVELS.map((l) => l.id));
-    for (const id of Object.keys(MOTIF_BY_LEVEL_ID)) {
+    for (const id of Object.keys(FLYER_EMBLEMS)) {
       expect(ids.has(id), `${id} is mapped to a motif but is not a shipped level`).toBe(true);
     }
   });

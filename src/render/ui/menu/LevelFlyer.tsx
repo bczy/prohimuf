@@ -17,70 +17,9 @@ import {
 import type { Corner } from "@render/ui/print";
 import { cx } from "../controls";
 import { difficultyMark } from "./derivations";
-import { FlyerMotif, MOTIF_BY_LEVEL_ID } from "./FlyerMotif";
+import { FlyerMotif, FLYER_EMBLEMS } from "./FlyerMotif";
+import type { MotifSlot } from "./FlyerMotif";
 import styles from "./LevelFlyer.module.css";
-
-/**
- * Emblem size per level, in px. Deliberately UNEVEN: five sheets printed by five crews
- * on five different machines would never carry the same stamp at the same size, and a
- * uniform size is the tell that gives away a template. Indexed by id like every other
- * flyer jitter — never Math.random, so the wall is identical on every render.
- *
- * The spread is bounded by what the sheet can host: the halftone lozenge reads as mud
- * below ~70px, and anything past ~100 starts crowding the info block on a narrow column.
- */
-const MOTIF_SIZE_PX: Readonly<Partial<Record<string, number>>> = {
-  tutorial: 76,
-  belliard: 96,
-  stalingrad: 84,
-  vitry: 100,
-  "niveau-final": 88,
-};
-
-/** Fallback for a level with a motif but no size entry — mid-range, never zero. */
-const MOTIF_SIZE_FALLBACK_PX = 84;
-
-/**
- * WHERE the stamp landed on each sheet — vertically. `hero` prints it above the
- * masthead (the sheet whose front IS the image, type pushed under it), `mid` drops it
- * between the difficulty row and the slogan, `body` after the info lines.
- *
- * Horizontally every emblem stays CENTRED: a stamp that wandered sideways too fought
- * the flyer's centred masthead and left ragged white on one flank. The variety lives on
- * the vertical axis instead — plus a per-sheet nudge in px, so two sheets sharing a slot
- * still don't line up. Indexed by id, deterministic, never Math.random.
- */
-type MotifSlot = "hero" | "mid" | "body";
-
-const MOTIF_PLACEMENT: Readonly<Partial<Record<string, { slot: MotifSlot; offsetY: number }>>> = {
-  tutorial: { slot: "mid", offsetY: 14 },
-  belliard: { slot: "body", offsetY: -6 },
-  stalingrad: { slot: "mid", offsetY: -10 },
-  // The one sheet that leads with its image: NADIR 94's halftone runs across the top
-  // and the lettering starts below it.
-  vitry: { slot: "hero", offsetY: 0 },
-  "niveau-final": { slot: "body", offsetY: 18 },
-};
-
-/** Per-sheet turbulence seed, so no two emblems break up the same way. Fixed values,
- *  not derived at runtime: feTurbulence is deterministic only with an explicit seed. */
-const MOTIF_WEAR_SEED: Readonly<Partial<Record<string, number>>> = {
-  tutorial: 7,
-  belliard: 21,
-  stalingrad: 13,
-  vitry: 34,
-  "niveau-final": 3,
-};
-
-/** Deterministic per-level tilt (degrees), in the same spirit as FLYER_REST_ROTATION_DEG:
- *  a stamp banged on by hand is never square to the sheet. */
-const MOTIF_TILT_DEG: Readonly<Partial<Record<string, number>>> = {
-  tutorial: -4,
-  belliard: 3,
-  stalingrad: -2,
-  vitry: 5,
-  "niveau-final": -3,
-};
 
 /**
  * One rave flyer per level (NIVEAUX). Three artifact modes — playable, tutorial
@@ -224,10 +163,9 @@ function CrewMotif({
   slot: MotifSlot;
   locked?: boolean;
 }): JSX.Element | null {
-  const kind = MOTIF_BY_LEVEL_ID[levelId];
-  if (kind === undefined) return null;
-  const placement = MOTIF_PLACEMENT[levelId] ?? { slot: "body" as const, offsetY: 0 };
-  if (placement.slot !== slot) return null;
+  const emblem = FLYER_EMBLEMS[levelId];
+  if (emblem === undefined) return null;
+  if (emblem.slot !== slot) return null;
   return (
     <div
       className={cx(
@@ -235,15 +173,14 @@ function CrewMotif({
         slot === "hero" ? styles.motifHero : undefined,
         locked ? styles.motifRowLocked : undefined,
       )}
-      // Vertical nudge only — the horizontal axis stays centred by the row's flexbox.
-      style={placement.offsetY === 0 ? undefined : { marginTop: placement.offsetY }}
+      style={emblem.offsetY === 0 ? undefined : { marginTop: emblem.offsetY }}
     >
       <FlyerMotif
-        kind={kind}
-        size={MOTIF_SIZE_PX[levelId] ?? MOTIF_SIZE_FALLBACK_PX}
-        tiltDeg={MOTIF_TILT_DEG[levelId] ?? 0}
+        kind={emblem.kind}
+        size={emblem.sizePx}
+        tiltDeg={emblem.tiltDeg}
         instanceId={levelId}
-        wearSeed={MOTIF_WEAR_SEED[levelId] ?? 1}
+        wearSeed={emblem.wearSeed}
       />
     </div>
   );
@@ -331,6 +268,10 @@ export function LevelFlyer({
                 <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
                 <div className={styles.tutorialName}>{level.name}</div>
                 <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
+                {/* All three slots, like PlayableBody and LockedBody: a renderer that
+                    offers fewer is how NADIR 94 lost its emblem. Dormant while the tutorial
+                    sits in `mid`, and that is the point — it stays correct if it moves. */}
+                <CrewMotif levelId={level.id} slot="hero" />
                 <CrewMotif levelId={level.id} slot="mid" />
                 <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
                 <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
