@@ -106,7 +106,8 @@ const TAU = 0.01;
 // old fit caps no longer apply.
 const FILL = 1.43;
 // Extra safety margin (beyond τ) kept between the sprite box and the opening edge.
-const MARGIN = 0.006;
+// (No longer read by the fit — kept as documentation of the historical tuning.)
+const _MARGIN = 0.006;
 
 // Coverage-audit tuning (ADR-0028 iteration 2). The UNDERCOVER/OVERCOVER audit and
 // the measure()-side gate share these so the corrected openings always satisfy the

@@ -24,8 +24,6 @@ export default tseslint.config(
 
       ".yarn/**",
 
-      "scripts/**",
-      // Gemini asset generation scripts — linted separately
       "eslint.config.ts",
       // self-referential lint causes false positives
       "vite.config.ts",
@@ -82,6 +80,42 @@ export default tseslint.config(
 
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
+    },
+  },
+
+  // scripts/** — Node CLI tooling (asset gen, checks, e2e). Plain .mjs files
+  // sit outside every tsconfig project, so type-aware rules cannot run on
+  // them; everything else (js recommended + non-type-aware strict) applies.
+  {
+    files: ["scripts/**/*.mjs"],
+
+    extends: [tseslint.configs.disableTypeChecked],
+
+    languageOptions: {
+      globals: { ...globals.node, ...globals.es2022 },
+    },
+
+    rules: {
+      // Requires type annotations, which plain .mjs cannot carry.
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+    },
+  },
+
+  // scripts/**/*.ts — type-checked against tsconfig.node.json (the Node-side
+  // project also used by `yarn typecheck`), not the browser tsconfig.json.
+  {
+    files: ["scripts/**/*.ts"],
+
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+
+        project: "./tsconfig.node.json",
+
+        tsconfigRootDir: import.meta.dirname,
+      },
+
+      globals: { ...globals.node, ...globals.es2022 },
     },
   },
 

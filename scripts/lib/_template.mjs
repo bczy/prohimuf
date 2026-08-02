@@ -14,7 +14,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { sleep, fetchWithRetry, fluxUrl, buildRequestUrl } from "./pollinations.mjs";
+import { sleep, fetchWithRetry, buildRequestUrl } from "./pollinations.mjs";
+// Also available from ./pollinations.mjs: fluxUrl (raw FLUX URL builder).
 import { skip } from "./idempotent.mjs";
 import { parseAssetArgs } from "./cli.mjs";
 // Only if this harness also chroma-keys a flat generated background:

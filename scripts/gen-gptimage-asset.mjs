@@ -31,7 +31,7 @@ const OUT = args.out;
 const GEN = parseInt(args.gen ?? "1024", 10);
 const SIZE = parseInt(args.size ?? "256", 10);
 const TOL = parseInt(args.tol ?? "95", 10);
-const KIND = args.kind ?? "sprite";
+const _KIND = args.kind ?? "sprite";
 if (!PROMPT || !OUT) {
   console.error("need --prompt and --out");
   process.exit(2);

@@ -173,7 +173,7 @@ async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
     // PRIMARY: kontext img2img — frozen hero when declared, else committed frame 1.
     // Same per-frame descriptor `planRequests()` emits (planFrameRequest) — the
     // guard verifies THIS executed path, not a parallel reconstruction.
-    const { imageUrl, url: kUrl } = planFrameRequest(e, i, registry, repo, sha);
+    const { url: kUrl } = planFrameRequest(e, i, registry, repo, sha);
     const sourceLabel = hero ? `hero "${hero.slug}"` : `${e.key}.png`;
     console.log(`  [gen]  ${name} — strategy=KONTEXT img2img (source ${sourceLabel})`);
     try {
