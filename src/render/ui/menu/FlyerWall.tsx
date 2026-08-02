@@ -324,17 +324,32 @@ export function FlyerWall({
   }, [playCascade, reducedMotion]);
 
   useEffect(() => {
-    const onKey = () => {
+    const forget = () => {
       pointerPressed.current = null;
     };
     const onPointer = (e: PointerEvent) => {
       pointerPressed.current = e.target;
     };
-    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keydown", forget, true);
     window.addEventListener("pointerdown", onPointer, true);
+    // The gesture's END releases the marker, so it can only ever suppress the focus of the
+    // gesture it belongs to. Left to be overwritten by the next pointerdown, it would keep
+    // pointing at a flyer indefinitely whenever a press produces NO focus — macOS Safari
+    // without Full Keyboard Access does not focus a control on click, and a locked flyer
+    // only shakes — and a screen reader landing on that same flyer later would be read as
+    // that old gesture's own focus and silently denied the settle it needs.
+    //
+    // `click` and not `pointerup`: on touch the order is pointerdown → pointerup →
+    // synthetic mousedown → focus → mouseup → click, so pointerup still precedes the tap's
+    // own focus. `click` is the first event that is always after it. `pointercancel`
+    // covers the gestures that never reach a click at all (scroll takeover, palm reject).
+    window.addEventListener("click", forget, true);
+    window.addEventListener("pointercancel", forget, true);
     return () => {
-      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keydown", forget, true);
       window.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("click", forget, true);
+      window.removeEventListener("pointercancel", forget, true);
     };
   }, []);
 

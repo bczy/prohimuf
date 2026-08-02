@@ -438,6 +438,28 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
   });
 
+  it("still settles when assistive tech lands on a flyer clicked earlier", () => {
+    // The pointer marker must not outlive its own gesture. A press that produces NO focus
+    // — macOS Safari does not focus a control on click without Full Keyboard Access, and a
+    // locked flyer only shakes — would otherwise leave it aimed at that flyer for good, and
+    // a screen reader arriving on the SAME flyer later would be mistaken for that stale
+    // gesture's own focus and denied the settle. The gesture's click releases it.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      el?.dispatchEvent(new MouseEvent("click", { bubbles: true })); // gesture over, no focus
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+    act(() => {
+      el?.focus(); // a virtual cursor arriving later, no key event in between
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
   it("does not hand the showing back after the player settled the wall themselves", () => {
     // Settling on arrival REMOVES a running animation, so the last slot fires
     // animationcancel, never animationend — "ran to its end" alone would read this wall as
