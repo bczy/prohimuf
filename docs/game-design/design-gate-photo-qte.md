@@ -683,3 +683,431 @@ G-1/G-2 = local exception, not general rules. The four below travel with the PAS
    composite).
 
 _Karim — `lead-game-designer`, 2026-08-01, round 2, final._
+
+---
+
+---
+
+# CONTRÔLE DELTA — Rev.3, relocalisation sur BELLIARD
+
+**Gate:** `lead-game-designer` (Karim) · **Date:** 2026-08-02 ·
+**Nature: contrôle delta, PAS un round 3.** La décision de Bertrand du 2026-08-02 (hôte =
+Belliard, override de mon ruling R-10) n'est pas rediscutée : elle est exécutée. Je ne vérifie
+que ce que la relocalisation a touché, et je laisse fermé tout ce qu'elle n'a pas touché.
+
+| #   | Livrable                             | Rev.      | **VERDICT DELTA**                                          |
+| --- | ------------------------------------ | --------- | ---------------------------------------------------------- |
+| 1   | `spec-photo-qte-paparazzi.md`        | **Rev.3** | **PASS delta** — 2 rulings rendus, 3 résidus éditoriaux    |
+| 2   | `spec-photo-qte-fiction.md`          | **Rev.3** | **PASS delta** — 3 résidus éditoriaux (dont C-1, non fait) |
+| 3   | `techplan-photo-qte.md` + `adr/0080` | **Rev.3** | **hors de mon gate** (Winston) — 3 notes design renvoyées  |
+| 4   | `ux/photo-qte-controls.md`           | Rev.2     | **non touché** par la relocalisation — pas relu            |
+
+> **VERDICT D'ENSEMBLE : PASS DELTA, SOUS UNE CONDITION BLOQUANTE (D-1).**
+> Le travail de re-dérivation des deux lanes est honnête et vérifiable : les fenêtres, les
+> keyframes, les floors et les paliers ne bougent pas, et **je les ai re-dérivés moi-même**.
+> Mais la relocalisation **falsifie une prémisse sur laquelle mes rounds 1 et 2 ont accordé le
+> PASS** sur « une mission = 3-5 minutes » (§D-1). Ce point-là, et lui seul, se rouvre.
+> Rien d'autre ne se rouvre.
+
+---
+
+## 0. Ce que j'ai contrôlé, et ce que je n'ai pas contrôlé
+
+**Contrôlé (delta) :** la nouvelle source de couverture et sa période · les fenêtres absolues
+et les 3 recouvrements F3 · les 9 keyframes sur la géométrie du passage / marche arrière ·
+le lieu d'affût et le lieu de scène contre le décor shippé · le déclencheur `[2,8] s` contre la
+fiction ET contre la coexistence otage/boss/camion · le pin de scope `rewardMultiplier` devenu
+exigence assertée · le paquet `lead-art` · les deux rulings demandés en §11.0 · le désaccord
+inter-lanes §2.3.
+
+**Non contrôlé (fermé, non rouvert) :** toute l'arithmétique K-1/K-2/K-3/K-4 de la Rev.2 ·
+R2-1 à R2-5 · les floors F1-F13 · la cible, le triptyque, `filmCount`, l'invariant « isolé
+jamais affaibli », la forme des deux CTA · le spec UX. Sacha affirme « zéro valeur déplacée » ;
+j'ai vérifié par sondage sur les cellules qui portent (F3 : 4,5/**1,5**/2,9 ≥ 1,2 ✓ ;
+K6→K7 = 9,00/2,90 = **3,103 su/s** ✓ ; fenêtres [10,17][31,38][52,59] avec période 21 et offset
+10 ✓ ; transits = exactement les trois tells de 1,8 s ✓). L'affirmation tient.
+
+**Citations décor vérifiées contre `spec-belliard-street-wide-repositioning.md` §0.2/§2.3** —
+passage `0,372–0,408` (zone d'exclusion, aucun pop), feu tricolore `0,388` (**seul** prop haut,
+posé devant le passage), boulangerie `0,340`. La fiction ne s'invente pas un décor : elle cite
+le mien. C'est la bonne façon de relocaliser.
+
+---
+
+## 1. Les deux rulings demandés par Sacha (§11.0)
+
+### R3-1 — La lecture « carrefour à cycle 42 s, deux phases nourrissant la rue » : **RATIFIÉE**, avec un pin et une correction du coût annoncé
+
+La dérivation est honnête et elle est faite dans le bon sens : Sacha ne recycle pas le 21 s de
+la Rev.2, il le **re-dérive** et il écrit ce qui casserait si la lecture ne tenait pas. C'est
+exactement la discipline que j'attends d'un amendement — et le contre-factuel qu'il pose (un
+21 s lu comme _cycle_ ⇒ une seule fenêtre dans 60 s ⇒ F3 cassé sur un bonus ⇒ scène à ~90 s)
+est juste ; je l'ai refait.
+
+**Pin (bloquant, gratuit).** La donnée authored est **`WAVE_PERIOD = 21.0 s`, un intervalle de
+vague** — le « cycle de 42 s » est une **justification de fiction, jamais une valeur**. Aucune
+donnée, aucun test, aucun brief son ne doit contenir 42. Sans ce pin, le prochain lecteur
+« corrige » la période vers 42 pour la faire coller au carrefour, et emmène les neuf keyframes
+avec lui.
+
+**Deuxième pin (conséquence gameplay, pas un goût de mix).** §10.4 point 1 demande à Malik deux
+vagues de **caractère** différent mais de **durée** et d'**attaque** identiques. Ce n'est pas une
+préférence : `inCover(t)` est un booléen unique et **F3 suppose que les trois fenêtres valent
+7,0 s**. Une vague « tourneurs » plus courte que la vague « traversante » casse le run à zéro
+suspicion sur l'instant qui tombe dedans. À écrire comme contrainte de gameplay dans le brief
+E-7, pas comme note de mix.
+
+**Correction du coût annoncé — et c'est une bonne nouvelle que Sacha se refuse à lui-même.**
+Il chiffre l'échec de la lecture 42 s à « la cadence se rouvre, la scène passe à ~90 s, les neuf
+keyframes bougent ». **Faux, ou plutôt : pessimiste d'un cran.** Sa propre §10.4 porte déjà le
+repli de la fiction — **le fournil de la boulangerie** (prop shippé `x_norm 0,340`) — qui est une
+source **mono-périodique** : elle produit une vague tous les 21 s sans avoir besoin d'une lecture
+à deux phases, et tout le mécanisme lit `WAVE_*`, jamais « une voiture ». Donc si Malik ou
+Estelle ne soutiennent pas le carrefour à deux phases, **la cadence ne se rouvre pas** : on
+bascule sur le repli, à coût mécanique nul. Le risque réel de ce ruling est donc **fiction +
+mix**, pas **cadence**. Sacha : écris-le à la place de la phrase actuelle, c'est la seule chose
+que je te demande de changer en §4.1.
+
+### R3-2 — Le refus du « bonus de lisibilité » de la fiction §2.3 : **REFUS SOUTENU, et durci en interdiction**
+
+D'abord le cadrage, parce qu'il compte : ce n'est pas un désaccord entre deux lanes de rang
+égal. Yasmine a **explicitement décliné la propriété** du point (« à `sound-designer` +
+`ux-designer`, pas une exigence de ma lane ») et a nommé elle-même le risque (« ça se lit comme
+un feu de circulation qu'on doit respecter »). Sacha tranche dans son propre périmètre. Il a
+raison, et pour la bonne raison : l'onde verte met la couleur du feu **≈ 7 s hors phase** avec
+le tell audio, donc le canal enseigne un **modèle causal faux**.
+
+**Je soutiens, et je durcis d'un cran** — c'est la même famille que ma prohibition T-4 (l'aiguille
+n'est pas un posemètre), et je veux qu'elles soient citées ensemble :
+
+> **Aucun élément de la planche ne peut encoder l'état de couverture, à l'exception des phares
+> du paquet en haut de la rue.** Le feu tricolore de la planche est un **décor et une source de
+> lumière** : il peut être animé, il ne peut pas être lu. Ni **hors phase** (modèle faux), ni
+> **en phase** (indicateur gratuit non budgété : la patience deviendrait lisible sans écouter,
+> ce qui déplace la difficulté que F3 et §5.2 calibrent — un changement de tuning déguisé en
+> note d'art).
+
+**Et voilà la contradiction que ce ruling fait apparaître, et que personne n'a vue** — c'est le
+seul vrai désaccord de documents du contrôle delta :
+
+- Mécanique Rev.3 §4.1 : _« le feu de la planche reste décor et source de lumière »_.
+- Techplan **D-J** : _« la lumière dessinée dans la surface du set-piece est une **projection de
+  `photoQte`** — `inCover(spec.cover, sceneClock, …)` plus la fenêtre de tell »_.
+
+La **décision** de D-J est juste et je la ratifie sans réserve : `trafficSignalPhase` (13,5 s,
+horloge murale, ne se met pas en pause) ne doit jamais devenir la source de vérité de la
+couverture, et retuner `TRAFFIC_PHASES` à 21 s est le piège D-F en costume. Mais sa **rédaction**
+réintroduit par la porte de derrière exactement le canal que Sacha vient de refuser, en phase
+cette fois. **Correction (une ligne, à Winston, bloquante pour le brief de la lane B, pas pour
+le build) :** ce qui se projette depuis `inCover` c'est **les phares du paquet / l'éclairement de
+la bouche du passage**, **pas la couleur du feu**. Le feu de la planche ne consomme pas
+`inCover`. Renvoyé en §5 (N-1).
+
+---
+
+## 2. Cohérence delta — ce que j'ai vérifié cellule par cellule
+
+### 2.1 Les fenêtres contre la nouvelle fiction — **COHÉRENT**, et meilleur qu'avant
+
+[10,17] [31,38] [52,59], tells 8,2/29,2/50,2, recouvrements 4,5/**1,5**/2,9 contre F3 = 1,2 :
+inchangés, re-dérivés, ✓. Ce qui change est la **causalité**, et c'est un gain réel : les deux
+hommes se calent sur le feu comme tout Paris (instant 1), ils attendent que la rue se vide pour
+l'enveloppe (instant 2 — la preuve maîtresse est risquée **parce que ses acteurs ont choisi le
+silence**), et la plaque est lisible **parce que** les phares rasent la bouche du passage
+(instant 3). Cette troisième ligne transforme la conformité F3 de l'instant 3 en propriété
+**structurelle**. Je la ratifie et je la verrouille : personne ne « répare » cette coïncidence.
+
+**Mais elle crée une contradiction de source lumineuse entre les deux specs, et elle porte :**
+
+- Fiction §2.2, 3e puce : _« c'est **lui** [le feu] qui rend la plaque lisible au départ de la
+  berline »_.
+- Mécanique §4.2, ligne 3 : _« la plaque est lisible **parce que les phares du paquet** rasent la
+  bouche du passage »_.
+
+Ce n'est pas de la couleur locale : si c'est le **feu** qui éclaire la plaque, alors l'onde verte
+(≈ 7 s) désynchronise l'éclairage de la fenêtre de couverture, et l'argument « structurel » de
+F3 sur l'instant 3 **tombe**. La bonne lecture est celle de Sacha. **C-4 (fiction, bloquant avant
+transcription) :** §2.2 corrige — le feu **allume la bouche du passage en permanence** (il reste
+la raison pour laquelle l'endroit est éclairable), **les phares du paquet** sont ce qui rend la
+plaque lisible **pendant la fenêtre**. Une phrase.
+
+### 2.2 Le déclencheur `[2,8] s` — **COHÉRENT avec le camion, PAS avec « avant la boucle »**
+
+L'arithmétique est propre et je la ratifie : camion à 20 s, otage à 12 s, invariant d'ordre +
+`SAFETY_MARGIN_SECONDS` ⇒ la seule fenêtre légale est avant 12 s. Rien à redire côté
+architecture.
+
+Côté fiction, deux seams, dont une réelle :
+
+1. **« Avant le camion » : ✓.** Le camion est à 20 s, le déclencheur avant 12 s. Littéral.
+2. **« Avant la boucle `Récupérer → Livrer → Éviter` », « comme une scène pré-niveau qui serait
+   jouable », « Muf est monté en avance » (fiction §2.4) : ✗ au sens littéral.** À 2-8 s de temps
+   joué, Muf est **sur sa moto, dans la rue**, et il se retrouve à plat ventre sur le zinc sans
+   avoir grimpé. L'ellipse est portée par la phase `BRIEFING` (techplan D-G, ligne 8 du script :
+   « Tu montes sur le toit, la lucarne au bout de la rue ») — donc **elle est jouable**, mais
+   aucun document ne l'assume aujourd'hui, et la fiction affirme encore le contraire.
+
+**Ruling R3-3.** Le déclencheur mi-niveau est **accepté** ; la phase `BRIEFING` **est** l'ellipse
+de la montée et de la redescente, et c'est à ce titre qu'elle est non-facultative dans la
+structure (skippable pour le joueur, jamais absente de la machine). Deux conséquences :
+
+- **C-5 (fiction, bloquant avant transcription).** §2.4 point 1 réécrit : le set-piece se joue
+  **au tout début de la nuit, avant le premier chargement**, et non « avant la boucle » ni
+  « comme une scène pré-niveau ». Le mot « pré-niveau » est faux depuis la relocalisation et il
+  induira un dev en erreur.
+- **Pin de valeur (à Sacha, dans `[2,8]`) : autorise le BAS de la fourchette, ≈ 2,0-3,0 s**, pour
+  deux raisons cumulatives : (a) plus on s'éloigne de 0, plus le joueur a engagé la boucle et
+  plus l'ellipse « monté en avance » coûte cher ; (b) l'écart de **temps joué** entre la sortie
+  de la planche contact et le gel du duel otage vaut `12 − t_p`, donc **10 s à t_p = 2 mais 4 s
+  à t_p = 8**. Voir D-1 : ces 4 s sont indéfendables.
+
+### 2.3 Le paquet `lead-art` — **INCOMPLET, à réémettre**
+
+Les deux nouvelles contraintes (dérive verticale nulle et échelle apparente constante de la
+plaque sur `[53,0 ; 55,9]`, toutes deux dans `SUBJECT_BOX_TOLERANCE`) sont **justes, bloquantes
+pour F12(1), et bien posées** — y compris la clause « si la voiture doit grossir, ce n'est pas
+une note d'art, c'est une ré-écriture de K6/K7 qui déplace 3,103 su/s, F5b, F5c, §3.3.b et
+AC6c ». Exactement le bon réflexe : le refus d'absorber en silence.
+
+**Mais elles ne sont pas dans le paquet qui part chez Nico.** Le techplan §11.4 écrit _« les
+quatre contraintes de E-6 sont inchangées… Rev.3 ajoute une cinquième »_ — et la cinquième qu'il
+nomme est la **continuité de rue** (la planche doit se lire comme `street-wide.png`), pas les
+items 7-8 de §10.5. **E-6 passe donc de 4 à 7 contraintes** et je le réémets intégralement en §5.
+
+**Et un trou d'application que je nomme maintenant plutôt qu'au stage 5.** Le script CI
+`check-photo-subject-boxes.mjs` vérifie F12(1) **aux keyframes**. Or :
+
+- les contraintes 7-8 portent sur l'**intervalle** `[53,0 ; 55,9]` (entre K6 et K7), pas sur ses
+  bornes — une marche arrière qui descend puis remonte passe le contrôle aux deux extrémités ;
+- la contrainte « pose de maintien non dérivante » porte sur l'**animation idle** entre K2→K3
+  (19,2 s) et K4→K5 (14,7 s), pas sur K2, K3, K4, K5.
+
+**Un contrôle aux seules keyframes n'asserte donc aucune des trois.** Le script doit
+**échantillonner l'intervalle** (pas de valeur imposée par moi : le pas est à `qa-lead` +
+`dev-tooling-assets`). Renvoyé en N-2 — non bloquant pour le gate, bloquant pour la promesse
+F12(1).
+
+### 2.4 Le pin de scope `rewardMultiplier` — **COHÉRENT, et strictement renforcé**
+
+Mon pin du round 2 disait : _« vise la DONNÉE, pas “le boss” ; l'encontre Belliard est
+byte-intouchée (elle précède aussi le set-piece dans la progression, donc c'est gratuit — mais
+écris-le) »_. Rev.3 retire le « c'est gratuit » et promeut la clause en exigence assertée
+(AC12). **C'est cohérent avec mon pin, et c'est plus fort que lui.** Trois vérifications :
+
+1. **Le scénario n'est plus hypothétique, il est CERTAIN, et plus tôt que Sacha ne le dit.**
+   Sacha écrit « selon où `pm` place la nuit de retour ». Non : la ligne Belliard porte le
+   `photoQte` (déclencheur 2-8 s) **et** son propre `bossQteSpec` à l'expiration du timer (90 s,
+   derrière `BELLIARD_BOSS_ENABLED`). Donc **dans la même run**, le joueur photographie le
+   Commandant à ~5 s et l'affronte ~85 s plus tard en tenant `master-bonus`. Aucun placement de
+   `pm` ne peut l'éviter. Le techplan §4.1/§4.4 le dit d'ailleurs correctement.
+2. **Le techplan ferme le piège par la structure, pas par la convention** : `shieldedLullSeconds`
+   est une **constante de module partagée** par Belliard et le Niveau Final ⇒ les paliers sont un
+   champ authored `photoLeverageTiers?` sur la seule ligne Niveau Final, absent ⇒ ×1.00, et le
+   test tourne aux **trois** valeurs de levier. C'est la bonne réponse à K-3, et elle est
+   meilleure que mon pin, qui supposait à tort une ligne de tuning par niveau.
+3. **La fiction couvre la séquence sans qu'on ait rien à écrire — et je le grave pour que
+   personne ne le « répare ».** Photographier le Commandant à 23 h 40 puis l'affronter au porche
+   85 s plus tard **à ×1.00** est **narrativement juste** : la récompense passe par la
+   photocopieuse, les vingt-trois copies et les cages d'escalier (fiction §5.1/§5.2), c'est-à-dire
+   par des **jours**, pas par des minutes. **Ruling R3-4 : l'encontre Belliard reste à ×1.00 pour
+   toujours, et ce n'est pas un oubli — c'est la diffusion qui prend du temps.** Toute proposition
+   future de « récompenser aussi le boss Belliard » est une réouverture de gate.
+
+---
+
+## 3. D-1 — LA CONDITION BLOQUANTE : la relocalisation falsifie la prémisse de mon PASS sur « une mission = 3-5 minutes »
+
+C'est le seul point où je rouvre, et je rouvre parce que **c'est mon propre raisonnement qui est
+cassé**, pas celui de Sacha. Round 1, §1, mot pour mot :
+
+> _« "Une mission = 3-5 minutes" : le set-piece est **hors du chrono de mission**, donc la
+> contrainte dure n'est pas violée sur sa face. »_
+
+Cette phrase reposait sur un fait qui était vrai à Stalingrad et qui est **faux à Belliard** : le
+set-piece n'était pas dans la mission, il la **précédait**. Rev.3 l'y **encastre** — bloc à scène
+gelée, `elapsedSeconds` figé, déclenché à 2-8 s **d'une mission de 90 s**. Le chrono de mission
+ne bouge pas (le techplan le prouve, et c'est vrai) ; **le temps du joueur, lui, bouge.**
+
+**L'arithmétique, sur une seule tentative de mission Belliard :**
+
+| Segment                                 | Temps réel (mur)                | Temps joué |
+| --------------------------------------- | ------------------------------- | ---------- |
+| Set-piece photo, 1 tentative (AC13b)    | **≤ 120 s** (F13 authored 87,8) | 0 s        |
+| Course jusqu'au duel otage (`12 − t_p`) | 4-10 s                          | 4-10 s     |
+| Duel otage (gelé, pire cas techplan)    | **≈ 21,5 s**                    | 0 s        |
+| Reste de la mission                     | ~80 s                           | ~80 s      |
+| **Total**                               | **≈ 3,7-3,9 min**               | 90 s       |
+
+Une tentative passe, de justesse, dans la borne haute des 3-5 min. **Mais `[ RECOMMENCER ]` n'est
+pas limité en nombre** — c'est une décision gatée (K-4 : « retry is not rate-limited, but it is
+budgeted »), et le budget qui le borne (F13 / AC13) borne **une tentative**, pas leur nombre. Or
+sur Belliard, chaque re-tentative se paie **à l'intérieur de la même mission** :
+
+> **2 tentatives ⇒ ≈ 5,9 min. La contrainte dure est franchie au premier retry.**
+
+Et la dilution est pire que le chiffre : sur les ~2,5 premières minutes du **premier niveau du
+jeu**, celui qui enseigne `Récupérer → Livrer → Éviter`, le joueur n'exécute **aucun** des trois
+verbes. Deux scènes gelées se suivent à 4-10 s d'intervalle de jeu réel. Winston a prouvé que les
+**horloges** composent (elles composent, arithmétiquement, il a raison, et A-T12 le teste) —
+personne n'a regardé si le **rythme** compose. Ce n'est pas sa lane : c'est la mienne.
+
+**Les guidelines sont muettes sur le point exact, donc je propose la règle manquante (E-3bis,
+à Bertrand) :**
+
+> **G-3 — Le temps de scène gelée ne compte pas contre « une mission = 3-5 minutes », à
+> condition que le temps gelé total **atteignable à l'intérieur d'une tentative de mission**
+> soit **borné** et que la borne soit écrite.** Précédent : le duel otage (≈ 21,5 s, gelé, gaté)
+> et le boss QTE n'ont jamais été comptés — parce qu'ils sont bornés par construction. Un
+> set-piece re-jouable à volonté à l'intérieur d'une mission n'est pas borné, donc il ne
+> bénéficie pas de l'exemption.
+
+**Condition de fermeture (je nomme le trou et la condition, je n'écris pas la solution) :**
+
+> Le **temps gelé total atteignable dans une tentative de mission Belliard** doit être **borné,
+> chiffré, et défendu contre les 3-5 min**, avant que la lane A n'écrive la valeur de
+> `triggerAtElapsedSeconds`.
+
+Trois options, et je les cadre pour que la boucle ne parte pas en design par comité :
+
+- **(a) Borner les re-entrées du set-piece dans une même run.** La sortie existe déjà et elle est
+  gatée : passé la borne, `[ RECOMMENCER ]` disparaît et `[ LAISSER TOMBER ]` reste — l'invariant
+  « bonus jamais gate » **porte lui-même le plafond**. Coût : un compteur + une ligne de copy à
+  Yasmine. **C'est l'option la moins chère et celle qui ne rouvre rien.** Attention : elle ne
+  touche pas R2-5 (les deux CTA pairs restent la forme sur la branche d'échec tant que le retry
+  est offert).
+- **(b) Rendre le set-piece réellement pré-niveau** (les mots de la fiction). Restaure ma prémisse
+  du round 1 telle quelle, mais coûte la beauté de D-A (pause, décline et non-rechargement
+  gratuits) et se heurte à D-G (`PRE_LEVEL_NARRATIVE` n'est pas ré-entrable). Coût architecture,
+  pas coût design.
+- **(c) Ne rien borner et faire adopter G-3 sans clause de borne.** Je le déconseille et je dis
+  pourquoi : ça revient à écrire qu'une mission peut durer indéfiniment tant que le chrono
+  interne ne tourne pas, ce qui vide la contrainte de sa fonction.
+
+**Qui, et en combien de temps :** `game-designer` + `senior-architect` + `pm` reconcilient et me
+reviennent **une fois** ; si ça ne converge pas au premier passage, les options partent chez
+Bertrand telles quelles (cap habituel — je ne brûle pas trois cycles là-dessus).
+
+**Ce que D-1 ne bloque PAS :** le build des lanes A/B/C peut démarrer. D-1 ne touche ni un type,
+ni une signature, ni une valeur de tuning — il touche le **nombre de re-entrées** et la **valeur
+du déclencheur**, deux données authored. La lane A doit seulement ne pas figer
+`triggerAtElapsedSeconds` avant la fermeture.
+
+---
+
+## 4. Les deux questions ouvertes du techplan qui sont des questions de DESIGN
+
+### R3-5 — Q-3 (le set-piece se déclenche-t-il à la PREMIÈRE run Belliard ?) : **NON. Tranché, design-side.**
+
+Le techplan recommande « inconditionnel en V1, et que “retour” se lise comme un cadrage
+narratif ». **Je refuse**, et pas pour la fiction :
+
+1. La fiction dit « une nuit de **retour**, pas la nuit du tutoriel » (§2.4 point 3) et c'est une
+   **décision de design**, pas de la couleur : le joueur y revient « pour la regarder » **après**
+   avoir appris à la fuir.
+2. **G-1 s'écroule si on l'enlève.** L'exception à « déplacement + une action » a été accordée
+   (round 1, §6) sur trois clauses dont « (b) le schéma est apprenable sans copy » et « (c) le
+   set-piece est optionnel et hors du chrono ». Poser **quatre verbes** devant un joueur qui n'a
+   pas encore appris **les deux premiers du jeu** casse (b). L'exception a été concédée par
+   Bertrand comme **locale à ce QTE** ; elle n'était pas concédée pour le tutoriel.
+3. Ça aggrave D-1 pile là où c'est le plus cher (un premier joueur est celui qui refait le
+   set-piece le plus souvent).
+
+**Binding : le set-piece ne se déclenche pas sur la première run Belliard.** Le prédicat exact
+(progression, entonnoir, jalon) est à `pm` ; la route architecturale est déjà propre et gratuite
+(un booléen `LevelParams` via `handlePlay`, pas de clé, pas d'ADR — techplan Q-3). Écrit dans E-5.
+
+### R3-6 — Q-4 (la preuve devient « farmable ») : **ACCEPTÉ. Fermé design-side, aucune rareté.**
+
+Belliard est toujours déverrouillé, `[ RECOMMENCER ]` rejoue une scène byte-identique (AC10) et
+la fusion est monotone (ADR-0080 D1) ⇒ tout joueur patient banque `master-bonus`. **Ce n'est pas
+un défaut, c'est la conséquence assumée de trois décisions gatées** : la scène est **déterministe
+et faite pour être apprise** (c'est l'argument même d'AC10), le retry est offert sans punition
+(K-4/D1.c), et la récompense est délibérément modeste (une accalmie sur deux phases, jamais de
+PV, jamais de route). Une compétence apprenable qui finit par payer, c'est le contrat.
+
+**Ruling : aucune rareté.** Toute tentative future de rendre la preuve rare (limite de retry
+hors-D-1, péremption, one-shot, contingence à la survie du niveau) rouvre K-4, R2-4 ou AC10 au
+gate. Si le levier paraît trop fort au playtest, **le levier honnête est le tuning des paliers
+sur la ligne Niveau Final** (×0.90/×0.80), pas le report. Winston écrit exactement ça dans Q-4 ;
+je le ratifie et je le ferme. **Q-4 sort de la liste de `pm`.**
+
+_(Q-1 — le rate-limit du pan desktop à `PAN_RATE_MAX` — est une vraie question de design et la
+réponse est **oui, rate-limité sur les deux devices** : une souris absolue rend F5c vide et fait
+d'AC6c un critère mobile-only, c'est-à-dire **deux modèles d'équité pour un seul tuning gaté**.
+C'est le même refus que ma parité reduced-motion (§3.4/AC9). Ratifié, un modèle, un jeu d'AC.)_
+
+_(Q-2 — banque à la sortie du set-piece plutôt qu'à la réussite du niveau — je confirme
+design-side : rendre un bonus explicitement optionnel contingent d'un succès obligatoire est
+exactement la pression que K-4 existe pour retirer. La décision reste celle de `pm`, mais elle
+n'est plus neutre : « banquer au clear » **contredit** un correctif gaté.)_
+
+---
+
+## 5. Résidus, notes et paquet sortant mis à jour
+
+**Résidus éditoriaux — bloquants avant transcription, aucun ne rouvre le gate :**
+
+| ID      | Lane    | Quoi                                                                                                                                                                                                                                                                                                               |
+| ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **C-1** | Yasmine | **Toujours pas fait** (flaggé round 2, Rev.3 shippée sans). Fiction §4.4 point 2 cite encore _« un bonus quelconque = ×0,75 »_ — palier **retiré** en Rev.2 (il casse le plancher composé de la phase 2). Corriger en **×0,80**, et citer le mécanisme plutôt que le nombre.                                       |
+| **C-4** | Yasmine | Fiction §2.2 : la plaque est rendue lisible par **les phares du paquet** pendant la fenêtre, pas par le feu (§2.1 ci-dessus). Sinon l'argument structurel de F3 sur l'instant 3 tombe.                                                                                                                             |
+| **C-5** | Yasmine | Fiction §2.4 point 1 : retirer « avant la boucle » / « scène pré-niveau ». Le set-piece est **dans** le niveau, au tout début, avant le premier chargement ; l'ellipse de la montée est la phase `BRIEFING`.                                                                                                       |
+| **C-6** | Yasmine | Fiction §2.3 : marquer le « bonus de lisibilité » comme **décliné au gate (R3-2)**, pour qu'il ne soit pas re-proposé au prochain passage.                                                                                                                                                                         |
+| **C-7** | Sacha   | Mécanique §11.4 est **périmée** : _« E-1 remains open… `docs/adr/0077-…` is not on this branch (checked again this round) »_. L'ADR **est** sur la branche (je l'ai lu et comparé au round 2, §0 : zéro divergence) et E-1 est **CLOSED**. Une ligne fausse dans un hand-off en devient une dans le prochain.      |
+| **C-8** | Sacha   | Mécanique §4.1 : remplacer le coût annoncé de l'échec de la lecture 42 s (« la scène passe à ~90 s ») par le **repli boulangerie**, à coût mécanique nul (R3-1). Et §1.1 : ajouter `BRIEFING` à la table des phases (techplan D-G — la phase existe, elle porte l'ellipse C-5, elle ne peut pas rester implicite). |
+
+**Notes renvoyées à `senior-architect` (Winston) — ni des FAIL ni mon périmètre, mais elles
+portent sur des promesses de design :**
+
+- **N-1 (D-J, bloquant pour le brief de la lane B).** Ce qui se projette depuis `inCover` est
+  **l'éclairement / les phares**, jamais **la couleur du feu de la planche** (R3-2). La décision
+  de D-J est ratifiée ; sa formulation réintroduit le canal refusé.
+- **N-2 (F12(1), enforcement).** `check-photo-subject-boxes.mjs` aux seules keyframes n'asserte
+  **ni** les contraintes 7-8 (intervalle `[53,0 ; 55,9]`) **ni** la non-dérive des deux poses de
+  maintien (intervalles K2→K3, K4→K5). Échantillonner les intervalles (§2.3).
+- **N-3 (D-1).** Ne pas figer `triggerAtElapsedSeconds` avant la fermeture de D-1 ; quand elle
+  tombe, viser le **bas** de `[2,8]` (R3-3).
+
+**Paquet sortant — mis à jour :**
+
+| ID                  | À                        | Delta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **E-3bis**          | **Bertrand**             | **G-3** (§3) : adopter ou refuser la règle « le temps gelé ne compte pas dans les 3-5 min **à condition d'être borné** ». Sans elle, D-1 n'a pas de critère opposable et chaque futur set-piece re-plaidera le point. _(Rappel : G-1/G-2 ont été concédées comme exception locale — le stock de règles non écrites s'accumule.)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **E-4**             | `senior-architect`       | Les 7 asks sont **répondus** (techplan §8) et je les tiens pour fermés. **S'ajoutent N-1, N-2, N-3.** Le report devient `Belliard → Niveau Final` (mécanisme inchangé, durée de vie plus longue : deux niveaux, des rechargements, des sessions) — la fusion monotone et l'écriture à la sortie ne sont **plus** des choix conservateurs, ce sont les seuls corrects, et R3-6 les grave design-side.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **E-5**             | `pm`                     | **(1) Q-3 est tranchée par le design : le set-piece ne se déclenche PAS à la première run Belliard** (R3-5) — le prédicat est à toi, le « pas la première » ne l'est pas. **(2) Q-4 est FERMÉE, pas de rareté** (R3-6) : ne me la re-remonte pas comme un problème d'équilibrage. **(3) Q-2** : « banquer au clear » contredit K-4, décide en le sachant. **(4) D-1** : la coexistence photo + otage + camion + boss sur la ligne Belliard est ton problème de progression autant que le mien. (5) La UNE `PARIS-MINUIT` différée coûte un bit `hasPlaque` sur le report (chiffré, techplan §5.3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **E-6**             | `lead-art` (Nico)        | **Réémis à 7 contraintes** — pair lane, signalé, non arbitré. (1) l'aiguille n'est pas un posemètre (T-4) ; (2) le sujet ne porte pas le vocabulaire de glow interactif (F-4) ; (3) **le dessin EST la boîte** aux 9 keyframes, `SUBJECT_BOX_TOLERANCE = max(0,40 su ; 5 %)` (F12(1)) ; (4) **deux poses de maintien non dérivantes** (K2→K3 19,2 s, K4→K5 14,7 s) ; **(5) NOUVELLE — la marche arrière est PLATE** (`cy` constant à 9,00 sur `[53,0 ; 55,9]`, dérive ≤ tolérance) ; **(6) NOUVELLE — la marche arrière ne GROSSIT pas** (boîte `7,50 × 4,22` constante, manœuvre quasi parallèle au plan image) — si la voiture doit approcher, **c'est une ré-écriture de K6/K7 qui revient au gate**, pas une note d'art absorbée ; **(7) continuité de rue** — la planche doit se lire comme `street-wide.png` au premier coup d'œil (passage `0,372–0,408`, boulangerie `0,340`, feu `0,388`, rideaux taggés). **Et une prohibition, qui est mienne** (R3-2) : aucun élément de la planche n'encode l'état de couverture sauf les phares ; le feu est décor et source de lumière. |
+| **E-7**             | `sound-designer` (Malik) | **La cadence n'a pas bougé** ([10,17] [31,38] [52,59], tell 1,8 s) ; **la source a changé** : paquet de véhicules lâché par le carrefour en haut de la rue, tell = les moteurs qui montent **à la ligne, près de l'affût**. Deux exigences de **gameplay**, pas de mix : (a) les deux vagues du cycle peuvent différer de caractère, **jamais de durée (7,0 s) ni d'attaque** — `inCover` est un booléen et F3 suppose trois fenêtres égales (R3-1) ; (b) si le carrefour à deux phases ne tient pas, le repli est le **fournil de la boulangerie**, mono-périodique, **à coût mécanique nul** — la cadence ne se rouvre pas. Le clic net/sourd reste le seul canal audio de T5.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **E-8** _(nouveau)_ | `qa-lead` (Inès)         | **AC15 (imposé, à transcrire dans la spec de Sacha)** : au `verify`, mesurer au chronomètre **le temps réel total d'une tentative de mission Belliard incluant le set-piece**, en 1 puis 2 tentatives de set-piece, et le rapporter contre les 3-5 min. C'est la mesure qui ferme ou rouvre D-1 par l'observation plutôt que par le débat. S'ajoute à AC13(b), ne le remplace pas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+---
+
+## 6. Les quatre tests du gate, sur le delta seulement
+
+1. **Scope.** [EXTENSION] consciente et documentée, inchangée ; ADR-0077 sur la branche ; la
+   relocalisation **supprime** un niveau à construire et n'ajoute aucun asset (la planche 2D
+   dédiée était déjà exigée par D9). Le décor est cité, pas inventé. **PASS.**
+2. **Boucle.** `Récupérer → Livrer → Éviter` : aucun verbe ajouté, aucune règle sur `Éviter`,
+   énergie/score/quota inertes (F8). **MAIS la contrainte « une mission = 3-5 minutes » n'est plus
+   satisfaite par construction** : le set-piece est passé de « devant la mission » à « dedans »,
+   et le retry non borné la franchit au premier essai supplémentaire. **CONDITIONNEL — D-1.**
+3. **Vérifiabilité.** Tout ce que la relocalisation a touché est chiffré et re-dérivé (période,
+   fenêtres, keyframes, vitesses, échelle du plateau) ; les deux nouvelles contraintes art sont
+   des tolérances numériques, pas des adjectifs ; la valeur du déclencheur est nommée comme
+   authored et sa contrainte est assertée. **PASS**, sous N-2 (une promesse F12 non assertée par
+   le contrôle actuel).
+4. **Cohérence.** Mécanique ↔ fiction : cohérentes après C-4/C-5 (deux citations croisées
+   périmées, pas des désaccords). Mécanique ↔ techplan : **une** contradiction réelle (N-1, le
+   feu). Contre le set gaté : ADR-0060 (le pin de scope est **renforcé**, pas contredit), la
+   décision décor aim-honesty (F12(1) étendue à deux nouvelles fenêtres — bon réflexe), ADR-0034
+   (déterminisme préservé : le repli explicite de D-J sur `trafficSignalPhase` protège AC10).
+   **PASS**, sous N-1.
+
+**Ce qui part maintenant :** le build (lanes A/B/C) n'est pas bloqué. Ce qui est bloqué, c'est la
+**valeur du déclencheur** et le **nombre de re-entrées** — jusqu'à la fermeture de D-1.
+
+**Stage 5 inchangé :** Sacha me rapporte l'acceptation design contre **AC1–AC15**. Les quatre
+choses que je regarderai en premier : `[ LAISSER TOMBER ]` en une pression (l'invariant), AC14
+(la chasse à la frustration), AC6b(d) (dessiné == boîte, au composite), et **AC15** (le temps réel
+de la mission Belliard avec le set-piece dedans).
+
+_Karim — `lead-game-designer`, 2026-08-02, contrôle delta Rev.3._

@@ -4,17 +4,60 @@
 authority figure through a telephoto lens instead of shooting him. This spec owns the
 **mechanic, the tuning and the 3C**; it is the `game-designer` deliverable of the ADR-0077
 design loop.
-**Author:** `game-designer` (Sacha) · **Date:** 2026-08-01
-**Status:** **Rev. 2** — round 2 of the ADR-0077 design gate. Answers the four blocking
-corrections K-1…K-4 of `docs/game-design/design-gate-photo-qte.md`. Still **needs
-`lead-game-designer` (Karim) DESIGN GATE PASS** before it reaches `senior-architect`
+**Author:** `game-designer` (Sacha) · **Date:** 2026-08-02
+**Status:** **Rev. 3** — relocation amendment (Bertrand's decision, override of gate ruling
+R-10) + the round-2 editorial correction C-2. Rev. 2's answers to K-1…K-4 stand. Still
+**needs `lead-game-designer` (Karim) DESIGN GATE PASS** before it reaches `senior-architect`
 (TECH PLAN) and before any dev implements it.
+
+---
+
+## AMENDEMENT Rev.3 — le set-piece est hébergé sur BELLIARD (décision Bertrand, 2026-08-02)
+
+> **Décision de Bertrand, finale : le premier set-piece photo se joue rue Belliard**
+> (le niveau 1 shippé), **pas sur un nouveau niveau Stalingrad.** Cette décision **override
+> et annule le ruling R-10 du design gate** ("Stalingrad, quai de la Loire, ne pas rouvrir").
+> **Aucun niveau n'est à construire.** La fiction est déjà amendée : `spec-photo-qte-fiction.md`
+> Rev.3, §2 (réécrite) et §9.0 (hand-off par lane).
+
+**Ce que la relocalisation change de mon côté (mécanique + tuning) :**
+
+| Ce qui change                                                                                                                               | Où                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| La **source de couverture sonore** : passages de métro → **cycle du feu du carrefour** en haut de la rue. Constantes renommées `WAVE_*`.    | §4.1, §4.2, §5.2, §8, §10.4, §10.5 |
+| La **période** est **re-dérivée**, pas héritée : cycle de feu **42,0 s à deux phases vertes** ⇒ **une vague toutes les 21,0 s** (§4.1).     | §4.1                               |
+| La **mise en scène du plateau** : quai / viaduc / pilier → **bouche du passage, rideaux de fer, feu tricolore**, vue plongeante en lucarne. | §2.5, §0 (implicite), §8           |
+| La **berline sort en marche arrière** du passage (elle n'"part" plus sous un viaduc) — **géométrie et vitesses vérifiées, non recalées**.   | §2.5, §4.3                         |
+| Le **carry run-scoped** : `Stalingrad → Niveau Final` devient **`Belliard → Niveau Final`**. Le mécanisme est identique.                    | §1.3, §10.6 (e), AC13              |
+| **C-2 (résidu du gate round 2)** : la posture est un **fork device** (hold Space desktop / **tap-to-toggle** mobile), pas un bouton tenu.   | §1.2                               |
+
+**Ce qui NE change PAS (et je le vérifie explicitement, pas par confiance) :** les fenêtres de
+couverture absolues **[10,17] [31,38] [52,59]** · les tells de vague **8,2 / 29,2 / 50,2 s** ·
+les trois instants et leur triptyque (ARRIVÉE dans la couverture / **L'ÉCHANGE à cheval sur
+une fin de couverture** / LA PLAQUE dans la couverture) · le floor **F3** (≥ 1,2 s de
+chevauchement pour chaque instant : 4,5 / **1,5** / 2,9 s) · les **9 keyframes** de §2.5, y
+compris la contrainte **3,103 su/s** de LA PLAQUE et le pan de **9,83 su** de K4→K6 · toute
+l'arithmétique K-1/K-2/K-3/K-4 de la Rev. 2 · le levier R1 et ses paliers ×0.90 / ×0.80.
+
+**Deux gains réels, pas cosmétiques** (§4.1 et §2.5 les démontrent) : (1) les trois
+chevauchements couverture/instant deviennent **causaux** au lieu d'être tunés — la scène se
+règle sur le feu parce que ses acteurs s'y règlent aussi ; (2) la vitesse de LA PLAQUE
+(3,103 su/s ≈ **0,40 m/s** sur le plateau) devient **physiquement juste** pour une marche
+arrière, là où elle était invraisemblablement lente pour un départ sous viaduc.
+
+**Deux contraintes art NOUVELLES nées de la nouvelle géométrie** (§2.5) : la dérive verticale
+et la variation d'échelle apparente de la plaque sur `[53,0 ; 55,9]` doivent rester dans
+`SUBJECT_BOX_TOLERANCE`. Elles n'existaient pas dans la version viaduc et elles sont
+bloquantes pour F12(1).
+
+---
 
 | Rev.     | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | -------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1        | 2026-08-01 | Initial spec.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **2**    | 2026-08-01 | **K-1** F5 re-derived against **effective** slack (formula pinned in §3.3), `SWAY_AMP_X` 2.4 → **2.00 su** + dependent constants, F5 becomes a **three-leg** floor (sway share / untracked grace / pan authority), new `PAN_RATE_MAX`. **K-2** the full **9-keyframe `subjectTrack` table** is authored (§2.5) and floor **F12** added in three legs. **K-3** F10 becomes a **compound** floor against the gated `SHIELD_BREAK_LULL_CUT`, `rewardMultiplier` is **phase-scoped and Niveau-Final-scoped**, tiers re-tuned ×0.90/×0.80, R1 transcribed as **AMENDMENT A1** (§D7.2). **K-4** the **decline exit** is specified (§1.3) and the ≤ 2 min attempt budget becomes floor **F13** + AC13. |
-| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, host level **Stalingrad**, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.**                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **3**    | 2026-08-02 | **Relocation to Belliard** (Bertrand, override of R-10): sound cover re-derived on the **traffic-light cycle** (§4.1, `TRAIN_*` → `WAVE_*`, period re-derived from a 42 s two-phase cycle, **windows unmoved**), keyframe staging re-read on the **passage / reverse-out** geometry (§2.5, **no value moved**, two new art constraints), run-scoped carry renamed `Belliard → Niveau Final`, all Stalingrad/quai/métro references purged. **C-2** fixed: §1.2 posture is the T-2 **device fork**. No floor, window, keyframe or tier value changed.                                                                                                                                             |
+| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.** (R-10's host level is the **one** ratification Bertrand overrode — Rev. 3.)                                                                                                                                                                                                                                                                                                                                                                |
 
 **Design source (DECIDED upstream, not re-opened here):**
 [`docs/adr/0077-qte-photo-paparazzi-set-pieces.md`](../adr/0077-qte-photo-paparazzi-set-pieces.md)
@@ -27,11 +70,14 @@ shutter, semantic at the contact sheet (D8), dedicated 2D backdrop + key-pose sp
 
 **Sister specs this one is aligned to (read them, they are load-bearing):**
 
-- `docs/game-design/spec-photo-qte-fiction.md` (`narrative-designer`, Yasmine) — the first
-  set-piece is **le Commandant encaissant une enveloppe, quai de la Loire sous le métro
-  aérien**, triptych **ARRIVÉE** (bonus) / **L'ÉCHANGE** (master proof: _two faces AND two
-  hands in frame_) / **LA PLAQUE** (bonus, max focal on a moving subject); sound cover = the
-  métro passages; reward invariant = **"moins couvert", jamais "moins de PV"**.
+- `docs/game-design/spec-photo-qte-fiction.md` (`narrative-designer`, Yasmine) — **Rev. 3** —
+  the first set-piece is **le Commandant encaissant une enveloppe dans la bouche du passage,
+  rue Belliard** (`x_norm 0,372–0,408`), shot from a **lucarne de toit en haut de la rue**
+  (diagonale de 60-70 m, ce qui justifie le 300 mm); triptych **ARRIVÉE** (bonus) /
+  **L'ÉCHANGE** (master proof: _two faces AND two hands in frame_) / **LA PLAQUE** (bonus,
+  max focal on a moving subject); sound cover = **the traffic-light cycle of the crossroads
+  at the top of the street** (fiction §2.3); reward invariant = **"moins couvert", jamais
+  "moins de PV"**.
 - `docs/game-design/ux/photo-qte-controls.md` (`ux-designer`, Tony) — four verbs (viser /
   zoomer / déclencher / **lever-baisser** l'appareil, hold-to-raise), suspicion **needle**,
   AF **brackets that read composition only, never the verdict**, film ≤ 8 for a
@@ -98,7 +144,7 @@ ESTABLISHING ──► ACTIVE ──┬─► SPOTTED   ─┐
 | `ESTABLISHING`  | set-piece triggers                 | The wide plate holds, unzoomed. Camera **forced LOWERED**, shutter inert, `sceneClock` **frozen at 0**, suspicion frozen.                       | after `PHOTO_ESTABLISH_SECONDS = 2.0 s` → `ACTIVE` |
 | `ACTIVE`        | —                                  | `sceneClock` runs; the authored cadence (§3) plays; the posture sub-machine (§1.2) is live.                                                     | one of the three terminal conditions below         |
 | `SPOTTED`       | `suspicion ≥ SUSPICION_MAX`        | Targets scatter. Terminal, **non-lethal** (D7).                                                                                                 | → `DEVELOPING`                                     |
-| `ROLL_END`      | `film === 0` (after the decrement) | The roll is finished; the scene is over for Muf whatever happens on the quai.                                                                   | → `DEVELOPING`                                     |
+| `ROLL_END`      | `film === 0` (after the decrement) | The roll is finished; the scene is over for Muf whatever happens in the passage.                                                                | → `DEVELOPING`                                     |
 | `SCENE_END`     | `sceneClock ≥ SCENE_DURATION`      | The berline is gone. The passive-failure route: a player who never presses ends here.                                                           | → `DEVELOPING`                                     |
 | `DEVELOPING`    | any terminal                       | `PHOTO_DEVELOP_SECONDS = 0.8 s` mechanical beat (wind-on / cut to black). No input.                                                             | → `CONTACT_SHEET`                                  |
 | `CONTACT_SHEET` | —                                  | The verdict (D8). Every frame shot is stamped (§4.4).                                                                                           | player CTA → `DONE`                                |
@@ -120,8 +166,27 @@ shown on `SPOTTED` is the same sheet, truncated to the frames actually shot, wit
 
 ### 1.2 Posture sub-machine (inside `ACTIVE`) — `LOWERED ↔ RAISED`
 
-Hold-to-raise (UX §1.4: Space held on desktop, a held on-screen button on mobile).
-`LOWERED` is the default and the resting state.
+**Raise/lower is a DEVICE FORK, not one binding (C-2, Rev. 3).** `ux/photo-qte-controls.md`
+§1.4 corrected this at round 2 (T-2, blocking) and §6.3 of this spec adopts the UX bindings
+unchanged — so the fork is what I spec against:
+
+| Device      | Binding (UX §1.4, T-2)                                               | Posture semantics                                         |
+| ----------- | -------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Desktop** | **Hold Space** — press-and-hold, released = lower.                   | `RAISED` while held.                                      |
+| **Mobile**  | **Tap-to-toggle** a fixed on-screen button (≥ 44×44 px, thumb zone). | One tap raises, one tap lowers. **No sustained contact.** |
+
+Rev. 2 said "a held on-screen button on mobile", which contradicted the UX spec it claims to
+adopt — that was C-2 and it is corrected here. The mechanical model is **identical on both
+devices**: `LOWERED` is the default and the resting state, and every rule below (`raisedElapsed`,
+`SHUTTER_ARM_SECONDS`, sway reset, suspicion freeze) reads the **posture state**, never the
+input that produced it. `raisedElapsed` therefore starts at the raise **event** on both devices;
+nothing in D1.a/D1.b/D1.c depends on a finger staying down.
+
+One consequence I own (the gate's playtest watch item): on mobile a sway re-roll costs **two
+taps** instead of a press-release. D1.b's 0.40 s arm still lands the re-raise at `u = 0.73` of
+the first sway leg, so the anti-spam argument survives the fork on paper — **AC6c and AC10
+must confirm it in the built game on a mobile viewport**, and if re-rolling dominates there,
+the fix is a raise-index term in the sway hash, not a change to the binding.
 
 | Property        | `LOWERED` (safe)                                                 | `RAISED` (committed)                     |
 | --------------- | ---------------------------------------------------------------- | ---------------------------------------- |
@@ -130,7 +195,7 @@ Hold-to-raise (UX §1.4: Space held on desktop, a held on-screen button on mobil
 | Sway            | **zero**, path reset                                             | Accrues from `raisedElapsed` (§2.3)      |
 | Shutter         | **inert** — swallowed, no film, no noise, no suspicion (UX §1.3) | Armed after `SHUTTER_ARM_SECONDS` (§1.3) |
 | Suspicion       | **frozen** (no rise, no decay — UX A5 verbatim)                  | Can rise, on shutter releases only (§5)  |
-| `sceneClock`    | **runs** — the quai does not wait for you                        | runs                                     |
+| `sceneClock`    | **runs** — the street does not wait for you                      | runs                                     |
 
 **D1.a — The focal value survives a lower/raise; only the displayed view changes.** The UX
 spec says the viewfinder "retracts to a neutral, un-zoomed wide preview" — that is the
@@ -170,7 +235,7 @@ assert in prose. An invariant that is only written down is not implemented.
   condition F-1; the fiction already writes the decline as variant (c) _« Alors ils remettront
   ça. Ils remettent toujours ça. »_ — an acceptance, not a retry.)
 - **`Décliner` is one press, and the run continues** from where the set-piece interrupted it,
-  with the Stalingrad delivery intact and the Niveau Final boss at baseline. No penalty, no
+  with the **Belliard** delivery intact and the Niveau Final boss at baseline. No penalty, no
   energy, no score, no quota (§6.4, F8). Declining is a legal way to play the game.
 - **Retry is not rate-limited**, but it is **budgeted**: floor **F13** caps one un-skipped
   attempt at ≤ 90 s of authored time and AC13 measures the whole attempt (briefing → sheet →
@@ -288,30 +353,76 @@ moment and the role are semantic and therefore withheld.
 
 ### 2.5 The authored `subjectTrack` keyframe table (**K-2a** — set-piece #1) {#keyframes}
 
-Staging on the `100 × 56.25 su` plate, quai de la Loire under the viaduct (fiction §2, §3.1):
-quai ground line at `y = 6.0`; the berline parked under the viaduct and departing **to the
-right**; the two men meeting mid-plate; the pillar the Commandant waits behind at `x ≈ 65`.
-Standing men are `13.5 su` tall (24 % of frame height).
+**Staging RE-READ in Rev. 3 on the Belliard passage — and every value below is unchanged.**
+The plate is the **mouth of the passage, rue Belliard, seen from the roof lucarne at the top
+of the street** (fiction Rev.3 §2.1/§2.2): a plunging diagonal at 60-70 m, which is exactly
+what the 300 mm is for.
+
+| Plate element      | Where, on the `100 × 56.25 su` plate                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Roadway band       | low in frame, `y ≈ 6 – 11`. **Ground line `y = 6.0`** (unchanged).                                                                                     |
+| Passage mouth      | the dark vertical slot, `x ≈ 58 – 74`, receding away from the camera. It is the **black backdrop** the manteau clair reads against.                    |
+| Pavement / façades | rideaux de fer taggés either side; the **BOULANGERIE** in amorce frame-left; the **feu tricolore** planted in front, lighting the mouth.               |
+| The berline        | nosed **into** the passage (feux éteints), rear towards the street; it leaves **in reverse** (fiction §3.2, instant 3).                                |
+| The Commandant     | waits in the slot's shadow at `x ≈ 65` and steps out of it — where the viaduct version had a pillar, the passage's own darkness does the job for free. |
+
+**Scale sanity check (new, Rev. 3).** Standing men are `13.5 su` tall (24 % of frame height)
+⇒ `1 su ≈ 0.13 m` ⇒ the plate is **≈ 13.0 m wide × 7.3 m high**. That is a passage mouth plus
+a slice of façade either side: the plate reads as a real place at a real focal, which the
+`100 su ≈ a quai under a viaduct` framing never quite did.
 
 **Linear interpolation between consecutive keyframes, on all four components** (`cx`, `cy`,
 `w`, `h`). Nine keyframes, defined and finite on the whole of `[0, 60.0]`:
 
-| K   | `t` (s)   | centre `(cx, cy)` su | size `(w × h)` su | Drawn subject the box is the AABB of                                  | Segment                   |
-| --- | --------- | -------------------- | ----------------- | --------------------------------------------------------------------- | ------------------------- |
-| K0  | **0.00**  | (65.00, 12.75)       | **6.00 × 13.50**  | the Commandant alone, in the pillar's shadow                          | **A** hold — pre-roll     |
-| K1  | **9.20**  | (65.00, 12.75)       | 6.00 × 13.50      | idem (unchanged) — last frame before tell #1                          | A end · **tell #1 fires** |
-| K2  | **11.00** | (54.00, 12.75)       | **24.00 × 13.50** | the two men facing each other, full figures, car door open            | **B** hold · `openAt` #1  |
-| K3  | **34.70** | (54.00, 12.75)       | 24.00 × 13.50     | idem — dead-beat **hold pose** (they stand and talk)                  | B end · **tell #2 fires** |
-| K4  | **36.50** | (54.00, 14.72)       | **17.00 × 9.56**  | the two **faces** + the two **hands** + the envelope                  | **C** hold · `openAt` #2  |
-| K5  | **51.20** | (54.00, 14.72)       | 17.00 × 9.56      | idem — dead-beat **hold pose** (envelope pocketed, heads still close) | C end · **tell #3 fires** |
-| K6  | **53.00** | (62.00, 9.00)        | **7.50 × 4.22**   | the berline's rear plate, entering the lamppost's light               | **D** · `openAt` #3       |
-| K7  | **55.90** | (71.00, 9.00)        | 7.50 × 4.22       | idem, plate leaving the light                                         | D · `closeAt` #3          |
-| K8  | **60.00** | (83.70, 9.00)        | 7.50 × 4.22       | the berline continuing out of the plate at the same speed             | **E** · `SCENE_END`       |
+| K   | `t` (s)   | centre `(cx, cy)` su | size `(w × h)` su | Drawn subject the box is the AABB of                                              | Segment                   |
+| --- | --------- | -------------------- | ----------------- | --------------------------------------------------------------------------------- | ------------------------- |
+| K0  | **0.00**  | (65.00, 12.75)       | **6.00 × 13.50**  | the Commandant alone, in the dark of the passage mouth                            | **A** hold — pre-roll     |
+| K1  | **9.20**  | (65.00, 12.75)       | 6.00 × 13.50      | idem (unchanged) — last frame before tell #1                                      | A end · **tell #1 fires** |
+| K2  | **11.00** | (54.00, 12.75)       | **24.00 × 13.50** | the two men facing each other at the mouth, full figures, car door open           | **B** hold · `openAt` #1  |
+| K3  | **34.70** | (54.00, 12.75)       | 24.00 × 13.50     | idem — dead-beat **hold pose** (they stand and talk)                              | B end · **tell #2 fires** |
+| K4  | **36.50** | (54.00, 14.72)       | **17.00 × 9.56**  | the two **faces** + the two **hands** + the envelope                              | **C** hold · `openAt` #2  |
+| K5  | **51.20** | (54.00, 14.72)       | 17.00 × 9.56      | idem — dead-beat **hold pose** (envelope pocketed, heads still close)             | C end · **tell #3 fires** |
+| K6  | **53.00** | (62.00, 9.00)        | **7.50 × 4.22**   | the berline's rear plate **backing out of the passage**, entering the feu's light | **D** · `openAt` #3       |
+| K7  | **55.90** | (71.00, 9.00)        | 7.50 × 4.22       | idem, plate leaving the light                                                     | D · `closeAt` #3          |
+| K8  | **60.00** | (83.70, 9.00)        | 7.50 × 4.22       | the berline finishing its manoeuvre and pulling away, at the same speed           | **E** · `SCENE_END`       |
 
 Derived, and consistent with §4.2 (no value moved): K6→K7 is `9.00 su / 2.90 s = **3.103
 su/s**`; the three transits are exactly `[9.20, 11.00]`, `[34.70, 36.50]`, `[51.20, 53.00]`
 — the three `TELEGRAPH_LEAD_PHOTO = 1.8 s` telegraphs; the track is **constant** on
 `[15.50, 34.70]` and on `[40.30, 51.20]`, which is F12(2) satisfied by construction.
+
+**Rev. 3 — the reverse-out geometry, verified against the numbers rather than assumed.**
+The berline no longer "departs under a viaduct"; it **backs out of the passage into the
+street**. Three checks, all of which the authored table passes **without a single value
+moving**:
+
+1. **Speed.** K6→K7 is `9.00 su / 2.90 s = 3.103 su/s`. At `1 su ≈ 0.13 m` that is
+   **≈ 0.40 m/s ≈ 1.45 km/h** in the image plane. For a forward departure that was
+   implausibly slow; for a car reversing out of a passage mouth into a live street, it is
+   **exactly right**. The relocation makes the load-bearing constant physically honest —
+   which is a better outcome than "it still fits".
+2. **Direction is lateral, and that is why the path is horizontal.** Backing out of the
+   passage means crossing the pavement **perpendicular to the street axis**; from a lucarne
+   looking down the street, that projects as a near-**horizontal** slide across the low band
+   of the plate. Hence `cy` constant at 9.00 on K6→K7→K8 — unchanged, and now motivated
+   instead of merely authored.
+3. **The rear plate leads.** The car was nosed in, so its **rear** faces the street: reversing
+   out, the number plate is the **first** thing to clear the mouth and it faces the camera
+   square-on. The 300 mm read the instant demands is geometrically available, which the
+   viaduct staging only asserted.
+
+**Two NEW art constraints this geometry creates (they did not exist in the viaduct version,
+and both are blocking for F12(1)) — to `lead-art` / `concept-artist`, see §10.5 items 7-8:**
+
+- **Vertical drift ≤ tolerance.** Over `[53.0, 55.9]` the drawn plate's AABB centre may not
+  move on `y` by more than `SUBJECT_BOX_TOLERANCE` (0.40 su), because the authored track is
+  flat. A staged reverse that visibly descends toward the camera desynchronises the brackets
+  from the picture — "bien cadré" becomes a lie during the hardest frame in the set-piece.
+- **Apparent scale constant ≤ tolerance.** Same window, same reason: the authored box is
+  `7.50 × 4.22` throughout, so the reverse must be staged **near-parallel to the image plane**.
+  If the art needs the car to grow as it approaches, that is not an art note — it is a
+  **re-author of K6/K7**, and it moves `3.103 su/s`, F5b, F5c, §3.3.b and AC6c with it. Come
+  back to me, do not absorb it silently.
 
 **Why these centres.** K2→K4 keeps `cx = 54.00` and only shrinks the box while lifting `cy`
 by 1.97 su: the master proof's telegraph is a **near-pure zoom-in** (94 → 132 mm, fill 0.64),
@@ -480,19 +591,57 @@ Everything below is **authored data** and a **pure function of `sceneClock`**. N
 `Math.random`, no `Date.now`, no wall clock, anywhere (ADR-0077 determinism guardrail). Same
 retry ⇒ byte-identical scene, which is what makes learning it a real skill.
 
-### 4.1 Sound cover — the métro passages
+### 4.1 Sound cover — the traffic-light cycle (RE-DERIVED, Rev. 3)
 
-The fiction hands me a free, diegetic, periodic noise source (fiction §2.1, §3.3).
+The relocation changes the **source**, not the shape: fiction Rev.3 §2.3 hands me the
+**crossroads at the top of rue Belliard**. Each green releases a packet of vehicles that
+descends the street; between packets the street is dead. Same three properties the mechanic
+needs — periodic, deterministic, telegraphed — from a prop that is **already shipped in the
+level** instead of a level that would have to be built.
 
-| Field                 | Default    | Rationale                                                                                                                                                                        |
-| --------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TRAIN_FIRST_OPEN`    | **10.0 s** | Leaves 10 s of `ACTIVE` silence first, so the player meets the _risky_ state before the safe one and learns the needle from the safe side.                                       |
-| `TRAIN_PERIOD`        | **21.0 s** | Three passages in a 60 s scene — the fiction's "deux passages" plus the one the plaque needs. A 1998 métro headway, and short enough that missing a window is never a 40 s wait. |
-| `TRAIN_COVER_SECONDS` | **7.0 s**  | 33 % duty cycle. Generous enough that a patient player can take **all three** shots at zero suspicion (F3 floor), tight enough that impatience is the default failure.           |
-| `TRAIN_TELL_SECONDS`  | **1.8 s**  | The rame is **heard and seen approaching** before it covers — "on entend la rame arriver avant qu'elle couvre" (fiction §3.3). Never a surprise window.                          |
+**The period, derived instead of inherited.** This is the one number the new source genuinely
+puts under pressure, so I derive it rather than carry it over:
+
+| Step                                                                                                                                                                          | Value                      |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| A Maréchaux-type signalled junction, 1998, two phases                                                                                                                         | **cycle ≈ 42 s**           |
+| Rue Belliard is fed on **both** phases — the through green (traffic coming straight down the street) **and** the cross green (traffic turning into it). Near-opposite phases. | **2 packets per cycle**    |
+| ⇒ interval between two packets reaching the street                                                                                                                            | **42 / 2 = 21.0 s**        |
+| Packet ≈ 6-8 vehicles over ≈ 45 m at ≈ 9 m/s, plus the ramp-up at the line and the tail                                                                                       | **≈ 7.0 s of loud street** |
+| ⇒ duty cycle                                                                                                                                                                  | **7 / 21 = 33 %**          |
+
+That is the honest reading, and it is why I keep the numbers rather than because they were
+already written: **21.0 s is not a light cycle, it is a wave interval**, and a 42 s two-phase
+cycle producing two evenly-spaced waves is period-correct for the junction the fiction names.
+(Had I read 21 s as the _cycle_ itself it would have been too brisk for a real junction, and
+had I taken a 42 s wave interval instead, a 60 s scene would hold **one** cover window: LA
+PLAQUE would fall in silence, F3 would break on a bonus, and the scene would have to grow to
+~90 s — dragging every keyframe with it. The two-phase reading is both the truthful one and
+the cheap one; that convergence is why it is the decision and not a rationalisation.)
+
+| Field                | Default    | Rationale                                                                                                                                                                                                                                                                |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WAVE_FIRST_OPEN`    | **10.0 s** | Unchanged. Leaves 10 s of `ACTIVE` silence first, so the player meets the _risky_ state before the safe one and learns the needle from the safe side. It is a **phase offset**: the scene opens mid-cycle.                                                               |
+| `WAVE_PERIOD`        | **21.0 s** | Derived above (42 s cycle ÷ 2 feeding greens). Three waves in a 60 s scene, and missing one costs **at most 14 s** of waiting — a recoverable mistake, which a 42 s wait would not be.                                                                                   |
+| `WAVE_COVER_SECONDS` | **7.0 s**  | The packet-pass duration derived above; 33 % duty. Generous enough that a patient player takes **all three** shots at zero suspicion (F3), tight enough that impatience is the default failure.                                                                          |
+| `WAVE_TELL_SECONDS`  | **1.8 s**  | **The engines rising at the line** before the wave arrives — "les moteurs qui montent au feu avant la vague" (fiction Rev.3 §2.3). The light is at the **top** of the street, i.e. right under the affût, so the tell is heard close and early. Never a surprise window. |
 
 ⇒ Cover windows at **[10.0, 17.0]**, **[31.0, 38.0]**, **[52.0, 59.0]**; approach tells from
-8.2 / 29.2 / 50.2 s.
+**8.2 / 29.2 / 50.2 s**. **Identical to Rev. 2 — nothing downstream moves.** Window 3 closes at
+59.0 s, inside `SCENE_DURATION = 60.0 s`; the fourth wave would open at 73.0 s, outside the
+scene, so no window is ever truncated by the terminal.
+
+**One deliberate refusal: the on-plate traffic light is NOT a mechanical channel.** The feu
+is visible on the plate (it is what lights the number plate at instant 3), and fiction §2.3
+offers its colour as a free second read of the cover state. **I decline it**, and this is a
+design call, not an oversight: the level's feu is synchronised to the crossroads on an _onde
+verte_, i.e. offset by the packet's travel time (≈ 65 m / 9 m/s ≈ 7 s). Wiring the cover read
+to that light would put the visual signal **7 s out of phase** with the audio one and teach a
+false causal model — the exact failure mode the suspicion needle's "no numbers" rule exists to
+avoid. The tell has **two** channels and both live at the top of the street: **audio** (engines
+rising at the line) and **visual** (the packet's headlights swinging into the street, readable
+from the lucarne). The feu on the plate stays scenery and a light source. To `sound-designer`
+and `ux-designer` as a settled constraint, §10.4.
 
 **Silence is the default state, cover is the exception.** A shutter release is classified by
 one boolean: `inCover(t)`. Nothing in between, no partial credit — the gauge stays countable
@@ -508,6 +657,28 @@ one boolean: `inCover(t)`. Nothing in between, no partial credit — the gauge s
 | 2   | **L'ÉCHANGE** | **master** | 34.7 s  | **36.5 – 40.3** | 3.8 s    | **1.5 s** (straddles the end of [31,38]) | `17.0 × 9.56` static                  | **93 – 189 mm**  | 132 mm     |
 | 3   | **LA PLAQUE** | bonus      | 51.2 s  | **53.0 – 55.9** | 2.9 s    | **2.9 s** (fully in [52,59])             | `7.5 × 4.22`, **moving** x 62 → 71 su | **210 – 300 mm** | 251 mm     |
 
+**Rev. 3 — the triptych re-checked against the new source, cell by cell.** No row moved; what
+changed is that all three overlaps are now **caused** by the fiction instead of imposed on it:
+
+| Instant       | Overlap   | F3 (≥ 1.2 s) | Why the wave and the scene coincide (Rev. 3)                                                                                                                                                       |
+| ------------- | --------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ARRIVÉE**   | 4.5 s     | ✓            | The berline noses into the passage **inside a packet** — you hide a manoeuvre in traffic, not in an empty street. The two men time their meeting on the light like everyone else in Paris.         |
+| **L'ÉCHANGE** | **1.5 s** | ✓ (just)     | They **wait for the street to empty** before the handover: no headlights on the envelope. The master proof is risky **because its actors chose the silence** — the design intent now has a motive. |
+| **LA PLAQUE** | 2.9 s     | ✓            | The plate is legible **because** the packet's headlights rake the mouth of the passage as it backs out. The cover window is the **light source** of the shot, not just its alibi.                  |
+
+That third line is the strongest lock in the scene: instant 3's F3 compliance is now
+**structural** (no headlights ⇒ no readable plate ⇒ no instant), not a tuned coincidence a
+future re-author could break by nudging a window.
+
+**Tell collision, checked (new in Rev. 3).** Wave tells fire at 8.2 / 29.2 / 50.2 s, instant
+tells at 9.2 / 34.7 / 51.2 s. On instants **1 and 3** the two tells are exactly **1.0 s apart**
+— close enough to be read as one event. That is **information, not noise**: the scene moves
+when the street moves, which is the whole causal claim above, and it gives the player a single
+composite cue to learn. On instant **2** they are deliberately **anti-correlated** (the instant
+tell at 34.7 s sits mid-cover, 3.3 s before the cover closes at 38.0 s), which is precisely the
+beat that teaches "this one is different — shoot early". No change required; recorded so nobody
+"fixes" the coincidence later.
+
 `TELEGRAPH_LEAD_PHOTO = 1.8 s` for all three (tell → window open). **The boxes in that last
 column are not authored here** — they are the values `subjectTrack(t)` already holds on each
 instant's segment, read off the keyframe table (§2.5, K2/K4/K6-K7). One source, no duplicate.
@@ -518,8 +689,8 @@ proof is demanding but generous, the last bonus is the mastery test. Nobody is a
 learn the verb on the shot they must not miss.
 
 **Why L'ÉCHANGE straddles the end of a cover window.** Directly from fiction §3.3, and I
-adopt it as tuning: the master proof's window opens 1.5 s before the rame passes and stays
-open 2.3 s into the silence. A player who reads the tell and shoots early pays **zero**
+adopt it as tuning: the master proof's window opens 1.5 s before the packet finishes passing
+and stays open 2.3 s into the silence. A player who reads the tell and shoots early pays **zero**
 suspicion; a hesitant player pays **+34** for the same photograph. That is the entire
 suspicion mechanic taught in one beat, on the one beat that matters, without a tutorial
 line. 1.5 s is above the F3 floor (1.2 s) but only just — deliberately.
@@ -532,8 +703,9 @@ that computed need, not picked round.
 
 ### 4.3 LA PLAQUE — the moving subject
 
-The box translates x 62 → 71 su across its 2.9 s window (**3.103 su/s** ≈ 22 %/s of the frame
-width at the sweet spot — keyframes K6/K7, §2.5). Held still, the viewfinder loses containment
+The box translates x 62 → 71 su across its 2.9 s window as the berline **backs out of the
+passage** (**3.103 su/s** ≈ 22 %/s of the frame width at the sweet spot — keyframes K6/K7,
+§2.5; ≈ 0.40 m/s in the world, i.e. a real reverse). Held still, the viewfinder loses containment
 in ≈ 0.86 s, so the shot **requires tracking**; §3.3.b puts the exact demand at
 **≥ 1.20 su/s of pan**, 10 % of the available authority. Because focus is positional (D2.a),
 panning with the car costs nothing — it is a tracking skill, not an impossible one.
@@ -576,13 +748,13 @@ sheet then says which it was.
 
 ### 5.2 Suspicion
 
-| Field                       | Default  | Rationale                                                                                                                                                      |
-| --------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SUSPICION_MAX`             | **100**  | The needle's full sweep (UX §2.2).                                                                                                                             |
-| `SUSPICION_SHUTTER_COVERED` | **0**    | A rame overhead absorbs the click completely. Cover is a genuine safe state, not a discount — that is what makes waiting for it a real decision.               |
-| `SUSPICION_SHUTTER_EXPOSED` | **+34**  | **Three silent frames get you spotted; two do not.** The gauge is a countable budget the needle teaches at a glance, without ever printing a number (UX §2.4). |
-| Decay                       | **none** | See below.                                                                                                                                                     |
-| Any other source            | **none** | ADR-0077 D6 names exactly one input: shutter noise vs. sound cover. No time pressure, no proximity, no "he glances your way". One input, one lesson.           |
+| Field                       | Default  | Rationale                                                                                                                                                          |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SUSPICION_MAX`             | **100**  | The needle's full sweep (UX §2.2).                                                                                                                                 |
+| `SUSPICION_SHUTTER_COVERED` | **0**    | A packet of engines in the street absorbs the click completely. Cover is a genuine safe state, not a discount — that is what makes waiting for it a real decision. |
+| `SUSPICION_SHUTTER_EXPOSED` | **+34**  | **Three silent frames get you spotted; two do not.** The gauge is a countable budget the needle teaches at a glance, without ever printing a number (UX §2.4).     |
+| Decay                       | **none** | See below.                                                                                                                                                         |
+| Any other source            | **none** | ADR-0077 D6 names exactly one input: shutter noise vs. sound cover. No time pressure, no proximity, no "he glances your way". One input, one lesson.               |
 
 **Why no decay at all.** Three reasons, in order of weight: (a) UX A5 asserts the needle
 shows **zero delta while lowered** — a decay that ran only while raised would be perverse,
@@ -731,11 +903,21 @@ Binding cell: **phase 2 at ×0.80**, 0.38 s of residual against ε = 0.35 s. The
 the narrative invariant holds by construction.
 
 **Scope pin (K-3): `rewardMultiplier` targets the DATA, not "the boss".** It applies to the
-**Niveau Final** `bossQteSpec` **only**. The **Belliard** encounter is byte-untouched — it also
-precedes the set-piece in progression, so this costs nothing, but it is written down because
-the shield-break story's own K-2 already burned this crew once on a system constant that
-reached _both_ live encounters. Implementation shape: a field on the Niveau Final authored row,
-never a module constant.
+**Niveau Final** `bossQteSpec` **only**. The **Belliard** encounter is byte-untouched, and it
+is written down because the shield-break story's own K-2 already burned this crew once on a
+system constant that reached _both_ live encounters.
+
+> **Rev. 3 — this pin was cheap insurance, it is now load-bearing.** Rev. 2 could add "and
+> anyway Belliard precedes the set-piece in progression, so it costs nothing". **That safety
+> net is gone:** the set-piece now plays **on the Belliard level itself** (a return night,
+> fiction Rev.3 §2.4), so a player can hold `photoOutcome = master` while the **Belliard**
+> encounter is still ahead of them, depending on where `pm` places the return night. If the
+> multiplier were ever a module constant rather than a field on the Niveau Final authored row,
+> the relocation would silently buff the level-1 boss — the exact K-2 failure, re-armed.
+> **The Niveau-Final-only scope is therefore a REGRESSION-ASSERTED requirement, not a
+> convention** (AC12 already tests "the Belliard encounter is byte-identical at every tier";
+> Rev. 3 promotes that clause from belt-and-braces to the point of the test). Implementation shape: a field on the Niveau Final authored row,
+> never a module constant.
 
 **Why this is the right mechanical shape, not just the cheap one.** Shortening the lull does
 **not** make the fight easier: `maxBlownWindows` is unchanged, so the efficiency bar the
@@ -804,7 +986,7 @@ House discipline (ADR-0035 D2, ADR-0034 G4/G5): every one of these is a unit-tes
 `createPhotoQte` (or equivalent) against the authored set-piece data, including any future
 difficulty curve.
 
-| ID      | Floor                                                                                                                                                                                       | Value / rule                                                                                                  | Set-piece #1 (Stalingrad)                                             | Why it exists                                                                                                                                                                   |
+| ID      | Floor                                                                                                                                                                                       | Value / rule                                                                                                  | Set-piece #1 (**Belliard**, Rev. 3)                                   | Why it exists                                                                                                                                                                   |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **F1**  | Every instant's pose window ≥ `POSE_WINDOW_FLOOR`                                                                                                                                           | **1.6 s**                                                                                                     | 4.5 / 3.8 / **2.9** ✓                                                 | Must fit tell-read + reframe + `FOCUS_HOLD` + click within human reaction.                                                                                                      |
 | **F2**  | Every instant preceded by a tell ≥ `TELEGRAPH_LEAD_FLOOR`, strictly before `openAt`                                                                                                         | **1.2 s**                                                                                                     | **1.8** ✓ (computed need 1.42 s)                                      | No un-telegraphed instant ever ships. The zoom traverse must fit in the tell.                                                                                                   |
@@ -868,7 +1050,7 @@ Asserted in code **against the authored keyframe table** (§2.5), never trusted:
 
 ## 8. Consolidated value table (the deliverable)
 
-**System constants** (Stalingrad-first, exactly as the hostage QTE's wander constants are —
+**System constants** (**Belliard**-first, exactly as the hostage QTE's wander constants are —
 promoted to authored fields only when a second set-piece needs to curve them):
 
 | Constant                     | Default                                         |     | Constant                    | Default                       |
@@ -889,13 +1071,13 @@ promoted to authored fields only when a second set-piece needs to curve them):
 
 **Authored per set-piece** (`photoQteSpec` — the data shape is `senior-architect`'s call):
 
-| Key                  | Stalingrad set-piece #1                                                                                                                                                                                                       |
+| Key                  | **Belliard** set-piece #1 (Rev. 3)                                                                                                                                                                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scenePlate`         | quai de la Loire, `100 × 56.25 su` (art request: fiction §6)                                                                                                                                                                  |
+| `scenePlate`         | **la bouche du passage, rue Belliard** (`x_norm 0,372–0,408`), vue plongeante depuis la lucarne du haut de rue — `100 × 56.25 su` ≈ 13,0 × 7,3 m (art request: fiction Rev.3 §6)                                              |
 | `sceneDuration`      | 60.0 s                                                                                                                                                                                                                        |
 | `filmCount`          | 6                                                                                                                                                                                                                             |
 | `swaySeed`           | integer, **pinned at stage-5 `verify`** (§9 AC10 — the ADR-0034 K-5 discipline)                                                                                                                                               |
-| `coverWindows`       | period 21.0 s, first open 10.0 s, cover 7.0 s, tell 1.8 s ⇒ [10,17] [31,38] [52,59]                                                                                                                                           |
+| `coverWindows`       | **traffic waves** — `WAVE_PERIOD` 21.0 s, `WAVE_FIRST_OPEN` 10.0 s, `WAVE_COVER_SECONDS` 7.0 s, `WAVE_TELL_SECONDS` 1.8 s ⇒ [10,17] [31,38] [52,59] (§4.1)                                                                    |
 | `subjectTrack`       | **the 9-keyframe table of §2.5** — `{ t, cx, cy, w, h }[]`, linearly interpolated, total on `[0, 60.0]`                                                                                                                       |
 | `instants`           | the three rows of §4.2 (`openAt`, `closeAt`, `role`, tell)                                                                                                                                                                    |
 | `briefingMaxSeconds` | 25.0 s, skippable (§1.3)                                                                                                                                                                                                      |
@@ -970,7 +1152,7 @@ promoted to authored fields only when a second set-piece needs to curve them):
   gate).
 - **AC13 — Bonus, never gate; and it is bounded (K-4, F13).** (a) On a roll with **no** master
   proof — including a `SPOTTED` abort — the contact sheet shows **two** controls, the primary
-  one **leaves**, and **one press** returns the player to the Stalingrad delivery with the run
+  one **leaves**, and **one press** returns the player to the **Belliard** delivery with the run
   intact and the boss at ×1.00. (b) The whole first-playthrough attempt, un-skipped and
   measured wall-clock at `verify` — briefing → set-piece → contact sheet → press — is
   **≤ 2 min**; the authored leg (F13) is asserted ≤ 90 s in a unit test. (c) The contact sheet
@@ -1011,8 +1193,19 @@ Her §5.4 invariant is adopted verbatim and made mechanical (§D7): the reward t
 `SHIELDED` lull only, never HP, never `maxBlownWindows`. The bonus tier is **flat** (any one
 bonus = the full ×0.80) — so the second bonus's payoff should be **fictional**, which is
 exactly where her `PARIS-MINUIT` UNE variant belongs (fiction §5.3), gated on LA PLAQUE. Her
-§3.3 proposal (bonuses land inside cover, the master proof straddles the end of a rame) is
+§3.3 proposal (bonuses land inside cover, the master proof straddles the end of a wave) is
 **adopted as tuning** and hardened into floor F3, extended to the bonuses too.
+
+**Rev. 3 — the relocation, back to her.** Her re-derived source (the traffic-light cycle) is
+adopted with **her three orders of magnitude intact** — 21.0 s / 7.0 s / 1.8 s — but re-derived
+rather than inherited (§4.1): the 21.0 s is a **wave interval**, not a light cycle, which needs
+a **42 s two-phase junction** to hold up. If `sound-designer` or `art-advisor` cannot support a
+42 s cycle feeding the street on both phases, that is not a mix note — it is a **cadence
+re-open**, and it costs the scene duration and all nine keyframes. One line back to me, please,
+before anyone absorbs it quietly. I also **decline** her §2.3 "bonus de lisibilité" (the
+on-plate feu's colour doubling the audio cue): the onde verte puts it ≈ 7 s out of phase with
+the tell. Reason in §4.1 — the feu stays a light source, and the visual tell is the packet's
+headlights at the top of the street.
 
 **Rev. 2 owes her one line back (gate F-1):** the contact sheet's failure branch now needs a
 **decline** CTA label alongside `Réessayer` (§1.3). Her variant (c) — _« Alors ils remettront
@@ -1022,7 +1215,24 @@ exactly where her `PARIS-MINUIT` UNE variant belongs (fiction §5.3), gated on L
 
 The cover windows are **gameplay state**, not ambience: `[10,17] [31,38] [52,59]` s, with a
 1.8 s audible approach before each. The mix must make "covered" and "silent" unmistakable
-without looking at the needle, and the approach must be audible before it is visible. The
+without looking at the needle, and the approach must be audible before it is visible.
+
+**Rev. 3 — the source changed, the contract did not.** Not a métro; **a packet of vehicles
+released by the crossroads at the top of rue Belliard**. Three things I need from the mix:
+
+1. **The loop is a 42 s two-phase light cycle carrying two packets** (through traffic, then
+   turners), i.e. one wave every **21.0 s** (§4.1). The two waves may differ in character —
+   they must not differ in **duration** (7.0 s) or in **onset sharpness**, because both feed the
+   same `inCover(t)` boolean.
+2. **The tell is the engines rising at the line** — 1.8 s, and it comes from the **top of the
+   street, close to the affût**, not from the far end. It must be unmistakably "something is
+   about to arrive", never "something is happening down there".
+3. **Silence must be genuinely dead** between waves (a rideau de fer, a néon, nothing else).
+   The needle's whole lesson is that the safe state is the exception.
+
+Fiction's fallback if the light does not survive playtest is the **boulangerie's extractor**
+(fiction Rev.3 §2.3) — same period, same duty, same tell shape; it costs nothing mechanically
+because everything above reads `WAVE_*`, not "a car". The
 shutter's **crisp vs. dull** click is the sole mechanical feedback channel for T5 (§2.4) —
 an attentive ear must hear the difference with the visuals off.
 
@@ -1030,9 +1240,10 @@ an attentive ear must hear the difference with the visuals off.
 
 1. The player must identify **the subject box** at a glance in the wide preview (where is the
    action) and again through the lens. 2. The **tell** of each instant must read as "something
-   is about to happen" 1.8 s ahead, in B&W photocopy. 3. The **rame approaching** must read
-   visually as well as audibly. 4. Three bracket states, three verdict stamps, all
-   grayscale-distinguishable. Poses per fiction §6.
+   is about to happen" 1.8 s ahead, in B&W photocopy. 3. The **wave approaching** must read
+   visually as well as audibly — **the packet's headlights swinging into the top of the
+   street**, not the on-plate feu's colour (§4.1: the onde verte puts it out of phase). 4. Three bracket states, three verdict stamps, all grayscale-distinguishable. Poses per
+   fiction Rev.3 §6.
 
 **Rev. 2 adds two hard constraints, both from F12 (gate E-6 already flagged them to Nico):**
 
@@ -1044,6 +1255,23 @@ an attentive ear must hear the difference with the visuals off.
    (K2→K3, 19.2 s) and the pair post-exchange with heads still close (K4→K5, 14.7 s). Their
    idle animation must stay inside the same tolerance. A dead beat where the actors move is a
    semantic leak with extra steps.
+
+**Rev. 3 adds two more, born from the passage geometry (§2.5) — both blocking for F12(1):**
+
+7. **The reverse-out is FLAT in the frame.** Over `[53.0, 55.9]` the drawn number plate's AABB
+   centre may not drift on `y` by more than `SUBJECT_BOX_TOLERANCE` (0.40 su): the authored
+   track is horizontal at `cy = 9.00`.
+8. **The reverse-out does NOT grow.** Same window, apparent scale constant within the same
+   tolerance (authored box `7.50 × 4.22` throughout) — stage the manoeuvre near-parallel to the
+   image plane. If the car must visibly approach the camera, that is a **re-author of K6/K7**
+   which moves `3.103 su/s`, F5b, F5c, §3.3.b and AC6c: it comes back to me, it is not absorbed
+   in the art pass.
+
+Everything else in fiction Rev.3 §6 (backdrop = the passage mouth, rideaux de fer, boulangerie
+en amorce, feu tricolore, plunging view from the lucarne) is Yasmine's fiche and Nico's call;
+my only read-level ask on the backdrop is that **the mouth of the passage stay the darkest
+value on the plate**, because the manteau clair's contrast against it is what makes the master
+proof legible at 132 mm in photocopy B&W.
 
 ### 10.6 To `senior-architect` (Winston) — for the tech plan
 
@@ -1059,24 +1287,64 @@ levels stay byte-for-byte deterministic (AC11).
 - (d) **`subjectTrack` data shape** — an array of `{ t, cx, cy, w, h }` sorted on `t`, linearly
   interpolated on all four components, with the F12(3) totality assert at construction. The
   brackets must consume the **same** evaluated value as T3/T4 — one call site, not two (F12(1a)).
-- (e) **A run-scoped carry Stalingrad → Niveau Final.** The roll's outcome (`none | master |
-master+bonus`) must survive between levels. No such carry exists today outside the run-stats
-  work (ADR-0076) — this is a **new cross-level dependency** and it is yours to shape.
+- (e) **A run-scoped carry `Belliard → Niveau Final`** (Rev. 3 — the endpoints are renamed, the
+  mechanism is unchanged). The roll's outcome (`none | master | master+bonus`) must survive
+  between levels. No such carry exists today outside the run-stats work (ADR-0076) — this is a
+  **new cross-level dependency** and it is yours to shape. Note the relocation makes it
+  **longer-lived**, not shorter: the carry now spans the whole run from level 1 rather than a
+  late-game level, so it must survive every intervening level transition and any mid-run
+  retry — and it must be **inert** for a player who never triggers the set-piece.
 - (f) **`rewardMultiplier` is authored on the Niveau Final `bossQteSpec` row**, never a module
   constant, and is applied **before** `SHIELD_BREAK_LULL_CUT` and **before** the existing clamp
   (order fixed by amendment §D7.2 point 2). Phases 1-2 only.
 - (g) **The decline exit** (§1.3) must return control to the interrupted delivery without a
-  reload of the Stalingrad level state — it is an exit from the set-piece, not a level restart.
+  reload of the **Belliard** level state — it is an exit from the set-piece, not a level restart.
 
 ---
 
-## 11. Hand-off — Rev. 2 back to `lead-game-designer` (Karim), round 2 of 2
+## 11. Hand-off — Rev. 3 back to `lead-game-designer` (Karim)
+
+### 11.0 Rev. 3 — the relocation amendment (2026-08-02)
+
+**From:** `game-designer` (Sacha) · **To:** `lead-game-designer` (Karim) — for information and
+one small ruling; then `sound-designer`, `concept-artist` / `lead-art`, `senior-architect`.
+
+**This is not a re-gate: it is the execution of Bertrand's decision** (host level = Belliard,
+override of R-10). Everything Karim ruled in rounds 1 and 2 stands except that one line.
+
+**What I re-derived, and the answer:**
+
+| Question the relocation asked                             | Verdict                                                                                                                                                               |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Does the traffic-light source carry 21.0 / 7.0 / 1.8 s?   | **Yes — but only read as a 42 s two-phase cycle feeding the street twice** ⇒ wave interval 21.0 s (§4.1). Derived, not inherited. A 21 s _cycle_ would not have held. |
+| Do the absolute windows move?                             | **No.** [10,17] [31,38] [52,59], tells 8.2 / 29.2 / 50.2 — identical.                                                                                                 |
+| Does the triptych still work (L'ÉCHANGE astride a close)? | **Yes**, and it is now **causal**: the pair wait for the street to empty before the handover (§4.2).                                                                  |
+| Does floor **F3** still hold?                             | **Yes**: 4.5 / **1.5** / 2.9 s of overlap, floor 1.2 s. Instant 3's compliance is now **structural** (no headlights ⇒ no readable plate).                             |
+| Do the 9 keyframes survive the passage / reverse-out?     | **Yes, with zero values moved** — and `3.103 su/s` becomes ≈ **0.40 m/s**, i.e. physically right for a reverse (§2.5). Two **new art constraints** are the price.     |
+| Anything the relocation makes _worse_?                    | **One thing, and I flag it loudly**: the Niveau-Final-only scope of `rewardMultiplier` lost its "Belliard comes first anyway" safety net (§D7.1, Rev. 3 box).         |
+
+**Rulings I am asking Karim for (two, both small):**
+
+1. **The 42 s two-phase reading of the junction.** It is the load-bearing fiction assumption
+   under the whole cadence. If `art-advisor` / `sound-designer` cannot support it, the cadence
+   re-opens and the scene grows to ≈ 90 s with all nine keyframes — I want that stated as a
+   known cost now, not discovered at stage 5.
+2. **My refusal of fiction §2.3's "bonus de lisibilité"** (the on-plate feu's colour as a
+   second cover read). Reason: the onde verte offsets it ≈ 7 s from the audio tell, so it would
+   teach a false model. If Karim wants the colour channel anyway, it needs its own phase
+   authored and it is no longer free.
+
+**C-2 (round-2 editorial correction) is closed** — §1.2 now specs the T-2 device fork
+(hold Space desktop / tap-to-toggle mobile) and states explicitly that every posture rule
+reads the **state**, never the input, so D1.a/D1.b/D1.c are device-agnostic.
+
+### 11.1 Rev. 2's hand-off — the four blocking corrections (unchanged)
 
 **From:** `game-designer` (Sacha) · **To:** `lead-game-designer` (Karim), design gate round 2.
 **Requesting:** closure of **K-1, K-2, K-3, K-4**. Round 1's ten points are ruled and I do not
 re-open a single ratified one below.
 
-### 11.1 The four blocking corrections — what I changed
+#### 11.1.a The four blocking corrections — what Rev. 2 changed
 
 | ID      | The hole                                                                                                               | What Rev. 2 does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Where                              |
 | ------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
@@ -1089,11 +1357,12 @@ re-open a single ratified one below.
 
 `SPOTTED` → contact sheet · `SUSPICION_SHUTTER_EXPOSED = +34` with **no decay** (F3 carries
 the anti-frustration guarantee) · `filmCount = 6` · `FOCUS_HOLD = 0.35 s` as a HOLD ·
-D1.a / D1.b · host level **Stalingrad** (R-10) · R1 + R3, R2 rejected · the "moins couvert,
+D1.a / D1.b · ~~host level **Stalingrad** (R-10)~~ → **Belliard, Rev. 3, decision Bertrand,
+R-10 annulé** · R1 + R3, R2 rejected · the "moins couvert,
 jamais moins de PV" invariant · the flat bonus tier · floors F1/F2/F3/F4/F6/F7/F8/F9/F11 ·
 the focal bands, windows, telegraph and traverse arithmetic you re-derived. **Untouched.**
 
-### 11.3 The three rulings I am asking you for (and nothing else)
+### 11.3 The three rulings Rev. 2 asked for (still open unless already ruled)
 
 1. **`SWAY_AMP_X = 2.00 su`, not your 2.131 ceiling.** I traded ≈ 3 pp of master difficulty
    for ≈ 5 pp of headroom on both binding cells. If you want the tension back, ×0.55 of the
@@ -1114,10 +1383,13 @@ the focal bands, windows, telegraph and traverse arithmetic you re-derived. **Un
 **E-1 remains open and it still gates everything**: `docs/adr/0077-…` is **not on this branch**
 (checked again this round). Every value above is provisional on it. E-2 (§8.3 ideological flag)
 and E-3 (G-1/G-2) are Bertrand's. E-4 grew by four asks in §10.6 (d)-(g) — the run-scoped
-Stalingrad → Niveau Final carry (e) is the one with real architecture in it. E-5 (`pm`,
-progression + deferred UNE variant), E-6 (`lead-art`, now with the two F12 constraints in
-§10.5 items 5-6), E-7 (`sound-designer`, cadence unmoved by the retune — the K-1 fix touches
-`SWAY_AMP_X`, not a single window).
+**Belliard → Niveau Final** carry (e) is the one with real architecture in it, and Rev. 3 makes
+it **longer-lived** (level 1 → final, not late-game → final). E-5 (`pm`, progression + deferred
+UNE variant) **gains one question from Rev. 3**: the return night rue Belliard now has to be
+placed relative to the **Belliard boss encounter**, and §D7.1's Rev. 3 box explains why that
+ordering must never be allowed to leak into the reward. E-6 (`lead-art`, now **four** F12
+constraints: §10.5 items 5-8), E-7 (`sound-designer`, **source changed, cadence unmoved** — the
+new brief is §10.4, and the 42 s two-phase cycle is the one thing that needs confirming).
 
 **What I do NOT decide:** the fiction and cast (`narrative-designer`), controls,
 accessibility envelope and HUD dress (`ux-designer`), the look (`lead-art`), the sound

@@ -133,6 +133,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0075](./0075-level-plan-composable-generated-levels.md) | Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/` | Proposed |
 | [0076](./0076-run-stats-system-local-first.md) | Run stats system (local-first) | Accepted |
 | [0077](./0077-qte-photo-paparazzi-set-pieces.md) | QTE photo paparazzi : set-pieces de preuve photographique | Proposed |
-| [0080](./0080-photo-leverage-cross-level-carry.md) | Photo leverage: a cross-level carry (Stalingrad → Niveau Final) | Proposed |
+| [0080](./0080-photo-leverage-cross-level-carry.md) | Photo leverage: a cross-level carry (Belliard → Niveau Final) | Proposed |
 
 <!-- ADR-INDEX:END -->

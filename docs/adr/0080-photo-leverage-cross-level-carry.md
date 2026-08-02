@@ -1,7 +1,7 @@
-# 0080 — Photo leverage: a cross-level carry (Stalingrad → Niveau Final)
+# 0080 — Photo leverage: a cross-level carry (Belliard → Niveau Final)
 
 - **Status:** Proposed
-- **Date:** 2026-08-01
+- **Date:** 2026-08-01 · **amended 2026-08-02** (host level moved to Belliard)
 - **Number:** 0080, allocated by `senior-architect` (Winston) at stage 3 — no `producer` in this
   loop, same posture as ADR-0077's self-allocation clause. Verified against the local branch,
   `origin/main` and all 107 fetched remote refs (max visible = 0077, itself claimed on three
@@ -17,29 +17,45 @@
   multiplier is authored on), ADR-0054 (`muf_scores_*` / `muf_player_name` — the storage family
   this feature must stay out of).
 - **Inputs:** gated design set `docs/game-design/spec-photo-qte-paparazzi.md` (Rev. 2, §D7),
-  `docs/game-design/spec-photo-qte-fiction.md` (§5), `docs/game-design/design-gate-photo-qte.md`
+  `docs/game-design/spec-photo-qte-fiction.md` (**Rev.3**, §2, §5, §9.0),
+  `docs/game-design/design-gate-photo-qte.md`
   (round 2 final — rulings R2-2 and R2-4, escalation E-4 asks (e) and (f)); tech plan
   `docs/game-design/techplan-photo-qte.md` §4–§5.
+- **Amendment, 2026-08-02 (Bertrand, final — overrides gate ruling R-10):** the set-piece is
+  hosted on **Belliard**, the shipped level 1; **no new level is built**. This ADR's source level
+  changes accordingly. **The decision itself — persisted, monotone, own `muf_*` key, object blob,
+  pure algebra + bridge I/O — is unchanged;** every clause of it is reinforced rather than
+  weakened by the longer carry, as recorded in Context §2 and Consequences below.
 
 ## Context
 
-The photo set-piece plays on **Stalingrad**. Its reward is paid on the **Niveau Final**: a proof
-in the roll compresses the final boss's `SHIELDED` lulls — "il est moins couvert", never "il a
-moins de PV" (fiction §5.4, gate R-F3). The outcome therefore has to survive the gap between two
-levels. Four facts of the shipped build make that an architecture decision rather than a variable:
+The photo set-piece plays on **Belliard** — the shipped level 1 (Bertrand, 2026-08-02; before that
+amendment the gate had placed it on Stalingrad, ruling R-10, now annulled). Its reward is paid on
+the **Niveau Final**: a proof in the roll compresses the final boss's `SHIELDED` lulls — "il est
+moins couvert", never "il a moins de PV" (fiction §5.4, gate R-F3). The outcome therefore has to
+survive the gap between the game's first level and its last. Four facts of the shipped build make
+that an architecture decision rather than a variable:
 
 1. **muf has no run that spans levels.** ADR-0076 F1 is explicit — "a run is one attempt on one
    level" — and `RunStats` is reset by construction at every `createInitialState`. The design
    gate's phrase "run-scoped carry" has **no existing home** in the code.
-2. **Levels are separated by the menu, and possibly by a browser reload.** `App.tsx`'s
-   `handlePlay(levelId)` mounts a fresh `GameScene`; between Stalingrad and the Niveau Final the
-   player crosses the end screen, the menu, a narrative screen, and any amount of wall-clock
-   time. In-memory React state loses the leverage on reload — and a reward that vanishes without
-   explanation is indistinguishable from a bug.
+2. **Levels are separated by the menu, and possibly by a browser reload — and now by two further
+   levels.** `App.tsx`'s `handlePlay(levelId)` mounts a fresh `GameScene`; between **Belliard** and
+   the Niveau Final the player crosses the end screen, the menu, narrative screens, **Vitry,
+   Stalingrad**, an unbounded number of retries, and any amount of wall-clock time — plausibly
+   several sessions. In-memory React state loses the leverage on reload — and a reward that
+   vanishes without explanation is indistinguishable from a bug. **The relocation does not weaken
+   this argument; it removes the last doubt about it.** What was an edge case (reload between two
+   adjacent levels) is now the default path (days between the first level and the last).
 3. **The boss's per-phase tuning is a module constant shared by two live encounters.**
    `BOSS_PHASE_TABLE` (`bossQteSystem.ts`) holds `shieldedLullSeconds` / `telegraphLeadSeconds`
    for **both** Belliard and the Niveau Final. A multiplier applied there hits both — the exact
    burn the shield-break story already took once on a system constant (gate K-3's own warning).
+   **The relocation makes this fact acute.** Belliard now both _produces_ the leverage and _runs
+   its own boss finale off that shared table_, minutes later, in the same session. A multiplier
+   applied to the table would compress the boss of the very level the player just photographed —
+   a visible, immediate, plausible-looking bug. Authored data on the consuming row is no longer
+   merely the tidy answer; it is the only one that survives the host level's own encounter.
 4. **Two gated fairness contracts meet on the same number.** ADR-0060 already cuts the next lull
    by `SHIELD_BREAK_LULL_CUT = 0.5 s`, clamped just above the phase tell. Composed naively with a
    reward multiplier, the clamp fires and **silently eats** the shield-break reward: the player
@@ -77,6 +93,15 @@ and one scores-screen read — not two strings, and not a data migration either.
   locks (ADR-0076 D4), for the same reason: a write that can only improve is a write no ordering
   bug can corrupt.
 
+**Amendment 2026-08-02 — the blob shape is unchanged, and the monotone merge becomes
+load-bearing.** Under the Stalingrad placement, "a later, worse roll" meant replaying a late-game
+level: real, but rare. Hosting the set-piece on **Belliard** — always unlocked, always the first
+row of the menu, the level players replay to warm up — makes the downgrade path the **normal**
+one: earn `master-bonus`, replay Belliard the next evening, press `[ LAISSER TOMBER ]`, and a
+last-write-wins store would silently take the proof back. The monotone merge is what makes that
+harmless, and it was already the decision. This amendment only records that it is now the clause
+holding the most weight, and that **it must not be "simplified" to a plain overwrite in review**.
+
 ### D2 — Pure algebra in `src/game`, browser I/O in `src/hooks` — ADR-0076 D4, applied again
 
 - **Pure (`src/game/systems/photoLeverageSystem.ts`):** the value type, the total parse, the
@@ -91,17 +116,24 @@ points saying "storage adapters for new features live in the bridge", not one ex
 ADR-0074's older shape (each owner holding its own I/O inside `src/game/systems`) is **not**
 retro-migrated, and this ADR does not authorise doing so.
 
-### D3 — The leverage is banked when the player LEAVES the set-piece, not when Stalingrad is cleared
+### D3 — The leverage is banked when the player LEAVES the set-piece, not when the host level is cleared
 
 The write happens on the tick `tickPhotoQte` reports a settled outcome — whichever exit the
 player takes (`[ CONTINUER ]`, `[ LAISSER TOMBER ]`, or a `SPOTTED` roll declined).
 
-**Why:** making the reward contingent on also clearing Stalingrad would couple an explicitly
+**Why:** making the reward contingent on also clearing the host level would couple an explicitly
 optional bonus to a mandatory success. That is precisely the pressure the gate's K-4 correction
 exists to remove ("bonus, jamais gate" — and the `[ LAISSER TOMBER ]` button IS the invariant).
 The photograph exists the moment it is in the box; dying to the street afterwards does not
 un-take it. Consequence, accepted and named: once obtained, the leverage is banked permanently
 for that browser profile. **Flagged to `pm` for ratification** (it is one predicate to overrule).
+
+**Amendment 2026-08-02.** The host level is **Belliard**, and the set-piece fires in its first
+seconds (tech plan D-K: the trigger must land before the hostage duel at 12 s). "Bank at level
+clear" would therefore mean that most **first-time** photographers — beginners, on level 1, who
+then die to the street — lose the proof they just took, minutes after being taught that the
+photograph is theirs. The relocation does not change the predicate; it makes the case for it
+plainly stronger. **Q-2 to `pm` remains open**, unchanged in substance.
 
 ### D4 — `rewardMultiplier` is AUTHORED DATA on the Niveau Final row, resolved once, applied through one helper
 
@@ -109,7 +141,11 @@ for that browser profile. **Flagged to `pm` for ratification** (it is one predic
   on the **Niveau Final row only** (`×0.90` / `×0.80`). **Absent ⇒ ×1.00 at every leverage
   value**, so Belliard, Vitry, Stalingrad, the tutorial and the dev harness are byte-identical —
   the additive-and-optional law, and the structural answer to Context §3. **Never a module
-  constant** (gate E-4(f), verbatim).
+  constant** (gate E-4(f), verbatim). **Amendment 2026-08-02:** Belliard now authors the
+  `photoQte` **and no tiers**; the two fields are independent and sit on the same row. A player
+  can hold `master-bonus` while fighting Belliard's own Commandant, who resolves to **×1.00 by
+  absence**. The test that asserts Belliard's boss timeline is identical at all three leverage
+  values is therefore no longer defensive — it covers a scenario the shipped build produces.
 - **`BossQte` gains a runtime `rewardMultiplier`**, resolved **once** in
   `createBossQte(spec, leverage)`. The tick reads the record, never the storage, never the tiers.
 - **One application point**, `shieldedLullOf(row, phaseIndex, m)`, replacing all three raw reads
@@ -149,7 +185,9 @@ stops being a playtest hope and becomes a structural guarantee. Legal multiplier
 
 - **In-memory only (React state in `App.tsx`).** Rejected: it silently loses the leverage on any
   reload between the two levels, producing a reward that "sometimes doesn't work" — the worst
-  possible failure shape for an optional bonus the player worked for.
+  possible failure shape for an optional bonus the player worked for. **Since 2026-08-02 the two
+  levels are the first and the last, with two levels and probably several sessions between them,
+  so this option does not merely fail on an edge case — it fails on the expected path.**
 - **Fold the leverage into `muf_progress`.** Rejected: that key is the unlock set, read by the
   menu on every render, with its own corrupt-blob default (`["belliard"]`). Overloading it
   couples two unrelated lifetimes and puts a gameplay reward inside navigation state.
@@ -179,6 +217,29 @@ stops being a playtest hope and becomes a structural guarantee. Legal multiplier
 - **The Niveau Final's boss row acquires a second authored tuning field.** Belliard and the dev
   harness stay byte-identical by absence, and a test asserts it at every leverage value rather
   than trusting the absence.
+- **The carry now spans the whole campaign, not one seam (2026-08-02).** Belliard → Vitry →
+  Stalingrad → Niveau Final, across sessions. Three practical consequences, all accepted:
+  (i) the persisted key is the only workable transport, and the in-memory alternative below is now
+  rejected for a stronger reason than it was written with; (ii) the monotone merge is load-bearing,
+  because the source level is the most-replayed one in the game (D1 amendment); (iii) the value
+  must stay **forward-compatible on its own**, since the blob may sit in a player's storage for
+  weeks between write and read — which is exactly what the versioned object shape buys.
+- **The proof becomes farmable, and that is a design fact, not an architectural one
+  (2026-08-02).** Belliard is always unlocked, `[ RECOMMENCER ]` re-enters a byte-identical scene
+  (AC10), and the merge only ever upgrades — so a patient player banks `master-bonus` on level 1
+  and meets the final boss at ×0.80 by default. **No clause of this ADR is changed to prevent
+  that:** the retry, the monotone merge and the exit-write are each gated decisions (R2-4, AC10,
+  K-4), and undoing one to make the reward scarce would re-open a gate. If design wants scarcity,
+  the lever is the **tiers on the Niveau Final row** — authored data, one line, no ADR.
+  Routed to `pm` + `game-designer` as tech plan §8bis Q-4.
+- **The host level was already crowded, and the photo set-piece had to learn to queue
+  (2026-08-02).** Belliard authors a hostage duel (12 s) and a boss finale (timer expiry) with a
+  margin invariant already asserted at load. The set-piece serialises with both by a runtime
+  trigger guard plus an authoring ordering rule, and — because every frozen-scene block freezes
+  `elapsedSeconds` — it costs the level timer zero seconds, leaving those shipped invariants
+  arithmetically untouched. That belongs to the tech plan (D-K, §2.7), not to this ADR; it is
+  recorded here only so the next reader knows the relocation was checked against the host row and
+  not merely against the fiction.
 - **`spec-boss-shield-break-tempo-shot.md` is amended, not re-gated** — amendment A1, transcribed
   verbatim by that spec's lane (`game-designer`). §D4/§D5 above are its implementation and must
   not diverge from it; if they ever do, the spec wins and this ADR is superseded.
@@ -189,6 +250,11 @@ stops being a playtest hope and becomes a structural guarantee. Legal multiplier
   efficiency bar (`maxBlownWindows` is untouched, so the ≈ 62 % window-answer requirement is
   identical). If it is imperceptible, the honest fix is a design re-tune inside the `≥ ×0.781`
   wall — **not** widening the phase scope, which re-opens K-3.
+- **Follow-up (2026-08-02):** if `pm` gates the set-piece on progression (fiction §2.4 frames it as
+  a _return_ to Belliard, not the tutorial night), that condition must ride the existing
+  `LevelParams` seam — a boolean computed in `App.tsx` from already-persisted state, threaded
+  exactly like `photoLeverage`. **It must not become a second storage read inside the pure layer,
+  and it does not warrant a seventh `muf_*` key.** Tech plan §8bis Q-3.
 - **Follow-up:** if `pm` un-defers the `PARIS-MINUIT` UNE variant (E-5 / F-2), the blob gains
   `hasPlaque` — an additive field under the total parse, recorded in D1 so it is not discovered
   as a bug report. If `pm` overrules D3 (bank at exit vs bank at level clear), that is a change to

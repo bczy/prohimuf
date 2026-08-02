@@ -1,20 +1,56 @@
 # QTE photo paparazzi — fiction du PREMIER set-piece
 
 **Author:** `narrative-designer` (Yasmine) · **Gate:** `lead-game-designer` (Karim) —
-status **Rev.2, round 2 du design gate** · **Date:** 2026-08-01 ·
+status **Rev.3, amendement post-gate** · **Date:** 2026-08-02 ·
 **Frame:** `docs/adr/0077-qte-photo-paparazzi-set-pieces.md` (Proposed)
 
-**Ce qui a changé depuis la Rev.1** (`design-gate-photo-qte.md`, round 1) :
+---
 
-| Entrée                                 | Effet sur cette spec                                                                                                                                                                                                                                   |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **E-2 tranché par Bertrand — RATIFIÉ** | §8.3 est **canon gravé**, plus un flag. Toute formulation conditionnelle sur ce point est retirée (§1.1, §8.3).                                                                                                                                        |
-| **F-1** (blocking, paire avec K-4)     | §4.3 : copy de **refus** écrite, deux libellés de CTA, variante (c) couvre les trois terminaux + le rouleau vide.                                                                                                                                      |
-| **F-2**                                | (a) + (b) + (c) shippées au V1. La UNE `PARIS-MINUIT` sort du V1 (§5.3, §5 bonus).                                                                                                                                                                     |
-| **F-4**                                | Demande art **autorisée**, avec les deux contraintes de Karim reportées en §6.                                                                                                                                                                         |
-| **K-4a** (mécanique)                   | Le refus est le chemin « bonus, jamais gate ». Vérifié sans friction sur les 3 variantes (§4.3, §4.4).                                                                                                                                                 |
-| **E-3**                                | G-1 / G-2 valent comme **exception pour ce QTE**, pas comme règles générales (§7).                                                                                                                                                                     |
-| Ratifications du gate                  | Cible = le Commandant (§1) · alt. B = set-piece n°2 (§1.2) · Stalingrad (§2) · triptyque (§3.2) · « isolé jamais affaibli » = **invariant** (§5.4) · `filmCount = 6` (§3.4) · `SPOTTED` atteint la planche contact tronquée (§4.3). **Non rouvertes.** |
+## AMENDEMENT Rev.3 — relocalisation sur BELLIARD (décision Bertrand, 2026-08-02)
+
+> **Décision de Bertrand, finale : le premier set-piece photo est hébergé sur BELLIARD**
+> (le niveau 1 shippé, `street-wide.png`), **pas sur un nouveau niveau Stalingrad.**
+> Cette décision **override le ruling R-10 du design gate** (« Stalingrad, quai de la Loire,
+> ne pas rouvrir ») et l'annule. **Aucun nouveau niveau n'est à construire.**
+
+**Périmètre de l'amendement — ce qui change :**
+
+| Section                         | Changement                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| §2 (entière)                    | Nouveau lieu d'affût + nouveau lieu de la scène + nouvelle couverture sonore + moment ajusté. R-10 retiré.  |
+| §1.3                            | Ajout : le set-piece et le boss partagent désormais la même rue — pourquoi c'est un gain, pas un doublon.   |
+| §3.1 / §3.2                     | Décor des trois instants (viaduc/quai → passage/rideau de fer). Le triptyque lui-même est **inchangé**.     |
+| §3.3                            | Réécrite : nouvelle source sonore, contraintes de cadence conservées.                                       |
+| §4 (backdrop, ids, l. 4/8/9/11) | Répliques de briefing qui citaient le quai / le métro aérien / l'entrepôt KANAL. Ids de scène `belliard_*`. |
+| §4.3 (c) `ROLL_END`, CTA        | Une image de décor, et « retour à la livraison » (plus « Stalingrad »).                                     |
+| §5.1                            | Canal de diffusion : « le quartier » au lieu du 19e nommé.                                                  |
+| §6                              | Fiche backdrop du set-piece.                                                                                |
+| §7                              | Liste d'authenticité 1998.                                                                                  |
+
+**Ce qui NE change pas (canon, non rouvert) :** la cible = **le Commandant** (§1) ·
+l'enveloppe et le second homme anonyme (§3.1) · le triptyque **ARRIVÉE / L'ÉCHANGE / LA
+PLAQUE** (§3.2) · `filmCount = 6` (§3.4) · le **canon gravé E-2** (§1.1, §8.3) · les deux CTA
+`[ RECOMMENCER ]` / `[ LAISSER TOMBER ]` (§4.3) · « isolé jamais affaibli » (§5.4) ·
+alternative B = set-piece n°2 (§1.2) · bonus jamais gate (§5.3).
+
+**Conséquence budgétaire à noter pour le gate :** l'ADR-0077 D9 impose une planche 2D dédiée
+dans les deux cas — donc Belliard ne coûte pas plus cher en art **et** économise le niveau.
+L'argument « Belliard coûte l'invention d'une couverture sonore de substitution » (R-10)
+tombe : la source retenue (§2.3) est un **prop déjà shippé du niveau**, pas une invention.
+
+---
+
+**Ce qui avait changé en Rev.2 (round 2 du gate)** (`design-gate-photo-qte.md`, round 1) :
+
+| Entrée                                 | Effet sur cette spec                                                                                                                                                                                                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **E-2 tranché par Bertrand — RATIFIÉ** | §8.3 est **canon gravé**, plus un flag. Toute formulation conditionnelle sur ce point est retirée (§1.1, §8.3).                                                                                                                                                             |
+| **F-1** (blocking, paire avec K-4)     | §4.3 : copy de **refus** écrite, deux libellés de CTA, variante (c) couvre les trois terminaux + le rouleau vide.                                                                                                                                                           |
+| **F-2**                                | (a) + (b) + (c) shippées au V1. La UNE `PARIS-MINUIT` sort du V1 (§5.3, §5 bonus).                                                                                                                                                                                          |
+| **F-4**                                | Demande art **autorisée**, avec les deux contraintes de Karim reportées en §6.                                                                                                                                                                                              |
+| **K-4a** (mécanique)                   | Le refus est le chemin « bonus, jamais gate ». Vérifié sans friction sur les 3 variantes (§4.3, §4.4).                                                                                                                                                                      |
+| **E-3**                                | G-1 / G-2 valent comme **exception pour ce QTE**, pas comme règles générales (§7).                                                                                                                                                                                          |
+| Ratifications du gate                  | Cible = le Commandant (§1) · alt. B = set-piece n°2 (§1.2) · ~~Stalingrad (§2)~~ **annulé Rev.3** · triptyque (§3.2) · « isolé jamais affaibli » = **invariant** (§5.4) · `filmCount = 6` (§3.4) · `SPOTTED` atteint la planche contact tronquée (§4.3). **Non rouvertes.** |
 
 **Extends (ne rouvre pas) :** `spec-boss-encounter-fiction.md` (identité du Commandant),
 `spec-boss-belliard-fiction.md` (le bouclier = cover prop), `pregame-copy-deck.md` §9
@@ -101,6 +137,14 @@ fait doublon. Non — **les deux beats ne disent pas la même chose** :
 - Le **boss fight** dit : _il te barre la route, dégage-le_.
 - Le **set-piece photo** dit : _il n'est pas ta fatalité, il est l'employé de quelqu'un_.
 
+**Ajout Rev.3 — le boss et la photo partagent maintenant la même rue.** `spec-boss-belliard-fiction.md`
+§1.1 a posé que le Commandant tient le porche de Belliard **en personne**, sans déléguer. La
+relocalisation transforme cette bizarrerie en explication : **il est là parce que c'est là qu'il
+encaisse.** Le passage où il prend l'enveloppe est à trente mètres du porche qu'il bloque. Il ne
+descend pas dans le 19e par zèle de chef de rue — il descend parce qu'il a un rendez-vous dans
+cette rue-là, et qu'il en profite pour verrouiller la porte de son client. Le décor **paie une
+dette de fiction** ouverte par la spec boss : on n'invente rien, on répond.
+
 Et surtout, la photo **ne le tue pas** : elle lui retire sa couverture. Ce qui alimente
 directement la ligne **déjà shippée** du niveau final — `« Cette nuit il n'a plus personne
 pour le couvrir. Il descend lui-même. »` Aujourd'hui cette phrase n'a qu'une cause : les flics
@@ -110,53 +154,127 @@ cette cible : elle **rembourse** du canon existant au lieu d'en ajouter.
 
 ---
 
-## 2. Lieu et moment
+## 2. Lieu et moment — RÉÉCRITE Rev.3 (Belliard)
 
-### 2.1 Lieu — sous le viaduc du métro aérien, quai de la Loire, Stalingrad (19e)
+### 2.1 Lieu de l'affût — la lucarne, en haut de la rue Belliard
 
-**Le quai du bassin de la Villette, au pied des piliers du métro aérien.** Muf est posté en
-face, en hauteur, dans un étage vide de l'entrepôt de **KANAL SYSTEM** — le lieu du gig, la
-seule fenêtre du quartier qui donne sur le quai sans être vue.
+**Muf est sur les toits.** Il monte par la cage d'escalier du dernier immeuble de la rue —
+celui au **pignon aveugle** — et se cale dans une **lucarne de la mansarde**, à plat ventre
+sur le zinc, le boîtier posé sur le rebord.
+
+Ce n'est pas une invention : c'est une **réplique shippée**. Dans `belliard_pre`, DISPATCH dit
+déjà `« Les flics patrouillent depuis la manif. Reste sur les toits. »` Le set-piece **exécute
+littéralement** l'ordre que le joueur a lu à sa première nuit de jeu. Là où le briefing
+d'origine disait « reste en hauteur pour ne pas te faire prendre », le set-piece ajoute :
+_en hauteur, on ne fait pas que se cacher — on voit._
+
+Pourquoi cette position tient :
+
+- **Ligne de vue.** La lucarne est au bout de la rue ; la cible est au **tiers gauche**
+  (`x_norm ≈ 0,39`, cf. `spec-belliard-street-wide-repositioning.md` §0.2). C'est toute la
+  diagonale de la rue — soixante, soixante-dix mètres en enfilade, sans un obstacle : la
+  distance qui **justifie le 300 mm**, et l'angle plongeant qui explique qu'on voie le fond
+  du passage depuis la rue.
+- **Personne ne regarde en l'air.** La rangée de pop du niveau est aux **fenêtres** (rangées
+  A/B/C) ; les toits, eux, n'ont jamais rien accueilli. L'affût est le seul point de la rue
+  que le jeu n'a jamais utilisé comme menace — donc le seul crédible comme planque.
+- **Zéro conflit de lecture.** Le set-piece se joue **depuis** un endroit d'où l'on ne tire
+  jamais. Le joueur ne peut pas confondre le beat photo avec un beat de tir : la position elle-
+  même est neuve.
+
+### 2.2 Lieu de la scène — la bouche du passage, entre la boulangerie et le mur-pignon
+
+**Le passage.** Le renfoncement noir entre deux immeubles, `x_norm 0,372 – 0,408` du décor
+shippé — la faille verticale sombre déjà relevée par `spec-belliard-street-wide-repositioning.md`
+§0.2 comme **zone d'exclusion** (aucune fenêtre, aucun pop, aucune cible) et comme **repère de
+navigation** du tiers gauche.
+
+C'est le meilleur endroit de la rue pour un rendez-vous qu'on ne veut pas voir, et le canon
+mécanique le dit déjà sans le savoir : **c'est le seul point de la rue où le jeu a décidé que
+personne ne regarde jamais.** Une berline s'y engage à moitié, feux éteints ; le reste de la
+rue continue à ne rien voir.
 
 Pourquoi ce lieu et pas un autre :
 
-- **Ligne de vue.** Un téléobjectif exige de la distance dégagée. La largeur du bassin la
-  donne, sans qu'on ait à zoomer dans une façade (contrainte ADR-0077 : les calques parallax
-  ne sont pas authored pour ×10 — donc **backdrop dédié**, et un bassin d'eau noire est le
-  décor le moins coûteux qui soit en B&N photocopié).
-- **Couverture sonore diégétique et gratuite.** Le **métro aérien** passe au-dessus de la
-  scène. Chaque rame = une fenêtre de bruit. Entre deux rames, le quai est **silencieux** —
-  eau, rien d'autre. La mécanique « déclencher pendant le bruit » de l'ADR-0077 §6 n'a besoin
-  d'**aucune** invention : elle est déjà dans le lieu. Cadence déterministe, brief clair pour
-  `sound-designer`.
-- **Canon existant.** Stalingrad est déjà un niveau shippé, et KENZA y a déjà posé sa réplique
-  `« Ils ont des planques là-dedans depuis '95. »` Le quartier **est** déjà, dans le canon, le
-  lieu où l'on regarde les gens sans qu'ils le sachent. On retourne l'objectif, voilà tout.
-- **Backdrop art.** Demande à l'art flow : piliers de fonte, eau noire, une rame qui passe.
-  Réutilise l'ambiance `assets/levels/stalingrad/*` sans réutiliser les calques eux-mêmes.
+- **Il est déjà dessiné.** La « respiration » du passage, les rideaux de fer taggés qui
+  l'encadrent, la **BOULANGERIE** à sa gauche (`x_norm 0,340`) : tout est dans `street-wide.png`.
+  La planche 2D dédiée (ADR-0077 D9) ne fabrique pas un lieu — elle **rapproche** un lieu que
+  le joueur a déjà panné cent fois sans le voir. C'est le meilleur retournement possible.
+- **Il est adjacent au porche du boss.** Trente mètres. Le Commandant tient une porte et
+  encaisse dans la ruelle d'à côté (§1.3).
+- **Il a sa lumière.** Le **feu tricolore** est planté juste devant, `x_norm 0,388` — c'est le
+  seul prop haut du niveau (`spec-belliard-street-wide-repositioning.md` §2.3). Il éclaire par
+  intermittence la sortie du passage : c'est **lui** qui rend la plaque lisible au départ de la
+  berline (§3.2, instant 3), et c'est **lui** qui porte la couverture sonore (§2.3). Un objet
+  déjà shippé fait tout le travail.
+- **Le contraste B&N est gratuit.** Un homme en manteau **clair** dans une bouche d'ombre
+  **noire** : le read se fait au ton, à 300 mm, en photocopié. Le passage est le fond le moins
+  cher et le plus lisible du niveau.
 
-### 2.2 Moment — la nuit du gig Stalingrad, avant le son
+### 2.3 Couverture sonore — LE FEU DU CARREFOUR, en haut de la rue
 
-**23 h 40, le soir de la livraison Stalingrad, avant que le camion arrive.** Muf est venu en
-avance pour repérer. Il attend avec un boîtier sur les genoux ; la scène dure le temps de deux
-passages de métro.
+**Source retenue : le carrefour au bout de la rue Belliard.** Le feu tricolore du niveau
+(`x_norm 0,388`, prop shippé) est **synchronisé sur celui du carrefour** ; à chaque vert, le
+carrefour lâche un **paquet de voitures et de deux-roues** qui descend la rue d'un coup, phares
+et moteurs, puis s'écoule. Entre deux verts, la rue Belliard est **vide et muette** — un rideau
+de fer, un néon de tabac, rien.
 
-Trois raisons :
+Ça donne, sans qu'on invente une seule ligne de fiction, exactement la forme dont la mécanique
+a besoin :
+
+| Contrainte mécanique (valeurs exactes = `game-designer`) | Ce que la fiction fournit                                                                                                                       |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Période ~21 s, déterministe**                          | Un cycle de feu. C'est **la machine périodique de la rue** : elle ne varie pas, elle ne se négocie pas, et le joueur le sait depuis l'enfance.  |
+| **Fenêtre couverte ~7 s**                                | Le temps qu'un paquet de véhicules relâché au vert défile devant l'affût. Un tiers du cycle : la proportion réelle d'un feu de carrefour.       |
+| **Tell audible ~1,8 s avant**                            | Le **paquet qui redémarre** en haut de la rue : les moteurs qui montent avant que la vague arrive. On entend venir la voiture avant de la voir. |
+
+Trois raisons de préférer cette source à toute autre :
+
+1. **Elle est déjà à l'écran.** Le feu est le seul prop haut du décor Belliard, déjà placé
+   **devant le passage** pour des raisons d'occlusion (§2.3 de la spec décor). On ne dessine
+   rien, on ne pose rien : on **écoute** ce qui était déjà planté là. L'objection R-10
+   (« Belliard coûte l'invention d'une couverture sonore ») tombe.
+2. **Elle est déterministe par nature.** Un feu ne tire pas au sort. Le brief `sound-designer`
+   est trivial (boucle de cycle + montée de moteurs), et le garde-fou ADR-0077 — jamais
+   `Math.random`, jamais `Date.now` — est **soutenu par la fiction elle-même**, pas subi.
+3. **Elle est period-correct sans effort.** Paris 1998, minuit, un carrefour de boulevard des
+   Maréchaux qui coule toute la nuit : diesel, scooters, un bus. Zéro anachronisme, zéro
+   technologie à dater.
+
+**Bonus de lisibilité (à `sound-designer` + `ux-designer`, pas une exigence de ma lane) :** le
+feu étant **visible** dans le décor, sa couleur peut doubler l'information sonore sans un mot
+de tutoriel. Je le signale ; l'arbitrage (et le risque « ça se lit comme un feu de circulation
+qu'on doit respecter ») ne m'appartient pas.
+
+**Alternative en une ligne, si le feu ne tient pas au playtest :** le **fournil de la
+BOULANGERIE** (devanture shippée, `x_norm 0,340`) — l'extracteur du four qui se relance en
+cycle, soufflerie pleine puis silence, avec le moteur qui monte avant de souffler ; même forme,
+même déterminisme, period-correct (on cuit la nuit en 1998), mais moins lisible à l'écran parce
+qu'aucun objet ne le montre.
+
+### 2.4 Moment — une nuit de retour rue Belliard, 23 h 40, avant le camion
+
+**23 h 40, une livraison rue Belliard, avant que le camion arrive.** Muf est monté en avance ;
+la scène dure le temps de quelques cycles de feu.
+
+Quatre raisons :
 
 1. **Ça ne gate rien.** Le set-piece se joue **avant** la boucle `Récupérer → Livrer → Éviter`,
    comme une scène pré-niveau qui serait jouable — jamais au milieu d'une livraison. La règle
    « une mission = 3-5 minutes » tient : le set-piece est **court, et hors du chrono**.
-2. **Ça justifie la solitude.** Muf seul, en hauteur, avant tout le monde : ni foule ni sono,
-   donc le silence entre deux rames est crédible, donc le risque au déclenchement l'est aussi.
-3. **Ça ne casse pas Belliard.** Le premier gig reste le premier gig (tutoriel de la boucle).
-   Le contre-pouvoir arrive au **deuxième** — quand le joueur a déjà appris à fuir, il apprend
-   à répondre.
+2. **Ça justifie la solitude.** Muf seul, sur le zinc, avant tout le monde : ni foule ni sono,
+   donc le silence entre deux verts est crédible, donc le risque au déclenchement l'est aussi.
+3. **Ça ne casse pas le premier gig.** La rue est la même, la **nuit** ne l'est pas : c'est un
+   **retour** rue Belliard, pas la nuit du tutoriel. Le joueur a déjà appris à fuir cette rue ;
+   il y revient pour la regarder. Le placement exact dans la progression reste `pm`.
+4. **L'heure sert la source sonore.** À 23 h 40 le carrefour coule encore fort ; à 4 h du matin
+   il n'y aurait plus de paquet à lâcher, donc plus de couverture. L'heure et la mécanique se
+   tiennent.
 
-> **Tranché (gate R-10) : Stalingrad, quai de la Loire.** La relocalisation Belliard est
-> **écartée** — l'ADR-0077 D9 impose une planche 2D dédiée dans les deux cas, donc Belliard
-> n'économise aucun asset et coûte l'invention d'une couverture sonore de substitution. Le
-> calendrier de build (quand la story s'ouvre par rapport au reste de Stalingrad) reste
-> `senior-architect` + `producer`. **Ne pas rouvrir.**
+> **Amendement Rev.3 — le ruling R-10 du gate est ANNULÉ** par la décision de Bertrand du
+> 2026-08-02 (§ AMENDEMENT en tête de spec). Le premier set-piece est **rue Belliard** ;
+> **aucun** niveau Stalingrad n'est à construire pour lui. Le calendrier de build reste
+> `senior-architect` + `producer`.
 
 ---
 
@@ -172,7 +290,7 @@ levier. Aucune valeur de tuning ici — c'est `game-designer`.
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | **La cible**        | **Le Commandant** — canon existant, silhouette ratifiée (tête nue, tenue de commandement, pas de casque).                                                                      | Oui, déjà canon.                                                 |
 | **Le second homme** | **Le patron de boîte** — manteau clair, un civil qui n'a rien à faire là. La nuit légale : une boîte qui déclare ses recettes et perd sa clientèle au profit des free parties. | **Non.** Jamais nommé. Il n'est qu'« l'homme au manteau clair ». |
-| **La voiture**      | Une berline sombre garée sous le viaduc, feux éteints.                                                                                                                         | Identifiée par sa **plaque** seulement.                          |
+| **La voiture**      | Une berline sombre engagée à moitié dans le passage, feux éteints.                                                                                                             | Identifiée par sa **plaque** seulement.                          |
 
 **Pourquoi le second homme reste anonyme** — trois bénéfices : (a) zéro cast nouveau à faire
 apprendre au joueur ; (b) l'anonymat **est** le sujet (le pouvoir qui paie n'a pas de visage,
@@ -181,11 +299,11 @@ au lieu d'être un collectible décoratif.
 
 ### 3.2 Les trois instants
 
-| #   | Instant       | Ce qu'on voit                                                                                                                                         | Statut               | Ce que la photo prouve                                                                      |
-| --- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
-| 1   | **L'ARRIVÉE** | La berline s'arrête sous le viaduc, feux éteints. Le manteau clair descend. Le Commandant sort de l'ombre d'un pilier — les deux hommes se font face. | **Bonus**            | Qu'ils étaient là, ensemble, la même nuit. Circonstance, pas preuve.                        |
-| 2   | **L'ÉCHANGE** | Une enveloppe passe de la main du manteau clair à celle du Commandant, qui l'empoche. **Les deux visages et les deux mains dans le même cadre.**      | **PREUVE MAÎTRESSE** | L'acte. Sans les deux visages **et** l'enveloppe, la photo ne prouve rien.                  |
-| 3   | **LA PLAQUE** | La berline repart ; en passant sous le lampadaire du quai, l'immatriculation est lisible une poignée de secondes.                                     | **Bonus**            | **Qui** paie. C'est le bonus qui transforme « un flic ripou » en « un flic à qui on doit ». |
+| #   | Instant       | Ce qu'on voit                                                                                                                                                  | Statut               | Ce que la photo prouve                                                                      |
+| --- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
+| 1   | **L'ARRIVÉE** | La berline s'engage dans le passage et s'arrête, feux éteints. Le manteau clair descend. Le Commandant sort du fond du passage — les deux hommes se font face. | **Bonus**            | Qu'ils étaient là, ensemble, la même nuit. Circonstance, pas preuve.                        |
+| 2   | **L'ÉCHANGE** | Une enveloppe passe de la main du manteau clair à celle du Commandant, qui l'empoche. **Les deux visages et les deux mains dans le même cadre.**               | **PREUVE MAÎTRESSE** | L'acte. Sans les deux visages **et** l'enveloppe, la photo ne prouve rien.                  |
+| 3   | **LA PLAQUE** | La berline ressort du passage en marche arrière ; en passant sous le feu, l'immatriculation est lisible une poignée de secondes.                               | **Bonus**            | **Qui** paie. C'est le bonus qui transforme « un flic ripou » en « un flic à qui on doit ». |
 
 C'est ce triptyque qui fait vivre le double trade-off du zoom de l'ADR-0077 §3 sans aucune
 règle plaquée :
@@ -200,15 +318,22 @@ règle plaquée :
 départ de la voiture, qui **ouvre l'enveloppe et compte** — a été envisagé et écarté du V1 :
 il redit ce que #2 dit déjà, pour un coût art plein. Noté pour ne pas être réinventé.
 
-### 3.3 La couverture sonore, en clair (brief pour `sound-designer` + `game-designer`)
+### 3.3 La couverture sonore, en clair — RÉÉCRITE Rev.3 (brief `sound-designer` + `game-designer`)
 
-- **Rame au-dessus = fenêtre sûre.** Le grondement couvre le déclencheur.
-- **Entre deux rames = silence du quai.** Déclencher là fait monter la suspicion.
-- Le **timing des rames est déterministe et télégraphié** (on entend la rame arriver avant
-  qu'elle couvre) — jamais `Math.random`, jamais `Date.now` (ADR-0077, garde-fous).
+- **Le paquet qui descend la rue = fenêtre sûre.** Moteurs, diesel, un scooter : ça couvre le
+  déclencheur.
+- **Entre deux verts = la rue est morte.** Déclencher là fait monter la suspicion.
+- Le **cycle du feu est déterministe et télégraphié** (on entend les moteurs monter au
+  carrefour avant que la vague arrive) — jamais `Math.random`, jamais `Date.now` (ADR-0077,
+  garde-fous). La fiction ne demande **aucune** dérogation : un feu, par définition, ne varie
+  pas.
+- Ordres de grandeur portés par la fiction, **à re-dériver par `game-designer`** : cycle
+  complet **~21 s**, vague couvrante **~7 s** (un tiers du cycle — la proportion réelle d'un
+  carrefour), montée de moteurs **~1,8 s** avant que ça couvre. La source les supporte ; les
+  valeurs finales sont à Sacha.
 - Contrainte de conception que je signale : #1 et #3 doivent **pouvoir** tomber dans une
   fenêtre sonore, sinon le joueur est puni pour jouer le jeu. #2, la preuve maîtresse, mérite
-  au contraire d'être **à cheval** sur la fin d'une rame — le bon joueur déclenche tôt.
+  au contraire d'être **à cheval** sur la fin d'une vague — le bon joueur déclenche tôt.
   _Proposition de fiction, pas une contrainte de tuning : Sacha tranche._
 
 ### 3.4 La pellicule
@@ -235,29 +360,30 @@ photo.
 Format = `NarrativeLine` (`src/game/systems/narrativeSystem.ts`). **Règle de fer respectée :
 aucune illustration qui ne soit un sprite DÉJÀ shippé dans `public/assets/`.** Les images ci-
 dessous sont toutes vérifiées présentes. Le backdrop de scène (`NarrativeScene.backdrop`,
-ADR-0023) réutilise la façade Stalingrad shippée.
+ADR-0023) réutilise la façade **Belliard** shippée — celle des trois scènes déjà à l'écran
+(`belliard_pre`, `belliard_post`, tutoriel).
 
-### 4.1 Pré-set-piece — briefing hybride (`stalingrad_photo_pre`, `id` proposé)
+### 4.1 Pré-set-piece — briefing hybride (`belliard_photo_pre`, `id` proposé)
 
 Le briefing donne **QUI** et **OÙ**, jamais **QUAND** ni **QUOI** — c'est la règle hybride de
 l'ADR-0077 §4. DISPATCH pose le dossier, KENZA pose le terrain, personne ne décrit la scène :
 le joueur la découvre dans la lunette.
 
-`backdrop: "assets/levels/stalingrad/facade.png"`
+`backdrop: "assets/levels/belliard/facade.png"`
 
-| #   | speaker  | text (FR)                                                                        | image (sprite shippé)                | imageAlt                                |
-| --- | -------- | -------------------------------------------------------------------------------- | ------------------------------------ | --------------------------------------- |
-| 1   | DISPATCH | `Le camion a une heure de retard, Muf. T'as le temps de bosser pour moi.`        | —                                    | —                                       |
-| 2   | MUF      | `Bosser à quoi ? J'ai pas d'arme sur moi.`                                       | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
-| 3   | DISPATCH | `T'en as pas besoin. Oxane te prête son boîtier. Fond de pellicule.`             | —                                    | —                                       |
-| 4   | KENZA    | `Quai de la Loire, sous le métro aérien. Deux jeudis de suite, la même berline.` | `assets/vehicles/car.png`            | `Une berline garée dans la rue`         |
-| 5   | MUF      | `Et qui l'attend ?`                                                              | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
-| 6   | DISPATCH | `Lui.`                                                                           | `assets/boss/commander_shielded.png` | `Le Commandant, chef de la BAC de nuit` |
-| 7   | MUF      | `...le Commandant. Sous un viaduc. À minuit.`                                    | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
-| 8   | DISPATCH | `Tu montes au troisième de l'entrepôt. Tu regardes. Tu comprendras.`             | —                                    | —                                       |
-| 9   | KENZA    | `Le métro passe au-dessus. Quand ça gronde, personne t'entend déclencher.`       | —                                    | —                                       |
-| 10  | MUF      | `Et quand ça gronde pas ?`                                                       | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
-| 11  | KENZA    | `Tu respires, et t'attends la suivante.`                                         | —                                    | —                                       |
+| #   | speaker  | text (FR)                                                                                              | image (sprite shippé)                | imageAlt                                |
+| --- | -------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------ | --------------------------------------- |
+| 1   | DISPATCH | `Le camion a une heure de retard, Muf. T'as le temps de bosser pour moi.`                              | —                                    | —                                       |
+| 2   | MUF      | `Bosser à quoi ? J'ai pas d'arme sur moi.`                                                             | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
+| 3   | DISPATCH | `T'en as pas besoin. Oxane te prête son boîtier. Fond de pellicule.`                                   | —                                    | —                                       |
+| 4   | KENZA    | `Rue Belliard, le passage à côté de la boulangerie. Deux jeudis de suite, la même berline.`            | `assets/vehicles/car.png`            | `Une berline garée dans la rue`         |
+| 5   | MUF      | `Et qui l'attend ?`                                                                                    | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
+| 6   | DISPATCH | `Lui.`                                                                                                 | `assets/boss/commander_shielded.png` | `Le Commandant, chef de la BAC de nuit` |
+| 7   | MUF      | `...le Commandant. Au fond d'un passage. À minuit.`                                                    | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
+| 8   | DISPATCH | `Tu montes sur le toit, la lucarne au bout de la rue. Tu regardes. Tu comprendras.`                    | —                                    | —                                       |
+| 9   | KENZA    | `En haut de la rue, le feu lâche un paquet de bagnoles. Quand ça roule, personne t'entend déclencher.` | —                                    | —                                       |
+| 10  | MUF      | `Et quand ça roule pas ?`                                                                              | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
+| 11  | KENZA    | `Tu respires, et t'attends le vert suivant.`                                                           | —                                    | —                                       |
 
 **Notes d'écriture (pour le gate) :**
 
@@ -267,9 +393,13 @@ le joueur la découvre dans la lunette.
 - Ligne 6 : `Lui.` — un mot, avec le sprite du Commandant. C'est le beat du briefing. La ligne
   la plus courte de la scène porte la révélation ; on ne l'emballe pas.
 - Ligne 8 : `Tu comprendras.` — DISPATCH **refuse** de dire ce qui va se passer. C'est la règle
-  hybride écrite dans sa bouche : le dossier s'arrête là où l'œil commence.
+  hybride écrite dans sa bouche : le dossier s'arrête là où l'œil commence. **Rev.3 :**
+  `Tu montes sur le toit` est le rappel exact de la ligne shippée `« Reste sur les toits. »`
+  (`belliard_pre`) — le joueur reconnaît l'ordre, on ne lui explique pas la position.
 - Ligne 9 : la couverture sonore est enseignée **diégétiquement** par KENZA, dans son registre
-  de terrain — jamais par un tutoriel plaqué. Elle nomme le _quand_, pas le _comment_.
+  de terrain — jamais par un tutoriel plaqué. Elle nomme le _quand_, pas le _comment_, et ne
+  chiffre **jamais** le cycle (le tuning est à Sacha ; un feu n'a pas besoin d'être annoncé
+  en secondes pour être compris).
 - 11 répliques : dans la borne des scènes shippées (5-11, cf. le tutoriel). Skippable en un
   bouton comme toute cutscene (guidelines §5 UX 3).
 
@@ -293,7 +423,7 @@ d'aucun mot. `POSES : {n}` n'est donc **pas** une seconde surface : c'est une **
 repli**, à n'utiliser que si le cadran seul ne se lit pas à la taille mobile. Un seul compteur
 à l'écran, jamais deux.
 
-### 4.3 Post — la planche contact (`stalingrad_photo_post`, `id` proposé)
+### 4.3 Post — la planche contact (`belliard_photo_post`, `id` proposé)
 
 La planche contact **est** le verdict (ADR-0077 §8). Le texte ne fait que la lire ; il ne la
 remplace pas. Trois variantes selon ce que le joueur a dans la boîte.
@@ -326,7 +456,7 @@ la seconde est commune et ne change jamais.
 
 | Terminal (mécanique §1.1)                        | Ligne 1 — speaker `MUF`, image `assets/courier/rider.png`, alt `Muf, le coursier à moto` |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `ROLL_END` (pellicule finie, rien d'exploitable) | `Plus de pellicule. Deux dos et un pilier.`                                              |
+| `ROLL_END` (pellicule finie, rien d'exploitable) | `Plus de pellicule. Deux dos et un rideau de fer.`                                       |
 | `SPOTTED` (repéré, la scène se disperse)         | `Ils ont levé la tête. La berline est partie.`                                           |
 | `SCENE_END`, au moins une pose brûlée            | `L'enveloppe, je l'ai pas. Le reste, ça prouve rien.`                                    |
 | `SCENE_END`, rouleau intact (zéro pose)          | `J'ai pas déclenché. J'ai regardé.`                                                      |
@@ -338,11 +468,11 @@ la seconde est commune et ne change jamais.
 **Les deux CTA de la planche contact (K-4 / T-3).** Sur cette branche l'écran offre **deux**
 boutons, jamais un. Libellés, forme maison (`[ … ]` capitales, cf. `NarrativeScreen.tsx`) :
 
-| Rôle                                          | Libellé              | Long. | Ce qu'il fait                                                                      |
-| --------------------------------------------- | -------------------- | ----- | ---------------------------------------------------------------------------------- |
-| Rejouer le set-piece                          | `[ RECOMMENCER ]`    | 11 c. | Retry depuis le checkpoint (mécanique §6.3).                                       |
-| **Refuser — le chemin « bonus jamais gate »** | `[ LAISSER TOMBER ]` | 15 c. | **Une seule pression** → retour à la livraison Stalingrad, boss en baseline ×1.00. |
-| Branches (a) / (b), un seul bouton            | `[ CONTINUER ]`      | 10 c. | Forme déjà shippée.                                                                |
+| Rôle                                          | Libellé              | Long. | Ce qu'il fait                                                                    |
+| --------------------------------------------- | -------------------- | ----- | -------------------------------------------------------------------------------- |
+| Rejouer le set-piece                          | `[ RECOMMENCER ]`    | 11 c. | Retry depuis le checkpoint (mécanique §6.3).                                     |
+| **Refuser — le chemin « bonus jamais gate »** | `[ LAISSER TOMBER ]` | 15 c. | **Une seule pression** → retour à la livraison en cours, boss en baseline ×1.00. |
+| Branches (a) / (b), un seul bouton            | `[ CONTINUER ]`      | 10 c. | Forme déjà shippée.                                                              |
 
 **Pourquoi ces mots.** `[ LAISSER TOMBER ]` est du registre de Muf, pas de celui d'un menu :
 c'est ce qu'on dit dans la rue quand on renonce sans se justifier. Il ne contient ni
@@ -409,7 +539,7 @@ c'est l'enterrer. Et un joueur de 1998 dans le circuit free-party **ne fait pas 
 presse** : ce serait un contresens de scène.
 
 **La photo part sur la photocopieuse du fanzine.** Vingt-trois copies, agrafées aux flyers,
-collées dans les cages d'escalier du 19e, passées de main en main aux entrées de teuf. Le
+collées dans les cages d'escalier du quartier, passées de main en main aux entrées de teuf. Le
 canal de diffusion **existe déjà** dans le canon (le zine `UNDERGROUND PARIS`, le tirage 23,
 « Ne se vend pas. Ne se jette pas. Se passe. »). Zéro invention.
 
@@ -472,13 +602,13 @@ de gate. _On conçoit ensemble, on livre séparément._
 
 Le VISUEL appartient à `concept-artist` → `lead-art`. Voici ce qu'ils ont besoin de savoir.
 
-| Élément                      | Rôle dans la scène                                                                                                                                          | Poses / états demandés                                                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Le Commandant**            | La cible. Silhouette **déjà ratifiée** — tête nue, tenue de commandement, ni casque ni bouclier.                                                            | `attend dans l'ombre` · `face à face` · `reçoit l'enveloppe` (main tendue, visage de trois quarts) · `empoche`. |
-| **L'homme au manteau clair** | Le client. Civil, manteau clair (contraste B&N maximal avec le Commandant sombre : le read se fait au ton, pas à la couleur). Jamais nommé, visage lisible. | `descend de voiture` · `face à face` · `tend l'enveloppe`.                                                      |
-| **La berline**               | L'identification. Feux éteints à l'arrivée, plaque lisible au départ sous le lampadaire.                                                                    | `arrêtée` · `en départ, plaque lisible`.                                                                        |
-| **Backdrop du set-piece**    | Quai de la Loire, piliers du viaduc, eau noire, un lampadaire. Une rame qui passe au-dessus.                                                                | Backdrop 2D dédié (ADR-0077 §9) — **pas** un zoom dans les calques Stalingrad.                                  |
-| **Planche contact**          | Le verdict. B&N photocopié, bords de perforation, croix au feutre gras sur ce qui compte.                                                                   | Surface UI — `ux-designer` + art flow.                                                                          |
+| Élément                      | Rôle dans la scène                                                                                                                                                                                                                                                                                                                    | Poses / états demandés                                                                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Le Commandant**            | La cible. Silhouette **déjà ratifiée** — tête nue, tenue de commandement, ni casque ni bouclier.                                                                                                                                                                                                                                      | `attend dans l'ombre` · `face à face` · `reçoit l'enveloppe` (main tendue, visage de trois quarts) · `empoche`.                                                          |
+| **L'homme au manteau clair** | Le client. Civil, manteau clair (contraste B&N maximal avec le Commandant sombre : le read se fait au ton, pas à la couleur). Jamais nommé, visage lisible.                                                                                                                                                                           | `descend de voiture` · `face à face` · `tend l'enveloppe`.                                                                                                               |
+| **La berline**               | L'identification. Feux éteints à l'arrivée, plaque lisible au départ sous le feu tricolore.                                                                                                                                                                                                                                           | `arrêtée` · `en départ, plaque lisible`.                                                                                                                                 |
+| **Backdrop du set-piece**    | **Rev.3 —** la bouche du passage rue Belliard : faille d'ombre entre deux immeubles, rideaux de fer taggés de part et d'autre, la devanture de la BOULANGERIE en amorce à gauche, le **feu tricolore** planté devant. Vue plongeante depuis la lucarne du bout de la rue. Un paquet de phares qui descend la rue = la fenêtre sonore. | Backdrop 2D dédié (ADR-0077 §9) — **pas** un zoom dans `street-wide.png`, mais la **même rue**, reconnaissable au premier coup d'œil (rideaux taggés, boulangerie, feu). |
+| **Planche contact**          | Le verdict. B&N photocopié, bords de perforation, croix au feutre gras sur ce qui compte.                                                                                                                                                                                                                                             | Surface UI — `ux-designer` + art flow.                                                                                                                                   |
 
 **Demande AUTORISÉE par le gate (F-4).** Elle s'ouvre auprès de `concept-artist` → `lead-art`
 avec **deux contraintes attachées par Karim**, transmises telles quelles — l'arbitrage
@@ -523,8 +653,9 @@ qu'ils référencent aujourd'hui sont des sprites **déjà shippés**.
 - **Roster §7 intact.** Aucune quatrième faction. Le Commandant est déjà l'apex de la BAC de
   nuit ; **le patron de boîte est un civil, pas un antagoniste jouable** — il n'entre pas au
   roster, il ne tire jamais, il ne réapparaît pas.
-- **Authenticité 1998.** Argentique, pellicule finie, planche contact, photocopieuse, métro
-  aérien, francs, aucun écran de contrôle, aucun réseau social, aucun téléphone à photo. Si le
+- **Authenticité 1998.** Argentique, pellicule finie, planche contact, photocopieuse, feu
+  tricolore et circulation de nuit sur les Maréchaux, rideaux de fer, francs, aucun écran de
+  contrôle, aucun réseau social, aucun téléphone à photo. Si le
   gate veut durcir le grounding culturel (matériel photo, plaque d'immatriculation format
   1998), `art-advisor` (Estelle) est la lane.
 - **Cahier des charges.** Prohibition (Atari ST) n'avait ni narration ni photo : **extension
@@ -555,12 +686,32 @@ qu'ils référencent aujourd'hui sont des sprites **déjà shippés**.
 
 ---
 
-## 9. Hand-off — round 2 du design gate
+## 9. Hand-off
 
-**De :** `narrative-designer` (Yasmine) · **À :** `lead-game-designer` (Karim) ·
-**Objet :** Rev.2 de la fiction du premier set-piece photo. **Round 2 = le cap.**
+### 9.0 Rev.3 — amendement de relocalisation (2026-08-02)
 
-### 9.1 Réponse aux conditions du gate
+**De :** `narrative-designer` (Yasmine) · **À :** `lead-game-designer` (Karim), pour
+information — puis `game-designer` (Sacha), `sound-designer`, `concept-artist` / `lead-art`.
+
+**Objet :** le premier set-piece est **rue Belliard** (décision Bertrand, override de R-10).
+Ce n'est **pas** une réouverture de gate : c'est l'exécution d'une décision. Les huit
+ratifications du round 1 tiennent, sauf le lieu.
+
+Ce que chaque lane doit récupérer :
+
+| Lane                          | Ce qui change pour elle                                                                                                                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `game-designer` (Sacha)       | La source sonore est un **cycle de feu tricolore** (§2.3). Elle porte période ~21 s / vague ~7 s / montée ~1,8 s ; **les valeurs exactes restent à re-dériver par toi** — la fiction ne les grave pas.      |
+| `sound-designer`              | Brief : boucle de cycle (paquet de véhicules qui descend une rue vide) + montée de moteurs en amorce. Déterministe par nature, zéro aléa. Alternative de repli en une ligne : le fournil de la boulangerie. |
+| `concept-artist` / `lead-art` | Nouvelle fiche backdrop §6 : bouche du passage rue Belliard, rideaux de fer, boulangerie en amorce, feu tricolore, vue plongeante depuis la lucarne. Les deux contraintes de Karim sont **inchangées**.     |
+| `dev-gameplay`                | Ids de scène `belliard_photo_pre` / `belliard_photo_post`, `backdrop: "assets/levels/belliard/facade.png"`. Répliques 4 / 7 / 8 / 9 / 10 / 11 réécrites (§4.1), ligne `ROLL_END` réécrite (§4.3).           |
+| `pm`                          | Le set-piece se joue sur une **nuit de retour** rue Belliard, pas la nuit du tutoriel. Le placement exact dans la progression reste ta lane.                                                                |
+
+**Aucun niveau à construire. Aucun dialogue shippé modifié.** Le seul asset neuf reste la
+planche 2D dédiée déjà exigée par l'ADR-0077 D9 — donc le budget art est **inchangé**, et le
+niveau Stalingrad qu'on n'écrit plus est une **économie sèche**.
+
+### 9.1 Réponse aux conditions du gate (Rev.2 — inchangée)
 
 | Cond.    | État            | Où c'est traité                                                                                                                                                      |
 | -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -574,7 +725,8 @@ qu'ils référencent aujourd'hui sont des sprites **déjà shippés**.
 
 ### 9.2 Ce que le gate n'a plus à trancher
 
-Cible (§1), alternative B en n°2 (§1.2), Stalingrad (§2), triptyque (§3.2), `filmCount = 6`
+Cible (§1), alternative B en n°2 (§1.2), ~~Stalingrad (§2)~~ — **remplacé Rev.3 par Belliard,
+décision Bertrand, R-10 annulé** —, triptyque (§3.2), `filmCount = 6`
 (§3.4), « isolé jamais affaibli » invariant (§5.4), bonus jamais gate (§5.3), `SPOTTED` atteint
 la planche tronquée (§4.3/§4.4). **Ratifiés round 1, non rouverts ici.**
 
