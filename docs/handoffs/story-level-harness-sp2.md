@@ -35,10 +35,10 @@ Auto-revue des deux plans.
 - Écarts assumés : check-sprite-integrity non branché (retiré du pipeline enemy,
   ADR-0029) ; évidence du run d'essai non commitée (artefact CI) ; bug subshell
   du gate props trouvé et épinglé par test.
-- État : typecheck vert, 1705/1705 tests (×2), workflows:check ok (6 warnings
-  préexistants). Douteux tracé : intégration navigateur d'align-windows testable
-  seulement en CI réelle ; seeds libres de T5 sans cap (à borner si besoin, hors
-  périmètre).
+- État à la fin du BUILD : typecheck vert, 1705/1705 tests (×2), workflows:check ok.
+  Ce compte a évolué avec la remédiation du panel — voir §2d pour l'état final.
+  Douteux tracé : intégration navigateur d'align-windows testable seulement en CI
+  réelle ; seeds libres de T5 sans cap (à borner si besoin, hors périmètre).
 
 ## 2c. ADR-0078 — la surface CI (panel run 6) — 2026-08-02
 
@@ -52,11 +52,47 @@ chemin d'échec, double garde de confinement, verrou d'id + validation avant dé
 comptabilité du cap par commits de trace `--full-history`, sérialisation par level,
 idempotence au re-dispatch) et leurs limites assumées.
 
+## 2d. Remédiation du panel, runs 7 à 11 — 2026-08-01/02
+
+Le run 6 (§2c) a produit ADR-0078 ; le travail a continué cinq rounds de plus, chacun
+trouvant un défaut RÉEL — pas de la cosmétique :
+
+- **run 7** : l'ADR proclamait une doctrine universelle (« l'allowlist vaut aussi sur le
+  chemin d'échec ») que `gen-plan-verify` ne tenait pas. Le code a rejoint l'ADR ;
+  le test du chemin d'échec couvre désormais les TROIS workflows, génériquement.
+- **run 8** : `backdrop.file` était le troisième champ devenant cible d'écriture et le
+  seul sans garde — forme au CI + containment runtime via un resolver PARTAGÉ
+  (`planPaths.mjs`). `spriteBase` gagne une garde de collision (namespace plat : une
+  clé shippée réutilisée ferait SKIPPER la génération, en vert). Le rationale de la
+  décision 3 d'ADR-0078, devenu faux dans le même diff, est corrigé.
+- **run 9** : contradiction fatale introduite au run 8 — forme sans tiret + préfixe
+  portant l'id étaient mutuellement exclusifs pour un id à tirets (`porte-de-vanves`).
+  Aucun level à tiret n'aurait pu déclarer d'ennemi. Id normalisé dans le préfixe.
+- **run 10** : `SCRIPTS.md` documentait l'anti-pattern même que le gate props refuse
+  (substitution de process → PASS creux) ; doc corrigée + test anti-dérive. Lecture de
+  `--plan` dédoublonnée (`planIdFromArgs`).
+- **run 11** : le containment se contournait par la BASE — `resolveBackdropFile`
+  construisait `levelDir` depuis un `plan.id` jamais validé, un id échappé faisait
+  sortir la base et le `startsWith` passait trivialement (vérifié : écriture dans
+  `public/etc/`). Garde posée. Et 0077 était l'ADR tsc/ESLint mergé, pas celui du MCP :
+  rectifié dans ADR-0078, la branche MCP devra renuméroter au-delà de 0078.
+
+**État final** : 1776/1776 tests, typecheck + lint + workflows:check verts. Chaque garde
+ajoutée est prouvée par mutation (la désactiver fait rougir un test dédié).
+Décision de Bertrand (2026-08-02) : un dernier round puis merge, les mineurs restants
+devenant des follow-ups plutôt que de nouveaux rounds.
+
 ## Suivi
 
 - [x] PR #151 (specs+plans) : panel PASS (4 runs convergents) → MERGÉE (3ba17a47,
       2026-07-30)
-- [ ] BUILD : branche `feat/level-harness-sp2`, T1 (dev-gameplay) puis T2-T6
-      (dev-tooling-assets), T7 (boucle design du level candidat) ferme
+- [x] BUILD : T1-T6 livrées (PR #156), 11 rounds de panel remédiés, ADR-0078
+- [ ] **Follow-ups tracés** (mineurs du run 11, hors périmètre de cette PR) :
+      (a) la boucle push-avec-retry est recopiée 5× dans 3 workflows — à factoriser
+      en script partagé ou action composite ; (b) le gate props re-parse la sortie
+      humaine de `--list` par découpage shell — un mode `--list --json` serait plus
+      robuste ; (c) le décodage du format d'octets du backdrop généré n'est pas
+      exercé de bout en bout (attend un vrai candidat, T7).
+- [ ] T7 : boucle design du level candidat, puis les 5 phases sur du vrai contenu
 - [ ] Le level candidat : id/quartier/fiction proposés par game-designer +
       narrative-designer, gate lead-game-designer, AVANT le premier tirage payé
