@@ -133,5 +133,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0075](./0075-level-plan-composable-generated-levels.md) | Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/` | Proposed |
 | [0076](./0076-run-stats-system-local-first.md) | Run stats system (local-first) | Accepted |
 | [0077](./0077-couverture-tsc-eslint-scripts.md) | Couvrir scripts/ par tsc et ESLint via tsconfig.node.json et @types/node explicite | Accepted |
+| [0078](./0078-flyer-cascade-session-key.md) | Clé de session pour l'entrée du mur de flyers | Accepted |
 
 <!-- ADR-INDEX:END -->

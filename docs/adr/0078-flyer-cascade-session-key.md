@@ -1,10 +1,13 @@
-# 0077 — Clé de session pour l'entrée du mur de flyers
+# 0078 — Clé de session pour l'entrée du mur de flyers
 
 - **Status:** Accepted
 - **Date:** 2026-08-01
-- **Number:** 0077 — auto-alloué (aucun `producer` dans la boucle sur cette PR, ouverte en
+- **Number:** 0078 — auto-alloué (aucun `producer` dans la boucle sur cette PR, ouverte en
   course express puis escaladée ; max local + `origin/main` + index vérifiés ensemble, voir
-  le skill `adr-new`). À re-vérifier au merge.
+  le skill `adr-new`). **Renuméroté 0077 → 0078 au merge** : `main` avait entre-temps livré
+  son propre ADR-0077 (`couverture-tsc-eslint-scripts`). C'est exactement le cas que la
+  re-vérification au merge existe pour attraper, et le doublon qui avait produit deux
+  ADR-0020 dans ce dépôt.
 
 ## Context
 
