@@ -132,8 +132,8 @@ function renderReadme(adrs) {
 }
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-/** Escape, then promote `code` spans to <code>. */
-function rich(s) {
+/** Escape, then promote `code` spans to <code>. (Currently unreferenced.) */
+function _rich(s) {
   return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 

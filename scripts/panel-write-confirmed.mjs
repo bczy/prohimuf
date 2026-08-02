@@ -66,7 +66,7 @@ async function finalize() {
     verdicts = parsed.verdicts;
   } catch (err) {
     console.error(`[panel-write-confirmed] skeptic answer unusable: ${err.message}`);
-    const confirmed = withIds.map(({ id, ...finding }) => ({ ...finding, confirmed: true }));
+    const confirmed = withIds.map(({ id: _id, ...finding }) => ({ ...finding, confirmed: true }));
     await writeFile(OUT, JSON.stringify(confirmed, null, 2));
     process.exitCode = 1;
     return;
