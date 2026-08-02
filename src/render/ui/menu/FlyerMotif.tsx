@@ -177,7 +177,6 @@ interface FlyerMotifProps {
   instanceId: string;
   /** Turbulence seed — vary it per sheet so no two share the same ink breakup. */
   wearSeed?: number;
-  className?: string;
 }
 
 export function FlyerMotif({
@@ -186,7 +185,6 @@ export function FlyerMotif({
   tiltDeg = 0,
   instanceId,
   wearSeed = 1,
-  className,
 }: FlyerMotifProps): JSX.Element {
   const Shape = MOTIF_SHAPES[kind];
   const filterId = `muf-motif-wear-${instanceId}`;
@@ -197,7 +195,6 @@ export function FlyerMotif({
       // it never adds noise to the roving-focus reading of the wall.
       aria-hidden={true}
       focusable="false"
-      className={className}
       width={size}
       height={size}
       viewBox="0 0 100 100"

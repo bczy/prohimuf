@@ -244,9 +244,8 @@ export function FlyerWall({
   // flag below never retroactively hides the nudge or drops the focus steal during this
   // same visit. Absent flag ⇒ first-timer: auto-focus the tutorial flyer + show the nudge.
   const [firstVisit] = useState(() => !hasSeenTutorialNudge());
-  // Captured ONCE at mount, before the effect below marks it — so this same mount still
-  // animates while every later one in the session does not.
-  // LATCHED at mount, reduced motion included. The OS half of that signal is live and can
+  // LATCHED at mount, reduced motion included — before the effect below marks the session,
+  // so this mount still animates while every later one does not. The OS half of that signal is live and can
   // flip without unmounting us; recomputing would then start the cascade in the middle of a
   // visit, long after the entrance moment, and mark the session on an animation nobody
   // asked to see. Deciding once per mount keeps the flag and what was shown in agreement.
@@ -267,16 +266,12 @@ export function FlyerWall({
   // gesture, which is the only focus we must not act on — it lands on the very element
   // that was just pressed, so that is what we compare against.
   //
-  // Settling is the default for every other focus, deliberately. Three narrower rules were
-  // tried and each shut out a real population:
-  //   - `:focus-visible` — engine-dependent on a script-focusable div[role=button]; WebKit
-  //     has shipped versions where a MOUSE focus matches, which would settle mid-click.
-  //   - pointer RECENCY — broken on touch, where the order is pointerdown → pointerup →
-  //     synthetic mousedown → focus: a tap's own focus arrives after its gesture has ended.
-  //   - requiring a KEYDOWN — shut out assistive tech. A VoiceOver swipe or an NVDA rotor
-  //     jump moves DOM focus with no key event reaching the page at all, so the reader user
-  //     — the one this settle rule exists to protect from the clipped focus ring — was
-  //     precisely the one it ignored.
+  // Settling is the DEFAULT for every other focus, deliberately: three narrower rules were
+  // tried (`:focus-visible`, pointer recency, requiring a keydown) and each shut out a real
+  // population — WebKit mouse focus, touch, and assistive tech respectively. Which one
+  // broke what is written up once, in decision §5 of
+  // docs/game-design/ux/decision-niveaux-entrance-animation.md; repeating it here is how
+  // that document and this file drifted apart in the first place.
   const pointerPressed = useRef<EventTarget | null>(null);
 
   // Whether the session's one showing has been SPENT — either the cascade ran to its end
@@ -302,17 +297,13 @@ export function FlyerWall({
   }, [playCascade]);
 
   useEffect(() => {
-    // The OS half of `reducedMotion` is LIVE and can flip while the wall stays mounted. If
-    // it turns on mid-fall, the CSS kill switch cuts the animation off — but the flag was
-    // already set at mount, so the session's one showing would have been spent on a
-    // cascade the player only half saw. Hand it back.
-    //
-    // Only a showing the player did NOT get is worth handing back. If the cascade ran to
-    // its end, or the player themselves put the wall at rest by arriving on it, the session
-    // HAS had its showing — clearing the flag would buy a SECOND full cascade later in the
-    // same session, the per-session guarantee of decision §1 broken from the other end.
-    // `reducedMotion` toggling has no deadline: a player can flip it an hour into a visit,
-    // for reasons that have nothing to do with this wall.
+    // The OS half of `reducedMotion` is LIVE and can flip while the wall stays mounted,
+    // and the flag was already set at mount — so a flip mid-fall would spend the session's
+    // one showing on a cascade the player only half saw. Hand it back, but ONLY then: if
+    // the cascade ran to its end, or the player put the wall at rest themselves by arriving
+    // on it, the session HAS had its showing and clearing the flag would buy a second one
+    // later — decision §1 broken from the other end. The toggle has no deadline; a player
+    // can flip it an hour into a visit for reasons unrelated to this wall.
     if (!playCascade || !reducedMotion) return;
     if (!showingConsumed.current) clearCascadePlayed();
     // LATCHED for this mount, finished or not: the OS switch can flip back to OFF while we

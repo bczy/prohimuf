@@ -108,14 +108,11 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
  * full budget before the settle poll even started, making the real worst case twice the
  * documented one.
  *
- * It is a safety net, not a computed budget, and left that way ON PURPOSE. Deriving it
- * from `(LEVELS.length - 1) * stagger + duration` would restore in this file exactly the
- * three-way coupling the helper exists to remove: the stagger lives in FlyerWall.tsx, the
- * duration in FlyerWall.module.css, the count in the level data. The wait itself already
- * scales with all three for free, since it watches the real end state. Only the ESCAPE
- * HATCH is fixed — and it stops covering the wall at roughly 105 levels
- * ((105-1) x 180ms + 1400ms > 20s), against 5 today. If the game ever approaches that,
- * raise this default rather than reintroducing the arithmetic.
+ * It is a safety net, not a computed budget, and left that way ON PURPOSE — deriving it
+ * would reintroduce the very coupling described above. Only the ESCAPE HATCH is fixed, and
+ * it stops covering the wall at roughly 105 levels ((105-1) x 180ms + 1400ms > 20s),
+ * against 5 today. If the game ever approaches that, raise this default rather than
+ * bringing the arithmetic back.
  */
 export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
   const deadline = Date.now() + timeout;
