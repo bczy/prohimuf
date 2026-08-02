@@ -15,6 +15,15 @@
  * muted. No new src hooks and no new window.__MUF_* flags are introduced
  * (architect ruling): this drives the real, shipped game only.
  *
+ * Set-pieces (why this gate takes the opt-out): `seedDeterminism` seeds
+ * `window.__MUF_NO_SETPIECE__ = true` by DEFAULT (techplan-photo-qte.md
+ * "AMENDEMENT Rev.5" T-7). Belliard's photo QTE freezes `elapsedSeconds` for
+ * up to ~88 s of wall time at a trigger @2.5 s of played time; this gate's
+ * BANNER_TIMEOUT is `(trigger + 15s)` game-relative and has no margin for a
+ * frozen scene it never asked for. This script does not test the set-piece
+ * (that is `scripts/e2e-photo-*.mjs`), so it relies on the default rather than
+ * widening its own budget to absorb a beat it is not exercising.
+ *
  * belliard's delivery (src/game/levels/levels.ts → deliveries[0]): vehicleType
  * "truck", triggerAtElapsedSeconds 20, windowSeconds 8. The truck sprite path is
  * read from levelArt.json (vehicles.types.truck.asset) so it tracks the manifest.

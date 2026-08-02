@@ -7,7 +7,7 @@
 // a bracket state, never re-evaluates the subject box (techplan D-C/§6 Lane B). It is
 // given boxes the tick already produced and returns where to paint them.
 
-import type { Box, PhotoSceneView, PlateExtent } from "@render/ui/photo/photoSeam";
+import type { Box, PhotoBracket, PhotoSceneView, PlateExtent } from "@render/ui/photo/photoSeam";
 
 /** A rectangle in the drawn frame's normalised space: origin top-left, y DOWN, 0..1. */
 export interface FrameRect {
@@ -85,4 +85,64 @@ export function bracketArm(rect: FrameRect): number {
   const raw = Math.min(rect.w, rect.h) * BRACKET_ARM_FRACTION;
   if (!Number.isFinite(raw)) return BRACKET_ARM_MIN;
   return Math.max(BRACKET_ARM_MIN, Math.min(BRACKET_ARM_MAX, raw));
+}
+
+/** Bracket keyline thickness, as a fraction of the drawn frame. */
+export const BRACKET_WEIGHT = 0.004;
+/** `locked` draws the same corners in a heavier keyline — a SHAPE tell, not a hue tell. */
+export const BRACKET_WEIGHT_LOCKED = BRACKET_WEIGHT * 2.5;
+/** `dashed` splits each arm in two, leaving this fraction of the arm open in the middle. */
+export const BRACKET_DASH_GAP = 0.34;
+
+/**
+ * The AF corner brackets, as flat rectangles in the drawn frame's normalised space
+ * (y-DOWN). Four corners × two arms, each arm split in two when `dashed`.
+ *
+ * The three states are told apart by SHAPE ALONE, so the read survives a grayscale
+ * capture (UX A6) and needs no colour:
+ *   - `dashed` — broken arms (composition invalid; nothing is charging),
+ *   - `solid`  — continuous arms (valid, the hold is charging),
+ *   - `locked` — continuous arms in a heavy keyline (the hold has completed).
+ *
+ * What this function is NOT allowed to know, and structurally cannot: which instant is
+ * open, which role it carries, what the frame would be worth. `PhotoSceneView` has no such
+ * field (D-D), so `locked` on a NO_SUBJECT interval and `locked` on the master instant
+ * produce byte-identical geometry (A7bis) — by construction, not by inspection.
+ */
+export function bracketSegments(rect: FrameRect, state: PhotoBracket): readonly FrameRect[] {
+  const arm = bracketArm(rect);
+  const weight = state === "locked" ? BRACKET_WEIGHT_LOCKED : BRACKET_WEIGHT;
+  const right = rect.x + rect.w;
+  const bottom = rect.y + rect.h;
+  const out: FrameRect[] = [];
+
+  const push = (x: number, y: number, w: number, h: number): void => {
+    if (state !== "dashed") {
+      out.push({ x, y, w, h });
+      return;
+    }
+    // Break the arm in two, leaving a centred gap.
+    const horizontal = w > h;
+    const span = horizontal ? w : h;
+    const piece = (span * (1 - BRACKET_DASH_GAP)) / 2;
+    const far = span - piece;
+    if (horizontal) {
+      out.push({ x, y, w: piece, h }, { x: x + far, y, w: piece, h });
+    } else {
+      out.push({ x, y, w, h: piece }, { x, y: y + far, w, h: piece });
+    }
+  };
+
+  for (const [cx, cy, sx, sy] of [
+    [rect.x, rect.y, 1, 1],
+    [right, rect.y, -1, 1],
+    [rect.x, bottom, 1, -1],
+    [right, bottom, -1, -1],
+  ] as const) {
+    const x0 = sx > 0 ? cx : cx - arm;
+    const y0 = sy > 0 ? cy : cy - weight;
+    push(x0, y0, arm, weight); // the horizontal arm
+    push(sx > 0 ? cx : cx - weight, sy > 0 ? cy : cy - arm, weight, arm); // the vertical arm
+  }
+  return out;
 }

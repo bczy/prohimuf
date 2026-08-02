@@ -4,6 +4,7 @@ import {
   BRACKET_ARM_MAX,
   BRACKET_ARM_MIN,
   bracketArm,
+  bracketSegments,
   drawnPlateRegion,
   plateUvRect,
   projectBox,
@@ -98,5 +99,51 @@ describe("bracketArm", () => {
 
   it("is finite on a degenerate rect", () => {
     expect(bracketArm({ x: 0, y: 0, w: Number.NaN, h: 1 })).toBe(BRACKET_ARM_MIN);
+  });
+});
+
+describe("bracketSegments — three states, told apart by SHAPE (A6)", () => {
+  const RECT = { x: 0.4, y: 0.4, w: 0.2, h: 0.2 } as const;
+
+  it("draws four corners of two arms each when continuous", () => {
+    expect(bracketSegments(RECT, "solid")).toHaveLength(8);
+    expect(bracketSegments(RECT, "locked")).toHaveLength(8);
+  });
+
+  it("breaks every arm in two when dashed — a broken silhouette, not a paler one", () => {
+    const dashed = bracketSegments(RECT, "dashed");
+    expect(dashed).toHaveLength(16);
+    const solidArm = bracketSegments(RECT, "solid")[0];
+    expect(dashed[0]?.w).toBeLessThan(solidArm?.w ?? 0);
+  });
+
+  it("draws `locked` in a heavier keyline than `solid` (same corners, more ink)", () => {
+    const solid = bracketSegments(RECT, "solid")[0];
+    const locked = bracketSegments(RECT, "locked")[0];
+    expect(locked?.h).toBeGreaterThan(solid?.h ?? 0);
+  });
+
+  it("gives the three states three distinct geometries", () => {
+    const key = (s: Parameters<typeof bracketSegments>[1]): string =>
+      JSON.stringify(bracketSegments(RECT, s));
+    expect(new Set([key("dashed"), key("solid"), key("locked")]).size).toBe(3);
+  });
+
+  it("hugs the four corners of the bracketed box, never a full rectangle", () => {
+    const segs = bracketSegments(RECT, "solid");
+    const arm = bracketArm(RECT);
+    expect(arm).toBeLessThan(RECT.w / 2);
+    for (const s of segs) {
+      expect(s.x).toBeGreaterThanOrEqual(RECT.x - 0.01);
+      expect(s.x + s.w).toBeLessThanOrEqual(RECT.x + RECT.w + 0.01);
+      expect(s.y).toBeGreaterThanOrEqual(RECT.y - 0.01);
+      expect(s.y + s.h).toBeLessThanOrEqual(RECT.y + RECT.h + 0.01);
+    }
+  });
+
+  it("A7bis — geometry depends ONLY on the box and the state, never on anything semantic", () => {
+    // The scene view carries no instant/role/verdict at all (D-D), so the only inputs
+    // that exist are these two: same box + same state ⇒ byte-identical brackets.
+    expect(bracketSegments(RECT, "locked")).toEqual(bracketSegments({ ...RECT }, "locked"));
   });
 });

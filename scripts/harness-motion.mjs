@@ -26,6 +26,16 @@
  *        re-pointed story-hostage-taker AC8 "execution countdown cue rising
  *        before it fires").
  *
+ * Set-pieces (why this harness takes the opt-out): `seedPlay` seeds
+ * `window.__MUF_NO_SETPIECE__ = true` by DEFAULT (techplan-photo-qte.md
+ * "AMENDEMENT Rev.5" T-7). This capture is keyed to the hostage QTE reaching
+ * `ACTIVE` @14s of played time within `RUN_GAME_SECONDS = 21`; Belliard's photo
+ * QTE (trigger @2.5 s of played time, frozen for up to ~88 s of wall time)
+ * would sit in front of the hostage beat this script actually records and
+ * starve both invariants inside the 21s game-time window. This harness does
+ * not review the set-piece, so it relies on the default rather than widening
+ * RUN_GAME_SECONDS to absorb a beat it never asked for.
+ *
  * Input: `PREVIEW_URL` — a running server URL including the base.
  * Output: `screenshots/motion-belliard.png`.
  * Exit: 0 when both invariants are observed in the trace; 1 otherwise.

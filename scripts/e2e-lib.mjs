@@ -12,8 +12,8 @@
  *
  *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
- *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default).
- *   - seedPlay(page, ids, o)          — ADR-0005 "play" mode: __MUF_PLAY__ + mute + unlock (never __MUF_FREEZE_COPS__).
+ *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default, set-pieces off by default).
+ *   - seedPlay(page, ids, o)          — ADR-0005 "play" mode: __MUF_PLAY__ + mute + unlock (never __MUF_FREEZE_COPS__; set-pieces off by default).
  *   - readState(page)                 — one window.__MUF_STATE__() read (null if the seam isn't installed yet).
  *   - pollState(page, predicate, o)   — poll readState() until predicate(state) or timeout.
  *   - loadLevelManifest(root)         — level list/ids from levelArt.json (SoT).
@@ -126,12 +126,19 @@ export async function dismissNarrative(page) {
  * A deterministic/static seed therefore turns it OFF by default. The one flow
  * that must still compile+exercise the CRT shaders under SwiftShader (e2e-ingame,
  * the ADR-0031 publish guard) opts back in with `{ crt: true }`.
+ *
+ * `setPieces` (default **false**, opt-out by construction — see `seedPlay` below
+ * for the full rationale): sets `window.__MUF_NO_SETPIECE__` so a frozen-scene
+ * set-piece (photo QTE today; whatever ships next tomorrow) never triggers under
+ * this seed. A caller that genuinely needs a set-piece on screen passes
+ * `{ setPieces: true }` explicitly.
  */
-export async function seedDeterminism(page, levelIds, { crt = false } = {}) {
+export async function seedDeterminism(page, levelIds, { crt = false, setPieces = false } = {}) {
   await page.addInitScript(
-    ({ ids, crt }) => {
+    ({ ids, crt, noSetPiece }) => {
       // Freeze cops so the scene is static/deterministic (matches screenshot-preview).
       window.__MUF_FREEZE_COPS__ = true;
+      window.__MUF_NO_SETPIECE__ = noSetPiece;
       try {
         localStorage.setItem("muf_progress", JSON.stringify(ids));
         localStorage.setItem(
@@ -142,7 +149,7 @@ export async function seedDeterminism(page, levelIds, { crt = false } = {}) {
         // ignore storage failures
       }
     },
-    { ids: levelIds, crt },
+    { ids: levelIds, crt, noSetPiece: !setPieces },
   );
 }
 
@@ -172,11 +179,27 @@ export function createFailedResponseCollector(origin) {
  * reason (the animated CRT pass is non-deterministic noise the harness gains
  * nothing from). `levelIds` comes from `loadLevelManifest` so every level stays
  * reachable, same convention as `seedDeterminism`.
+ *
+ * `setPieces` (default **false** — architect ruling, techplan-photo-qte.md
+ * "AMENDEMENT Rev.5" T-7): a frozen-scene set-piece (a fourth block of
+ * `tickGameState`, same shape as the hostage duel — the photo QTE is the first
+ * one) freezes `elapsedSeconds` for real wall-clock seconds while it plays. On
+ * Belliard the photo QTE freezes ~88 s of wall time at a trigger @2.5 s of
+ * played time, which would blow every wall-clock budget in
+ * `e2e-delivery.mjs`, `harness-assert.mjs` (D2-A) and `harness-motion.mjs` —
+ * none of which are testing the set-piece. Rather than pad three unrelated
+ * budgets (or worse, silently widen them until they stop failing), the
+ * harness seeds `window.__MUF_NO_SETPIECE__ = true` by default so `App.tsx`
+ * never arms one; a caller that is actually testing a set-piece (the photo
+ * e2e scenarios) opts back in with `{ setPieces: true }`. Deliberately
+ * generic (not `noPhotoQte`): the next frozen-scene set-piece inherits the
+ * same immunity without a second flag.
  */
-export async function seedPlay(page, levelIds, { crt = false } = {}) {
+export async function seedPlay(page, levelIds, { crt = false, setPieces = false } = {}) {
   await page.addInitScript(
-    ({ ids, crt }) => {
+    ({ ids, crt, noSetPiece }) => {
       window.__MUF_PLAY__ = true;
+      window.__MUF_NO_SETPIECE__ = noSetPiece;
       try {
         localStorage.setItem("muf_progress", JSON.stringify(ids));
         localStorage.setItem(
@@ -187,7 +210,7 @@ export async function seedPlay(page, levelIds, { crt = false } = {}) {
         // ignore storage failures
       }
     },
-    { ids: levelIds, crt },
+    { ids: levelIds, crt, noSetPiece: !setPieces },
   );
 }
 

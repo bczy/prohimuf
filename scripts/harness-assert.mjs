@@ -30,6 +30,15 @@
  * The withdrawn `car` and the retired street `hostage_taker` (superseded by the
  * cinematic QTE) carry no assertions here — see the ADR-0005 amendment.
  *
+ * Set-pieces (why D2-A takes the opt-out): `seedPlay` seeds
+ * `window.__MUF_NO_SETPIECE__ = true` by DEFAULT (techplan-photo-qte.md
+ * "AMENDEMENT Rev.5" T-7). D2-A's own QTE_TIMEOUT (120 s) is already budgeted
+ * for CI's ~0.4x game-time pacing to the hostage QTE alone; Belliard's photo
+ * QTE (trigger @2.5 s of played time, frozen for up to ~88 s of wall time)
+ * would sit in front of it and blow that budget for an assertion that has
+ * nothing to do with the photo beat. D2-A does not exercise the set-piece, so
+ * it relies on the default rather than padding QTE_TIMEOUT to absorb it.
+ *
  * Input: `PREVIEW_URL` — a running server URL including the base (matches every
  * other e2e-*.mjs script; driven by `.github/actions/e2e-ingame` in CI).
  * Exit: 0 when both D2-A and D2-B hold; 1 otherwise (with the failing deltas
