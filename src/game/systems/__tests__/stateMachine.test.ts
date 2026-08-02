@@ -993,6 +993,81 @@ describe("boss QTE encounter — timed-finale trigger, freeze & completion (ADR-
   });
 });
 
+// --- GUARD: delivery + timed-finale boss (panel PR #143 follow-up) --------------
+
+describe("createInitialState — GUARD: a timed-finale boss never orphans a delivery in flight", () => {
+  // The boss branch of `tickGameState` early-returns before the delivery block, so a
+  // delivery still INCOMING/DELIVERING when the timer-expiry finale fires would freeze
+  // forever. Mirror of the hostage+boss guard: fail LOUD at level load if the authored
+  // delivery cannot be fully resolved AND off-screen (GONE) before `timeSeconds`.
+  const BOSS_SPEC = {
+    zoomSeconds: 2,
+    anchor: { x: 0, y: 0 },
+    phaseCount: 3,
+    bossHp: 24,
+    maxBlownWindows: 10,
+    targetSeed: 20260719,
+  };
+  const DELIVERY: DeliverySpec = {
+    vehicleType: "truck",
+    triggerAtElapsedSeconds: 20,
+    integrity: 100,
+    windowSeconds: 8,
+    bonus: 500,
+    entrySide: "left",
+    stopPosition: { x: 0, y: -5 },
+  };
+  function params(over: Partial<LevelParams> = {}): LevelParams {
+    return {
+      lives: 3,
+      timeSeconds: 90,
+      enemiesToWin: 3,
+      enemySpeedMultiplier: 1,
+      delivery: DELIVERY,
+      bossQte: BOSS_SPEC,
+      ...over,
+    };
+  }
+
+  it("allows delivery + boss together when the delivery is GONE with margin before the finale", () => {
+    // FIELD.halfWidth 40 → entry/exit edge at ±44, speed 8: 5.5s in + 8s window + 5.5s
+    // out = worst-case end 39s, well under timeSeconds 90 − margin.
+    expect(() => createInitialState(FACADE_01, params(), undefined, FIELD)).not.toThrow();
+  });
+
+  it("throws when the delivery's worst case (trigger + travel in + window + travel out) overruns the timer", () => {
+    // Same 39s worst case, but a 40s timer leaves less than the safety margin.
+    expect(() =>
+      createInitialState(FACADE_01, params({ timeSeconds: 40 }), undefined, FIELD),
+    ).toThrow(/delivery.*not safely sequential/s);
+  });
+
+  it("still guards the width-independent bound (trigger + window) when no courier field is supplied", () => {
+    // Without a field the travel legs are unknowable, but 20 + 8 = 28s + margin already
+    // overruns a 30s timer — the guard must not go blind just because travel is unknown.
+    expect(() => createInitialState(FACADE_01, params({ timeSeconds: 30 }))).toThrow(
+      /delivery.*not safely sequential/s,
+    );
+  });
+
+  it("each spec alone stays untouched — delivery without boss, boss without delivery", () => {
+    // A delivery-only level may legitimately run its window right up to the buzzer.
+    expect(() =>
+      createInitialState(FACADE_01, params({ bossQte: null, timeSeconds: 25 }), undefined, FIELD),
+    ).not.toThrow();
+    expect(() =>
+      createInitialState(FACADE_01, params({ delivery: null, timeSeconds: 25 }), undefined, FIELD),
+    ).not.toThrow();
+  });
+
+  it("the shipped niveau-final config passes the guard with its real numbers", () => {
+    // trigger 18 + travel + window 6 stays far from timeSeconds 70 on any plausible street.
+    const final = levelById("niveau-final");
+    const p: LevelParams = { ...paramsForLevel(final), bossQte: final.bossQteSpec ?? null };
+    expect(() => createInitialState(FACADE_01, p, undefined, FIELD)).not.toThrow();
+  });
+});
+
 // --- ADR-0055: weapon + LOOT integration at the tick level ---------------------
 
 // Aim `mouseX/mouseY` at a crate on the given slot: its x is the slot's world-x,

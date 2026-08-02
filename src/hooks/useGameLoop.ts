@@ -261,7 +261,9 @@ export function useGameLoop(
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
-  const gameStateRef = useRef<GameState>(createInitialState(facade, levelParams, roster));
+  const gameStateRef = useRef<GameState>(
+    createInitialState(facade, levelParams, roster, courierField),
+  );
   // Boss QTE capture seam: if the render layer installed a fast-forward factory
   // (`?preview=boss&at=…`), seed the initial boss state with the pre-advanced BossQte ONCE —
   // so the SwiftShader ~2 fps sandbox can screenshot the depletion-gated ADR-0052
@@ -413,7 +415,7 @@ export function useGameLoop(
       // persistent wall-mark FIFO on a clean facade (spec D4.3).
       if (impactChannelRef?.current) impactChannelRef.current.resetNonce += 1;
       if (playerHitChannelRef?.current) playerHitChannelRef.current.resetNonce += 1;
-      gameStateRef.current = createInitialState(facade, levelParams, roster);
+      gameStateRef.current = createInitialState(facade, levelParams, roster, courierField);
       return;
     }
 
