@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
 import {
@@ -194,7 +194,9 @@ export function LevelFlyer({
 
   // Object-level transform/pull/opacity live on the (unclipped) `.flyer`; background, the
   // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
-  const flyerDynamic = {
+  // Annotated, not cast: the intersection keeps every standard property type-checked
+  // (a `transfrom` typo still fails) while allowing the `--flyer-*` custom properties.
+  const flyerDynamic: CSSProperties & Record<`--${string}`, string> = {
     cursor: unlocked ? "pointer" : "default",
     transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? FLYER_LIFT_PX.pulled : FLYER_LIFT_PX.rest)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
     transition: `transform ${String(MOTION.flyerPull)}ms ease-out, filter ${String(MOTION.flyerPull)}ms ease-out`,
@@ -203,14 +205,14 @@ export function LevelFlyer({
     ...(pulled ? { "--flyer-shadow": "drop-shadow(6px 26px 7px rgba(20, 18, 16, 0.6))" } : {}),
     animation: shaking ? `mufLockedShake ${String(MOTION.lockedShakeMs)}ms ease-in-out` : undefined,
     opacity: unlocked ? 1 : 0.85,
-  } as React.CSSProperties;
-  const paperDynamic = {
+  };
+  const paperDynamic: CSSProperties & Record<`--${string}`, string> = {
     background: stock,
     "--flyer-clip": edge.clipPath,
     "--flyer-crease-angle": `${String(creaseAngle)}deg`,
     // Folded into the CSS drop-shadow filter; only set when locked (grayscale over the paper).
     ...(unlocked ? {} : { "--flyer-lock-filter": "grayscale(1)" }),
-  } as React.CSSProperties;
+  };
 
   return (
     <MarkerCircle active={focused} ink={INK.black}>

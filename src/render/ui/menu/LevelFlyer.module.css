@@ -36,7 +36,8 @@
   /* The flyer sits PROUD of the wall, not flush against it: the rest transform lifts it a
      few px and this cast shadow drops below it. `--flyer-shadow` is the state-driven knob —
      the component raises it to the deeper pulled value inline, in step with the pull
-     transform (both are listed in the transition below). rgba = alpha of ink-black, so the
+     transform (both `transform` and `filter` are named in the inline `transition` that
+     LevelFlyer.tsx sets on this element). rgba = alpha of ink-black, so the
      shadow only ever DARKENS: no glow, §2bis-compliant. */
   filter: var(--flyer-shadow, drop-shadow(3px 13px 4px rgba(20, 18, 16, 0.55)));
 }
