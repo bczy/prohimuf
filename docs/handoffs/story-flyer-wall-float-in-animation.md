@@ -106,10 +106,14 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
 
 **Ce qui MANQUE, nommé plutôt que sous-entendu :**
 
-- **Gate `lead-art` non repassé.** Bertrand a validé les dessins à l'œil pendant la session,
-  ce qui n'est pas une signature de lane sur le bible d'art. Relevé par moi auprès de lui au
-  moment de la fusion, puis indépendamment par le panel. **Reste dû** — c'est le seul gate
-  manquant de cette story.
+- **Gate `lead-art` — PASSÉ, avec une réserve BLOQUANTE.** Réclamé par moi auprès de
+  Bertrand à la fusion, puis indépendamment par le panel, puis demandé par Bertrand.
+  Verdict : [`docs/art-direction/decision-flyer-crew-emblems.md`](../art-direction/decision-flyer-crew-emblems.md).
+  Quatre emblèmes sur cinq passent ; **`halftone` (NADIR 94) est refusé** — le champ de
+  points ne résout aucune forme quand on recule, donc c'est une texture et non une marque,
+  il entre en collision avec le dot-screen du papier, et il est le seul aplat tonal d'un set
+  d'encres pleines (bible §2 loi 2 : un asset hors-famille fait tomber le set). Rework en
+  attente d'arbitrage Bertrand.
 - **Pas de spec `game-designer` / `narrative-designer`.** L'attribution crew→emblème est un
   choix d'identité visuelle : la spirale de SPIRALE 23 découle du nom, l'invader de L'Éden
   est une citation. Aucune fiction n'a été inventée, mais aucune n'a été validée non plus.
