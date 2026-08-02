@@ -29,8 +29,15 @@ qui casse un critère en vol « ESCALATES to the full pipeline at the stage it v
 l'architecte avait d'ailleurs reconnu inventer une troisième issue. Une dérogation
 attribuable reste une dérogation à une règle qui n'en prévoit pas.
 
-**Escaladé pour de bon** : palier tournée complète, cycle tracé ici et non dans
-`docs/handoffs/fixes.md` (réservé aux cycles fix-lane), signature du second lane obtenue.
+**Escaladé pour de bon** : palier tournée complète, cycle tracé ici **depuis l'escalade**,
+signature du second lane obtenue.
+
+`docs/handoffs/fixes.md` garde en revanche les **deux lignes d'AVANT l'escalade**
+(2026-07-30), quand cette PR était encore une course express : la réponse au panel de
+stage 6, et la dérogation `senior-architect` — **retirée depuis**, le panel l'ayant bloquée.
+Elles y restent parce qu'un journal ne se réécrit pas : effacer la trace d'une dérogation
+demandée puis refusée supprimerait précisément ce qu'il est utile de savoir. Les deux
+lignes portent un renvoi vers ce shard, qui est l'enregistrement à jour.
 
 **Écart de doctrine à porter par `producer`** : le palier fix-lane n'offre que deux
 issues (express / pipeline complet). Le cas rencontré — un correctif de review qui fait
