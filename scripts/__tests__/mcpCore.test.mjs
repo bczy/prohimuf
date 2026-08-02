@@ -114,6 +114,17 @@ describe("validate", () => {
     expect(issues.length).toBeGreaterThan(0);
   });
 
+  it("cumule les issues plan-level ET catalogue en un seul appel (feedback one-shot, §6.7)", () => {
+    const broken = soundPlan("oneshot");
+    broken.archetypes[0].weight = 3;
+    const dupA = soundPlan("twice");
+    const dupB = soundPlan("twice");
+    const { issues } = validate({ plan: broken }, { plans: [dupA, dupB] });
+    const codes = issues.map((i) => i.code);
+    expect(codes).toContain("plan/weight-nonzero");
+    expect(codes).toContain("plan/duplicate-id");
+  });
+
   it("rends des issues sans throw pour un plan null ou non-objet (R1 — malformed avant l'upsert)", () => {
     for (const plan of [null, 42, "plan", [], true]) {
       expect(() => validate({ plan })).not.toThrow();

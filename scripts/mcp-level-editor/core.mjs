@@ -88,6 +88,11 @@ function resolveInputPlan(input, plans) {
  * is therefore purely a catalogue-integrity invariant (two DIFFERENT aggregated
  * plans sharing an id); overwrite protection for an existing `<id>.ts` on disk is a
  * disk invariant owned entirely by `scaffold` (`scaffold/exists` + `overwrite`).
+ * Upsert angle case (panel §6.7 R2): the filter drops EVERY catalogue entry sharing
+ * the candidate's id, so a catalogue already corrupted on that precise id is
+ * silently repaired within this join — accepted, since the human aggregation holds
+ * one line per id and the bootstrap fail-fast + the CI test on the real
+ * GENERATED_PLANS still catch a genuine duplicate.
  *
  * Composes `validateLevelPlan` + `validateCatalogue` FIRST — structural/plan-level
  * checks that never touch the global archetype registry and never throw on a
@@ -119,11 +124,6 @@ export function validate(input, { plans = GENERATED_PLANS } = {}) {
   const planIssues = validateLevelPlan(plan);
   if (planIssues.some((i) => i.code === "plan/malformed")) return { issues: planIssues };
 
-  // Upsert angle case (panel §6.7 R2): the filter drops EVERY catalogue entry
-  // sharing the candidate's id, so a catalogue already corrupted on that precise id
-  // is silently repaired within this join. Accepted — the human aggregation holds
-  // one line per id, and the bootstrap fail-fast + the CI test on the real
-  // GENERATED_PLANS still catch a genuine duplicate.
   const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
   const issues = [...planIssues, ...validateCatalogue(catalogue)];
   if (issues.length > 0) return { issues };

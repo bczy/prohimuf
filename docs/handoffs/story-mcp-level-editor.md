@@ -60,7 +60,12 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] **review-panel (2026-08-01) : 4 reviewers + triage architecte (§6) → fixes
       prescrits atterris → re-vérification incrémentale architecte (§6.7) :
       verdict MERGE CONDITIONNEL** — 2 gestes courts restants (R1 + ruling ADR)
-- [ ] **R1** (`dev-tooling-assets`, tier fix-lane) : `validate({plan: null})` throw encore
+- [x] **R1** (`dev-tooling-assets`, tier fix-lane, 2026-08-02) : fix §6.7 appliqué au
+      caractère près (`eac9688b`), reviewer unique `code-review` (high) rejoué après le
+      reset de la limite d'usage : **RAS bloquant, fix lane close** — contrats
+      never-throws (`validate` ET `scaffold`) et cumul one-shot prouvés par probes ;
+      ses 2 LOW appliqués dans la foulée (phrase R2 déplacée dans le JSDoc de
+      `validate`, probe du cumul promue en test commité)
 - [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0077; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
 - [ ] PR draft → acceptation pm
 - [ ] Merge
