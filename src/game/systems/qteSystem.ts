@@ -7,6 +7,7 @@ import type {
   CaptorStance,
 } from "@game/types/hostageQte";
 import type { Vec2 } from "@game/types/vector";
+import { hash32, smoothstep } from "@game/systems/hash";
 
 // Hostage-taker cinematic QTE — "the static duel" (revises ADR-0034 after playtest).
 // Pure logic: zero React/Three, unit-tested. When the scripted trigger fires the rest
@@ -242,18 +243,6 @@ export function qteZoneAt(dx: number, dy: number): QteZone {
 // re-chunking the same total elapsed yields the SAME offset: replay-deterministic and
 // framerate-independent. NO Math.random / Date.now anywhere.
 
-/** Cheap 32-bit integer hash (FNV-1a mix + avalanche) of three integers → uint32. */
-function hash32(a: number, b: number, c: number): number {
-  let h = 2166136261 >>> 0;
-  h = Math.imul(h ^ (a >>> 0), 16777619);
-  h = Math.imul(h ^ (b >>> 0), 16777619);
-  h = Math.imul(h ^ (c >>> 0), 16777619);
-  h ^= h >>> 13;
-  h = Math.imul(h, 2246822507);
-  h ^= h >>> 16;
-  return h >>> 0;
-}
-
 /** Raw waypoint k: the hash split into two 16-bit halves, each mapped uniformly onto the
  *  amplitude box [−AMP, +AMP]. Absolute (uncoupled); anti-jitter refines it in `wander`. */
 function rawWaypoint(targetSeed: number, peekIndex: number, k: number): Vec2 {
@@ -301,11 +290,6 @@ function capLeg(p: Vec2, prev: Vec2): Vec2 {
   if (d <= MAX_LEG_DISPLACEMENT) return p;
   const s = MAX_LEG_DISPLACEMENT / d;
   return { x: prev.x + dx * s, y: prev.y + dy * s };
-}
-
-/** Smoothstep 3u²−2u³ (zero velocity at u=0 and u=1 → the deceleration firing window). */
-function smoothstep(u: number): number {
-  return u * u * (3 - 2 * u);
 }
 
 /**

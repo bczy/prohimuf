@@ -1,0 +1,126 @@
+/* Photo set-piece diegetic dress (ADR-0046) — static structure/typography only. Every
+   colour/font/size references a var(--…) injected by applyPrintTokens.ts from tokens.ts:
+   no hex, no font stack, no token literal re-declared here. The needle's ANGLE is the
+   only dynamic value and it arrives as the inline custom property --needle-angle.
+   Holds zero game rules.
+
+   T-4 (binding, gate): nothing in this sheet may dress the dial as a light/exposure
+   meter — no lux/EV ticks, no aperture or sun glyph. The instrument reads noise. */
+
+.dress {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Small tracked-out uppercase caption, mono — the engraved-label register. */
+.caption {
+  font-size: var(--font-size-xs);
+  font-family: var(--font-hud-mono);
+  color: var(--ink-black);
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* ── Film counter (top-left) ─────────────────────────────────────────────── */
+
+.counter {
+  position: absolute;
+  top: var(--space-xl);
+  left: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* The mechanical exposure-count window: a keylined aperture in the body plate with the
+   numeral sitting in it. Mono digits, generously sized — this is the read the player
+   glances at mid-frame. */
+.counterWindow {
+  min-width: 34px;
+  padding: var(--space-xs) var(--space-md);
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+  font-family: var(--font-hud-mono);
+  font-size: var(--font-size-xxl);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-full);
+  text-align: center;
+}
+
+/* ── Suspicion dial (top-right) ──────────────────────────────────────────── */
+
+.dial {
+  position: absolute;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  width: 92px;
+  height: 52px;
+  border: var(--keyline-width) solid var(--ink-black);
+  background: var(--stock-shell);
+  overflow: hidden;
+}
+
+/* The bare arc the needle sweeps — a keyline, deliberately UNGRADUATED: graduations on
+   this instrument would read as an exposure scale (T-4) and would also amount to a
+   numeric suspicion readout by proxy (A7). */
+.dialArc {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 6px;
+  height: 56px;
+  border: 1px solid var(--ink-black);
+  border-bottom: none;
+  border-radius: 50% 50% 0 0;
+  opacity: 0.45;
+}
+
+/* Risk band at the far (right) end of the sweep — diagonal HATCH, not a colour fill, so
+   "the needle is in the danger third" survives a grayscale capture (A6/§3.3). */
+.dialRisk {
+  position: absolute;
+  right: 12%;
+  bottom: 6px;
+  width: 22%;
+  height: 26px;
+  background: repeating-linear-gradient(45deg, var(--ink-black) 0 2px, transparent 2px 5px);
+  opacity: 0.55;
+}
+
+/* The needle: pivoted at its base, rotated by the inline --needle-angle. */
+.needle {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 2px;
+  height: 36px;
+  background: var(--ink-full);
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) rotate(var(--needle-angle, -45deg));
+}
+
+.needlePivot {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-bottom: -4px;
+  border-radius: 50%;
+  background: var(--ink-full);
+}
+
+/* ── Engraved focal value (under the dial) ───────────────────────────────── */
+
+.focal {
+  position: absolute;
+  top: calc(52px + var(--space-xl) + var(--space-xs));
+  right: var(--space-xl);
+  text-align: right;
+}

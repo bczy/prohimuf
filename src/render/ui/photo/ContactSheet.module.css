@@ -1,0 +1,174 @@
+/* Planche contact (ADR-0046) — static structure/typography only; every colour/font/size
+   references a var(--…) injected by applyPrintTokens.ts from tokens.ts. No hex, no font
+   stack, no token literal re-declared here. Holds zero game rules.
+
+   Look: photocopied B&W fanzine — toner-black ink on shell stock, the frames printed as
+   grey plates. Colour never carries a read on this screen (§3.3/A13): the three verdict
+   stamps are told apart by SHAPE and TEXT, and the reject is additionally degraded. */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--ink-black);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 720px;
+  max-height: 100%;
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--stock-shell);
+  border: var(--keyline-width) solid var(--ink-black);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.masthead {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-full);
+}
+
+/* 2×3 at the ratified filmCount = 6 — one viewport, no scroll, no pagination. */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--ink-black);
+  overflow: hidden;
+}
+
+/* The printed frame. A halftone-ish toner plate stands in for the exposure until the
+   set-piece's own thumbnails exist; the STAMP is what carries the read either way. */
+.thumb {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--ink-black) 0 2px,
+    var(--stock-newsprint) 2px 4px
+  );
+  opacity: 0.45;
+  filter: grayscale(1) contrast(1.35);
+}
+
+/* Rejected frames print visibly degraded, so the reject reads even to a player who
+   cannot parse the stamp glyph (UX §4.2). */
+.thumbRejected {
+  filter: grayscale(1) contrast(0.7) blur(2px);
+  opacity: 0.3;
+}
+
+/* Unexposed window: the same cell, dashed keyline and bare stock — visibly a frame that
+   was never taken, not a frame that failed (T-11). */
+.cellEmpty {
+  border-style: dashed;
+}
+
+.thumbEmpty {
+  position: absolute;
+  inset: 0;
+  background: var(--stock-newsprint);
+  opacity: 0.5;
+}
+
+/* Frame number, bottom-right of the cell — the sheet's contact-print margin numeral. */
+.ordinal {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-family: var(--font-hud-mono);
+  font-size: var(--font-size-xs);
+  color: var(--ink-full);
+  background: var(--stock-shell);
+  padding: 0 3px;
+}
+
+/* ── Verdict stamps: three SHAPES, three TEXTS, no hue dependency ─────────── */
+
+.stamp {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.1em;
+  color: var(--ink-full);
+  background: var(--stock-shell);
+  padding: var(--space-xs) var(--space-md);
+  border: 3px solid var(--ink-full);
+}
+
+/* MASTER — a heavy double-ruled rectangle, the biggest mark on the sheet. */
+.stampMaster {
+  border-width: 4px;
+  box-shadow:
+    0 0 0 2px var(--stock-shell),
+    0 0 0 5px var(--ink-full);
+  transform: rotate(-4deg);
+  font-size: var(--font-size-base);
+}
+
+/* BONUS — an OVAL: a different silhouette, never confusable with the master's box. */
+.stampBonus {
+  border-radius: 50%;
+  padding: var(--space-xs) var(--space-lg);
+  transform: rotate(3deg);
+}
+
+/* REJECTED — struck through, tilted hard: the crossed-out mark. */
+.stampRejected {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+  transform: rotate(-11deg);
+  border-style: dashed;
+}
+
+/* ── CTAs ────────────────────────────────────────────────────────────────── */
+
+/* One row, and — on the two-control branch — two PEERS: identical size, treatment and
+   type scale, neither styled primary (R2-5). Any rule that made one heavier than the
+   other would re-create the soft gate T-3 removed, so this class has NO modifier. */
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  /* Visible spacing so a fat-finger tap cannot hit the wrong control (A15). */
+  gap: var(--space-xxl);
+}
+
+.cta {
+  min-width: 44px;
+  min-height: 56px;
+  padding: var(--space-lg) var(--space-xl);
+  font-family: var(--font-display);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.1em;
+  color: var(--ink-full);
+  background: var(--stock-shell);
+  border: var(--keyline-width) solid var(--ink-full);
+  cursor: pointer;
+}
+
+.cta:focus-visible {
+  outline: 3px solid var(--ink-full);
+  outline-offset: 3px;
+}

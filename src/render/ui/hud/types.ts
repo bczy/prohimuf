@@ -2,6 +2,7 @@ import type { Phase } from "@game/types/gameState";
 // Single source of truth for the delivery phase: the game type (no render-side dup).
 import type { DeliveryPhase } from "@game/types/delivery";
 import type { QtePhase } from "@game/types/hostageQte";
+import type { PhotoBracket, PhotoPosture, PhotoQtePhase } from "@game/types/photoQte";
 import type { RunSummary } from "@game/types/runStats";
 import type { WeaponKind } from "@game/types/weapon";
 
@@ -59,6 +60,32 @@ export interface HudBossQte {
 }
 
 /**
+ * Photo set-piece state surfaced to the DOM HUD (techplan §3.4). VIEW VALUES ONLY, and
+ * nothing semantic: there is no instant, no role and no verdict here, so the diegetic
+ * dress cannot leak the two-beat secret (D8/D-D). Present only while the set-piece holds
+ * the scene (`isPhotoQteActive`), `undefined` otherwise, so nothing renders orphaned.
+ *
+ * `suspicion` is the needle's ANGLE input and is **never printed** (UX A7); `suspicionMax`
+ * travels with it so the render divides instead of re-declaring the game's `SUSPICION_MAX`.
+ * The contact sheet is deliberately NOT here — it is a screen, and it reads
+ * `photoSheetView(qte)` off the state ref like `EndScreen` reads `runSummary`.
+ */
+export interface HudPhotoQte {
+  phase: PhotoQtePhase;
+  posture: PhotoPosture;
+  /** The mechanical counter's numeral (UX §2.1) — the one number on this HUD. */
+  film: number;
+  /** 0..`suspicionMax`. Needle angle only, never text. */
+  suspicion: number;
+  /** The game's `SUSPICION_MAX`, projected so the render states no tuning value. */
+  suspicionMax: number;
+  /** The engraved millimetre label (fiction §4.2). */
+  focalMm: number;
+  /** T-1's three states — mechanical (T3∧T4, T5) only, never the verdict. */
+  bracket: PhotoBracket;
+}
+
+/**
  * Active-weapon state surfaced to the DOM HUD (ADR-0055 §6.2). Read-only view value
  * mirrored from `GameState.weapon`; the game owns the rule (stock/burst/auto-return).
  * The HUD renders it as a fuel gauge (glyph + stock), never a tension meter (N2/W4).
@@ -93,6 +120,9 @@ export interface HudData {
   deliveryDirection?: HudTargetIndicator | undefined;
   hostageQte?: HudHostageQte | undefined;
   bossQte?: HudBossQte | undefined;
+  // Photo set-piece dress (techplan §3.4). Present only while the set-piece holds the
+  // scene; the contact sheet is NOT here (it is a screen reading `photoSheetView`).
+  photoQte?: HudPhotoQte | undefined;
   // Active weapon + special stock (ADR-0055). Absent only on the pre-tick initial
   // HUD before the first loop tick populates it; the readout defaults to base/∞.
   weapon?: HudWeapon | undefined;

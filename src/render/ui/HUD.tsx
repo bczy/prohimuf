@@ -11,6 +11,7 @@ import { HostageQteOverlay, isQteSetPieceVisible } from "./hud/HostageQteOverlay
 import { OffscreenArrowIndicator } from "./hud/OffscreenArrowIndicator";
 import { PhaseMessageBanner } from "./hud/PhaseMessageBanner";
 import { BossHpBar } from "./hud/BossHpBar";
+import { PhotoHud } from "./photo/PhotoHud";
 
 // HUD view types now live in ./hud/types (drops the type-only import cycle: widgets
 // import the shapes from there, not from this component). Re-exported so external
@@ -20,6 +21,7 @@ export type {
   HudDelivery,
   HudHostageQte,
   HudBossQte,
+  HudPhotoQte,
   HudTargetIndicator,
 } from "./hud/types";
 import type { HudData } from "./hud/types";
@@ -83,6 +85,10 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
       {/* Boss-QTE HP bar (ADR-0051) — only while the boss QTE holds the scene
           (`bossQte` present); renders null otherwise (no orphan HUD). */}
       <BossHpBar bossQte={data.bossQte} />
+
+      {/* Photo set-piece diegetic dress (UX §2) — film counter, suspicion needle and the
+          engraved focal label. Renders null while the set-piece is not holding the scene. */}
+      <PhotoHud photoQte={data.photoQte} />
 
       <PhaseMessageBanner phase={data.phase} />
     </>
