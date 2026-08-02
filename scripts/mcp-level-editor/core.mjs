@@ -225,6 +225,18 @@ export function inspect({ levelId }, { plans = GENERATED_PLANS, rootDir = repoRo
 // (panel §6.4 n5).
 const SAFE_ID = /^[a-z0-9][a-z0-9_-]*$/;
 
+// Modules under `generated/` that are NOT level data and that scaffold must never
+// write, regardless of `overwrite` (panel r8 security). Until now the promise
+// "scaffold never touches index.ts" held only by the accident that `overwrite`
+// defaults to false: `scaffold({ plan: { id: "index" }, overwrite: true })` would
+// have replaced the whole GENERATED_PLANS barrel with a single-plan data file.
+//
+// Deliberately NOT listed: "fixture". The panel grouped it with "index", but the two
+// differ in kind — `fixture.ts` IS a level module, exactly what this tool owns, and
+// re-scaffolding a level with `overwrite: true` is the documented iteration loop the
+// M1 fix exists to make work. Blocking it would undo that fix to guard nothing.
+const RESERVED_MODULE_NAMES = new Set(["index"]);
+
 function scaffoldIdIssue(id) {
   if (typeof id !== "string" || id.length === 0) {
     return {
@@ -248,6 +260,16 @@ function scaffoldIdIssue(id) {
       severity: "error",
       field: "plan.id",
       message: `plan.id "${id}" is outside the safe namespace (lowercase letters, digits, "-", "_" only)`,
+    };
+  }
+  if (RESERVED_MODULE_NAMES.has(id)) {
+    return {
+      code: "scaffold/reserved-id",
+      severity: "error",
+      field: "plan.id",
+      message:
+        `plan.id "${id}" names a module under generated/ that scaffold does not own — ` +
+        `refused whatever "overwrite" says`,
     };
   }
   return null;
@@ -443,9 +465,12 @@ async function ensureDevServer({
     };
   };
 
+  // UNE seule sonde réseau : l'écrire en deux conditions faisait payer deux
+  // fetch-avec-timeout à tout appel tombant sur une entrée périmée (panel r8).
   const held = spawnedServers.get(key);
-  if (held !== undefined && (await isServerUp(url))) return holdOn(held);
-  if (await isServerUp(url)) return { url, release: NO_RELEASE };
+  if (await isServerUp(url)) {
+    return held === undefined ? { url, release: NO_RELEASE } : holdOn(held);
+  }
 
   // stdio fully ignored: readiness is polled via isServerUp, and piped stdout/
   // stderr would keep a short-lived library caller's event loop alive forever
@@ -473,19 +498,33 @@ async function ensureDevServer({
     exited = true;
   });
 
-  /** Our child is gone: adopt whoever IS serving, or report the failure. */
-  const adoptOrFail = async (reason) => {
-    if (await isServerUp(url)) return { url, release: NO_RELEASE };
+  /**
+   * Our child is gone: adopt whoever IS serving, or report the failure. Polls to the
+   * SAME deadline as the main loop rather than probing once (panel r8): the loser of a
+   * cold-port race dies on EADDRINUSE almost instantly, while the winner's vite takes
+   * noticeably longer to boot — a single probe would call a healthy startup a failure.
+   * And when a winner IS registered, take a REFERENCE on it instead of NO_RELEASE, or
+   * the winner's own release() could kill the server while this caller is still
+   * driving Playwright through it.
+   */
+  const adoptOrFail = async (reason, deadline) => {
+    while (Date.now() < deadline) {
+      if (await isServerUp(url)) {
+        const existing = spawnedServers.get(key);
+        return existing === undefined ? { url, release: NO_RELEASE } : holdOn(existing);
+      }
+      await sleep(300);
+    }
     throw new Error(`dryrun/preview: failed to start the dev server: ${reason}`);
   };
 
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
-    if (spawnError !== null) return await adoptOrFail(spawnError.message);
+    if (spawnError !== null) return await adoptOrFail(spawnError.message, deadline);
     // Our own process died (EADDRINUSE and friends). Never register a dead `proc`
     // in the Map: doing so would overwrite the real winner's entry, reset its
     // refcount, and leak the live server while `release()` kills a corpse.
-    if (exited) return await adoptOrFail(`the dev server on port ${String(port)} exited`);
+    if (exited) return await adoptOrFail(`the dev server on port ${String(port)} exited`, deadline);
     if (await isServerUp(url)) {
       // Only OUR live child gets registered — and only if nobody registered this
       // target while we were polling (first writer wins, later ones just hold).

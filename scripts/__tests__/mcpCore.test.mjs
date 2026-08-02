@@ -87,6 +87,18 @@ describe("validate", () => {
     expect(issues[0].code.startsWith("plan/")).toBe(false);
   });
 
+  it("rejects a plan carrying an unknown extra key (tsc would reject the scaffolded module — panel r8)", () => {
+    for (const mutate of [
+      (pl) => ({ ...pl, extraNote: "reviewed" }),
+      (pl) => ({ ...pl, fiction: { ...pl.fiction, mood: "tendu" } }),
+      (pl) => ({ ...pl, archetypes: [{ ...pl.archetypes[0], nickname: "le gros" }] }),
+      (pl) => ({ ...pl, props: [{ ...pl.props[0], zIndex: 3 }] }),
+    ]) {
+      const { issues } = validate({ plan: mutate(soundPlan("extrakey")) });
+      expect(issues.map((i) => i.code)).toContain("plan/malformed");
+    }
+  });
+
   it("resolves a sound plan to no issues", () => {
     expect(validate({ plan: soundPlan("mcpvalidatesound") })).toEqual({ issues: [] });
   });
@@ -213,6 +225,13 @@ describe("scaffold", () => {
     dir = mkdtempSync(join(tmpdir(), "mcp-scaffold-"));
     return dir;
   };
+
+  it("refuses to scaffold over generated/index.ts even with overwrite: true (panel r8)", () => {
+    const rootDir = rootDirFor();
+    const result = scaffold({ plan: soundPlan("index"), overwrite: true }, { rootDir });
+    expect(result.ok).toBe(false);
+    expect(result.issues[0].code).toBe("scaffold/reserved-id");
+  });
 
   it("refuses an id containing a path separator, before touching disk", () => {
     const rootDir = rootDirFor();

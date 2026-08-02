@@ -202,6 +202,65 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       );
     }
   }
+  // Excess keys, not just missing ones. `renderModuleSource` writes the plan as a
+  // DIRECTLY-TYPED literal (`export const plan: LevelPlan = {...}`), and TypeScript's
+  // excess-property check fires on those — so a stray key makes `yarn typecheck` fail
+  // on a module `scaffold` just reported as cleanly written, breaking spec §6's own
+  // acceptance criterion ("un module que la suite accepte tel quel"). Very plausible
+  // from an agent, since the wire schema is deliberately loose (ADR-0081 D3). Panel r8.
+  const KNOWN_KEYS = {
+    plan: ["id", "fiction", "backdrop", "archetypes", "props", "gameplay"],
+    fiction: ["name", "label", "district", "year"],
+    backdrop: ["mode", "file", "aspect"],
+    gameplay: ["enemiesToWin", "timeSeconds", "enemySpeedMultiplier", "windowWeights"],
+    archetype: [
+      "kind",
+      "hp",
+      "bulletDamage",
+      "hiddenDuration",
+      "visibleDuration",
+      "shoots",
+      "scoreDelta",
+      "livesDelta",
+      "timeDelta",
+      "countsAsTarget",
+      "weight",
+      "spriteBase",
+      "variants",
+      "tint",
+      "aspect",
+      "artRetired",
+    ],
+    prop: ["kind", "asset", "aspect", "heightFrac", "footPadFrac", "x", "row"],
+  } as const;
+  const reportExtraKeys = (value: unknown, allowed: readonly string[], at: string): void => {
+    if (!isRecord(value)) return;
+    for (const key of Object.keys(value)) {
+      if (allowed.includes(key)) continue;
+      issues.push(
+        planIssue(
+          "malformed",
+          at === "" ? key : `${at}.${key}`,
+          `${at === "" ? key : `${at}.${key}`}: unknown field — a scaffolded module is a ` +
+            `typed LevelPlan literal, so an extra key makes tsc reject the written file`,
+        ),
+      );
+    }
+  };
+  reportExtraKeys(p, KNOWN_KEYS.plan, "");
+  reportExtraKeys(p.fiction, KNOWN_KEYS.fiction, "fiction");
+  reportExtraKeys(p.backdrop, KNOWN_KEYS.backdrop, "backdrop");
+  reportExtraKeys(p.gameplay, KNOWN_KEYS.gameplay, "gameplay");
+  if (Array.isArray(p.archetypes)) {
+    (p.archetypes as readonly unknown[]).forEach((a, i) => {
+      reportExtraKeys(a, KNOWN_KEYS.archetype, `archetypes[${String(i)}]`);
+    });
+  }
+  if (Array.isArray(p.props)) {
+    (p.props as readonly unknown[]).forEach((prop, i) => {
+      reportExtraKeys(prop, KNOWN_KEYS.prop, `props[${String(i)}]`);
+    });
+  }
   if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {
     issues.push(
       planIssue(

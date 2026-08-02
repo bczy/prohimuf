@@ -82,6 +82,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       1 MINEUR), traités, voir §8
 - [x] **Panel CI — round 7 : CONDITIONAL** sur `5fbc3586` (0 BLOQUANT, 2 MAJEUR,
       3 MINEUR), traités, voir §8
+- [x] **Panel CI — round 8 : CONDITIONAL** sur `633f91d5` (0 BLOQUANT, 3 MAJEUR,
+      2 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -982,3 +984,40 @@ code pendant que le risque de régression, lui, ne décroît pas.
   `src/game`, pas au transport. Test de niveau fil ajouté, **et vérifié discriminant par
   mutation** (retour à `z.record` ⇒ rouge).
 - **[MINEUR] devDeps** — « no action required », l'attestation d'ADR-0081 D2 est à jour.
+
+### Round 8 — `633f91d5` : CONDITIONAL (0 BLOQUANT, 3 MAJEUR, 2 MINEUR)
+
+Contrairement au round 7, deux des trois MAJEUR visent le code d'ORIGINE, pas mes
+correctifs — dont le plus grave manquement au contrat de toute la série.
+
+- **[MAJEUR, sécurité] `scaffold({id:"index", overwrite:true})` écrasait le barrel** —
+  fondé, et c'est le trou le plus sérieux : la promesse écrite noir sur blanc dans le
+  docstring, dans ADR-0081 D4 et dans la description de l'outil (« ne touche JAMAIS
+  `generated/index.ts` ») ne tenait que par l'accident qu'`overwrite` vaut `false` par
+  défaut. Rien ne regardait l'id. Un appel explicite aurait remplacé tout le module
+  d'agrégation `GENERATED_PLANS` par un fichier de données à un seul plan. Denylist
+  `RESERVED_MODULE_NAMES` ajoutée, refus quel que soit `overwrite`
+  (code `scaffold/reserved-id`), probe : `index.ts` intact après tentative.
+  **Écart assumé avec le finding** : il proposait de bloquer AUSSI `fixture`. Refusé —
+  les deux diffèrent en nature. `index.ts` n'est pas un level, c'est le barrel ;
+  `fixture.ts` EST un module de level, exactement ce que l'outil possède, et le
+  re-scaffolder avec `overwrite: true` est la boucle d'itération que le fix M1 existe
+  pour rendre possible. Le bloquer aurait défait M1 pour ne rien protéger.
+- **[MAJEUR] `scaffold` acceptait les clés en trop, écrivant un module que tsc rejette** —
+  fondé et malin : `renderModuleSource` écrit un littéral DIRECTEMENT TYPÉ
+  (`export const plan: LevelPlan = {...}`), donc le contrôle de propriétés excédentaires
+  de TypeScript s'y applique. Une clé parasite — erreur très plausible d'un agent face à
+  un schéma de transport volontairement lâche — passait `validate`, passait `scaffold`,
+  et faisait échouer `yarn typecheck` sur un fichier que l'outil venait de déclarer
+  proprement écrit. C'est-à-dire précisément le critère §6 (« un module que la suite
+  accepte tel quel »). Passe de détection des clés inconnues ajoutée sur les six formes
+  déclarées (plan, fiction, backdrop, gameplay, chaque archétype, chaque prop).
+- **[MAJEUR] `adoptOrFail` abandonnait après une sonde et ne prenait pas de référence** —
+  encore le fix du round 7 : le perdant d'une course meurt en EADDRINUSE presque
+  instantanément alors que le vite gagnant met bien plus longtemps à démarrer, donc une
+  sonde unique déclarait en échec un démarrage sain ; et l'adoption rendait `NO_RELEASE`
+  sans compter le porteur, si bien que le gagnant pouvait tuer le serveur en pleine
+  navigation Playwright. Sonde désormais jusqu'à la MÊME échéance que la boucle
+  principale, et prise de référence sur l'entrée du gagnant.
+- **[MINEUR] double sonde réseau sur entrée périmée** — corrigé, une seule sonde.
+- **[MINEUR] devDeps** — « no action required », l'attestation D2 tient.
