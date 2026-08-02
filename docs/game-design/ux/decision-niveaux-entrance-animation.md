@@ -82,7 +82,11 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
      confort.
 
    Comparer la CIBLE plutôt que deviner l'intention n'a aucun de ces défauts, et supprime
-   le réglage au lieu de le déplacer.
+   le réglage au lieu de le déplacer. Une cible par pointeur, en revanche, et non une
+   seule : les touchers sont **concurrents**, et un pouce posé sur le mur pendant que
+   l'index tape écraserait la cible du geste actif — le tapotement se verrait alors refuser
+   son exception et la feuille sauterait sous le doigt, soit la régression même que cette
+   règle existe pour empêcher, réintroduite par la règle.
 
 6. **Le mouvement réduit ne consomme pas la cascade de la session.** L'animation étant
    supprimée, marquer la session comme « déjà jouée » dépenserait son unique passage pour

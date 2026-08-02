@@ -438,6 +438,38 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
   });
 
+  it("does NOT settle when a SECOND finger lands while the first is still tapping", () => {
+    // Touches are concurrent. A thumb resting on the wall while the index finger taps fires
+    // a second pointerdown, and a single shared marker would be clobbered by it: the tapping
+    // finger's own focus would then match nothing, settle the wall, and yank the flyer out
+    // from under it mid-gesture — the exact regression this guard exists to prevent,
+    // reintroduced by the guard itself. Keyed by pointerId, both gestures stay live.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const slots = container.querySelectorAll<HTMLElement>(".muf-flyer-slot [role='button']");
+    const first = slots[0];
+    const second = slots[1];
+    expect(second).toBeDefined();
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      first?.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch", pointerId: 1 }),
+      );
+      // The resting thumb, landing on another flyer while the first gesture is still live.
+      second?.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch", pointerId: 2 }),
+      );
+      first?.dispatchEvent(
+        new PointerEvent("pointerup", { bubbles: true, pointerType: "touch", pointerId: 1 }),
+      );
+    });
+    act(() => {
+      first?.focus(); // the tapping finger's OWN focus, arriving after its pointerup
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+  });
+
   it("still settles when assistive tech lands on a flyer clicked earlier", () => {
     // The pointer marker must not outlive its own gesture. A press that produces NO focus
     // — macOS Safari does not focus a control on click without Full Keyboard Access, and a

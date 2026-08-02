@@ -260,11 +260,17 @@ export function FlyerWall({
   // The first-visit auto-focus is OURS, not the player's, and must not count as arrival —
   // otherwise a first-time visitor is the one person who never sees the cascade.
   const autoFocusing = useRef(false);
-  // What a pointer gesture last pressed, tracked at the WINDOW (a Tab arriving from OUTSIDE
-  // the wall fires its keydown on the element being left, never on us) and voided by any
-  // keystroke. It exists to recognise ONE thing: the focus that belongs to a pointer
+  // What each LIVE pointer gesture pressed, keyed by pointerId and tracked at the WINDOW
+  // (a Tab arriving from OUTSIDE the wall fires its keydown on the element being left,
+  // never on us). It exists to recognise ONE thing: the focus that belongs to a pointer
   // gesture, which is the only focus we must not act on — it lands on the very element
-  // that was just pressed, so that is what we compare against.
+  // that gesture pressed, so that is what we compare against.
+  //
+  // Keyed, not a single ref: touches are CONCURRENT. A thumb resting on the wall while the
+  // index finger taps a flyer fires a second pointerdown that would clobber the first
+  // gesture's target, and the tapping finger's own focus would then match nothing and
+  // settle the wall out from under it — the exact regression this guard exists to prevent,
+  // reintroduced by the guard itself.
   //
   // Settling is the DEFAULT for every other focus, deliberately: three narrower rules were
   // tried (`:focus-visible`, pointer recency, requiring a keydown) and each shut out a real
@@ -272,7 +278,7 @@ export function FlyerWall({
   // broke what is written up once, in decision §5 of
   // docs/game-design/ux/decision-niveaux-entrance-animation.md; repeating it here is how
   // that document and this file drifted apart in the first place.
-  const pointerPressed = useRef<EventTarget | null>(null);
+  const pointerPressed = useRef(new Map<number, EventTarget>());
 
   // Whether the session's one showing has been SPENT — either the cascade ran to its end
   // (the last slot's animationend, below) or the player resolved it themselves by arriving
@@ -316,16 +322,18 @@ export function FlyerWall({
 
   useEffect(() => {
     const forget = () => {
-      pointerPressed.current = null;
+      pointerPressed.current.clear();
     };
     const onPointer = (e: PointerEvent) => {
-      pointerPressed.current = e.target;
+      // A pointerdown with no target has nothing a later focus could be compared against,
+      // so recording it would only ever be a stale entry that suppresses nothing.
+      if (e.target !== null) pointerPressed.current.set(e.pointerId, e.target);
     };
     window.addEventListener("keydown", forget, true);
     window.addEventListener("pointerdown", onPointer, true);
-    // The gesture's END releases the marker, so it can only ever suppress the focus of the
-    // gesture it belongs to. Left to be overwritten by the next pointerdown, it would keep
-    // pointing at a flyer indefinitely whenever a press produces NO focus — macOS Safari
+    // The gesture's END releases the markers, so they can only ever suppress the focus of
+    // a gesture still in flight. Left to be overwritten by the next pointerdown, one would
+    // keep pointing at a flyer indefinitely whenever a press produces NO focus — macOS Safari
     // without Full Keyboard Access does not focus a control on click, and a locked flyer
     // only shakes — and a screen reader landing on that same flyer later would be read as
     // that old gesture's own focus and silently denied the settle it needs.
@@ -461,8 +469,11 @@ export function FlyerWall({
           // or cursor before the click resolves. Every other focus — a Tab, an arrow, a
           // screen reader's virtual cursor, which reaches us with no key event at all —
           // is a player arriving, and settles the wall so no focus ring gets clipped.
-          const pressed = pointerPressed.current;
-          if (pressed instanceof Node && e.target.contains(pressed)) return;
+          // ANY live gesture, not just the newest: with two fingers down, the one that
+          // produces this focus is not necessarily the one that pressed last.
+          for (const pressed of pointerPressed.current.values()) {
+            if (pressed instanceof Node && e.target.contains(pressed)) return;
+          }
           setInterrupted(true);
           showingConsumed.current = true;
         }}
