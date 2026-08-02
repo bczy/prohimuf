@@ -83,8 +83,6 @@ export interface PhotoQteSpec {
   readonly swaySeed: number;
   readonly briefingMaxSeconds: number;
   readonly briefingLines: readonly NarrativeLine[];
-  /** One entry plus `maxAttempts − 1` retries, MISSION-scoped (spec §1.3.a). */
-  readonly maxAttempts: number;
   readonly cover: CoverWindows;
   /** Sorted, total on `[0, sceneDuration]`, first/last exactly on the bounds (F12(3)). */
   readonly subjectTrack: readonly SubjectKeyframe[];
@@ -171,7 +169,16 @@ export interface PhotoQte {
   readonly film: number;
   readonly suspicion: number;
   readonly frames: readonly PhotoFrameRecord[];
-  /** 0-based; `BRIEFING` is entered iff `attemptIndex === 0` (spec §1.1). */
+  /**
+   * 0-based entry stamp, set by `createPhotoQte(spec, attemptIndex)` and NEVER touched by
+   * the tick (techplan Rev.5 T-2). The mission-scoped AUTHORITY is
+   * `GameState.photoQteAttempts`; this is only its snapshot, so `tickPhotoQte` and
+   * `photoSheetView` stay total functions of their existing arguments and no `GameState`
+   * ever enters `photoQteSystem`. Derived reads: `BRIEFING` is entered iff
+   * `attemptIndex === 0`; `retryOffered = attemptIndex + 1 < PHOTO_MAX_ATTEMPTS`.
+   * The budget is a MODULE constant (`PHOTO_MAX_ATTEMPTS = 2`), never an authored field —
+   * one gated value, one source of truth against D-1.
+   */
   readonly attemptIndex: number;
   /** Derived at `DEVELOPING`, frozen from then on. */
   readonly outcome: PhotoLeverage;
