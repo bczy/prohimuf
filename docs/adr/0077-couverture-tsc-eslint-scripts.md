@@ -26,8 +26,15 @@ buffer-image-size), donc un bump de n'importe laquelle de ces dépendances pouva
    `tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit`. Le projet Node
    couvre les quatre configs racine (`vite`/`vitest`/`eslint`/`prettier.config.ts`) et
    `scripts/**/*.ts`.
-2. **ESLint couvre `scripts/**`** : ignore retiré ; bloc `scripts/**/\*.mjs`en`disableTypeChecked`+ globals Node (pas de projet tsconfig possible pour du .mjs pur ;`explicit-module-boundary-types`off car insatisfiable sans annotations) ; bloc`scripts/**/_.ts`type-aware via`project: ./tsconfig.node.json`(projectService
-débrayé pour ces fichiers). lint-staged étendu à`_.mjs`.
+2. **ESLint couvre le dossier scripts** : ignore retiré ; les fichiers `.mjs` passent en
+   `disableTypeChecked` avec les globals Node (pas de projet tsconfig possible pour du
+   .mjs pur ; `explicit-module-boundary-types` off car insatisfiable sans annotations) ;
+   les fichiers `.ts` de scripts sont type-aware via `project: ./tsconfig.node.json`
+   (projectService débrayé pour ces fichiers). lint-staged étendu aux `.mjs`. Les globals
+   navigateur hérités du bloc de base sont explicitement désactivés dans scripts (flat
+   config MERGE les globals, il faut les éteindre un par un) ; seuls les harness qui
+   pilotent un navigateur (callbacks Playwright `page.evaluate` / `addInitScript`, où
+   window et document s'exécutent dans la page) les ré-activent, fichier par fichier.
 3. **`@types/node@^24` devient une devDependency explicite**, calée sur le Node 24 de la
    CI (`.github/workflows/ci.yml`). La **double résolution** qui en découle dans
    `yarn.lock` est un état ACCEPTÉ : la v24 directe est hoistée à la racine
