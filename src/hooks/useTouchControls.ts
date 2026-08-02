@@ -27,6 +27,16 @@ export interface TouchControlsState {
    * fully out. Read every frame by the loop, never consumed.
    */
   zoom: number;
+  /**
+   * Per-frame spread-ratio delta — the MOBILE focal axis of the photo set-piece. Written by
+   * the SAME pinch handler that commits `zoom`, consumed and ZEROED by the reader each frame.
+   *
+   * Deliberately NOT `zoom`: that is the committed CAMERA fraction, clamped to
+   * `[MIN_ZOOM_FRACTION, MAX_ZOOM_FRACTION]` and owned by the camera path — re-purposing it
+   * as a focal axis would saturate at the camera's clamp long before 300 mm and couple two
+   * unrelated zooms. This costs one accumulator and leaves the camera path byte-untouched.
+   */
+  pinchDelta: number;
 }
 
 // Tap classification (short + still) and the double-tap pairing rule are pure game logic
@@ -78,6 +88,7 @@ export function useTouchControls(
     flickVelocityY: null,
     pendingTaps: [],
     zoom: DEFAULT_ZOOM_FRACTION,
+    pinchDelta: 0,
   });
 
   useEffect(() => {
@@ -189,7 +200,12 @@ export function useTouchControls(
         const dist = spread(e.touches);
         if (dist !== null && Math.abs(dist - pinchStartDist) > PINCH_MIN_DELTA) {
           twoDrifted = true;
+          const previous = stateRef.current.zoom;
           stateRef.current.zoom = nextZoomFraction(pinchStartZoom, pinchStartDist, dist);
+          // Additive accumulator, read by whoever needs a focal axis. Derived from the
+          // COMMITTED delta so it stays in the same units as the gesture and needs no
+          // second dead-zone of its own.
+          stateRef.current.pinchDelta += stateRef.current.zoom - previous;
         }
       }
     };

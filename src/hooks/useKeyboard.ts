@@ -13,6 +13,9 @@ export function useKeyboard(): React.RefObject<KeyboardState> {
         case "R":
           kb.restart = true;
           break;
+        case " ":
+          kb.raise = true;
+          break;
         case "w":
         case "W":
         case "ArrowUp":
@@ -42,6 +45,9 @@ export function useKeyboard(): React.RefObject<KeyboardState> {
         case "r":
         case "R":
           kb.restart = false;
+          break;
+        case " ":
+          kb.raise = false;
           break;
         case "w":
         case "W":

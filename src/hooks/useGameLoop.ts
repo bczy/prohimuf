@@ -38,8 +38,18 @@ import {
   qteRestorePose,
   qteZoomInProgress,
 } from "@render/scene/qteCamera";
+import { SUSPICION_MAX, isPhotoQteActive } from "@game/systems/photoQteSystem";
+import { loadPrefs } from "@game/systems/prefsSystem";
+import type { PhotoInput } from "@game/types/photoQte";
 
 const MAX_DELTA = 0.1;
+
+/**
+ * Pinch-fraction → focal-notch conversion. The pinch delta is a fraction of the camera's zoom
+ * range; the focal axis counts notches. This is the ONE place the two units meet, so the pure
+ * layer sees a single `focalDelta` whatever produced it.
+ */
+const PHOTO_PINCH_TO_FOCAL = 12;
 const DIRECTION_DEAD_ZONE = 0.2;
 // Order used by the dev freeze hook to show every enemy type on the contact sheet.
 // No "civilian": its window art was retired (ADR-0029) — cycling it would 404 on
@@ -279,6 +289,7 @@ export function useGameLoop(
   mobileControls?: MobileControls,
   impactChannelRef?: React.RefObject<ImpactChannel>,
   playerHitChannelRef?: React.RefObject<PlayerHitChannel>,
+  photoControlChannelRef?: React.RefObject<PhotoControlChannel>,
 ): React.RefObject<GameState> {
   const keyboardRef = useKeyboard();
   const mouseRef = useMouse(canvasRef);
@@ -345,7 +356,16 @@ export function useGameLoop(
   const { camera, size } = useThree();
 
   useFrame((_state, delta) => {
-    if (paused) return;
+    if (paused) {
+      // T-5 / UX A9(b): on the frame the game pauses, the MOBILE posture latch is cleared, so
+      // both devices resume `LOWERED` (desktop is free — Space is not held behind an overlay)
+      // with the focal retained, since that lives in `photoQte` and is untouched. One rule,
+      // two devices. Everything else about the freeze is free: the set-piece is a block of
+      // `tickGameState`, and this early return is why it cannot advance while paused.
+      const channel = photoControlChannelRef?.current;
+      if (channel) channel.raiseToggle = false;
+      return;
+    }
     const safeDelta = Math.min(delta, MAX_DELTA);
     const prev = gameStateRef.current;
     const mouse = mouseRef.current;
@@ -362,7 +382,9 @@ export function useGameLoop(
       mobileControls !== undefined &&
       touch !== undefined &&
       !isQteActive(prev.qte) &&
-      !isBossQteActive(prev.bossQte)
+      !isBossQteActive(prev.bossQte) &&
+      // §3.3 site 1 — inside the set-piece the pinch drives the FOCAL, never the camera.
+      !isPhotoQteActive(prev.photoQte)
     ) {
       const zoom = mobileControls.baseZoom * touch.zoom;
       if (ortho.zoom !== zoom) {
@@ -384,7 +406,9 @@ export function useGameLoop(
       mobileControls !== undefined &&
       touch !== undefined &&
       !isQteActive(prev.qte) &&
-      !isBossQteActive(prev.bossQte)
+      !isBossQteActive(prev.bossQte) &&
+      // §3.3 site 2 — the drag pans the VIEWFINDER, not the street.
+      !isPhotoQteActive(prev.photoQte)
     ) {
       const rangeX = Math.max(0, mobileControls.halfWorldWidth - viewW / 2);
       const rangeY = Math.max(0, mobileControls.halfWorldHeight - viewH / 2);
@@ -460,6 +484,47 @@ export function useGameLoop(
     const tickCameraX = camera.position.x;
     const tickCameraY = camera.position.y;
 
+    // The DEVICE FORK DIES HERE (D-B): desktop hold-Space and the mobile tap-to-toggle both
+    // resolve to ONE `raiseIntent` before crossing into `src/game`, which contains zero
+    // knowledge of keys, taps, wheels or pinches. Every input below is consumed ONCE — the
+    // wheel accumulator, the pinch accumulator, the CTA and the skip are drained here.
+    const photoChannel = photoControlChannelRef?.current;
+    const photoActive = isPhotoQteActive(prev.photoQte);
+    const wheelDelta = mouse.wheelDelta;
+    mouse.wheelDelta = 0;
+    const pinchDelta = touch?.pinchDelta ?? 0;
+    if (touch) touch.pinchDelta = 0;
+    const pendingCta = photoChannel?.pendingCta ?? null;
+    if (photoChannel) photoChannel.pendingCta = null;
+    const pendingSkip = photoChannel?.pendingSkip ?? false;
+    if (photoChannel) photoChannel.pendingSkip = false;
+    // Mobile pans the viewfinder with the SAME drag channel the camera uses outside the
+    // set-piece; desktop hands the pointer over as a rate-limited TARGET (D-I).
+    const photoPanX = photoActive ? (touch?.panDeltaX ?? 0) : 0;
+    const photoPanY = photoActive ? (touch?.panDeltaY ?? 0) : 0;
+    if (photoActive && touch) {
+      touch.panDeltaX = 0;
+      touch.panDeltaY = 0;
+      // A flick armed one frame before the set-piece opened must not fire into the street
+      // when it closes: the inertial pan is skipped while a QTE holds the scene, so the
+      // velocity would otherwise survive the whole beat.
+      touch.flickVelocityX = null;
+      touch.flickVelocityY = null;
+    }
+    const photoInput: PhotoInput = {
+      aim: mobileControls === undefined ? { x: mouse.x, y: 1 - mouse.y } : null,
+      panDx: photoPanX,
+      panDy: -photoPanY,
+      focalDelta: wheelDelta + pinchDelta * PHOTO_PINCH_TO_FOCAL,
+      // The shutter is a consumed EDGE, one per press — the same click/tap that fires the
+      // weapon outside the set-piece, so the player learns no second verb.
+      shutter: didFire,
+      raiseIntent: keyboardRef.current.raise || (photoChannel?.raiseToggle ?? false),
+      skipBriefing: pendingSkip,
+      cta: pendingCta,
+      reducedMotion: loadPrefs().reducedMotion,
+    };
+
     const next = tickGameState(
       prev,
       didFire,
@@ -474,6 +539,7 @@ export function useGameLoop(
       levelParams?.enemiesToWin,
       courierField,
       roster,
+      photoInput,
     );
     // Dev/screenshot hook: when set, put one VISIBLE cop (no shooting) in every
     // window so contact-sheet captures show cop-vs-window proportion across the
@@ -699,6 +765,23 @@ export function useGameLoop(
         weapon: { active: next.weapon.active, stock: next.weapon.stock },
         weaponEmptyNonce: weaponEmptyNonceRef.current,
         runSummary,
+        // Photo set-piece dress (techplan §3.4). Present ONLY while the set-piece holds the
+        // scene, and carrying view values only: the phase, the posture, the film numeral, the
+        // needle's fraction, the engraved millimetres and the bracket state. No verdict, no
+        // instant, no role — the sheet is a screen and reads `photoSheetView`, not this.
+        ...(isPhotoQteActive(next.photoQte) && next.photoQte !== null
+          ? {
+              photoQte: {
+                phase: next.photoQte.phase,
+                posture: next.photoQte.posture,
+                film: next.photoQte.film,
+                suspicion: next.photoQte.suspicion,
+                suspicionMax: SUSPICION_MAX,
+                focalMm: next.photoQte.focal,
+                bracket: next.photoQte.composition.bracket,
+              },
+            }
+          : {}),
       };
       // Cache for the __MUF_STATE__ read seam (ADR-0005) before handing it out.
       lastHudRef.current = hudData;
