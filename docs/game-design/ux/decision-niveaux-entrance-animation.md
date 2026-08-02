@@ -37,7 +37,7 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
 4. **`overflow-x: hidden` reste limité à NIVEAUX.** SCORES et OPTIONS gardent une barre de
    défilement visible plutôt qu'un contenu coupé en silence.
 
-5. **L'arrivée d'un utilisateur au clavier stabilise le mur immédiatement.** La suite
+5. **L'arrivée d'un joueur sur le mur le stabilise immédiatement.** La suite
    « anneau de focus rogné » notée plus bas s'est révélée réelle, pas théorique : la dérive
    latérale atteint 44 px alors que le rembourrage du mur vaut 16 px, donc pendant l'entrée
    une feuille de bord — et son anneau de focus — dépasse le clip `overflow-x` de
@@ -49,14 +49,14 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    voir la cascade. Au passage c'est le bon ordre de priorité : qui a commencé à
    interagir prime sur une animation décorative.
 
-   **Restriction au clavier (correctif E2E).** La stabilisation ne se déclenche que sur une
-   arrivée **clavier**, pas sur n'importe quel focus. La première version
-   réagissait à tout focus, y compris celui d'un clic : retirer l'animation en plein geste
-   faisait **sauter** la feuille de sa position de départ à sa position de repos, entre le
-   `mousedown` et le `mouseup` — le clic tombait dans le vide et le niveau ne démarrait
-   jamais. La gate E2E golden l'a attrapé, en cliquant un flyer pendant sa phase de délai
-   où il est immobile et paraît donc prêt à recevoir le clic. Aucune perte : le rognage
-   d'anneau de focus que cette règle protège est un problème strictement clavier.
+   **La seule exception : le focus du geste pointeur lui-même (correctif E2E).** La
+   première version réagissait à TOUT focus, celui d'un clic compris : retirer l'animation
+   en plein geste faisait **sauter** la feuille de sa position de départ à sa position de
+   repos, entre le `mousedown` et le `mouseup` — le clic tombait dans le vide et le niveau
+   ne démarrait jamais. La gate E2E golden l'a attrapé, en cliquant un flyer pendant sa
+   phase de délai où il est immobile et paraît donc prêt à recevoir le clic. Le focus qui
+   appartient à un geste pointeur est donc le seul à ne pas stabiliser ; toute autre
+   arrivée le fait, y compris celles qui n'émettent aucune touche.
 
    **Détection : stabiliser par DÉFAUT, sauf pour le focus d'un geste pointeur.** Toute
    arrivée de focus stabilise le mur. Une seule est écartée : celle qui appartient à un
