@@ -962,3 +962,64 @@ tests : `photoQteKernel`, `photoQteSystem`, `photoQteStateMachine`, `photoLevera
    `GameState.photoLeverage` (mergé, monotone) — il se lit sur la state ref, pas besoin d'un
    second canal dans `HudData`. Le garde §3.3 site 3 (edge-scroll, `GameScene.tsx`) reste aussi
    à vous ; les sites 1 et 2 sont faits.
+
+## Lane B (dev-r3f-render, Amelia) — B5→B7, le montage
+
+Blocage d'origine levé par la lane A (`GameState.photoQte` existe) : la vue est montée, le
+monde est éteint derrière elle, et `App.tsx` porte les trois pièces qui m'avaient été passées.
+
+| Étape | Commit     | Contenu                                                                                                                         |
+| ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| B5    | `0e0e3f7e` | `PhotoQteLayer` + masquage monde + garde edge-scroll (§3.3 site 3) + `sweepPhaseAt` + surfaces DOM montées dans `PlayingCanvas` |
+| B6    | `935d8c9d` | `isPhotoQteUnlocked` (Q-3), override `__MUF_NO_SETPIECE__`, bank `recordPhotoLeverage`                                          |
+| B7    | `acf477c3` | deux défauts trouvés par capture : dress jamais poussée au DOM, flèches sur le viseur                                           |
+
+**File List.** `src/render/scene/{PhotoQteLayer.tsx,GameScene.tsx,PlayingCanvas.tsx,App.tsx,levelProgress.ts,photoPlateMaterial.ts}` ·
+`src/render/ui/HUD.tsx` · `src/hooks/useGameLoop.ts` (additif, voir plus bas) ·
+tests : `photoPlateMaterial`, `levelProgress`, `photoHudPush`.
+
+**Décisions à connaître.**
+
+- `PhotoQteLayer` existe pour SCOPER le re-render : `PhotoQteView` consomme un
+  `PhotoSceneView` frais par tick ; porter cet état sur `GameScene` re-rendrait tout le
+  niveau à 60 Hz pendant ~4 min.
+- `visible={false}` sur le groupe monde, `CrtPass` gardé monté : la passe post-traite la
+  plate elle-même, elle n'est PAS occultée, et la couper restylerait le set-piece (appel art,
+  pas render). Les ~73 draw calls de Ben, eux, tombent.
+- `sweepPhase` : la lane A ne l'a pas projeté sur `PhotoSceneView`, donc `sweepPhaseAt` le
+  dérive du `sceneClock` du tick + du générateur `cover` authored. Le SI la bande s'affiche
+  reste `headlightsLit` (le jeu) ; ceci n'est que le OÙ.
+- `isPhotoQteUnlocked` est PUR : un harnais sème `muf_progress` depuis un `addInitScript`,
+  aucun niveau à jouer, aucune nouvelle clé de stockage.
+
+**Une main dans `src/hooks` (couture partagée, lane A terminée).** La garde de push du HUD
+dans `useGameLoop` n'avait aucun terme photo, et le set-piece fige TOUS les autres — le HUD
+n'était jamais poussé, donc `HudPhotoQte` n'atteignait jamais le DOM. `photoHudChanged`
+(additif, comparé à la précision dessinée) corrige ; test `photoHudPush`.
+
+**Ce qui reste, et pour qui.**
+
+1. **Texture de plate — lane C.** `PhotoQteView` reçoit `plateTexture={null}` : le mapping
+   id→chemin est le vôtre et `photoAssetPaths` / `levelArt.photoQte.plateAsset` étaient
+   encore non committés au moment du montage. Dès que c'est poussé, c'est une ligne dans
+   `PhotoQteLayer` (`getPhotoTexture(<chemin>)`).
+2. **Captures du gate composite — bloquées sur (1).** Les trois cadrages (53,3 / 18,5 / 8,15
+   unités monde, bande de phares au cœur / au bord / absente) n'ont aucun sens sur une plate
+   plate : ils gatent l'image, pas la géométrie. À reprendre dès la texture branchée.
+3. **Collision de dress — `ux-designer` / `lead-game-designer`.** Le bandeau HUD principal
+   (score / niveau / temps / vies / énergie / arme) continue de se dessiner PAR-DESSUS la
+   dress diégétique : le compteur de poses recouvre le score, le cadran recouvre ARME. Je
+   n'ai pas masqué le bandeau de mon propre chef — c'est un appel de design (UX §2 dit
+   « pas une pile de barres », mais rien ne dit d'éteindre le HUD de run). Un mot suffit :
+   c'est une garde `data.photoQte === undefined` dans `HUD.tsx`, comme celle que je viens
+   d'ajouter aux flèches.
+4. **Écran de BRIEFING — non monté.** `PhotoQteSpec.briefingLines` est authored et la phase
+   `BRIEFING` tourne, mais aucune surface ne l'affiche (aucun `PhotoBriefing.tsx` n'existe) :
+   le joueur voit une plate muette pendant `briefingMaxSeconds`, et `e2e-photo-qte.mjs`
+   cherche un bouton « Passer » qui n'existe pas. À arbitrer (`pm` / `ux-designer`) : soit on
+   monte l'écran, soit on retire le beat.
+
+**Vert.** `rtk tsc`, `rtk lint`, `rtk vitest` (1886 tests), `yarn build`.
+**Preuve runtime.** Capture headless SwiftShader sur Belliard, `muf_progress` semé,
+`setPieces: true` : BRIEFING → ACTIVE → RAISED, monde masqué, plate en frame pleine, brackets
+`dashed` dessinés au bon endroit, dress présente, flèches parties.
