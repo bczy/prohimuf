@@ -114,6 +114,14 @@ describe("validate", () => {
     expect(issues.length).toBeGreaterThan(0);
   });
 
+  it("rends des issues sans throw pour un plan null ou non-objet (R1 — malformed avant l'upsert)", () => {
+    for (const plan of [null, 42, "plan", [], true]) {
+      expect(() => validate({ plan })).not.toThrow();
+      const { issues } = validate({ plan });
+      expect(issues.map((i) => i.code)).toContain("plan/malformed");
+    }
+  });
+
   it("does not pollute the archetype registry when validating a rejected plan (m3)", async () => {
     const { archetype, registerGeneratedArchetypes } = await import("@game/types/enemyTypes");
     const id = "regcheck";

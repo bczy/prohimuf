@@ -113,12 +113,23 @@ export function validate(input, { plans = GENERATED_PLANS } = {}) {
   if (resolved.issue !== undefined) return { issues: [resolved.issue] };
   const { plan } = resolved;
 
+  // `plan/malformed` short-circuits BEFORE the upsert join: the join dereferences
+  // `plan.id`, so a malformed plan (null, non-object, bad id) must be reported by
+  // `validateLevelPlan` first — `core.validate` inherits its never-throws contract.
+  const planIssues = validateLevelPlan(plan);
+  if (planIssues.some((i) => i.code === "plan/malformed")) return { issues: planIssues };
+
+  // Upsert angle case (panel §6.7 R2): the filter drops EVERY catalogue entry
+  // sharing the candidate's id, so a catalogue already corrupted on that precise id
+  // is silently repaired within this join. Accepted — the human aggregation holds
+  // one line per id, and the bootstrap fail-fast + the CI test on the real
+  // GENERATED_PLANS still catch a genuine duplicate.
   const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
-  const planIssues = [...validateLevelPlan(plan), ...validateCatalogue(catalogue)];
-  if (planIssues.length > 0) return { issues: planIssues };
+  const issues = [...planIssues, ...validateCatalogue(catalogue)];
+  if (issues.length > 0) return { issues };
 
   registerGeneratedArchetypes(plan.archetypes);
-  return { issues: [...planIssues, ...validateLevel(planToLevelConfig(plan))] };
+  return { issues: validateLevel(planToLevelConfig(plan)) };
 }
 
 /**
