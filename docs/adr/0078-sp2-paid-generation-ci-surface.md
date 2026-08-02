@@ -41,11 +41,23 @@ point de repère, et le raisonnement ne survivrait que dans un fil de commentair
 2. **L'allowlist vaut aussi sur le chemin d'échec.** Le seul step en `if: failure()`
    (upload d'artefact) est gaté sur `steps.validate.outcome == 'success'` : un id refusé
    ne peut atteindre AUCUN chemin, artefact compris.
-3. **Confinement des cibles d'écriture.** `props[].asset` et `archetype.spriteBase`
-   portent une garde de forme dans `validateLevelPlan` (CI-time) ET une assertion de
-   containment dans les générateurs (runtime) : deux gardes de nature différente, parce
-   que le validateur ne voit pas les plans brouillons et que le containment n'attrape que
-   l'évasion, pas les formes illégitimes restées à l'intérieur.
+3. **Confinement des cibles d'écriture — les TROIS champs concernés.** `props[].asset`,
+   `archetype.spriteBase` et `backdrop.file` portent chacun une garde de forme dans
+   `validateLevelPlan` (CI-time) ET une assertion de containment dans les générateurs
+   (runtime). Les deux moitiés ne font pas double emploi, mais **pas** pour la raison
+   d'abord écrite ici (« le validateur ne voit pas les brouillons ») : depuis la
+   décision 4, `loadPlan` valide _tout_ plan qu'il rend, brouillons compris. La vraie
+   raison est que les helpers de mode plan (`planRunTarget`, `loadEnemiesFromPlan`,
+   `loadNearForegroundArtFromPlan`, `resolveBackdropFile`) sont **exportés et
+   appelables avec un littéral** qui n'est jamais passé par `loadPlan` — leurs propres
+   tests le font. La garde de forme et la garde de containment n'attrapent d'ailleurs
+   pas la même chose : le containment ne voit que l'évasion, la forme refuse aussi ce
+   qui reste à l'intérieur sans être un stem de fichier (un sous-dossier, par exemple).
+   Corollaire de la même loi : le namespace des sprites est **plat**
+   (`public/assets/<spriteBase>*.png`, sans sous-dossier par level, contrairement aux
+   props), donc `spriteBase` doit porter l'id de son level (`enemy_<id>_…`) — sans quoi
+   une collision avec la table shippée ou un level frère échoue _silencieusement en
+   vert_ : le générateur ne produit une frame que si elle MANQUE.
 4. **Verrou d'identité et validation avant dépense.** `loadPlan` refuse un module dont
    `plan.id` diffère du nom de fichier (sinon une tentative cappée serait dépensée pour
    un level tout en écrasant l'art d'un autre), et valide le plan complet avant de le

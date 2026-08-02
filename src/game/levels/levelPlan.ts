@@ -122,6 +122,22 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
           `(a plain filename stem — it is joined into public/assets/<spriteBase>*.png)`,
       );
     }
+    // Unlike props — whose output is namespaced per level under
+    // assets/nearfg/<id>/ — a spriteBase resolves FLAT into public/assets/, so it
+    // shares one namespace with the shipped table and with every other generated
+    // level. A collision fails SILENTLY GREEN (panel run-8): gen-enemy-types only
+    // generates a frame when MISSING, so reusing e.g. "enemy_sprite" skips
+    // generation, commits nothing, exits 0 — and the level ships forever wearing
+    // another level's sprite. Requiring the plan's own id in the stem makes the
+    // flat namespace collision-free by construction.
+    if (!a.spriteBase.startsWith(`enemy_${plan.id}_`)) {
+      errors.push(
+        `archetype ${a.kind}: spriteBase "${a.spriteBase}" must start with ` +
+          `"enemy_${plan.id}_" — the sprite namespace is FLAT (public/assets/), so a ` +
+          `stem that does not carry this level's id can silently collide with the ` +
+          `shipped table or a sibling generated level`,
+      );
+    }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
     // non-integer means NaN sprite keys and an EMPTY preload manifest. Capped as
@@ -228,6 +244,19 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // The travel allowance derives from backdrop.aspect, so the aspect must be sane
   // FIRST — a NaN/non-positive aspect would poison the runway arithmetic below
   // (and the runtime layout math it mirrors).
+  // `backdrop.file` is the THIRD plan field that becomes a filesystem write target
+  // (gen-street-paid resolves public/assets/levels/<id>/<file>.png, the output of the
+  // PAID job; align-windows reads the same path) — it was the one that received
+  // neither of the two guards its siblings got (panel run-8, two reviewers). Same
+  // law as spriteBase: a plain filename stem, so no ".." or absolute segment can
+  // reach the resolve. The generators carry the containment throw as the runtime
+  // half — see ADR-0078 §3 for why both halves exist.
+  if (!/^[a-z0-9_-]+$/.test(plan.backdrop.file)) {
+    errors.push(
+      `backdrop.file: "${plan.backdrop.file}" must match ^[a-z0-9_-]+$ (a plain ` +
+        `filename stem — it is joined into public/assets/levels/${plan.id}/<file>.png)`,
+    );
+  }
   if (!Number.isFinite(plan.backdrop.aspect) || plan.backdrop.aspect <= 0) {
     errors.push(`backdrop.aspect: must be a finite number > 0`);
   }

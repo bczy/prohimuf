@@ -72,6 +72,7 @@ import { bootNavigation } from "./lib/bootNavigation.mjs";
 import { coverStrips, coverDefects } from "./lib/coverage.mjs";
 import { loadPlan } from "./lib/loadPlan.mjs";
 import { levelCfgFromPlan } from "./lib/planCalibration.mjs";
+import { resolveBackdropFile } from "./lib/planPaths.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
@@ -1196,12 +1197,7 @@ async function main() {
     const plan = await loadPlan(id);
     LEVEL_CFG[id] = {
       ...levelCfgFromPlan(plan),
-      facadeFilePath: path.resolve(
-        ROOT,
-        "public/assets/levels",
-        plan.id,
-        `${plan.backdrop.file}.png`,
-      ),
+      facadeFilePath: resolveBackdropFile(plan),
     };
     levels.push({ id: plan.id, name: plan.fiction.name, generated: true });
   }

@@ -531,3 +531,35 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
     });
   });
 });
+
+describe("validateLevelPlan — les cibles d'écriture du plan (panel #156 run 8)", () => {
+  it.each([
+    ["traversal", "../../../../tmp/pwned"],
+    ["absolu", "/tmp/pwned"],
+    ["sous-dossier", "sub/street"],
+  ])("rejette un backdrop.file %s", (_label, file) => {
+    const plan = { ...base, backdrop: { ...base.backdrop, file } };
+    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("backdrop.file"));
+  });
+
+  it("accepte un backdrop.file en simple stem", () => {
+    expect(
+      validateLevelPlan({ ...base, backdrop: { ...base.backdrop, file: "street-wide" } }),
+    ).toEqual([]);
+  });
+
+  it("rejette un spriteBase qui ne porte pas l'id du level (collision de namespace plat)", () => {
+    // "enemy_sprite" est la clé shippée : la réutiliser ferait SKIPPER la génération
+    // et le level porterait à jamais le sprite d'un autre — en vert.
+    const plan = { ...base, archetypes: [{ ...vigile, spriteBase: "enemy_sprite" }] } as LevelPlan;
+    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("enemy_fixture_"));
+  });
+
+  it("accepte un spriteBase namespacé sur le level", () => {
+    const plan = {
+      ...base,
+      archetypes: [{ ...vigile, spriteBase: "enemy_fixture_vigile" }],
+    } as LevelPlan;
+    expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});

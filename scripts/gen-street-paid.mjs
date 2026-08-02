@@ -37,6 +37,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { loadPlan } from "./lib/loadPlan.mjs";
+import { resolveBackdropFile } from "./lib/planPaths.mjs";
 import { buildPaidPrompt, seedFromLevelId } from "./lib/paidPrompt.mjs";
 import { skip } from "./lib/idempotent.mjs";
 
@@ -98,7 +99,8 @@ export function planRunTarget(plan, { model = process.env.MODEL ?? "ideogram-v4-
   const width = Number(process.env.W || 5120);
   const height = Number(process.env.H || Math.round(width / plan.backdrop.aspect));
   return {
-    outFile: path.resolve(ROOT, "public/assets/levels", plan.id, `${plan.backdrop.file}.png`),
+    // Containment via le resolver PARTAGÉ (une seule copie de la loi, cf. planPaths).
+    outFile: resolveBackdropFile(plan),
     prompt: buildPaidPrompt(plan),
     model,
     seed: seedFromLevelId(plan.id),
