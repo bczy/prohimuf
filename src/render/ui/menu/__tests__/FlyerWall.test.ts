@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, createElement } from "react";
 
 // Opt into React's act() environment so the client-render mount tests (auto-focus,
@@ -23,6 +25,7 @@ import {
   FLYER_PULLED_SHADOW,
   FLYER_STACK_GAP_PX,
   FLYER_GRID_MARGIN_PX,
+  PULLED_SHADOW_DROP_PX,
 } from "../LevelFlyer";
 
 const SEEN_KEY = "muf_seen_tutorial_nudge";
@@ -137,6 +140,37 @@ describe("LevelFlyer stacking gap — clears the pulled shadow in every layout",
 
   it("keeps the desktop wrap-grid's own gap + margin above the same requirement", () => {
     expect(SPACE.xxl + FLYER_GRID_MARGIN_PX).toBeGreaterThanOrEqual(FLYER_STACK_GAP_PX);
+  });
+
+  /**
+   * The desktop margin is authored in CSS, not emitted from TS — a media query can't be
+   * driven by the inline custom property the portrait gap uses (inline always wins). So the
+   * constant above would only be checking itself unless something reads the stylesheet.
+   * This asserts on the actual CSS text: constant and literal cannot drift apart in silence.
+   */
+  it("ties FLYER_GRID_MARGIN_PX to the literal actually written in the CSS module", () => {
+    // Resolved from the repo root, not from `import.meta.url`: under the happy-dom
+    // environment that URL is an http one and `readFileSync` rejects it.
+    const css = readFileSync(
+      resolve(process.cwd(), "src/render/ui/menu/LevelFlyer.module.css"),
+      "utf8",
+    );
+    const grid = /@media \(min-width: 640px\) and \(min-height: 481px\) \{[^}]*\{([^}]*)\}/.exec(
+      css,
+    );
+    expect(grid, "desktop wrap-grid media block not found in LevelFlyer.module.css").not.toBeNull();
+    expect(grid?.[1]).toContain(`margin-bottom: ${String(FLYER_GRID_MARGIN_PX)}px`);
+  });
+});
+
+/**
+ * The rack clips on BOTH edges. The top was pinned in round 1; this pins the bottom against
+ * the pulled shadow's downward reach, which round 3 pointed out was covered by nothing but
+ * a hand-picked 28.
+ */
+describe("FlyerWall short-landscape rack — pulled shadow does not get cropped below", () => {
+  it("keeps the rack's bottom padding above the pulled shadow's drop", () => {
+    expect(RACK_PAD_BOTTOM_PX).toBeGreaterThanOrEqual(PULLED_SHADOW_DROP_PX);
   });
 });
 

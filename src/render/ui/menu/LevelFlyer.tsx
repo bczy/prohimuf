@@ -177,6 +177,18 @@ export const FLYER_STACK_GAP_PX =
   FLYER_PULLED_SHADOW.dy + FLYER_PULLED_SHADOW.blur + FLYER_STACK_SHADOW_PAD_PX;
 
 /**
+ * How far the pulled sheet's cast shadow reaches BELOW where that sheet sits at rest, in
+ * px. The shadow's own reach (offset + blur) minus the distance the sheet travels upward
+ * when pulled — the sheet moving up takes its shadow with it. This is what a clipping
+ * container below the flyer has to clear; `FlyerWall`'s `RACK_PAD_BOTTOM_PX` is tested
+ * against it so a deeper shadow can't silently get cropped by the rack's `overflow: hidden`.
+ */
+export const PULLED_SHADOW_DROP_PX =
+  FLYER_PULLED_SHADOW.dy +
+  FLYER_PULLED_SHADOW.blur -
+  (Math.abs(FLYER_LIFT_PX.pulled) - Math.abs(FLYER_LIFT_PX.rest));
+
+/**
  * Vertical gap under each flyer in the DESKTOP WRAP-GRID, in px. That grid brings its own
  * `gap: var(--space-xxl)` (24px), so the margin only has to top it up — and it is kept at
  * the pre-existing 22px on purpose: 24 + 22 = 46px is what shipped on `main`, comfortably

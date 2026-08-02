@@ -58,7 +58,11 @@ interface FlyerMeta {
  *
  * Asymmetric on purpose: the top carries the pull plus the `scale(1.02)` growth and is the
  * edge that was cropping; the bottom only has to clear the cast shadow of a sheet that has
- * moved AWAY from it (pulled reach 26px offset + 7px blur, less the 14px it travelled up).
+ * moved AWAY from it. That bottom requirement is `PULLED_SHADOW_DROP_PX` — the shadow's
+ * full reach less the distance the sheet travelled up — and 28 is a deliberately generous
+ * round number over it, kept because it is the geometry that was measured on device.
+ * `FlyerWall.test.ts` pins BOTH edges against their requirement, so a future growth of
+ * `FLYER_LIFT_PX` or `FLYER_PULLED_SHADOW` fails loudly instead of cropping a sheet.
  */
 export const RACK_PAD_TOP_PX = Math.abs(FLYER_LIFT_PX.pulled) + FLYER_PULL_SCALE_HEADROOM_PX;
 export const RACK_PAD_BOTTOM_PX = 28;
@@ -271,21 +275,18 @@ export function FlyerWall({
                content band cannot fit a 397px-tall A5 sheet. */
             --muf-flyer-aspect: auto;
             /* Vertical headroom for the pulled flyer. NOTE: no backticks in this block —
-               it lives inside a JSX template literal. This rack is the ONE layout that
-               clips (overflow-y: hidden, forced by overflow-x: auto — visible is not
-               available alongside it), and a transform pushes content past the BORDER
-               edge, so the container's own padding is the whole budget. The pull lifts the
-               sheet 22px and its cast shadow reaches 33px below it; the .wall base padding
-               of 16px covered the old -4px pull and covers neither now. 28px top/bottom
-               clears both. Asymmetric on purpose: the top carries the pull (22px) plus the
-               scale(1.02) growth and is the edge that was clipping, the bottom only has to
-               clear the shadow of a sheet that has moved AWAY from it. Measured on a
-               844x390 coarse-pointer rack with the tutorial flyer auto-focused (its
-               mount-time focus makes pulled the FIRST-PAINT state here, not a hover corner
-               case): 7px top clearance, 39px at the bottom. Costs ~28px of the rack's
-               content band — the flyers are content-sized here (--muf-flyer-aspect: auto,
-               align-items: flex-start), not stretched, so this shifts them down rather
-               than shrinking them. */
+               it lives inside a JSX template literal. Deliberately carries NO numbers: an
+               earlier copy of this comment quoted "28px top/bottom" and went stale the
+               moment the top padding was re-derived, contradicting the declarations three
+               lines below it. The values and their rationale live in ONE place, the JSDoc
+               on RACK_PAD_TOP_PX / RACK_PAD_BOTTOM_PX above; read them there.
+               Why the padding matters at all: this rack is the ONE layout that clips
+               (overflow-y: hidden, forced by overflow-x: auto — visible is not available
+               alongside it), and a transform pushes content past the BORDER edge, so the
+               container's own padding is the whole headroom budget for the pulled sheet.
+               Costs the rack some of its content band — the flyers are content-sized here
+               (--muf-flyer-aspect: auto, align-items: flex-start), not stretched, so this
+               shifts them down rather than shrinking them. */
             padding-top: ${String(RACK_PAD_TOP_PX)}px;
             padding-bottom: ${String(RACK_PAD_BOTTOM_PX)}px;
             gap: 16px;
