@@ -77,10 +77,21 @@ trouvant un défaut RÉEL — pas de la cosmétique :
   `public/etc/`). Garde posée. Et 0077 était l'ADR tsc/ESLint mergé, pas celui du MCP :
   rectifié dans ADR-0078, la branche MCP devra renuméroter au-delà de 0078.
 
-**État final** : 1776/1776 tests, typecheck + lint + workflows:check verts. Chaque garde
+**État final** : 1780/1780 tests (le compte a bougé à chaque round ; c'est celui du
+dernier commit de la PR — la seule source à citer), typecheck + lint + workflows:check verts. Chaque garde
 ajoutée est prouvée par mutation (la désactiver fait rougir un test dédié).
 Décision de Bertrand (2026-08-02) : un dernier round puis merge, les mineurs restants
 devenant des follow-ups plutôt que de nouveaux rounds.
+
+### run 12 (le dernier)
+
+Deux MAJEUR, tous deux des pertes SILENCIEUSES vérifiées avant correction :
+`props[].asset` n'était jamais confronté au dossier de son propre level (un asset
+pointant vers `assets/nearfg/belliard/` passait la validation — prouvé — et le
+générateur y aurait écrit, écrasant l'art d'un level frère) ; et le glob de présence
+du commit des props, non récursif, laissait un job générer de l'art puis sortir EN
+VERT sans rien committer, l'art perdu avec le runner. Gardes posées, `compgen`
+supprimé au profit du `git add -f <dossier>` que les autres steps utilisent déjà.
 
 ## Suivi
 

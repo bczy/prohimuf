@@ -153,3 +153,18 @@ it("SCRIPTS.md ne recommande pas la substitution de process pour le gate props",
   expect(section).not.toMatch(/substitution\s*—?\s*`done < <\(/);
   expect(section).toMatch(/here-string|<<</);
 });
+
+/**
+ * Le step de commit des props ne doit PAS conditionner son `git add` à un glob
+ * non récursif : un asset d'un niveau plus profond ne serait jamais commité et le
+ * job sortirait en vert, l'art perdu avec le runner (panel #156 run 12).
+ */
+it("le commit des props n'est pas gardé par un glob de présence non récursif", () => {
+  const doc = parse(fs.readFileSync(WORKFLOW, "utf8"));
+  const step = Object.values(doc.jobs)
+    .flatMap((j) => j.steps ?? [])
+    .find((s) => String(s.name ?? "").includes("[props] Commit"));
+  expect(step, "step de commit des props introuvable").toBeDefined();
+  expect(step.run).not.toMatch(/compgen -G "public\/assets\/nearfg/);
+  expect(step.run).toMatch(/git add -f "public\/assets\/nearfg/);
+});

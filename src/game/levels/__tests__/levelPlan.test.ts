@@ -592,3 +592,31 @@ describe("validateLevelPlan — un id de level à TIRETS (panel #156 run 9)", ()
     );
   });
 });
+
+describe("validateLevelPlan — le namespace des props (panel #156 run 12)", () => {
+  it("rejette un asset pointant vers le dossier d'un AUTRE level", () => {
+    const plan = {
+      ...base,
+      props: [{ ...prop("fixture:vol"), asset: "assets/nearfg/belliard/lampadaire.png" }],
+    } as LevelPlan;
+    expect(validateLevelPlan(plan)).toContainEqual(
+      expect.stringContaining("assets/nearfg/fixture/"),
+    );
+  });
+
+  it("rejette une profondeur supplémentaire que le commit du workflow ne verrait pas", () => {
+    const plan = {
+      ...base,
+      props: [{ ...prop("fixture:vol"), asset: "assets/nearfg/fixture/decor/kiosque.png" }],
+    } as LevelPlan;
+    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("extra depth"));
+  });
+
+  it("accepte la forme documentée", () => {
+    const plan = {
+      ...base,
+      props: [{ ...prop("fixture:kiosque"), asset: "assets/nearfg/fixture/kiosque.png" }],
+    } as LevelPlan;
+    expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});

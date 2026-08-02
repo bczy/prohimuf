@@ -199,6 +199,21 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
           `with no ".." segment (documented shape: assets/nearfg/<id>/<name>.png)`,
       );
     }
+    // Le namespace par level des props était une hypothèse de commentaire, pas un
+    // invariant vérifié (panel run-12) : un asset pointant vers le dossier d'un AUTRE
+    // level passait la validation, et le générateur y aurait écrit — écrasant l'art
+    // commité d'un level frère. Même loi que le préfixe de `spriteBase` (run 8), à
+    // ceci près que les props ont, eux, un dossier propre : on l'exige. La forme est
+    // ancrée pour interdire aussi une profondeur supplémentaire, que le glob de
+    // présence du workflow ne verrait pas.
+    const assetDir = `assets/nearfg/${plan.id}/`;
+    if (!p.asset.startsWith(assetDir) || p.asset.slice(assetDir.length).includes("/")) {
+      errors.push(
+        `prop ${p.kind}: asset "${p.asset}" must be exactly "${assetDir}<name>.png" — ` +
+          `a foreign level's directory would be overwritten, and extra depth is not ` +
+          `committed by the workflow's presence check`,
+      );
+    }
     // `x` included: getNearForeground silently DROPS a non-finite-x object at
     // runtime, which would desynchronize the mobile-halving parity this
     // validator certifies below from the list the renderer actually indexes.
