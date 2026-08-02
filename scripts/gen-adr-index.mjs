@@ -131,7 +131,6 @@ function renderReadme(adrs) {
   return current.slice(0, s) + block + current.slice(e + END.length);
 }
 
-const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 function statusClass(status) {
   if (/^superseded/i.test(status)) return "superseded";
   if (/^proposed/i.test(status)) return "proposed";
