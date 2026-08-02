@@ -63,7 +63,7 @@ serveur** — tout invariant nouveau va dans `validateLevelPlan`/`validateLevel`
 ### 4.2 Le serveur
 
 `scripts/mcp-level-editor/server.mjs` (stdio, SDK officiel — l'hésitation `.ts`/`.mjs`
-de ce paragraphe est tranchée par ADR-0077 D1), entrée `.mcp.json`. Le
+de ce paragraphe est tranchée par ADR-0079 D1), entrée `.mcp.json`. Le
 serveur ne détient **aucun secret** : la génération payée reste en CI ; `dryrun`/
 `preview` n'utilisent que vite + Playwright locaux.
 
@@ -82,7 +82,7 @@ outil important le catalogue mécaniquement. Ce renversement exige son propre si
 représenter sans le déclencher).
 
 Proposition : **déplacer, pas supprimer**. Version **arbitrée par le sign-off
-`senior-architect` du 2026-07-31 (ADR-0077 D6, conditions C1→C6)** : seul le `throw`
+`senior-architect` du 2026-07-31 (ADR-0079 D6, conditions C1→C6)** : seul le `throw`
 quitte le corps de `generated/index.ts`. Le bootstrap du jeu (corps de module de
 `src/main.tsx`, avant le premier render) appelle `registerGeneratedLevels()`, qui exécute
 le fail-fast — le split-brain reste **impossible à rater au démarrage de l'app**, une

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // MCP level-editor server — stdio transport, dev-only tooling process.
 //
-// Scope per ADR-0077: this file is a thin transport. It registers the closed
+// Scope per ADR-0079: this file is a thin transport. It registers the closed
 // set of tools (`validate`, `inspect`, `scaffold`, `dryrun`, `preview`, added
 // in T3-T5) and delegates all logic to `core.mjs` — no validation rule, no
 // disk write, no game knowledge lives here. `ping` is a liveness probe only.

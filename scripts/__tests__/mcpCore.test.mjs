@@ -7,7 +7,7 @@ import { inspect, repoRoot, scaffold, validate } from "../mcp-level-editor/core.
 
 /**
  * The pure core behind the MCP `validate`/`inspect`/`scaffold` tools
- * (spec-mcp-level-editor §3, ADR-0077 D3/D4). Loaded as a plain `.mjs` module
+ * (spec-mcp-level-editor §3, ADR-0079 D3/D4). Loaded as a plain `.mjs` module
  * that imports TS from `src/game/**` — vitest resolves `@game/*` the same way
  * it resolves it for every `src/game` test (`vitest.config.ts`), which is what
  * lets this suite prove the "two surfaces, one core" claim (§6): this test

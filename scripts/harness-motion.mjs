@@ -162,7 +162,7 @@ async function main() {
           .then((buffer) => {
             frames.push({ buffer, label });
           })
-          .catch(() => {})
+          .catch(() => undefined)
           .finally(() => {
             shotInFlight = false;
           }),
