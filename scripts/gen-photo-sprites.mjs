@@ -174,6 +174,37 @@ async function tryCutout(file, key) {
   }
 }
 
+// ── Deterministic despeckle (shared sweep from retouch-sprites.mjs) ───────────
+// The chroma-key leaves a handful of tiny opaque debris islands around the figure; the
+// integrity gate's SPECKLE BUDGET (<= 4 comps < 12px) rejects them — same idiom as
+// gen-hostage-sprites.mjs's tryDespeckle.
+export async function despeckleFile(file) {
+  const { sweepSpeckle } = await import("./retouch-sprites.mjs");
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(file);
+  const W = img.width;
+  const H = img.height;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  const image = ctx.getImageData(0, 0, W, H);
+  const { removedComps, removedPx } = sweepSpeckle({ W, H, d: image.data });
+  if (removedComps > 0) {
+    ctx.putImageData(image, 0, 0);
+    fs.writeFileSync(file, canvas.toBuffer("image/png"));
+  }
+  return { removedComps, removedPx };
+}
+
+async function tryDespeckle(file, key) {
+  try {
+    const { removedComps, removedPx } = await despeckleFile(file);
+    console.log(`  [despeckle] ${key} — removed ${removedComps} comp / ${removedPx}px`);
+  } catch (e) {
+    console.log(`  [despeckle-skip] ${key} — ${e.message} (runs in CI)`);
+  }
+}
+
 // ── Mobile downsample (pipeline resize, never a second generation — ruling §1.6) ──
 async function downsampleMobile(a) {
   if (!a.mobile) return;
@@ -216,6 +247,17 @@ async function main() {
     return;
   }
 
+  // Maintenance pass: re-run the despeckle sweep on ALREADY-COMMITTED PNGs in place, no
+  // regeneration (pinned seeds make a CI regen produce identical art anyway) — mirrors
+  // gen-vehicle-sprites.mjs's `--reprocess`.
+  if (args.includes("--despeckle-only")) {
+    for (const a of assets) {
+      if (a.opaque || !fs.existsSync(a.outFile)) continue;
+      await tryDespeckle(a.outFile, a.key);
+    }
+    return;
+  }
+
   const todo = target ? assets.filter((a) => a.key === target) : assets;
   if (target && todo.length === 0) {
     console.error(`Unknown photoQte asset "${target}". Use --list.`);
@@ -238,7 +280,10 @@ async function main() {
     fs.mkdirSync(path.dirname(a.outFile), { recursive: true });
     fs.writeFileSync(a.outFile, buf);
     console.log(`  [ok ] wrote ${path.relative(ROOT, a.outFile)} (${buf.length} bytes)`);
-    if (!a.opaque) await tryCutout(a.outFile, a.key);
+    if (!a.opaque) {
+      await tryCutout(a.outFile, a.key);
+      await tryDespeckle(a.outFile, a.key);
+    }
     await downsampleMobile(a);
   }
 }
