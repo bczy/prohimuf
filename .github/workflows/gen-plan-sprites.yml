@@ -170,14 +170,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Pas de garde compgen : son glob non récursif (*.png) ne voyait pas un
-          # asset d'un niveau plus profond, si bien qu'un job pouvait générer de l'art
-          # puis sortir EN VERT sans rien committer — l'art étant alors perdu à la
-          # destruction du runner, et l'upload de secours jamais déclenché puisque le
-          # step n'échouait pas (panel run-12). `git add -f <dossier>` couvre déjà tout
-          # le sous-arbre, et `git diff --cached --quiet` seul dit s'il y a du neuf —
-          # exactement ce que font les steps backdrop et evidence.
-          git add -f "public/assets/nearfg/${LEVEL_ID}"
+          # Garde d'EXISTENCE, pas de glob (panel runs 12 puis 13). Le compgen
+          # d'origine avait un glob non récursif (*.png) : un asset plus profond
+          # n'était jamais commité et le job sortait EN VERT, l'art perdu avec le
+          # runner. Mais le remplacer par un `git add -f` nu plantait le job
+          # (exit 128, errexit) sur un plan à `props: []` — un dossier jamais créé,
+          # entrée parfaitement légitime. `-d` couvre les deux : tout le sous-arbre
+          # est ajouté quelle que soit sa profondeur, et l'absence de dossier retombe
+          # sur le no-op « rien à committer » — la forme exacte du step evidence.
+          if [ -d "public/assets/nearfg/${LEVEL_ID}" ]; then
+            git add -f "public/assets/nearfg/${LEVEL_ID}"
+          fi
           if git diff --cached --quiet; then
             echo "No new props to commit."
           else

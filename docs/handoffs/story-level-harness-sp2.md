@@ -77,7 +77,7 @@ trouvant un défaut RÉEL — pas de la cosmétique :
   `public/etc/`). Garde posée. Et 0077 était l'ADR tsc/ESLint mergé, pas celui du MCP :
   rectifié dans ADR-0078, la branche MCP devra renuméroter au-delà de 0078.
 
-**État final** : 1780/1780 tests (le compte a bougé à chaque round ; c'est celui du
+**État final** : 1783/1783 tests (le compte a bougé à chaque round ; c'est celui du
 dernier commit de la PR — la seule source à citer), typecheck + lint + workflows:check verts. Chaque garde
 ajoutée est prouvée par mutation (la désactiver fait rougir un test dédié).
 Décision de Bertrand (2026-08-02) : un dernier round puis merge, les mineurs restants
@@ -92,6 +92,17 @@ générateur y aurait écrit, écrasant l'art d'un level frère) ; et le glob de
 du commit des props, non récursif, laissait un job générer de l'art puis sortir EN
 VERT sans rien committer, l'art perdu avec le runner. Gardes posées, `compgen`
 supprimé au profit du `git add -f <dossier>` que les autres steps utilisent déjà.
+
+### run 13
+
+Le fix du run 12 avait troqué une perte silencieuse contre un CRASH sur entrée
+légitime : le `git add -f` nu plante (exit 128 sous errexit) pour un plan à
+`props: []`, dont le dossier n'est jamais créé — vérifié en l'exécutant. Remplacé par
+la garde d'existence `[ -d … ]`, qui couvre les deux cas (toute profondeur ajoutée,
+absence de dossier = no-op) et reprend la forme du step evidence. Le seul point
+qu'ADR-0078 revendiquait comme testé sans l'être — la décision 6, sérialisation par
+`concurrency` — a désormais son test, qui accepte les deux emplacements légitimes du
+bloc (workflow, ou job quand il porte une matrice).
 
 ## Suivi
 

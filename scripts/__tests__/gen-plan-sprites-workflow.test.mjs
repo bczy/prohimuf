@@ -167,4 +167,31 @@ it("le commit des props n'est pas gardé par un glob de présence non récursif"
   expect(step, "step de commit des props introuvable").toBeDefined();
   expect(step.run).not.toMatch(/compgen -G "public\/assets\/nearfg/);
   expect(step.run).toMatch(/git add -f "public\/assets\/nearfg/);
+  // ...mais il DOIT garder l'existence du dossier : un plan à props: [] ne le crée
+  // jamais, et un `git add -f` nu plante le job (exit 128 sous errexit) sur cette
+  // entrée légitime — la régression du run 12, corrigée au run 13.
+  expect(step.run).toMatch(/if \[ -d "public\/assets\/nearfg/);
 });
+
+/**
+ * Décision 6 d'ADR-0078 (sérialisation par level) : le seul point que l'ADR
+ * revendiquait comme testé sans l'être (panel run 13).
+ */
+it.each(["gen-plan-backdrop.yml", "gen-plan-sprites.yml", "gen-plan-verify.yml"])(
+  "%s sérialise par level_id sans annuler le run en cours",
+  (file) => {
+    const doc = parse(fs.readFileSync(path.join(REPO_ROOT, ".github", "workflows", file), "utf8"));
+    // Le bloc vit au niveau workflow, OU au niveau job quand celui-ci porte une
+    // matrice (sprites : skins/props doivent se sérialiser par famille, pas
+    // s'exclure l'une l'autre) — les deux formes honorent la décision 6.
+    const blocks = [doc.concurrency, ...Object.values(doc.jobs).map((j) => j.concurrency)].filter(
+      Boolean,
+    );
+    expect(blocks.length, `${file}: aucun bloc concurrency`).toBeGreaterThan(0);
+    for (const c of blocks) {
+      expect(String(c.group), `${file}: concurrency.group`).toMatch(/inputs\.level_id|LEVEL_ID/);
+      // cancel-in-progress: true tuerait un run EN TRAIN de payer — jamais.
+      expect(c["cancel-in-progress"], `${file}: cancel-in-progress`).toBe(false);
+    }
+  },
+);
