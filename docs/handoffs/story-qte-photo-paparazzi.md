@@ -874,3 +874,55 @@ The gate that matters is **Δ p50 on P5** (Belliard's boss finale reached _after
 set-piece, branch vs main): ≤ +1.5 ms desktop, ≤ +2.0 ms mobile. Setup note: play one Belliard
 mission first — `enabledOnFirstRun: false` means a fresh profile measures a level with no
 set-piece in it.
+
+---
+
+## LANE B (`dev-r3f-render`) — livré, et le seul point resté bloqué
+
+**Commits:** `861ccb42`↗ (seam A0 consommé) → `56c462d7`, `5354bd26`, `d2e399ef`.
+**Périmètre tenu:** `src/render/**` uniquement. Zéro règle côté render: aucun test de cadrage,
+aucun calcul de remplissage, aucun verdict, aucun fork device, aucune seconde source de la
+subject box. Les projections de `src/game` sont **lues**, jamais recalculées.
+
+**Livré** — surface téléobjectif (`scene/PhotoQteView.tsx` + `scene/photoFraming.ts` pur et testé:
+crop UV en 2 uniformes/frame, jamais de `CanvasTexture` re-crop — la falaise B12 de Ben),
+brackets AF 3 états distingués **par la forme** (`dashed` bras brisés / `solid` continus /
+`locked` filet lourd), balayage des phares en **remap de luminance dans le fragment shader de la
+plate** (`scene/photoPlateMaterial.ts`: le toner brûle vers le blanc papier par seuil mobile sur
+la trame — zéro draw call ajouté, zéro couverture blended, jamais d'additif), HUD diégétique
+(`ui/photo/PhotoHud.tsx`: compteur de poses mécanique, aiguille sans graduation ni vocabulaire
+d'exposition — T-4, zéro numérique de suspicion — A7), planche contact
+(`ui/photo/ContactSheet.tsx`: grille 2×3, un rouleau complet de fenêtres même vide (T-11),
+tampons distincts en niveaux de gris, vignettes en **deux couches DOM** plate+pose sur le même
+rectangle, croppées en CSS — ni readback ni bitmap pré-rendue), CTA R2-5 (un seul
+`[ CONTINUER ]` en succès; deux CTA **pairs**, même classe, aucun modificateur `primary`, focus
+initial sur `[ RECOMMENCER ]`), cache texture sans chemin en dur (`scene/photoTextures.ts`).
+**Tests:** 468 verts sur `src/render` (dont 44 nouveaux), `tsc` et `lint` verts.
+
+**BLOQUÉ sur A2 — le masquage du monde derrière la plate.** `<group visible={false}>` sur le
+groupe monde tant que le set-piece tient l'écran (la fuite des 73 draw calls + la chaîne CRT
+signalée par Ben) est un changement de `GameScene.tsx`, et il a besoin de
+`isPhotoQteActive(state.photoQte)` + `GameState.photoQte`, qui ne sont pas encore livrés (A0 seul
+a atterri). **Je n'ai pas simulé le seam** — un cast sur un champ absent aurait été exactement le
+contournement que les types interdisent. Dès qu'A2 atterrit c'est une passe courte: envelopper
+les enfants monde de `GameScene` + monter `<PhotoQteView>` + garde edge-scroll (§3.3 site 3).
+
+**Trois demandes de seam à la lane A** (aucune ne change une règle, toutes évitent une
+re-déclaration côté render):
+
+1. `PhotoSceneView.sweepPhase: number` — la position 0..1 du balayage, fonction pure de
+   `sceneClock`. Aujourd'hui c'est une **prop** de `PhotoQteView`, jamais une horloge render
+   (`state.clock.elapsedTime` ne gèle ni sur `paused` ni dans le bloc figé — D-J, F11/AC10).
+2. L'**étendue de la plate** en unités de scène (`100 × 56.25`): `PhotoSceneView.plate` porte les
+   ids d'art, pas la géométrie. Threadée en prop (`PlateExtent`) en attendant que
+   `photoQteSystem` exporte la constante que le clamp du viewfinder utilise déjà.
+3. `HudPhotoQte.suspicionMax` — projeté avec `suspicion`, pour que le render divise au lieu de
+   re-déclarer `SUSPICION_MAX`. Le type est déjà écrit dans `render/ui/hud/types.ts`.
+4. Optionnel (vignettes): le rectangle exposé par frame sur `PhotoFrameRecord`. Sans lui la
+   planche imprime le placeholder toner; avec lui les deux couches DOM sont exactes.
+
+**Contradiction signalée, non tranchée par moi:** mécanique §1.3 dit « le contrôle qui QUITTE est
+le focus par défaut, y compris sur la branche d'échec »; le techplan §6 lane B et l'UX disent
+« focus initial sur `[ RECOMMENCER ]` ». J'ai implémenté le techplan (focus `[ RECOMMENCER ]`
+tant que le budget de tentatives le permet, sinon le contrôle qui quitte). Un mot de
+`lead-game-designer` suffit à inverser: c'est une ligne dans `ContactSheet.tsx`.
