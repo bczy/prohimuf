@@ -24,12 +24,13 @@
   max-width: var(--flyer-max-width);
   box-sizing: border-box;
   /* Extra vertical gap so tilted flyers never crowd a neighbour (lead-art Gate 4).
-     Sized against the WORST case, the pulled state, because the portrait column layout
-     has no `gap` and this margin is its only vertical spacing: the pull lifts 14px past
-     the rest offset, `scale(1.02)` grows the box ~1% more, and the pulled cast shadow
-     reaches 26px + 7px blur below the sheet. 36px clears the shadow with headroom; at the
-     old 22px the pulled flyer and its shadow crossed into the neighbour above. */
-  margin-bottom: 36px;
+     The value is NOT authored here: LevelFlyer.tsx sets `--flyer-stack-gap` from
+     `FLYER_STACK_GAP_PX`, derived from the pulled cast shadow's reach + the scale headroom
+     and pinned by FlyerWall.test.ts. It was a bare literal until the review panel pointed
+     out that this is the same shape as the rack bug — a number that is "obviously enough"
+     until the pull grows and nothing says otherwise. The fallback only covers a flyer
+     rendered outside the component (tests/SSR), never the shipped path. */
+  margin-bottom: var(--flyer-stack-gap, 37px);
   outline: none;
   transform-origin: center;
   box-shadow: none;
@@ -40,6 +41,20 @@
      LevelFlyer.tsx sets on this element). rgba = alpha of ink-black, so the
      shadow only ever DARKENS: no glow, §2bis-compliant. */
   filter: var(--flyer-shadow, drop-shadow(3px 13px 4px rgba(20, 18, 16, 0.55)));
+}
+
+/* Desktop wrap-grid — the ONE layout that brings its own row gap (FlyerWall.module.css sets
+   `gap: var(--space-xxl)` = 24px on `.wall` under this exact same query). Left at the 22px
+   that shipped on `main`, so 24 + 22 = 46px of row rhythm: unchanged for desktop players,
+   and still well over FLYER_STACK_GAP_PX. Without this reset the portrait gap would stack
+   ON TOP of the grid's own, silently inflating desktop rows to 60px — which is what the
+   review panel caught. Overrides the base rule above by source order, and reaches the
+   `margin-bottom` property directly rather than `--flyer-stack-gap`, which the component
+   sets inline (an inline custom property would win over any stylesheet redefinition). */
+@media (min-width: 640px) and (min-height: 481px) {
+  .flyer {
+    margin-bottom: 22px;
+  }
 }
 
 /* The paper sheet — clipped to the hand-cut silhouette, carries the stock + toner/crease

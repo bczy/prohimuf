@@ -8,7 +8,7 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { SHORT_LANDSCAPE_MEDIA, SPACE } from "@render/ui/print";
 import {
   FlyerWall,
   buildPressionChoices,
@@ -17,7 +17,13 @@ import {
   RACK_PAD_TOP_PX,
   RACK_PAD_BOTTOM_PX,
 } from "../FlyerWall";
-import { FLYER_LIFT_PX, FLYER_PULL_SCALE_HEADROOM_PX } from "../LevelFlyer";
+import {
+  FLYER_LIFT_PX,
+  FLYER_PULL_SCALE_HEADROOM_PX,
+  FLYER_PULLED_SHADOW,
+  FLYER_STACK_GAP_PX,
+  FLYER_GRID_MARGIN_PX,
+} from "../LevelFlyer";
 
 const SEEN_KEY = "muf_seen_tutorial_nudge";
 
@@ -106,6 +112,31 @@ describe("FlyerWall short-landscape rack — pulled-flyer headroom", () => {
   it("lifts the flyer further when pulled than at rest, both off the wall", () => {
     expect(FLYER_LIFT_PX.pulled).toBeLessThan(FLYER_LIFT_PX.rest);
     expect(FLYER_LIFT_PX.rest).toBeLessThan(0);
+  });
+});
+
+/**
+ * The stacking gap between two flyers, per layout. Same failure shape as the rack above and
+ * caught by the same panel: a literal that is "obviously enough" until the pull or the
+ * shadow grows. The portrait column is the tight one (`.wall` has no `gap`, so the flyer's
+ * own margin is the ONLY separation); the desktop wrap-grid brings 24px of its own.
+ */
+describe("LevelFlyer stacking gap — clears the pulled shadow in every layout", () => {
+  it("derives the portrait gap from the pulled shadow it has to clear", () => {
+    expect(FLYER_STACK_GAP_PX).toBeGreaterThanOrEqual(
+      FLYER_PULLED_SHADOW.dy + FLYER_PULLED_SHADOW.blur,
+    );
+  });
+
+  it("emits that gap as the --flyer-stack-gap the CSS reads, on every flyer", () => {
+    const html = markup(DEFAULT_PREFS);
+    const emitted = (html.match(/--flyer-stack-gap:/g) ?? []).length;
+    expect(emitted).toBe((html.match(/role="button"/g) ?? []).length);
+    expect(html).toContain(`--flyer-stack-gap:${String(FLYER_STACK_GAP_PX)}px`);
+  });
+
+  it("keeps the desktop wrap-grid's own gap + margin above the same requirement", () => {
+    expect(SPACE.xxl + FLYER_GRID_MARGIN_PX).toBeGreaterThanOrEqual(FLYER_STACK_GAP_PX);
   });
 });
 
