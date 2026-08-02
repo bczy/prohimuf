@@ -61,7 +61,7 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       prescrits atterris → re-vérification incrémentale architecte (§6.7) :
       verdict MERGE CONDITIONNEL** — 2 gestes courts restants (R1 + ruling ADR)
 - [ ] **R1** (`dev-tooling-assets`, tier fix-lane) : `validate({plan: null})` throw encore
-- [ ] **Numéro ADR** : ruling `producer` — collision 0077 avec `origin/claude/flyer-wall-float-in-animation`
+- [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0077; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
 - [ ] PR draft → acceptation pm
 - [ ] Merge
 
