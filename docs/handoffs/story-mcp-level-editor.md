@@ -68,7 +68,51 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       `validate`, probe du cumul promue en test commité)
 - [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0077; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
 - [x] PR draft → acceptation pm — **ACCEPTED**, voir §7
+- [x] **Panel CI (PR #159, autorité bloquante ADR-0063) — round 1 : FAIL** sur `ae1aa10b`
+      (1 BLOQUANT, 2 MAJEUR, 1 MINEUR), les 4 findings traités, voir §8
 - [ ] Merge
+
+## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
+
+Trois runs du panel CI ont d'abord rendu **DEGRADED** : diagnostic vérifié sur les jobs,
+les 4 reviewers étaient `cancelled` (pas `failed`) par la **concurrency**, chaque fois à
+l'instant d'une de mes poussées, et le job `Preflight · panel availability` réussissait.
+Ni quota ni token — contrairement aux deux seules pistes que le message DEGRADED propose.
+**Défaut CI relevé, hors périmètre de ce diff** (le workflow vit sur `main`) : l'étape
+« Collect failed panel jobs » compte un job `cancelled` comme `failed` et publie un
+diagnostic d'authentification trompeur dans le cas d'une run supersédée. → chantier à
+ouvrir côté `dev-tooling-assets`.
+
+Round 1 complet (HEAD stable) : **FAIL**, 4 findings, tous traités.
+
+- **[BLOQUANT] trace contradictoire du fix lane R1** — `fixes.md:278` disait encore
+  « passe reviewer formelle à rejouer AVANT merge » alors que le shard et le corps de PR
+  affirmaient « fix lane close ». **Fondé, et de ma main** : la passe a bien été rejouée
+  et a rendu RAS, mais je n'avais mis à jour que le shard, pas la ligne du fix lane —
+  le diff portait donc deux versions contradictoires du même gate. Ligne corrigée.
+- **[MAJEUR] `dryrun()` orphelinait vite si `chromium.launch()` throw** — fondé : le
+  `launch` était HORS du try, donc un Chromium qui ne démarre pas (le cas même que
+  `PLAYWRIGHT_CHROMIUM_PATH` reconnaît) laissait le serveur `--strictPort` tenir le port
+  5173 et bloquait tout `dryrun`/`preview` suivant. Le `launch` passe dans le try,
+  `browser` devient nullable, le teardown couvre les deux échecs.
+- **[MAJEUR] contrôle d'ordre HUD aveugle** — fondé : `indexOf` non ancré cherchait les
+  labels dans TOUT le snippet, nom du level compris ; un district comme « Armentières »
+  contient `ARME`, ce qui épinglait le label à sa position dans le NOM et rendait le
+  contrôle anti-régression inopérant pour ce level. La plage de nom (NIVEAU…VAGUE) est
+  désormais masquée avant localisation. Test ajouté sur un nom collisionnant.
+- **[MINEUR] avis de sécurité des 3 nouvelles devDeps non cité** — `yarn npm audit --all
+--recursive` exécuté : **7 avis dans l'arbre, aucun ne touche
+  `@modelcontextprotocol/sdk@1.30.0`, `vite-node@3.2.4` ni `zod@4.4.3`** (tous
+  préexistants sur `main` : brace-expansion via minimatch ×3, git-raw-commits via
+  commitlint, glob via test-exclude, playwright, tar via node-gyp).
+
+**Review Copilot (3 remarques)** : 1 retenue — `compareDryrunReport` gardait le nom
+« Fixture » en dur, dernier reliquat de m5 (corrigé en `ae1aa10b`, le nom est lu dans
+l'évidence attendue). 2 réfutées par écrit dans les fils : `writeAtomic()` n'utilise pas
+`unlinkSync` (la remarque décrivait le prérequis de sa propre suggestion), et
+`fs.renameSync` écrase bien la destination sur Windows (libuv passe `MOVEFILE_REPLACE_EXISTING`
+à `MoveFileExW`) — l'`unlink` préalable suggéré ouvrirait la fenêtre non-atomique que le
+tmp-then-rename ferme.
 
 ## 3. BUILD — reprise 2026-07-31 (session remote)
 

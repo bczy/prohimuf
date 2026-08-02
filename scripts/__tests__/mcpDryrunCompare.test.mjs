@@ -135,6 +135,24 @@ describe("compareDryrunReport", () => {
     expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
   });
 
+  it("still sees the real labels when the level NAME contains a label word (CI panel MAJEUR)", () => {
+    // "Armentières" contains "ARME": an unmasked indexOf would pin the ARME label
+    // to its position inside the name, right after NIVEAU, so a scrambled HUD for
+    // that level would slip through the ordering check.
+    const named = (r, hud) => ({ ...r, hudSnippet: hud });
+    const sane =
+      "SCORE 0000 NIVEAU Armentières VAGUE 1 TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100 ARME A ∞";
+    const scrambled =
+      "SCORE 0000 NIVEAU Armentières VAGUE 1 ARME A ∞ TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100";
+    expect(compareDryrunReport(named(freshMatching, sane), named(committed, sane)).ok).toBe(true);
+    const { ok, mismatches } = compareDryrunReport(
+      named(freshMatching, scrambled),
+      named(committed, sane),
+    );
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
+  });
+
   it("derives the url pattern from { base, levelId } instead of hardcoding /prohimuf/ and level=fixture (m5)", () => {
     const actual = {
       ...freshMatching,

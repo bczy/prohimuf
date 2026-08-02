@@ -451,11 +451,16 @@ export async function dryrun(
   // preview.yml — so this is unset there). Unset by default: `undefined` makes
   // Playwright resolve its own bundled browser, same as every other e2e-*.mjs.
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
-  const browser = await chromium.launch({
-    args: SWIFTSHADER_ARGS,
-    ...(executablePath === undefined ? {} : { executablePath }),
-  });
+  // The launch itself is INSIDE the try: a Chromium that fails to start (missing
+  // system deps, revision mismatch — the very case PLAYWRIGHT_CHROMIUM_PATH
+  // exists for) would otherwise throw before the teardown block is armed and
+  // orphan the `--strictPort` vite server, blocking every later dryrun/preview.
+  let browser = null;
   try {
+    browser = await chromium.launch({
+      args: SWIFTSHADER_ARGS,
+      ...(executablePath === undefined ? {} : { executablePath }),
+    });
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await context.newPage();
     const pageErrors = [];
@@ -482,11 +487,12 @@ export async function dryrun(
       hudSnippet,
     };
   } finally {
-    // `proc.kill()` must run even when `browser.close()` throws — nested
-    // try/finally so a Chromium teardown error can never orphan a `--strictPort`
-    // vite server that would then block every subsequent `dryrun` (panel §6.3 m7).
+    // `proc.kill()` must run even when the browser never opened or `close()`
+    // throws — nested try/finally so neither a failed launch nor a teardown error
+    // can orphan a `--strictPort` vite server that would then block every
+    // subsequent `dryrun` (panel §6.3 m7, CI panel MAJEUR on ae1aa10b).
     try {
-      await browser.close();
+      if (browser !== null) await browser.close();
     } finally {
       // Only tear down a server WE spawned — `ensureDevServer` never kills one it
       // reused, and neither do we.
@@ -589,7 +595,12 @@ export function compareDryrunReport(
   // promise is "same ordered set", so a scrambled HUD must be caught, not just
   // a missing label (panel §6.4 n3).
   const labelOrder = (snippet) => {
-    const upper = snippet.toUpperCase();
+    // The level's own display name sits between NIVEAU and VAGUE and can itself
+    // contain a label word (the district "Armentières" contains "ARME"), which
+    // would pin that label's position INSIDE the name and blind the ordering
+    // check for that level — the exact regression it exists to catch. Mask the
+    // name span first, so only real HUD labels are located.
+    const upper = snippet.replace(/(NIVEAU\s+).+?(\s+VAGUE)/iu, "$1$2").toUpperCase();
     return HUD_LABELS.map((label) => ({ label, at: upper.indexOf(label) }))
       .filter((entry) => entry.at !== -1)
       .sort((a, b) => a.at - b.at)
