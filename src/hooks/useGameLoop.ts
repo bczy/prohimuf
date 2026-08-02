@@ -40,7 +40,7 @@ import {
 } from "@render/scene/qteCamera";
 import { SUSPICION_MAX, isPhotoQteActive } from "@game/systems/photoQteSystem";
 import { loadPrefs } from "@game/systems/prefsSystem";
-import type { PhotoInput } from "@game/types/photoQte";
+import type { PhotoInput, PhotoQte } from "@game/types/photoQte";
 
 const MAX_DELTA = 0.1;
 
@@ -206,6 +206,32 @@ function isSameIndicator(
   if (a === undefined && b === undefined) return true;
   if (a === undefined || b === undefined) return false;
   return a.up === b.up && a.down === b.down && a.left === b.left && a.right === b.right;
+}
+
+/**
+ * Has any value the photo DRESS draws changed this tick (techplan §3.4)?
+ *
+ * The push gate below is keyed on the values the HUD shows, and the photo set-piece FREEZES
+ * every one of them (score, lives, timer, phase, wave, energy, weapon): without this term the
+ * HUD is never pushed while the set-piece holds the scene, so `HudPhotoQte` never reaches the
+ * DOM at all — no film counter, no needle, no engraved focal. Found by capture, not by
+ * reading (`dev-r3f-render`, stage-4 mount).
+ *
+ * It compares the DRAWN precision, never the raw floats: the focal is engraved in whole
+ * millimetres and the needle's angle is read to the degree, so rounding both keeps the push
+ * on the order of the readable changes instead of one per frame — the same discipline as
+ * `Math.floor(timeRemaining)` in the gate.
+ */
+export function photoHudChanged(prev: PhotoQte | null, next: PhotoQte | null): boolean {
+  if (prev === null || next === null) return prev !== next;
+  return (
+    prev.phase !== next.phase ||
+    prev.posture !== next.posture ||
+    prev.film !== next.film ||
+    prev.composition.bracket !== next.composition.bracket ||
+    Math.round(prev.focal) !== Math.round(next.focal) ||
+    Math.round(prev.suspicion) !== Math.round(next.suspicion)
+  );
 }
 
 // Map a takedown's effect deltas to a floating label (text + colour), or null.
@@ -739,7 +765,9 @@ export function useGameLoop(
       // would be re-derived from this same camera and so almost never differ).
       // Without this term the cue would refresh at the 1 Hz `Math.floor(timeRemaining)`
       // cadence — a direction arrow up to a second stale (D2.6, Karim's advisory).
-      !isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection)
+      !isSameIndicator(lastHudRef.current?.deliveryDirection, deliveryDirection) ||
+      // The photo set-piece freezes every term above, so the dress needs its own.
+      photoHudChanged(prev.photoQte, next.photoQte)
     ) {
       // Project the finished run once the phase is terminal (ADR-0076 D6). The
       // loop keeps TICKING in a terminal phase — the early-return above is

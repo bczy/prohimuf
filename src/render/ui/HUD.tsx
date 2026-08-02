@@ -68,9 +68,15 @@ export function HUD({ data }: { data: HudData }): JSX.Element {
           enlarged arrows would poke into it. Back as soon as the verdict clears. The
           BOSS QTE (ADR-0051) freezes the scene on the same locked camera, so gate on it
           too — `bossQte` is undefined exactly while it is inactive (Tony story-2 UX). */}
-      {!isQteSetPieceVisible(data.hostageQte) && data.bossQte === undefined && (
-        <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
-      )}
+      {/* The PHOTO set-piece (ADR-0077) is the third frozen-scene block and takes the same
+          gate: the world is not only frozen there, it is switched OFF behind an opaque
+          plate, so an arrow pointing at an enemy nobody can see or shoot is pure noise
+          over the viewfinder. `photoQte` is undefined exactly while it is inactive. */}
+      {!isQteSetPieceVisible(data.hostageQte) &&
+        data.bossQte === undefined &&
+        data.photoQte === undefined && (
+          <OffscreenArrowIndicator targetIndicator={data.targetIndicator} />
+        )}
 
       {/* The banner also carries the off-screen cue toward the delivery point
           (telegraph spec D2.3): anchored on the objective's own call-out, NOT on the

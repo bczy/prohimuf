@@ -66,8 +66,8 @@ describe("levelProgress.nextLevelToUnlock — failable shipped level unlock rout
 // predicate stands on the progression `muf_progress` ALREADY holds — no new key, no new
 // write — and it is pure, so a harness seeds the state from an addInitScript.
 describe("isPhotoQteUnlocked", () => {
-  const host = LEVELS[0].id; // belliard, the host level
-  const nextId = LEVELS[1].id;
+  const host = LEVELS[0]?.id ?? ""; // belliard, the host level
+  const nextId = LEVELS[1]?.id ?? "";
 
   it("is false on a fresh save — a first Belliard never opens the set-piece", () => {
     expect(isPhotoQteUnlocked(host, new Set())).toBe(false);
@@ -80,7 +80,7 @@ describe("isPhotoQteUnlocked", () => {
 
   it("reads the level asked for, not the campaign's head", () => {
     // The last shipped level has nothing after it to stand on.
-    const last = LEVELS[LEVELS.length - 1].id;
+    const last = LEVELS[LEVELS.length - 1]?.id ?? "";
     expect(isPhotoQteUnlocked(last, new Set(LEVELS.map((l) => l.id)))).toBe(false);
   });
 
