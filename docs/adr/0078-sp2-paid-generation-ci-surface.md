@@ -2,9 +2,12 @@
 
 - **Status:** Proposed
 - **Date:** 2026-08-02
-- **Number:** 0078 — alloué après vérification de `docs/adr/` local, de l'index, d'`origin/main`
-  ET de toutes les branches distantes (0077 est pris par le serveur MCP de la story ③,
-  branche `feat/mcp-level-editor`, non encore poussée au moment de l'allocation).
+- **Number:** 0078 — alloué après vérification de `docs/adr/` local, de l'index,
+  d'`origin/main` ET de toutes les branches distantes. **Rectificatif** : 0077 est
+  `0077-couverture-tsc-eslint-scripts.md`, mergé sur `main` pour un sujet sans rapport
+  (couverture tsc/ESLint de `scripts/`) — pas le serveur MCP comme cette note l'a d'abord
+  affirmé. La branche `feat/mcp-level-editor`, qui portait aussi un 0077 local, devra donc
+  renuméroter **au-delà de 0078** quand elle atterrira.
 - **Relates to:** ADR-0075 (schéma `LevelPlan`) — dont la section Consequences dit
   verbatim « SP2 (per-phase CI generation) … build on this schema; **nothing here
   presumes them** » : c'est précisément pourquoi SP2 ne peut pas se réclamer de 0075 et
@@ -41,7 +44,11 @@ point de repère, et le raisonnement ne survivrait que dans un fil de commentair
 2. **L'allowlist vaut aussi sur le chemin d'échec.** Le seul step en `if: failure()`
    (upload d'artefact) est gaté sur `steps.validate.outcome == 'success'` : un id refusé
    ne peut atteindre AUCUN chemin, artefact compris.
-3. **Confinement des cibles d'écriture — les TROIS champs concernés.** `props[].asset`,
+3. **Confinement des cibles d'écriture — les TROIS champs concernés, base comprise.**
+   Un garde de containment ne vaut que si la BASE du chemin est elle-même validée :
+   `resolveBackdropFile` vérifie `plan.id` (la base `public/assets/levels/<id>/`) avant
+   de vérifier la feuille, sans quoi un id échappé ferait sortir la base et le
+   `startsWith` passerait trivialement (panel run-11). `props[].asset`,
    `archetype.spriteBase` et `backdrop.file` portent chacun une garde de forme dans
    `validateLevelPlan` (CI-time) ET une assertion de containment dans les générateurs
    (runtime). Les deux moitiés ne font pas double emploi, mais **pas** pour la raison

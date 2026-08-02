@@ -20,6 +20,20 @@ describe("resolveBackdropFile", () => {
   });
 
   it.each([
+    ["traversal", "../../etc"],
+    ["absolu", "/etc"],
+  ])(
+    "refuse un plan.id %s — le garde se contournerait par la BASE, pas par la feuille",
+    (_l, id) => {
+      // Sans cette garde, levelDir lui-même sort de public/assets/levels/ et le
+      // startsWith compare à une base déjà échappée : il passe trivialement.
+      expect(() => resolveBackdropFile({ id, backdrop: { file: "passwd" } })).toThrow(
+        /plan\.id .* must match/,
+      );
+    },
+  );
+
+  it.each([
     ["traversal", "../../../../tmp/pwned"],
     ["absolu", "/tmp/pwned"],
     ["remonte puis redescend", "../vitry/street-wide"],
