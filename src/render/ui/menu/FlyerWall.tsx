@@ -341,14 +341,19 @@ export function FlyerWall({
     // `click` and not `pointerup`: on touch the order is pointerdown → pointerup →
     // synthetic mousedown → focus → mouseup → click, so pointerup still precedes the tap's
     // own focus. `click` is the first event that is always after it. `pointercancel`
-    // covers the gestures that never reach a click at all (scroll takeover, palm reject).
+    // covers the gestures that never reach a click at all (scroll takeover, palm reject),
+    // and `contextmenu` the third way out: a right-click dispatches no click, and a
+    // long-press the OS takes over does not reliably cancel either, so without it those
+    // two gestures would leave a marker live until the player's next interaction anywhere.
     window.addEventListener("click", forget, true);
     window.addEventListener("pointercancel", forget, true);
+    window.addEventListener("contextmenu", forget, true);
     return () => {
       window.removeEventListener("keydown", forget, true);
       window.removeEventListener("pointerdown", onPointer, true);
       window.removeEventListener("click", forget, true);
       window.removeEventListener("pointercancel", forget, true);
+      window.removeEventListener("contextmenu", forget, true);
     };
   }, []);
 

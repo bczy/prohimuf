@@ -1,10 +1,13 @@
 # Décision art — les cinq emblèmes de crew sur les flyers NIVEAUX
 
-**Statut :** gate d'acceptation visuelle rétroactive · `lead-art` (Nico) · PR #145
+**Statut :** gate d'acceptation visuelle rétroactive · `lead-art` (Nico) · PR #145 ·
+**PASS** (2ᵉ passage : réserve bloquante R1 levée après rework)
 **Portée :** les cinq marques de `FlyerMotif.tsx`, leur pose sur la feuille
 (`LevelFlyer.tsx`, `LevelFlyer.module.css`) et leur attribution crew→emblème.
 **Preuve jugée :** rendu réel du menu construit (écran NIVEAUX, cascade stabilisée),
-lu au 1:1 et en gros plan par emblème — pas une maquette.
+lu au 1:1 et en gros plan par emblème — pas une maquette. Deux passages : un premier
+sur le set d'origine (trame `halftone` pour NADIR 94), un second sur le set corrigé
+(fil à plomb `plumb`).
 
 ## Pourquoi cette note existe
 
@@ -45,7 +48,7 @@ Deux remarques de cadrage, qui **jouent en faveur** de ce lot :
 | `smiley` — Tutoriel               | **PASS**                             | Acid house, l'icône la moins chère de la décennie, yeux et bouche **percés** dans le disque (even-odd) et non peints par-dessus : c'est la logique du pochoir, pas celle de l'illustration. Masse solide, lisible à toute taille. Sur la feuille manila du mode d'emploi, il joue le rôle d'accueil sans rien promettre. |
 | `rings` — KANAL SYSTEM/Stalingrad | **PASS** (réserve R2, non bloquante) | Cible hypnotique de la période, et — meilleure lecture que celle du commentaire — **onde concentrique sur l'eau** : Stalingrad, le bassin, KANAL. L'attribution devient site-spécifique au lieu d'être décorative.                                                                                                       |
 | `invader` — L'Éden                | **PASS** (réserve R3, non bloquante) | Grille de carrés pleins : la chose la plus simple qu'un pochoir ou une photocopieuse tienne. Silhouette imparable, la seule des cinq qui survivrait à une troisième génération de copie.                                                                                                                                 |
-| `halftone` — NADIR 94/Vitry       | **FAIL (rework)**                    | Voir R1.                                                                                                                                                                                                                                                                                                                 |
+| `plumb` — NADIR 94/Vitry          | **PASS** (2ᵉ passage)                | Fil à plomb, encre pleine, trou de visée **percé** en even-odd. Remplace la trame refusée au 1ᵉʳ passage (R1) ; levée en R1-bis.                                                                                                                                                                                         |
 
 ## Attribution crew→emblème
 
@@ -67,13 +70,25 @@ L'attribution tient, et elle tient mieux que ce que les commentaires du code en 
   un tag de rue contemporain de la fiction — et sur le dernier niveau, la nuit du
   31 décembre 1999, il lit aussi « invasion / fin de partie ». Attribution **validée**,
   à condition de réancrer la note d'intention (R3).
-- **NADIR 94 → trame.** C'est la seule qui ne dit rien. Voir R1.
+- **NADIR 94 → trame** (1ᵉʳ passage) : la seule qui ne disait rien. Refusée, voir R1.
+- **NADIR 94 → fil à plomb** (état final) : **la meilleure attribution du mur avec la
+  spirale.** Nadir = le point le plus bas ; un fil à plomb est l'instrument qui _définit_
+  ce point, pas une illustration de ce point. La marque ne décore pas le nom, elle le
+  démontre. Et l'objet est plausible sans effort d'époque : un crew qui pochoire une
+  annonce de squat en a un sous la main — c'est de l'outillage de chantier, pas un
+  symbole de graphiste. Vitry, la banlieue, le point bas de la carte : ça tient sur trois
+  niveaux à la fois, et aucun n'a besoin d'être expliqué au joueur pour que la feuille
+  fonctionne.
 
 Aucune attribution ne me paraît anachronique.
 
 ## Réserves
 
-### R1 — `halftone` / NADIR 94 : **bloquante**
+### R1 — `halftone` / NADIR 94 : **bloquante — LEVÉE au 2ᵉ passage (voir R1-bis)**
+
+> Conservée telle qu'écrite au premier passage : la raison du refus est ce qui rend la
+> forme finale défendable, et la supprimer laisserait le prochain lecteur libre de
+> reproposer la trame.
 
 L'intention écrite dans le code est juste et sur-direction : « une photo tramée jusqu'à
 ce qu'une photocopieuse puisse la reproduire ». C'est exactement le §1. **L'exécution ne

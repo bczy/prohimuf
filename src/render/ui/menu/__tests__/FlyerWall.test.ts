@@ -470,6 +470,26 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
+  it("releases the marker for a right-click, which dispatches no click at all", () => {
+    // The third way a gesture ends: a right-click fires pointerdown but never a click, and
+    // an OS-intercepted long-press does not reliably cancel either. Released only by the
+    // player's next interaction ANYWHERE, the marker would stay live in between — and a
+    // virtual cursor landing on that same flyer in that window would be denied its settle.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 2 }));
+      el?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+    });
+    act(() => {
+      el?.focus(); // assistive tech arriving on the same flyer, no click in between
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
   it("still settles when assistive tech lands on a flyer clicked earlier", () => {
     // The pointer marker must not outlive its own gesture. A press that produces NO focus
     // — macOS Safari does not focus a control on click without Full Keyboard Access, and a

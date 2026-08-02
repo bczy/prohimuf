@@ -112,11 +112,20 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
   Quatre emblèmes sur cinq passent ; **`halftone` (NADIR 94) est refusé** — le champ de
   points ne résout aucune forme quand on recule, donc c'est une texture et non une marque,
   il entre en collision avec le dot-screen du papier, et il est le seul aplat tonal d'un set
-  d'encres pleines (bible §2 loi 2 : un asset hors-famille fait tomber le set). Rework en
-  attente d'arbitrage Bertrand.
-- **Pas de spec `game-designer` / `narrative-designer`.** L'attribution crew→emblème est un
-  choix d'identité visuelle : la spirale de SPIRALE 23 découle du nom, l'invader de L'Éden
-  est une citation. Aucune fiction n'a été inventée, mais aucune n'a été validée non plus.
+  d'encres pleines (bible §2 loi 2 : un asset hors-famille fait tomber le set).
+  **Arbitré par Bertrand** : voie (b), remplacer par une marque d'encre pleine — la trame
+  devient un **fil à plomb** (`plumb`), nadir = le point le plus bas, masse pleine et trou
+  de visée percé comme les yeux du smiley. Les cinq marques sont désormais homogènes, ce
+  qui referme le grief de famille. Re-gate `lead-art` en cours sur le rework.
+- **Pas de spec `game-designer` / `narrative-designer` — SEUL POINT ENCORE OUVERT.**
+  L'attribution crew→emblème est un choix d'identité : la spirale de SPIRALE 23 découle du
+  nom, l'invader de L'Éden est une citation, le fil à plomb de NADIR 94 vient du sens du
+  mot. Aucune fiction n'a été inventée, mais aucune n'a été validée non plus.
+  `lead-art` s'est prononcé dessus au passage — « aucune anachronique, aucune paresseuse » —
+  et a relevé deux ancrages à réécrire (l'invader tient par **Invader carrelant Paris à
+  partir de 1998**, pas par l'âge du sprite d'arcade ; les anneaux gagnent à venir de l'onde
+  du canal pour KANAL SYSTEM). Cela ne remplace pas le gate `narrative-designer`, qui reste
+  à faire ou à exempter explicitement — décision Bertrand.
 
 **Défaut trouvé à la fusion, corrigé ici** — NADIR 94 n'affichait AUCUN emblème : placée en
 slot `hero`, la seule feuille conçue pour attaquer par son image, alors que la mise en page

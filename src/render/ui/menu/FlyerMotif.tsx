@@ -19,7 +19,7 @@ import type { JSX } from "react";
  * motifs were rasterised onto canvas textures.
  */
 
-export type MotifKind = "spiral" | "smiley" | "rings" | "halftone" | "invader";
+export type MotifKind = "spiral" | "smiley" | "rings" | "plumb" | "invader";
 
 /** WHERE the stamp landed on the sheet — vertically. `hero` prints it above the masthead
  *  (the sheet whose front IS the image, type pushed under it), `mid` between the difficulty
@@ -61,9 +61,9 @@ export const FLYER_EMBLEMS: Readonly<Partial<Record<string, FlyerEmblem>>> = {
   tutorial: { kind: "smiley", slot: "mid", offsetY: 14, sizePx: 76, tiltDeg: -4, wearSeed: 7 },
   belliard: { kind: "spiral", slot: "body", offsetY: -6, sizePx: 96, tiltDeg: 3, wearSeed: 21 },
   stalingrad: { kind: "rings", slot: "mid", offsetY: -10, sizePx: 84, tiltDeg: -2, wearSeed: 13 },
-  // The one sheet that leads with its image: NADIR 94's halftone runs across the top and
+  // The one sheet that leads with its image: NADIR 94's plumb bob hangs across the top and
   // the lettering starts below it.
-  vitry: { kind: "halftone", slot: "hero", offsetY: 0, sizePx: 100, tiltDeg: 5, wearSeed: 34 },
+  vitry: { kind: "plumb", slot: "hero", offsetY: 0, sizePx: 100, tiltDeg: 5, wearSeed: 34 },
   "niveau-final": {
     kind: "invader",
     slot: "body",
@@ -132,24 +132,26 @@ function RingsPath(): JSX.Element {
  * it at all. Dot RADIUS carries the tone, which is exactly how a halftone works; the
  * grid is deliberately coarse, like a cheap repro shop's screen.
  */
-function HalftonePath(): JSX.Element {
-  const dots: JSX.Element[] = [];
-  const step = 9;
-  for (let y = step / 2; y < 100; y += step) {
-    for (let x = step / 2; x < 100; x += step) {
-      const u = x / 100;
-      const v = y / 100;
-      // A smooth blob thresholded into dot size — deterministic, no Math.random.
-      const field =
-        0.55 + 0.45 * Math.sin(u * 5.1) * Math.cos(v * 4.3) + 0.25 * Math.sin((u + v) * 9);
-      const r = Math.max(0, Math.min(1, field)) * step * 0.52;
-      if (r < 0.5) continue;
-      dots.push(
-        <circle key={`${String(x)}-${String(y)}`} cx={x} cy={y} r={r} fill="currentColor" />,
-      );
-    }
-  }
-  return <>{dots}</>;
+function PlumbPath(): JSX.Element {
+  // NADIR 94's mark: a plumb bob — the lowest point, literally, which is what a nadir is.
+  // Solid ink like the other four (lead-art, PR #145: the halftone field it replaces read as
+  // a texture, not a mark, and was the one tonal wash in a set of solid inks). A builder's
+  // tool is also period-plain: a crew stencilling a squat announcement had one to hand.
+  return (
+    <>
+      {/* Suspension bar and line kept as their own paths: overlapping them with the
+          even-odd bob below would punch notches where the shapes meet. */}
+      <path fill="currentColor" d="M30 6h40v9H30z" />
+      <path fill="currentColor" d="M46 15h8v21h-8z" />
+      {/* The bob, with its sighting hole PUNCHED rather than painted — same stencil logic
+          as the smiley's eyes, and it keeps the mass readable at reading distance. */}
+      <path
+        fillRule="evenodd"
+        fill="currentColor"
+        d={"M50 36 74 50 50 96 26 50Z" + "M50 52a8 8 0 1 1 .1 0z"}
+      />
+    </>
+  );
 }
 
 /**
@@ -201,7 +203,7 @@ const MOTIF_SHAPES: Record<MotifKind, () => JSX.Element> = {
   spiral: SpiralPath,
   smiley: SmileyPath,
   rings: RingsPath,
-  halftone: HalftonePath,
+  plumb: PlumbPath,
   invader: InvaderPath,
 };
 

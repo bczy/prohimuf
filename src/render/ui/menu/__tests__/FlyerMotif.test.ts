@@ -6,7 +6,7 @@ import { FlyerMotif, FLYER_EMBLEMS } from "../FlyerMotif";
 import { LevelFlyer } from "../LevelFlyer";
 import type { MotifKind } from "../FlyerMotif";
 
-const ALL_KINDS: readonly MotifKind[] = ["spiral", "smiley", "rings", "halftone", "invader"];
+const ALL_KINDS: readonly MotifKind[] = ["spiral", "smiley", "rings", "plumb", "invader"];
 
 function render(kind: MotifKind, tiltDeg = 0, instanceId = "t", wearSeed = 5): string {
   return renderToStaticMarkup(
