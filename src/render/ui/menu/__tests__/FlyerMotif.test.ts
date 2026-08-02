@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LEVELS } from "@game/levels/levels";
 import { FlyerMotif, MOTIF_BY_LEVEL_ID } from "../FlyerMotif";
+import { LevelFlyer } from "../LevelFlyer";
 import type { MotifKind } from "../FlyerMotif";
 
 const ALL_KINDS: readonly MotifKind[] = ["spiral", "smiley", "rings", "halftone", "invader"];
@@ -79,6 +80,37 @@ describe("FlyerMotif", () => {
       (k): k is MotifKind => k !== undefined,
     );
     expect(new Set(assigned).size).toBe(assigned.length);
+  });
+
+  it("shows its emblem whether the level is locked or unlocked", () => {
+    // NADIR 94 shipped with no emblem at all: it is placed in the `hero` slot, and the
+    // LOCKED layout rendered only `mid` and `body`. A slot that branch omits costs the
+    // emblem exactly where it shows most — on a first visit, most of the wall is locked.
+    // Asserting both states for EVERY mapped level catches the next omission without
+    // anyone having to remember which slots each branch happens to offer.
+    for (const level of LEVELS) {
+      if (MOTIF_BY_LEVEL_ID[level.id] === undefined) continue;
+      for (const unlocked of [true, false]) {
+        const markup = renderToStaticMarkup(
+          createElement(LevelFlyer, {
+            level,
+            flyerIndex: 0,
+            unlocked,
+            stock: "#eee",
+            restRotationDeg: 0,
+            jitterPx: 0,
+            focused: false,
+            shaking: false,
+            tabIndex: 0,
+            onSelect: () => undefined,
+            onKeyDown: () => undefined,
+            onFocus: () => undefined,
+            registerRef: () => undefined,
+          }),
+        );
+        expect(markup, `${level.id} (unlocked=${String(unlocked)})`).toContain("motifRow");
+      }
+    }
   });
 
   it("only maps ids that actually exist in LEVELS", () => {
