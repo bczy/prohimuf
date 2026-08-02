@@ -26,11 +26,8 @@ buffer-image-size), donc un bump de n'importe laquelle de ces dépendances pouva
    `tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit`. Le projet Node
    couvre les quatre configs racine (`vite`/`vitest`/`eslint`/`prettier.config.ts`) et
    `scripts/**/*.ts`.
-2. **ESLint couvre `scripts/**`** : ignore retiré ; bloc `scripts/**/*.mjs` en
-   `disableTypeChecked` + globals Node (pas de projet tsconfig possible pour du .mjs pur ;
-   `explicit-module-boundary-types` off car insatisfiable sans annotations) ; bloc
-   `scripts/**/*.ts` type-aware via `project: ./tsconfig.node.json` (projectService
-   débrayé pour ces fichiers). lint-staged étendu à `*.mjs`.
+2. **ESLint couvre `scripts/**`** : ignore retiré ; bloc `scripts/**/\*.mjs`en`disableTypeChecked`+ globals Node (pas de projet tsconfig possible pour du .mjs pur ;`explicit-module-boundary-types`off car insatisfiable sans annotations) ; bloc`scripts/**/_.ts`type-aware via`project: ./tsconfig.node.json`(projectService
+débrayé pour ces fichiers). lint-staged étendu à`_.mjs`.
 3. **`@types/node@^24` devient une devDependency explicite**, calée sur le Node 24 de la
    CI (`.github/workflows/ci.yml`). La **double résolution** qui en découle dans
    `yarn.lock` est un état ACCEPTÉ : la v24 directe est hoistée à la racine
@@ -53,7 +50,7 @@ constat, à re-décider si un besoin réel émerge.
 - Négatif / à surveiller : deux versions d'@types/node coexistent dans le lock. Le
   montage ne casse que si la copie RACINE cesse d'être la v24 directe (elle gagne le slot
   tant qu'elle est une dépendance directe, linker node-modules). Si un `Duplicate
-  identifier` ou un drift de types apparaît, le remède est de dédupliquer (bump de la
+identifier` ou un drift de types apparaît, le remède est de dédupliquer (bump de la
   devDep ou `resolutions`), pas de retirer la dépendance directe.
 - Gotcha documenté dans `eslint.config.ts` : seul `scripts/` a un bloc .mjs — un .mjs
   ajouté ailleurs échoue au parse (projectService) et demande d'étendre le bloc ;
