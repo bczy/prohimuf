@@ -13,7 +13,7 @@ import {
   useMediaQuery,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
-import { LevelFlyer } from "./LevelFlyer";
+import { LevelFlyer, FLYER_LIFT_PX, FLYER_PULL_SCALE_HEADROOM_PX } from "./LevelFlyer";
 import styles from "./FlyerWall.module.css";
 import { BallotRow, cx } from "../controls";
 import type { BallotChoice } from "../controls";
@@ -46,6 +46,23 @@ interface FlyerMeta {
  * `Prefs["difficulty"]` union rather than imported, since `OptionsControls` does not
  * export them and M2 leaves that file untouched.
  */
+/**
+ * Vertical padding of the short-landscape rack, in px.
+ *
+ * The rack is the ONE flyer layout that clips (`overflow-y: hidden`, forced by
+ * `overflow-x: auto` — `visible` is not available alongside it), and a transform pushes
+ * content past the BORDER edge, so this padding IS the headroom budget for the pulled
+ * flyer. Derived from the pull rather than hand-tuned: at the old -4px pull the base 16px
+ * was enough, at -22px it was not, and nothing caught it. `FlyerWall.test.ts` pins the
+ * relation so the next change to `FLYER_LIFT_PX` fails loudly instead of cropping a sheet.
+ *
+ * Asymmetric on purpose: the top carries the pull plus the `scale(1.02)` growth and is the
+ * edge that was cropping; the bottom only has to clear the cast shadow of a sheet that has
+ * moved AWAY from it (pulled reach 26px offset + 7px blur, less the 14px it travelled up).
+ */
+export const RACK_PAD_TOP_PX = Math.abs(FLYER_LIFT_PX.pulled) + FLYER_PULL_SCALE_HEADROOM_PX;
+export const RACK_PAD_BOTTOM_PX = 28;
+
 const DIFFICULTIES: readonly { value: Prefs["difficulty"]; label: string }[] = [
   { value: "easy", label: "FACILE" },
   { value: "normal", label: "NORMAL" },
@@ -253,6 +270,24 @@ export function FlyerWall({
             /* A5 ratio waived in the rack (flyer-wall-format.md §4): the ~300px
                content band cannot fit a 397px-tall A5 sheet. */
             --muf-flyer-aspect: auto;
+            /* Vertical headroom for the pulled flyer. NOTE: no backticks in this block —
+               it lives inside a JSX template literal. This rack is the ONE layout that
+               clips (overflow-y: hidden, forced by overflow-x: auto — visible is not
+               available alongside it), and a transform pushes content past the BORDER
+               edge, so the container's own padding is the whole budget. The pull lifts the
+               sheet 22px and its cast shadow reaches 33px below it; the .wall base padding
+               of 16px covered the old -4px pull and covers neither now. 28px top/bottom
+               clears both. Asymmetric on purpose: the top carries the pull (22px) plus the
+               scale(1.02) growth and is the edge that was clipping, the bottom only has to
+               clear the shadow of a sheet that has moved AWAY from it. Measured on a
+               844x390 coarse-pointer rack with the tutorial flyer auto-focused (its
+               mount-time focus makes pulled the FIRST-PAINT state here, not a hover corner
+               case): 7px top clearance, 39px at the bottom. Costs ~28px of the rack's
+               content band — the flyers are content-sized here (--muf-flyer-aspect: auto,
+               align-items: flex-start), not stretched, so this shifts them down rather
+               than shrinking them. */
+            padding-top: ${String(RACK_PAD_TOP_PX)}px;
+            padding-bottom: ${String(RACK_PAD_BOTTOM_PX)}px;
             gap: 16px;
             align-items: flex-start;
             overflow-x: auto;

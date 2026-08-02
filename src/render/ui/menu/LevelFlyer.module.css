@@ -23,8 +23,13 @@
   width: 100%;
   max-width: var(--flyer-max-width);
   box-sizing: border-box;
-  /* Extra vertical gap so tilted flyers never crowd a neighbour (lead-art Gate 4). */
-  margin-bottom: 22px;
+  /* Extra vertical gap so tilted flyers never crowd a neighbour (lead-art Gate 4).
+     Sized against the WORST case, the pulled state, because the portrait column layout
+     has no `gap` and this margin is its only vertical spacing: the pull lifts 14px past
+     the rest offset, `scale(1.02)` grows the box ~1% more, and the pulled cast shadow
+     reaches 26px + 7px blur below the sheet. 36px clears the shadow with headroom; at the
+     old 22px the pulled flyer and its shadow crossed into the neighbour above. */
+  margin-bottom: 36px;
   outline: none;
   transform-origin: center;
   box-shadow: none;

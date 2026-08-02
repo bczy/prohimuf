@@ -121,6 +121,23 @@ interface LevelFlyerProps {
   registerRef: (el: HTMLDivElement | null) => void;
 }
 
+/**
+ * How far the flyer sits off the wall, in px, at rest and when pulled (focused/hovered).
+ *
+ * Exported because they are not a local styling detail: the short-landscape rack clips
+ * (`overflow-y: hidden`) and a transform pushes content past the BORDER edge, so the rack's
+ * top padding has to be sized against `pulled` or the lifted sheet gets cropped. That
+ * relation used to live only in a comment and broke silently when the pull grew from -4 to
+ * -22; `FlyerWall.test.ts` now pins it.
+ */
+export const FLYER_LIFT_PX = { rest: -8, pulled: -22 } as const;
+
+/**
+ * Headroom the rack must keep ON TOP of the pull, for the `scale(1.02)` growth of the
+ * pulled sheet (~1% of an A5-ish flyer height, measured at ~3px on a 390px-tall rack).
+ */
+export const FLYER_PULL_SCALE_HEADROOM_PX = 4;
+
 // Dog-ear (§2bis.2 pt4) is TWO elements: an unclipped wrapper carrying the fold's drop-shadow
 // and a clipped triangle child — `filter` + `clip-path` on one element never paints the shadow
 // (filter runs before clip). Wrapper picks the corner position, fold picks the triangle. CSS-
@@ -179,7 +196,7 @@ export function LevelFlyer({
   // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
   const flyerDynamic = {
     cursor: unlocked ? "pointer" : "default",
-    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -22 : -8)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
+    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? FLYER_LIFT_PX.pulled : FLYER_LIFT_PX.rest)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
     transition: `transform ${String(MOTION.flyerPull)}ms ease-out, filter ${String(MOTION.flyerPull)}ms ease-out`,
     // Pulled = lifted further off the wall, so the cast shadow drops lower and softens.
     // Rest value lives in the CSS module's `.flyer` fallback.

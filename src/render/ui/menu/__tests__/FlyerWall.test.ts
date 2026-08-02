@@ -14,7 +14,10 @@ import {
   buildPressionChoices,
   hasSeenTutorialNudge,
   markTutorialNudgeSeen,
+  RACK_PAD_TOP_PX,
+  RACK_PAD_BOTTOM_PX,
 } from "../FlyerWall";
+import { FLYER_LIFT_PX, FLYER_PULL_SCALE_HEADROOM_PX } from "../LevelFlyer";
 
 const SEEN_KEY = "muf_seen_tutorial_nudge";
 
@@ -75,6 +78,34 @@ describe("FlyerWall PRESSION header — short-landscape gating (Option A)", () =
   it("hides the header under the SHORT_LANDSCAPE_MEDIA query", () => {
     expect(html).toContain(SHORT_LANDSCAPE_MEDIA);
     expect(html).toMatch(/\.muf-pression-header\s*\{\s*display:\s*none/);
+  });
+});
+
+/**
+ * The short-landscape rack is the only flyer layout that CLIPS (`overflow-y: hidden`), and
+ * a transform pushes content past the border edge, so the rack's top padding is the whole
+ * headroom budget for the pulled flyer. That relation lived only in a comment and broke
+ * silently when the pull grew from -4px to -22px: the auto-focused tutorial flyer — pulled
+ * at FIRST PAINT, not on hover (see the auto-focus test below) — got its top edge cropped
+ * on a phone in landscape. These pin the arithmetic so the next pull change fails here.
+ */
+describe("FlyerWall short-landscape rack — pulled-flyer headroom", () => {
+  it("keeps the rack's top padding above the pull plus its scale growth", () => {
+    expect(RACK_PAD_TOP_PX).toBeGreaterThanOrEqual(
+      Math.abs(FLYER_LIFT_PX.pulled) + FLYER_PULL_SCALE_HEADROOM_PX,
+    );
+  });
+
+  it("emits that padding into the rack media block, not just into a constant", () => {
+    const html = markup(DEFAULT_PREFS);
+    const rack = html.slice(html.indexOf(SHORT_LANDSCAPE_MEDIA));
+    expect(rack).toContain(`padding-top: ${String(RACK_PAD_TOP_PX)}px`);
+    expect(rack).toContain(`padding-bottom: ${String(RACK_PAD_BOTTOM_PX)}px`);
+  });
+
+  it("lifts the flyer further when pulled than at rest, both off the wall", () => {
+    expect(FLYER_LIFT_PX.pulled).toBeLessThan(FLYER_LIFT_PX.rest);
+    expect(FLYER_LIFT_PX.rest).toBeLessThan(0);
   });
 });
 
