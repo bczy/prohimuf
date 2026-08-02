@@ -75,6 +75,28 @@ describe.each(WORKFLOWS)("%s — level_id allowlist", (file) => {
 });
 
 describe("l'allowlist vaut aussi sur le chemin d'échec (panel #156 run 4)", () => {
+  it.each(WORKFLOWS)("%s : le step de validation porte id: validate", (file) => {
+    const steps = jobsOf(file).flatMap((j) => j.steps ?? []);
+    const validate = steps.find((s) => String(s.name ?? "").startsWith("Validate level_id"));
+    expect(validate?.id, `${file}: id: validate manquant`).toBe("validate");
+  });
+
+  it.each(WORKFLOWS)(
+    "%s : AUCUN step ne survit au chemin d'échec sans être gaté sur la validation",
+    (file) => {
+      // failure()/always() sont les deux conditions qui font tourner un step alors
+      // que « Validate level_id » a échoué : chacune doit porter le gate (ADR-0078 §2).
+      const steps = jobsOf(file).flatMap((j) => j.steps ?? []);
+      const survivors = steps.filter((s) => /failure\(\)|always\(\)/.test(String(s.if ?? "")));
+      expect(survivors.length, `${file}: aucun step survivant trouvé`).toBeGreaterThan(0);
+      for (const s of survivors) {
+        expect(String(s.if), `${file} / "${s.name}"`).toContain(
+          "steps.validate.outcome == 'success'",
+        );
+      }
+    },
+  );
+
   it.each([
     ["gen-plan-backdrop.yml", "plan-backdrop-unpushed"],
     ["gen-plan-sprites.yml", "plan-sprites-unpushed"],

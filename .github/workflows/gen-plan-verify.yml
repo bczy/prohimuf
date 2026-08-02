@@ -38,6 +38,7 @@ jobs:
       # EXECUTES the resolved module (panel run-2 on PR #156). Same step as
       # gen-plan-backdrop.yml / gen-plan-sprites.yml.
       - name: Validate level_id (allowlist)
+        id: validate
         run: |
           set -euo pipefail
           if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
@@ -88,12 +89,16 @@ jobs:
           kill "$SERVER_PID" 2>/dev/null || true
           exit "$status"
 
+      # Gaté sur la validation (ADR-0078 §2) : `always()` seul ferait tourner ce step
+      # même quand l'allowlist a refusé le level_id — sur un workspace jamais checkouté,
+      # avec un id non vérifié dans ses chemins. L'invariant doit valoir pour les TROIS
+      # workflows, pas seulement pour backdrop et sprites.
       - name: Commit the playability evidence
         # Runs even when the proof step above FAILED — the evidence (including
         # the 00-failure.png shot and the report with its captured pageErrors)
         # is exactly what a human needs to diagnose the failure, so it is
         # committed either way; only the job's own exit status reflects PASS/FAIL.
-        if: always()
+        if: always() && steps.validate.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -119,11 +124,12 @@ jobs:
             fi
           fi
 
+      # Même gate que ci-dessus (ADR-0078 §2).
       - name: Re-assert the proof's own verdict
         # The commit step above always runs (even on failure) so the evidence
         # is never lost, but a failed proof must still fail the WORKFLOW — this
         # step re-reads the report and fails if the run wasn't clean.
-        if: always()
+        if: always() && steps.validate.outcome == 'success'
         run: |
           report="docs/qa/evidence/${LEVEL_ID}/report.json"
           if [ ! -f "$report" ]; then
