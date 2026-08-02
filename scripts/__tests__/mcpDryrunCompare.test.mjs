@@ -102,7 +102,15 @@ describe("compareDryrunReport", () => {
     };
     const { ok, mismatches } = compareDryrunReport(actual, committed);
     expect(ok).toBe(false);
-    expect(mismatches.some((m) => m.includes('contain the level name "Fixture"'))).toBe(true);
+    expect(mismatches.some((m) => m.includes('expected the level name "Fixture"'))).toBe(true);
+  });
+
+  it("reads the level name from the evidence, so a second level reuses this comparator (m5, review #159)", () => {
+    const rename = (r, name) => ({ ...r, hudSnippet: r.hudSnippet.replace("Fixture", name) });
+    const sp2Expected = rename(committed, "Belliard");
+    expect(compareDryrunReport(rename(freshMatching, "Belliard"), sp2Expected).ok).toBe(true);
+    // …and it stays strict on that other level: the fixture's own name now fails.
+    expect(compareDryrunReport(freshMatching, sp2Expected).ok).toBe(false);
   });
 
   it("rejects timerTicking: false on a report missing tempsFirstRead/tempsSecondRead, instead of silently agreeing (n2)", () => {

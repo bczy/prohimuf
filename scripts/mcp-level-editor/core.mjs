@@ -603,9 +603,15 @@ export function compareDryrunReport(
         `(full snippet: "${actual.hudSnippet}")`,
     );
   }
-  if (!(actual.hudSnippet ?? "").includes("Fixture")) {
+  // The level name is READ from the expected snippet (the committed evidence),
+  // never hardcoded — same reason as the url pattern above: SP2's second level
+  // must reuse this comparator instead of forking one. When the evidence carries
+  // no NIVEAU…VAGUE name, the ordered-label check above is what governs.
+  const levelNameOf = (snippet) => /NIVEAU\s+(.+?)\s+VAGUE/u.exec(snippet ?? "")?.[1];
+  const expectedName = levelNameOf(expected.hudSnippet);
+  if (expectedName !== undefined && levelNameOf(actual.hudSnippet) !== expectedName) {
     mismatches.push(
-      `hudSnippet: expected it to contain the level name "Fixture", got "${actual.hudSnippet}"`,
+      `hudSnippet: expected the level name "${expectedName}", got "${actual.hudSnippet}"`,
     );
   }
 
