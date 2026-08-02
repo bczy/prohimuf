@@ -75,9 +75,13 @@ early return that spreads `...state` with `elapsedSeconds` frozen. This single d
   next tick resumes the ordinary path. There is **no level restart, no checkpoint system, and
   none is needed**.
 - **"Retry from checkpoint" is the set-piece's own entry, not a level checkpoint.**
-  `[ RECOMMENCER ]` calls `createPhotoQte(spec)` again — `sceneClock = 0`, film restored,
-  suspicion 0, same `swaySeed` ⇒ byte-identical scene (AC10). No new persistence, no level
-  reload. **This is a clarification the specs left implicit; it is now pinned.**
+  `[ RECOMMENCER ]` calls `createPhotoQte(spec, attemptIndex + 1)` — `sceneClock = 0`, film
+  restored, suspicion 0, same `swaySeed` ⇒ byte-identical scene (AC10). No new persistence, no
+  level reload. **Rev.5 (T-2): the retry is BOUNDED — `PHOTO_MAX_ATTEMPTS = 2`, mission-scoped
+  (spec Rev.4 D-1).** The authoritative counter therefore CANNOT live on `photoQte`, which the
+  retry destroys and recreates: it lives on `GameState.photoQteAttempts` (§2.6), and
+  `createPhotoQte` receives the index it must stamp. The earlier wording "`[ RECOMMENCER ]` is
+  not bounded in number" predates Rev.4 and is **withdrawn**.
 
 **D-B — The device fork dies in the bridge: the pure layer sees ONE device-neutral input.**
 Desktop hold-Space and the mobile tap-to-toggle (T-2, residue C-2) both resolve to a single
@@ -328,6 +332,14 @@ export interface PhotoQte {
   readonly suspicion: number;
   readonly frames: readonly PhotoFrameRecord[];
   readonly outcome: PhotoLeverage; // derived at DEVELOPING, frozen from then on
+  /**
+   * Rev.5 (T-2). 0-based SNAPSHOT of the mission-scoped attempt this instance is.
+   * NOT the counter: the counter is `GameState.photoQteAttempts`, which survives the
+   * retry that destroys this object. Stamped by `createPhotoQte`, never mutated by the tick.
+   * Two consumers only: `BRIEFING` is entered iff `attemptIndex === 0` (spec Rev.4 D-1), and
+   * `photoSheetView` derives `retryOffered = attemptIndex + 1 < PHOTO_MAX_ATTEMPTS`.
+   */
+  readonly attemptIndex: number;
   readonly spec: PhotoQteSpec; // carried so the tick needs no second argument
 }
 
@@ -378,7 +390,13 @@ export interface PhotoLeverageTiers {
 ### 2.3 `src/game/systems/photoQteSystem.ts` — the machine
 
 ```ts
-export function createPhotoQte(spec: PhotoQteSpec): PhotoQte; // asserts F1–F13
+/** Rev.5 (T-2): `attemptIndex` is 0-based and REQUIRED — the caller (stateMachine) owns the
+ *  mission-scoped counter. Asserts F1–F13, plus `0 <= attemptIndex < PHOTO_MAX_ATTEMPTS`.
+ *  `phase` starts at `BRIEFING` iff `attemptIndex === 0`, else at `ESTABLISHING`. */
+export function createPhotoQte(spec: PhotoQteSpec, attemptIndex: number): PhotoQte;
+/** Mission-scoped attempt budget (spec Rev.4 D-1). A module constant, NOT an authored field:
+ *  the gate closed on one value for one set-piece; per-level authoring is not a requirement. */
+export const PHOTO_MAX_ATTEMPTS = 2;
 export function isPhotoQteActive(qte: PhotoQte | null): boolean; // phase ∉ {DONE, EXITED}
 export function shouldTriggerPhotoQte(
   spec: PhotoQteSpec | null,
@@ -465,6 +483,14 @@ export const PHOTO_LEVERAGE_STORAGE_KEY = "muf_leverage";
 - `LevelParams` gains `photoQte?: PhotoQteSpec | null`, `photoLeverage?: PhotoLeverage` and —
   **Rev.3, after the delta gate closed Q-3 with NO** — `photoQteEnabled?: boolean`
   (absent ⇒ `true`, so no existing caller or test changes).
+- **Rev.5 (T-2): `GameState` gains `photoQteAttempts: number`, seeded to `0` by
+  `createInitialState`.** This is the mission-scoped counter, and its scope is exactly the
+  lifetime of the `GameState` — a new level entry (or a level restart) rebuilds the state and
+  resets it to 0, which IS "mission-scoped"; `[ RECOMMENCER ]` does not rebuild the state
+  (D-A: the retry never destroys the level), so the counter rides through untouched. It must
+  **not** be reset when `photoQte` returns to `null` on `EXITED` — the whole point is that it
+  outlives the sub-record. Re-entry is impossible anyway (`shouldTriggerPhotoQte` is one-shot
+  per level via the D-K guard); the counter exists for the in-sheet retry alone.
 - `createInitialState` seeds `photoQte: null`,
   `photoLeverage: params.photoLeverage ?? "none"`, and
   `photoQteSpec: params.photoQteEnabled === false ? null : (params.photoQte ?? null)` on
@@ -475,11 +501,13 @@ export const PHOTO_LEVERAGE_STORAGE_KEY = "muf_leverage";
 
 ```ts
 let photoQte = state.photoQte;
+let photoQteAttempts = state.photoQteAttempts;
 if (
   shouldTriggerPhotoQte(state.photoQteSpec, photoQte, elapsedSeconds) &&
   state.photoQteSpec !== null
 ) {
-  photoQte = createPhotoQte(state.photoQteSpec);
+  photoQte = createPhotoQte(state.photoQteSpec, photoQteAttempts);
+  photoQteAttempts += 1; // Rev.5 (T-2): incremented ONCE per entry, first entry included
 }
 if (isPhotoQteActive(photoQte) && photoQte !== null) {
   const r = tickPhotoQte(photoQte, photoInput, delta);
@@ -1343,3 +1371,137 @@ them changes a type, a signature or the lane split:
 
 _Winston — `senior-architect`, 2026-08-01, stage 3 · amended Rev.3, 2026-08-02 · post-delta-gate
 corrections, 2026-08-02._
+
+---
+
+## AMENDEMENT Rev.5 — the two stage-4 blockers (`qa-lead` T-1/T-2/T-7/T-11)
+
+Stage 4, lanes A and B in flight. Inès's test plan raised four findings that are mine. Two are
+blocking. Decisions below are binding; the diffs they imply are already applied above
+(§1 D-A, §2.1, §2.3, §2.6).
+
+### R5-1 — T-2 (BLOCKING): the attempt counter lives on `GameState`, not on `PhotoQte`
+
+**Confirmed as stated.** My §2.1 predated spec Rev.4 D-1, and my own §D-A pinned the retry as
+`createPhotoQte(spec)` — a fresh object. A counter stored inside that object is reset by the
+very operation it is supposed to bound, so the cap could never fire and every attempt would
+replay the 25 s briefing. Two independent defects from one missing field.
+
+**Decision (three parts):**
+
+1. **Authority: `GameState.photoQteAttempts: number`**, seeded `0`, incremented once on every
+   entry into the set-piece (first entry included), never reset while the level state lives.
+   Mission scope == `GameState` lifetime; that identity is the whole argument.
+2. **Snapshot: `PhotoQte.attemptIndex: number`** (0-based), stamped by
+   `createPhotoQte(spec, attemptIndex)`, never touched by the tick. It exists so the pure
+   machine and the projection stay total functions of `(qte, input, delta)` — no second
+   argument threaded through `tickPhotoQte`, no `GameState` reaching into `photoQteSystem`.
+3. **Budget: `PHOTO_MAX_ATTEMPTS = 2`**, a module constant in `photoQteSystem.ts`, not an
+   authored `PhotoQteSpec` field. One gated value for one set-piece; authorability is not a
+   requirement and would be a second source of truth against D-1.
+
+**Derived rules, both now type-reachable:**
+
+- `phase` starts at `BRIEFING` iff `attemptIndex === 0`, else at `ESTABLISHING`
+  (F13's 25 s is paid once per mission — the Rev.4 62.8 s retry figure follows from this line).
+- `photoSheetView(qte).retryOffered = qte.attemptIndex + 1 < PHOTO_MAX_ATTEMPTS`.
+  `photoSheetView` keeps its single-argument signature.
+- `createPhotoQte` asserts `0 <= attemptIndex < PHOTO_MAX_ATTEMPTS` and throws otherwise —
+  house discipline (ADR-0035 D2): an out-of-budget entry is a caller bug, not a clamp.
+
+**SEAM IMPACT: NONE — lane B does not stop.** The A0 seam (861ccb42) already ships
+`PhotoSheetView.retryOffered: boolean` with the mission-scoped wording, which is the only thing
+the render lane consumes. This correction is **purely additive on `PhotoQte`** (one new readonly
+field) and changes **no exported type shape and no signature lane B calls**. Lane B's in-flight
+work compiles unchanged. The change is contained in lane A: `createPhotoQte` gains a second
+parameter, `GameState` gains one field, `stateMachine` §1a gains one increment.
+
+**Lane A consequence (blocking, do it in A2 before the CTA work):** three tests —
+(i) attempt 2 skips `BRIEFING`; (ii) after attempt 2 the sheet's `retryOffered === false`;
+(iii) `photoQteAttempts` survives `photoQte: null` on `EXITED`.
+
+### R5-2 — T-7 (BLOCKING): three CI gates boot Belliard on wall-clock budgets
+
+**Verified in the scripts, finding CONFIRMED and it is worse than "three checks might flake":**
+
+| Script                            | Belliard boot                       | Wall-clock budget crossed by an 87.8 s freeze at t=2.5 s                            |
+| --------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------- |
+| `scripts/e2e-delivery.mjs`        | `LEVEL_ID = "belliard"`, `seedPlay` | `BANNER_TIMEOUT = (TRIGGER_S + 15) * 1000`, then `SUCCESS_TIMEOUT`                  |
+| `scripts/harness-assert.mjs` D2-A | `assertBelliardPanic`, `seedPlay`   | polls `qte.phase === "ZOOMING"` under `QTE_TIMEOUT`; the hostage trigger is at 12 s |
+| `scripts/harness-motion.mjs`      | play mode, `seedPlay`               | hostage @12 s + zoom 2 s → `ACTIVE` @14 s, strip capture on wall clock              |
+
+`photoQteEnabled` alone is **NOT** the answer, and this is the core of the decision. The field is
+computed in `App.tsx handlePlay` from a progression predicate that is `pm`'s and not yet written.
+All three scripts call `seedPlay`, which writes `muf_progress` with **every** level id — so
+whether they see the set-piece is an accident of a predicate nobody has authored. Today it might
+read "first run ⇒ disabled" and CI stays green; the day `pm` refines the predicate, three
+required checks go red for a reason no one will connect to a progression tweak. **A green CI that
+depends on an unwritten predicate is the silent breakage, not the freeze.**
+
+**Decision — the harness opts OUT explicitly, and by DEFAULT:**
+
+1. `seedPlay(page, ids, { setPieces = false })` gains a third option. When `setPieces` is
+   false — **the default** — the init script sets `window.__MUF_NO_SETPIECE__ = true`.
+2. `App.tsx handlePlay` reads that flag **beside** the progression predicate, as a hard
+   override: `photoQteEnabled: window.__MUF_NO_SETPIECE__ === true ? false : <pm predicate>`.
+   One line, in the impure seam. **`src/game` learns nothing**: it still receives a spec or a
+   null, and a null-spec Belliard is the already-tested A-T7 path.
+3. The name is deliberately generic (`__MUF_NO_SETPIECE__`, not `__MUF_NO_PHOTO__`): the next
+   time-freezing set-piece inherits the immunity instead of re-breaking the same three gates.
+
+**Why default-OFF and not opt-out per script:** immunity by construction. Every existing and
+every future wall-clock harness is protected without its author knowing the set-piece exists.
+Only the new photo e2e opts in, deliberately, with `{ setPieces: true }`. It also composes with
+the T-1 rule below: a photo e2e that forgets the opt-in sees no set-piece — and its mandatory
+opening assertion fails **loudly**, instead of the false green Inès described.
+
+**Precedent:** this is the `__MUF_PLAY__` / `__MUF_FREEZE_COPS__` family (ADR-0005), a
+harness-only override in the seam that already owns them. No new ADR.
+
+**Lane consequences:**
+
+- **Lane C (blocking, before the e2e work):** the `seedPlay` option in `scripts/e2e-lib.mjs`,
+  plus a header note in each of the three scripts naming the freeze and the immunity
+  (this is Inès's gate condition, §9 of the test plan).
+- **Lane A (one line, in A2):** the `__MUF_NO_SETPIECE__` read in `handlePlay`, next to the
+  predicate. Flag read in `App.tsx` only — never in `src/game`, never in `src/hooks`.
+- **Lane B: nothing.**
+
+### R5-3 — T-1 (CONFIRMED, and it constrains `pm`): the false green
+
+Accepted as written: with `enabledOnFirstRun: false`, the default harness state produces no
+set-piece, so a naive e2e proves nothing while passing. Three rules, all binding:
+
+1. Every photo e2e opens with `pollState(… s.game.photoQte !== null …)` inside
+   trigger + margin, and **fails with a named error** if it does not appear. No photo assertion
+   may be written before that one.
+2. `{ setPieces: true }` is required on `seedPlay` (R5-2).
+3. **Architectural constraint on the predicate — this is mine, not a re-litigation of the
+   gate's "not the first run":** the predicate must be a **pure function of persisted state
+   already writable from an `addInitScript`** (`muf_progress` / `muf_prefs`). A predicate
+   resting on in-memory session state, a server, or a brand-new storage key that the harness
+   cannot seed makes the feature **untestable in CI**, and I will not sign that off. `pm` keeps
+   full freedom on _what_ "not the first run" means; _where it is read from_ is the
+   architecture's call. No new `window.__MUF_*` flag for the ENABLE path (Inès is right: the
+   flag would test the flag).
+
+### R5-4 — T-11 (MAJOR, resolved by removing the special case): the 0-frame sheet
+
+`SCENE_END` with zero exposed frames is reachable (never press the shutter for 60 s), and the
+truncating sheet then renders an empty grid — an unspecified render state.
+
+**Decision: the contact sheet is NEVER conditionally laid out.** It renders a fixed 2×3 grid of
+**six slots**, always; `frames[]` fills slots by `ordinal`, unfilled slots draw the empty-slot
+treatment. Consequences: `SPOTTED` truncation stops being a layout branch (it is just fewer
+filled slots), 0 frames stops being an edge case (it is the base case), and the layout cannot
+reflow between outcomes. The CTA row is always present, with initial focus on `[ RECOMMENCER ]`
+when `retryOffered`, else on the leaving CTA — which at 0 frames is `decline` (no MASTER frame),
+`outcome === "none"`, and that is correct, not a bug.
+
+**Lane B:** the six-slot grid + empty-slot treatment; no `frames.length === 0` early return
+anywhere in the sheet screen. **Lane C / E2:** keep the 0-frame `SCENE_END` case Inès specified.
+**Routed to `ux-designer` + `narrative-designer` (non-blocking, no code depends on it):** the
+empty-slot visual and the one line of copy for a roll shot with zero frames — the structure
+above ships with a placeholder string and does not wait for them.
+
+_Winston — `senior-architect`, 2026-08-02, stage 4 blocker triage (T-1, T-2, T-7, T-11)._

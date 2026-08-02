@@ -452,3 +452,425 @@ ferme ou rouvre D-1 par l'observation plutôt que par le débat.
 **Stage 5 :** acceptation design par Karim contre **AC1–AC15**. Les quatre premières choses que je
 regarde : `[ LAISSER TOMBER ]` en une pression (l'invariant), AC14 (chasse à la frustration),
 AC6b(d) (dessiné == boîte au composite), **AC15** (le temps réel de la mission Belliard).
+
+## stage-4. AUDIO SPEC — sound-designer (Malik) — 2026-08-02
+
+- claim: answer E-7 (mechanic §10.4, delta gate residual) — spec the audio identity of the
+  set-piece (wave cover, tell, shutter crisp/dull, affût ambience, contact-sheet beats), name
+  asset vs. behaviour, and gate the audible behaviours already specified by other lanes.
+  release: `docs/audio-qte-photo-paparazzi.md`. File List: `docs/audio-qte-photo-paparazzi.md`,
+  `docs/handoffs/story-qte-photo-paparazzi.md`.
+- VERDICT: PASS — `WAVE_*` cover cadence + two-waves-same-envelope rule (mechanic spec Rev. 4,
+  D4 §4.1). Adopted as an authoring discipline, checkable mechanically (envelope match across
+  the three wave renders) before any human-ear pass.
+- VERDICT: PASS — crisp/dull shutter click as the sole T5 channel (D2.a, §2.4), with one
+  discipline added on record: discrimination must hold in-mix against the loudest concurrent
+  wave, not just solo (bible §3, judged in-mix).
+- VERDICT: PASS — D8 two-beat feedback boundary. **Declining** to add a verdict-differentiated
+  contact-sheet sting (would leak the semantic verdict through an unbudgeted audio channel, same
+  family as the gate's R3-2 prohibition on the plate's traffic light) — recorded so it is not
+  re-proposed.
+- VERDICT: PASS — techplan D-J (cover read from `sceneClock`/`inCover`, never from
+  `trafficSignalPhase`'s wall-clock cycle). No audio dependency on the decorative signal prop;
+  explicitly refusing any future request to drive wave cadence from it.
+- **Open, not gated:** whether the shipped BGM tension tier keeps running or ducks/stops during
+  the frozen `BRIEFING`→`DONE` block. Not specified by any upstream doc — flagged as unverified,
+  not assumed, and handed to `game-designer`/`senior-architect` as a behaviour question before
+  the owning dev lane wires playback.
+- **No unreachable or incoherent ask found** in the mechanic/fiction/techplan specs read against
+  the bible.
+- **Hand-offs:** `dev-tooling-assets` (sourcing brief, 8 new files, none touching shipped
+  `bgm_*`/`shoot.wav`, bounded to 2 sourcing batches per cue family); `game-designer` (BGM-tier
+  question above); `senior-architect` (confirm lane split for the audio-hook wiring — likely
+  `dev-gameplay` pure trigger + `dev-r3f-render`/hooks playback, mirroring shipped
+  `shoot/hit/death/win`).
+
+## stage-4. AUDIO SPEC — sound-designer (Malik) — 2026-08-02
+
+- **Status:** DELIVERED
+- **release:** `docs/audio-qte-photo-paparazzi.md` (spec complet, 4 verdicts, BGM question escaladée)
+- **VERDICT PASS** ✓ (all 4 sections gated; BGM behaviour flagged, unverified)
+
+## stage-4. DOCS (tech-writer, Otis) — 2026-08-02
+
+- **Status:** DELIVERED
+- **release:** `spec-boss-shield-break-tempo-shot.md` header corrected, AMENDMENT A1 transcribed, Stalingrad sweep done
+- **Doc↔code bug fixed** (per `techplan-photo-qte.md` §"Doc↔code coherence bug found here" and
+  `design-gate-photo-qte.md` E-4): `spec-boss-shield-break-tempo-shot.md`'s header corrected to
+  `GATED (ADR-0060) — SHIPPED`, traced to ADR-0060 + `story-boss-shield-tempo-shot.md` §2.
+- **AMENDMENT A1 transcribed verbatim** into §8 "Amendments" of
+  `spec-boss-shield-break-tempo-shot.md` (rewardMultiplier order, compound floor non-strict `≥`,
+  phases 1-2 scope). Verbatim per protocol, no re-gate.
+- **Stalingrad cross-ref sweep:** confirmed no stale claims; photo set-piece relocation (Rev.3,
+  Belliard) documented; every other Stalingrad hit legitimate (level assets/roster/fiction).
+- **File List:** `docs/game-design/spec-boss-shield-break-tempo-shot.md`,
+  `docs/handoffs/story-qte-photo-paparazzi.md`.
+
+## stage-4. DEV LANE A — dev-gameplay (Amelia) — 2026-08-02
+
+- **claim:** A0 seam (shared types + photo control channel) ✓ **delivered** (commit 861ccb42).
+  Proceeding: A1 determinism kernel, A2 photo machine, A3 boss lever + carry, A4 bridge.
+  Dependencies: A2/A3 sequenced (both touch `types/gameState.ts` + `levels.data.ts`), hold
+  lane B on A0 release.
+- **release (A0):** `src/game/types/photoComposition.ts`, `src/game/hooks/photoControlChannel.ts`
+  - updated `bossQteSystem.ts`, `qteSystem.ts`.
+- **Next phases (A1–A4):** determinism `hash.ts` extraction (D-H blocking lane C check script),
+  determinism kernel + golden-vector tests, photo state machine + contact sheet wiring,
+  cross-level carry (ADR-0080 E-4e), bridge + `raiseIntent: boolean` (D-B device fork), decline
+  (E-4g), pause/resume posture (T-5).
+- **File List (A0):** `src/game/systems/hash.ts`, `src/game/systems/__tests__/hash.test.ts`.
+- **Status:** A0 DELIVERED, A1–A4 IN FLIGHT.
+
+## stage-4. DEV LANE B — dev-r3f-render (Amelia) — 2026-08-02
+
+- **claim:** telephoto view, three-state brackets (T-1), diegetic HUD (CSS Modules + ADR-0046),
+  contact sheet + R2-5 CTA shape (TWO peer CTAs, neither primary, identical weight ≥44×44),
+  mobile toggle button (T-2 device fork), App.tsx seed/persist wiring (ADR-0080 bridge).
+- **depends-on:** lane A0 seam types + channel (blocker).
+- **Status:** WAITING FOR A0 (at gate ready, not yet launched).
+
+## stage-4. CONCEPT LANE — concept-artist (Sacha) — 2026-08-02
+
+- **claim:** 9 sprite keyframes (K1–K9, locked by design gate) drawn==box at ±5% (F12(1b)),
+  two non-drifting hold poses (K2→K3 19.2 s, K4→K5 14.7 s per E-6), levelArt.json + sprite
+  dispatch to `dev-tooling-assets`. Gate: `lead-art` (E-6 7 constraints: 4 gated + 3 delta —
+  marche arrière plate & sans grossissement, continuité de rue vs street-wide.png).
+- **Status:** AWAITING LEAD-ART GATE (specs frozen, gate opened).
+- **Escalation E-6 (7 constraints):** See delta gate §38–43.
+
+## stage-4. QA LANE — qa-lead (Inès) — 2026-08-02
+
+- **claim:** test plan (A3bis touch-count, A7bis bracket pixel-diff, A9 pause/resume, A14bis
+  one-press decline, AC13(b) wall-clock vs assert), e2e suite **AC1–AC15** (with new AC15:
+  measure real-world mission-elapsed time Belliard ×1 and ×2 set-piece retries against 3–5 min).
+- **Status:** PLAN READY, EXECUTION AWAITING LANE A BUILD (A3bis touches requires live state
+  machine).
+- **Escalation E-8 (new):** AC15 — measure wall-clock time on Belliard, intent: close D-1 by
+  observation rather than debate (shard delta gate §9–10). If ≤2 tentatives fit 3–5 min window,
+  D-1 condition closes and E-5 constraint loosens. If > 5 min, reopens E-5/D-1 to architect/pm.
+
+## stage-4. ESCALATIONS & UNRESOLVED — CONSOLIDATION
+
+**Escalations from Round 2 (travelling):**
+
+- **E-4 (senior-architect / Winston):** 7 asks (a–g) resolved in techplan stage-3, + A1
+  amendment (tech-writer delivered), + ADR-0077/0080 merge re-check (producer). Status:
+  AWAITING LANE A BUILD to verify types/seams in code.
+- **E-5 (pm / John):** bonus never gate (K-4), Stalingrad scope/build order (now Belliard per
+  Bertrand override), deferred `PARIS-MINUIT` UNE variant (4-valued carry contingency),
+  AC13 ≤2 min. Status: OPEN — pm ruling awaited on (Q-2) bank-at-exit vs K-4 contradiction,
+  known non-neutral post-relocation.
+- **E-6 (lead-art / Nico):** 7 constraints (4 gated original + 3 delta: flat reverse, no zoom
+  reverse, street continuity) + prohibition R3-2 (no cover-encoding except headlights). Status:
+  GATE OPENING as concept-artist work lands, pending Nico verdict.
+- **E-7 (sound-designer / Malik):** wave cadence (WAVE\_\* cover), crisp/dull click, window+tell
+  state. **DELIVERED & PASS** at stage-4; BGM tier question (open, see below).
+
+**Escalations from Delta Gate Rev.3 (Belliard relocation):**
+
+- **E-3bis (Bertrand):** adopt/reject G-3 rule _"frozen scene time does not count vs 3–5 min IF
+  total reachable frozen time per mission attempt is bounded and written."_ Status: AWAITING
+  BERTRAND RULING (D-1 closure contingent).
+- **E-8 (qa-lead / Inès):** new gate-imposed AC15 — measure real-world Belliard mission time at
+  1 and 2 set-piece re-entry. Status: READY FOR BUILD (depends A3 shipped).
+- **N-1 (senior-architect / Winston):** contradiction correction — techplan D-J said "light from
+  `inCover`", but that re-introduces the prohibited colour-channel. Fix: "illumination / headlights
+  from `inCover`", not colour. Status: ROUTED, non-blocking correction.
+- **N-2 (senior-architect + dev-tooling-assets / Victor):** F12(1) constraint check needs
+  **interval sampling** (K2→K3, K4→K5 hold poses + K6→K7 reverse), not just 9-keyframe bounds.
+  `check-photo-subject-boxes.mjs` must sample. Status: ROUTED, spec'd, needs implementation.
+- **N-3 (senior-architect / Winston):** do NOT lock trigger at `triggerAtElapsedSeconds` before
+  D-1 closed. Status: ADVISORY (A1 lane must know, not pin code yet).
+
+**Residual Editorial Corrections (C-1…C-8):**
+
+- **C-1** (narrative-designer / Yasmine): ×0.75 → ×0.80 in fiction §4.4 (already noted round 2).
+- **C-2** (game-designer / Sacha): device fork (hold desktop, toggle mobile) into spec §1.1/1.3.
+- **C-3** (game-designer + ux-designer / Sacha + Tony): role names vs shipped strings.
+- **C-4** (game-designer / Sacha): fiction §2.2 light source (feu vs phares) must match mécanique
+  §4.2 (phares). Currently stale — conflicts with R3-2 ruling.
+- **C-5** (narrative-designer / Yasmine): fiction §2.4 "pre-Belliard" claim false post-relocation.
+- **C-6** (narrative-designer / Yasmine): mark R3-2 bonus-lisibilité as **declined**, prevent
+  re-proposal.
+- **C-7** (game-designer / Sacha): mécanique §11.4 stale (says ADR-0077 missing when now present,
+  E-1 CLOSED).
+- **C-8** (game-designer / Sacha): §4.1 boulangerie fallback + §1.1 BRIEFING phase addition.
+
+**Open Behaviour Question (not a gate, not yet assigned):**
+
+- **BGM tier during frozen set-piece:** whether shipped BGM tension tier (if active) keeps running,
+  ducks, or stops during `BRIEFING`→`DONE` frozen block. Not specified by any upstream doc.
+  **Status:** FLAGGED UNVERIFIED; routed to `game-designer`/`senior-architect` before lane A
+  wires audio playback. Risk: dev-gameplay may assume default; must clarify before commit.
+
+---
+
+## ADR STATUS — SELF-ALLOCATIONS & MERGE RE-CHECK
+
+- **ADR-0077** (self-allocated by Bertrand at brainstorming close, no producer in loop):
+  Present on branch, identical to round-1 reconstruction → E-1 CLOSED. **Producer re-check at
+  merge:** verify numbering collision (0077 claimed on three unmerged branches), precedent
+  (ADR-0063 guard).
+- **ADR-0080** (self-allocated by senior-architect at stage-3 tech plan, no producer in loop):
+  Relates ADR-0077, ADR-0076 (run-stats, F1 law), ADR-0060 (shield lever), ADR-0074 (storage).
+  Proposed status. **Producer re-check at merge:** same collision/precedent audit, verify logic
+  path vs ADR-0076 D4 split.
+- **ADR-0078 / ADR-0079** (reported taken on unmerged branch, not fetched): out of scope for this
+  audit; merge-time discovery expected.
+
+---
+
+## stage-4. PM RULINGS — John — 2026-08-02
+
+- **claim:** rule Q-2 (when the photo leverage is banked), Q-3 (the exact "not on the first
+  Belliard run" predicate), and F-2 (the deferred `PARIS-MINUIT` UNE variant), per E-5 and the
+  delta gate's routing. Lane A is blocked on Q-2/Q-3 before wiring A3 (boss lever + carry).
+- release: this entry. File List: `docs/handoffs/story-qte-photo-paparazzi.md`.
+
+### Q-2 — CONFIRMED: bank at the EXIT of the set-piece (ADR-0080 D3 stands, unchanged)
+
+`senior-architect`'s reasoning is right and the relocation to Belliard makes it _more_ right, not
+less: dying to the street after the photo is the modal outcome on level 1, and "bank at level
+clear" would strip the proof from most first-time photographers minutes after teaching them it
+was theirs. That is worse than a bug — it is a lesson in "don't bother," taught to new players,
+on the level that is supposed to teach the opposite.
+
+**Marion's tension — real-sounding, but it is a category error, and I want that said explicitly
+so it isn't re-raised as a blocker.** K-4 ("bonus, jamais gate") constrains _failure states_: no
+death, no blocked progress, no forced retry, no HP/score/quota cost for skipping or failing the
+set-piece — and the built screen enforces exactly that (`[ LAISSER TOMBER ]`, one press, always
+available, never subordinate — R2-5). It does **not**, and was never meant to, mean "the bonus
+has no value." A bonus with zero value isn't a bonus, it's decoration. The fact that skipping it
+means _not having the leverage_ is not a gate — it is the definition of an optional reward. By
+Marion's logic every optional collectible in every game ("more gold if you explore") is a
+"de facto gate" because skipping it costs you the gold — that reading empties the word "gate" of
+meaning. The actual test for a gate is: does declining block or punish anything **else**? No —
+confirmed by D1.3's leaving-control invariant and by ADR-0080's own "no scarcity" ruling (R3-6):
+the proof is deliberately farmable, replayable indefinitely, at zero cost. That is the opposite
+of a gate.
+
+One real (and already-closed) adjacent concern, named so it doesn't get confused with Marion's:
+persisted + monotone + always-replayable does create a **completionist pull** — a patient player
+will farm `master-bonus` on Belliard before ever touching the Niveau Final. That is priced and
+accepted at the design gate (R3-6, ADR-0080 Consequences) as a design fact, not an architecture
+problem, and the lever to de-tune it if it ever feels mandatory-in-practice is the **reward
+tiers** on the Niveau Final row (`×0.90`/`×0.80`), never the carry mechanism. No action from me;
+flagging it so lane A knows it is seen, not missed.
+
+**Ruling: D3 ships as written. Lane A may wire A3's bank-on-exit unchanged.**
+
+### Q-3 — The exact "not on the first Belliard run" predicate
+
+`photoQteEnabled` is a `LevelParams` boolean, computed in `App.tsx`, **read from `muf_progress`
+(the existing unlock-set key) — no new storage, no new key, no read inside the pure layer.**
+
+**Predicate: `photoQteEnabled = <the level unlocked immediately after Belliard> ∈ muf_progress`.**
+In plain terms: the set-piece is available on Belliard from the run in which the player has
+already **cleared Belliard at least once before** (evidenced by the next level being unlocked),
+never on the very first attempt. This is the cheapest possible signal that is already true and
+persisted the moment it matters, it needs zero new plumbing, and it is monotone by construction
+(an unlock, once granted, is never revoked) so the predicate can't flicker across sessions.
+
+Why this and not "level cleared this session" or a session flag: a session flag would need new
+state (React or a new storage key) for a fact `muf_progress` already encodes losslessly. Using
+the unlock set is the literal execution of ADR-0080's own follow-up note — "a boolean computed in
+`App.tsx` from already-persisted state, threaded exactly like `photoLeverage` … it does not
+warrant a seventh `muf_*` key" — I am simply naming which already-persisted fact to read.
+
+This also satisfies the design gate's own reasoning (R3-5): a first-time Belliard player has not
+yet learned the game's core two verbs, so fronting four QTE verbs on attempt 1 would break G-1's
+"apprenable sans copy" condition it was conceded under. Gating on "has cleared Belliard once" is
+the natural reading of "second and later visit," matches the fiction's framing of this as a
+_return_ to the street, and needs no narrative reframing.
+
+**Ruling: `photoQteEnabled` derives from `muf_progress` containing the post-Belliard level id.
+Lane A may wire this into `LevelParams` for A3.**
+
+### F-2 — `PARIS-MINUIT` UNE variant — CONFIRMED deferred out of V1
+
+Stays out. Reasons stack, they don't need re-arguing: (1) YAGNI — it is a prestige-tier payoff on
+a surface (the scores screen) nothing else in this story touches; building it now is scope creep
+against a story whose gate already closed at PASS without it. (2) ADR-0080 already priced the
+later cost honestly — an **added field** (`hasPlaque`), not a migration, one tier read, one
+scores-screen read — specifically so deferring it now doesn't tax whoever un-defers it later.
+That is the right shape of a deferred decision: cheap to defer, cheap to later un-defer. (3)
+Un-deferring it would turn the 3-valued carry into 4-valued and open a new UX surface (scores
+screen) — exactly the kind of scope addition that belongs in its own story with its own design
+loop, not folded silently into this one.
+
+**Ruling: F-2 stands as written in the fiction/mechanic specs. No V1 work on `PARIS-MINUIT`.**
+
+### Scope check against `PROJECT_GUIDELINES.md`
+
+Cahier des charges: **PASS.** Prohibition ST had no camera verb — [EXTENSION], consciously
+documented via ADR-0077, the core loop `Récupérer → Livrer → Éviter` untouched, no rule added to
+`Éviter`, never a gate. G-1/G-2 are correctly kept as a **local exception**, not written into
+`PROJECT_GUIDELINES.md` (E-3, Bertrand) — good discipline: the next set-piece re-argues both from
+zero rather than inheriting a silently-widened rule.
+
+**One non-blocking playtest flag I want on record, not a ruling.** F14's composed worst case is
+**262.1 s (4.37 min)** for a mission whose _played_ budget is 90 s — i.e. on the very first level
+of the game, a first-time player can spend more frozen time than played time. It is inside the
+letter of guideline rule 2 (3-5 min), but it leans on the ceiling, on level 1, stacked with the
+hostage duel. AC15 is exactly the right instrument to close this by measurement rather than
+argument (E-8) — I want its verdict routed to me before this ships, not just to
+`senior-architect`/`qa-lead`, because "technically inside the ceiling" and "feels like the game
+hasn't started yet" are two different questions and only the second one is mine to call.
+
+G-3 (E-3bis) remains Bertrand's call and is **not** blocking these three rulings or lane A's
+A3 work — the spec's own text (Rev. 4, §1.3.a) is explicit that D-1's closure holds "whether or
+not G-3 is adopted." I am not ruling on G-3 here; it stays with Bertrand.
+
+---
+
+## PIPELINE STAGE SUMMARY — 2026-08-02, STAGE 4 IN FLIGHT
+
+| Stage   | Owner              | Status          | Next Hand-off               | Blocker                      |
+| ------- | ------------------ | --------------- | --------------------------- | ---------------------------- |
+| **0–2** | lead-game-designer | PASS DELTA      | stage-3 → stage-4 LIVE      | E-3bis (Bertrand ruling G-3) |
+| **3**   | senior-architect   | TECH PLAN DONE  | stage-4 DEV                 | (none — plan frozen)         |
+| **4A**  | dev-gameplay       | A0 LIVE ✓       | A1–A4 IN FLIGHT             | D-1/BGM (see escalations)    |
+| **4B**  | dev-r3f-render     | WAITING A0      | B LAUNCH AFTER A0 STABLE    | (A0 seam gate)               |
+| **4C**  | concept-artist     | GATE OPENED     | LEAD-ART GATE               | E-6 (art gate)               |
+| **4**   | qa-lead            | PLAN READY      | AC1–AC15 EXECUTION          | E-8/lane A BUILD             |
+| **4**   | sound-designer     | DELIVERED ✓     | (gate done; BGM escalated)  | (none)                       |
+| **4**   | tech-writer        | DELIVERED ✓     | (amendment done; awaits pm) | (none)                       |
+| **5**   | game-designer      | ACCEPTANCE GATE | (awaits lane A + qa pass)   | AC1–AC15                     |
+| **6–8** | (waiting)          | (holding)       | → code-review panel         | stage-5 PASS                 |
+
+---
+
+## DECISION REGISTER — HOT ESCALATIONS FOR BERTRAND TRIAGE
+
+**Priority 1 — G-3 (E-3bis) — Bertrand calls the 3–5 min law**
+Context: Delta gate D-1 found that re-entry count on Belliard is unbounded, risking overflow
+past 5 min if rule G-3 is not adopted. Architect cannot move forward without this. **Bertrand
+to decide:** YES (adopt G-3, soft-gate the Belliard attempt count via `[ LAISSER TOMBER ]` text
+— cost: 1 line of copy) or NO (accept 5+ min risk, revert architecture or accept-with-defect).
+**Timeline:** ASAP (blocks E-5/pm scope, touches architecture story ordering).
+
+**Priority 2 — Q-2 (E-5 pm) — bank-at-exit vs K-4 contradiction**
+Context: Round 2 R2-4 ruled carry at "mission clear", but K-4 ruled "bonus never gate". Relocation
+Belliard now means carry survives the entire level, and Belliard is mandatory (level 1). **pm to
+resolve:** if bonus is taken as mandatory (not gated but always auditable), carry-at-exit is safe.
+If bonus is treated as optional (can be skipped), carries it forward violate K-4's "bonus never
+gate". **Timeline:** BEFORE lane A wires carry persistence (A3 sub-phase).
+
+**Priority 3 — BGM Behaviour — Malik escalated to game-designer/architect**
+Context: Audio spec gated "windows are gameplay state" but did not define BGM tier during frozen
+block. If dev-gameplay assumes default (keeps running), and playtest finds it breaks rhythm, costs
+rework. **To clarify BEFORE A1 committed:** does BGM pause/duck/stop during `BRIEFING`→`DONE` ?
+Is this asset-based (music key/tier field edit) or code (audio hook conditional)? **Timeline:**
+BEFORE audio wiring commit (lane A).
+
+**Priority 4 — Merge-time ADR re-check (not blocking build, blocking merge)**
+Both ADR-0077 and ADR-0080 self-allocated, no producer oversight during sprint. Standard
+`adr-new` guard applies: collision check (both claimed on multiple unmerged branches), precedent
+(ADR-0063 protocol compliance). **Timeline:** merge gate (stage-7).
+
+**Priority 5 — Lane ordering post-Belliard (pm/architect coordination)**
+Original tech plan assumed Stalingrad (level 4+), build-order impact minimal. Belliard (level 1)
+means photo QTE now touches the first impression. **pm + architect one-time sync:** confirm
+mission sequencing, AC13 ≤2 min scoping in front of a 3–5 min Belliard level, confirm deferred
+UNE variant scope. **Timeline:** during Q-2 ruling (Priority 2).
+
+---
+
+---
+
+## PROMPT GATE — `photoQte` set-piece prompts (lead-art / Nico, 2026-08-02)
+
+Verdict doc: [`docs/art-direction/gates/photo-qte-setpiece-prompt-gate.md`](../art-direction/gates/photo-qte-setpiece-prompt-gate.md).
+Subject: `docs/art-direction/prompt-drafts/photo-qte-setpiece.md` (Maud, DRAFT).
+
+**CONDITIONAL PASS — 2 reworks + 3 edits, then the write is authorised (no second round).**
+
+| Item                                                                   | Verdict                                                                 |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Structural (a) plate without actor/berline                             | PASS — ratified, it is what makes E-6(3) checkable                      |
+| Structural (b) ONE berline sprite translated K6/K7/K8                  | PASS — E-6(5)/(6) true by construction                                  |
+| Structural (c) static mono-frame hold poses                            | PASS — zero frames is the only zero-drift guarantee (E-6(4))            |
+| Plate (telephoto)                                                      | PASS w/ conditions                                                      |
+| shared `opening`                                                       | **FAIL — R1** (`one subject centred` contradicts 3 of 4 group cut-outs) |
+| shared `style`                                                         | PASS (carries R1's second half)                                         |
+| `commandant_wait` / `pair_facing` / `exchange_close` / `berline_plate` | PASS w/ edits E1 / E2 / — / E3                                          |
+| contact sheet                                                          | **FAIL — R2** (no outer chroma ground on a declared cut-out)            |
+| `stamp_master` / `stamp_bonus` / `stamp_reject`                        | PASS 3/3                                                                |
+
+- **kontext img2img from a `street-wide.png` crop: VALIDATED** (bible §3.12; E-6(7) is a gate
+  criterion, so continuity needs a mechanism not a hope). Crop committed as a reference, pinned
+  seed, opaque 16:9 no chroma, flux fallback pre-authorised, **cap 2 batches**.
+- **Seam 1 — registration plate: RULED.** Blank in the sprite, characters composited render-side
+  (LOOT-crate glyph precedent). Decor ink not neon; format from `art-advisor`; **composite gate
+  owed**; the composite must not move the AABB.
+- **Seam 2 — bakery fascia: RULED.** Blank panel, and **no** render-side lettering — the plate
+  cites the shipped décor, it does not enrich it. Inherited gibberish letters = asset-gate FAIL.
+- Prohibitions **F-4, T-4, R3-2/N-1: all clear**, with two standing conditions — no render-side
+  lit-lens overlay on the plate's feu, and no plate element consumes `inCover` (headlight sweep
+  only, render-side ⇒ composite gate).
+
+**Owed to lead-art:** asset gate on the 8 PNGs incl. the defect sweep (`exchange_close` read at
+1:1 — four hands + an envelope), and the composite gate on the plate characters + headlight sweep.
+
+---
+
+## Stage 4 (appui perf) — `gpu-specialist` (Ben) → `senior-architect` · 2026-08-02
+
+**VERDICT: CONDITIONAL — GPU / frame budget · tiers `desktop` + `mobile` · a priori (no build judged).**
+Full analysis, budget lines and on-target protocol: `docs/perf-budget.md` §9 + §10.
+New proposed budget lines **B10** (set-piece VRAM), **B11** (max texture dim), **B12** (per-frame
+upload), **B13** (occluded draw calls) — §2, awaiting Bertrand's ratification with the rest.
+
+**Two conditions on Lane B, both verifiable in the sandbox, both blocking a stage-5 PASS:**
+
+- **C1 (B13)** — the occluded world must not be drawn while the set-piece holds the screen.
+  Measured baseline: Belliard is 73 p50 / 86 max draw calls desktop, 57 p50 mobile, + the 5-pass
+  CRT chain — all fully occluded, for up to ~4 min/mission (115 s × `maxAttempts 2`). Remedy:
+  `visible={false}` on the world group while `isPhotoQteActive`. This is NOT the hostage duel
+  (which zooms into the world and must keep it). §9.5.
+- **C2 (B6)** — zero shader programs compiled at the set-piece's first open. As specified this is a
+  **B6 breach**: new materials compile at `triggerAtElapsedSeconds = 2.5 s`, mid-mission, on level
+  1. `warmAssets.ts` has no shader-warm path. Remedy: `renderer.compile()` at the loading gate. §9.6.
+
+**Two decisions routed to `senior-architect` (not mine to make):**
+
+- **D1 — the plate/pose PIXEL resolutions are unspecified anywhere.** `FILL_MIN/MAX` force a
+  7.5×–15× nearest-neighbour magnification of the plate; a 1280 px plate samples ~83 source pixels
+  at the tightest legal framing. Six options priced in §9.2: **B** (2048×1152 + 6 poses @512² =
+  15.4 MB) or **F** (tier-forked poses) are inside every line; a 4096 plate blows **B10** by 2.7×
+  on mobile; "1:1 at 300 mm" fails **B11** and draws black on a 4096-capped Android. The lever the
+  plan already has and hasn't used: carry density on the POSES, not on the plate. Art/design trade
+  ⇒ `lead-art` + `game-designer`.
+- **D2 — first-run manifest skip** (non-blocking). §9.7.
+
+**The preload call (techplan §6 Lane C, Rev.3): premise wrong, conclusion right by accident.**
+Measured here: cold boot is `manifestFor("menu")` = **1 asset / 0.10 MB**; Belliard is **54 assets
+/ 30.42 MB**, warmed behind a `LoadingScreen` at level SELECTION, not at first paint —
+time-to-first-frame is not on this path. And there is **no named-preload-group mechanism** in the
+codebase: `GESTURE_EMBEDDED_ASSETS` / `DIAGRAM_EMBEDDED_ASSETS` are branch-conditioned inclusions
+into the same eager list. **Recommendation: plain roster entries, build no new mechanism** — lazy
+cannot win a 2.5 s trigger, and the real cost is +8 % on a gate the player already sits through.
+Comparison anchor: the plate at 9.4 MB is **31 %** of `street-wide.png` (6418×1248 = 30.55 MB),
+which Belliard keeps resident at all times.
+
+**Named as false problems (do not spend time here):** the full-screen plate quad (1 opaque draw, a
+net B5 _reduction_ once C1 lands), sway as a UV/offset write (2 uniforms/frame), reduced motion
+(pure-layer only — zero GPU cost, both modes byte-identical to the renderer), the AF brackets
+(GPU-free; a DOM `transform` vs `top/left` question).
+
+**Two cliffs that are cheap to avoid and expensive to discover late:** sway implemented as a
+per-frame `CanvasTexture` re-crop (**236 MB/s**, ~30× the whole B5 allowance — B12); contact-sheet
+thumbnails drawn in-canvas (six `Texture.offset` values ⇒ six clones ⇒ +23.6 MB, B10 FAIL on its
+own) instead of one DOM image cropped six ways by CSS. §9.3, §9.4.
+
+**Note for `lead-art` (via architect), from the art hand-off above:** the render-side **headlight
+sweep** is the only element allowed to project `inCover`, so it animates for 60 s; as a full-screen
+additive quad it is 1.0× added blended coverage against a **mobile B5 allowance of 0.75×**. Scope
+it to the passage-mouth rect, or bake it. §9.6bis.
+
+**DEFERRED-ON-TARGET: B1 (frame time) on real silicon** — protocol ready to run at
+`docs/perf-budget.md` §10 (P0–P7, D1/D2/D3, thresholds). Chased by `producer`, run by Bertrand.
+The gate that matters is **Δ p50 on P5** (Belliard's boss finale reached _after_ ~4 min of
+set-piece, branch vs main): ≤ +1.5 ms desktop, ≤ +2.0 ms mobile. Setup note: play one Belliard
+mission first — `enabledOnFirstRun: false` means a fresh profile measures a level with no
+set-piece in it.

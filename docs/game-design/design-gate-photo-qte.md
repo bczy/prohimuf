@@ -1111,3 +1111,147 @@ choses que je regarderai en premier : `[ LAISSER TOMBER ]` en une pression (l'in
 de la mission Belliard avec le set-piece dedans).
 
 _Karim — `lead-game-designer`, 2026-08-02, contrôle delta Rev.3._
+
+---
+
+# ARBITRAGE URGENT — stage 4, findings QA T-4 et T-6
+
+**Saisine :** `qa-lead` (Inès), `testplan-photo-qte.md` §8 T-4 (bloquant lane B) et T-6 (majeur).
+**Portée :** je tranche deux points déjà gatés par moi. Aucune autre cellule n'est rouverte ;
+le build des lanes A/B/C continue, seules les deux zones nommées ci-dessous sont touchées.
+
+## A-1 — T-4 : la planche contact, focus et hiérarchie. **R2-5 Ruling B TIENT, sans amendement.**
+
+Il n'y a pas deux décisions en conflit : il y a **une** décision (R2-5 Ruling B, round 2,
+transcription verbatim exigée) et **une ligne non transcrite**. `spec-photo-qte-paparazzi.md`
+§1.3 bullet 1 dit encore _« The leaving control is the default/primary focus on both
+branches »_ — c'est le texte **antérieur** à mon arbitrage, que R2-5 a explicitement amendé
+(« Sacha §1.3 bullet 1 amended : leaving control **always present, always one press, never
+subordinate** — not "primary" »). Rev.3 et Rev.4 ont shippé sans l'appliquer. C'est un résidu
+éditorial, pas un désaccord de design.
+
+**Ce que lane B implémente, autorité unique, aucune ambiguïté :**
+
+- Branche **master** : **un seul** CTA, `[ CONTINUER ]` (R2-5 Ruling A).
+- Branche **sans master, budget restant** : **deux CTA pairs**, même rangée, poids visuel
+  identique (taille, traitement, échelle typo), **aucun stylé primaire** ; ≥ 44×44 CSS px,
+  espacement visible (A15). **Focus clavier/gamepad initial sur `[ RECOMMENCER ]`.**
+  `[ LAISSER TOMBER ]` à **une pression** en permanence (un Tab, ou un tap direct), jamais
+  imbriqué, jamais derrière une confirmation, jamais sur un second écran.
+- Branche **sans master, budget épuisé** (`attemptIndex + 1 === PHOTO_MAX_ATTEMPTS`) :
+  `[ RECOMMENCER ]` **absent du DOM**, `[ LAISSER TOMBER ]` seul — donc de facto focus initial.
+
+**Pourquoi ce n'est PAS une contradiction avec mon raisonnement du round 2, et pourquoi je le
+redis :** j'ai écrit que « décline = secondaire » est la façon dont un invariant meurt en
+silence. C'est un énoncé sur le **poids visuel et la distance d'accès** (K-4 : disponibilité en
+une pression), pas sur le **focus initial**. Le focus initial n'est pas une hiérarchie, c'est un
+point de départ de curseur : il ne rend pas `[ LAISSER TOMBER ]` moins lisible, moins gros ou
+plus loin — il l'empêche seulement d'être **pré-armé par un Entrée réflexe** d'un joueur qui vient
+d'échouer et dont l'intention la plus probable est de réessayer. Un décline déclenché par
+inadvertance serait la version symétrique et pire de la mort de l'invariant. Les deux exigences
+— CTA pairs + focus sur `[ RECOMMENCER ]` — sont donc **compatibles et cumulatives**, et c'est
+exactement ce que R2-5 Ruling B écrit.
+
+**Corrections à faire, par lane (je n'édite pas leurs fichiers) :**
+
+| ID       | Lane                              | Correction                                                                                                                                                                                                                                                                                          |
+| -------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C-9**  | Sacha (`spec-…-paparazzi.md`)     | §1.3, bullet 1 : **remplacer** « The leaving control is the default/primary focus on both branches » par le texte verbatim de R2-5 Ruling B (deux CTA pairs, focus `[ RECOMMENCER ]`, une pression à tout moment). Résidu round 2 non appliqué en Rev.3 **et** Rev.4. Éditorial, **aucun re-gate**. |
+| **C-10** | Tony (`ux/photo-qte-controls.md`) | A14 doit asserter **poids égal** (pas une paire primaire/secondaire) **et** la cible de focus initial. Et **T-5** : A14bis dit encore « retour à la livraison **Stalingrad** » — c'est **Belliard** depuis Rev.3. La ligne sert de source à E3 : périmée, elle fait tester le mauvais niveau.       |
+| **C-11** | Inès (`testplan`)                 | T-4 est **résolu** : C-CTA et E3/E4 s'écrivent contre R2-5 Ruling B tel que recopié ci-dessus. Ajouter l'assertion « aucun des deux CTA ne porte de classe/style primaire » **et** « `document.activeElement === [ RECOMMENCER ]` à l'apparition de la planche, budget restant ».                   |
+
+**Lane B est débloquée immédiatement** : elle code contre la présente section, qui fait foi sur
+les deux specs jusqu'à leur correction.
+
+## A-2 — T-6 : F14 est FAUX comme borne de « une mission = 3-5 minutes ». **D-1 est ROUVERT (conditionnel).**
+
+Inès a raison et le trou est de moi : j'ai ratifié Decision 4 en lisant `262,1 s = 4,37 min`
+comme du **temps réel de mission**, alors que la somme ne contient que du **temps gelé
+authored**. `CONTACT_SHEET_READ_BUDGET = 30,0 s` est une valeur que **cette spec elle-même
+autorise**, deux fois sur le chemin à deux tentatives : 60 s, contre 38 s de marge. Une borne qui
+exclut un budget que le même document publie n'est pas une borne, c'est une omission. Les deux
+prédictions d'Inès sont arithmétiquement justes : **92,8 s > 90 s** (plafond tentative 2) et
+**322,1 s = 5,37 min > 5 min** (mission à deux tentatives). Le chemin à une tentative
+(3,82 min) est confortable et n'est pas en cause.
+
+**Ce que je refuse d'emblée, et pourquoi :**
+
+- **Option « accepter 5,37 min ».** REFUSÉE. « Une mission = 3-5 minutes » est une contrainte
+  dure de `PROJECT_GUIDELINES.md`, pas un objectif. La seule façon de la satisfaire ici serait de
+  décréter que le temps de lecture ne compte pas — c'est-à-dire de redéfinir la contrainte pour
+  sauver le chiffre. C'est le même mécanisme que « décline = secondaire » : l'invariant survit
+  sur le papier et meurt dans le jeu construit.
+- **Option `PHOTO_MAX_ATTEMPTS = 1`.** REFUSÉE comme premier recours. Elle ferait tomber la
+  contrainte, mais elle supprime le retry — donc le seul palier d'apprentissage du set-piece,
+  E4, H4 (le compteur mission-scoped qui protège R3-6) et la forme à deux CTA pairs que je viens
+  de rétablir en A-1. Payer une erreur d'arithmétique par la suppression d'une mécanique gatée
+  est disproportionné tant qu'un levier de tuning existe.
+- **Toucher `ACTIVE = 60,0 s`.** INTERDIT. C'est la cadence authored : les 9 keyframes, les
+  trois fenêtres, F1–F5, F12 en dépendent. Aucune ouverture de ce côté.
+
+**Ce que je décide.** `PHOTO_MAX_ATTEMPTS = 2` **reste**. Les deux blocs à réduire sont ceux
+dont la durée est un **temps de lecture**, donc du tuning pur, sans conséquence sur une seule
+valeur de cadence : `PHOTO_BRIEFING_MAX_SECONDS` (25,0 s) et `CONTACT_SHEET_READ_BUDGET`
+(30,0 s). **La cible est arithmétique, pas adjectivale :**
+
+> **G-4 (règle proposée, manquante dans les guidelines).** La contrainte « une mission =
+> 3-5 minutes » se mesure en **temps mur (wall-clock), tout bloc gelé inclus, y compris les
+> budgets de lecture que le design publie lui-même**, dans le **pire cas légal** (tous les caps
+> écoulés, budget de tentatives épuisé). Un plancher qui ne borne que du temps authored doit
+> le dire dans son énoncé et n'est jamais la preuve de la contrainte. → escaladé à Bertrand
+> avec G-3 ; il est **appliqué immédiatement** ici, quelle que soit son adoption formelle,
+> puisqu'il ne fait qu'énoncer ce que la contrainte signifiait déjà.
+
+**Condition bloquante D-1b, commissionnée à `game-designer` (Sacha), 1 seule ronde :**
+
+1. **Réécrire F14** en temps mur : `90 (joué) + Σ tentatives (gel authored + budget de lecture
+de la planche) + 21,5 (otage)`, sous plafond **300 s**, avec **≥ 20 s** de réserve pour le
+   chargement, les transitions et l'hésitation du joueur.
+2. **Re-tuner les deux seules constantes ouvertes** (`PHOTO_BRIEFING_MAX_SECONDS`,
+   `CONTACT_SHEET_READ_BUDGET`) pour tenir cette borne, avec le rationale habituel : combien de
+   lignes de briefing sont lisibles dans le cap retenu, et combien de vignettes/tampons sont
+   lisibles dans le budget planche. **Si la lisibilité ne tient pas** dans les valeurs
+   nécessaires, tu ne rabotes pas : tu remontes, et le levier devient `PHOTO_MAX_ATTEMPTS = 1`
+   que je tranche alors moi-même contre l'arbitrage de Bertrand.
+   _Vérification que j'ai faite pour m'assurer que la commande est satisfaisable — c'est un
+   ordre de grandeur, pas une valeur imposée :_ briefing 15,0 s et planche 20,0 s donnent
+   tentative 1 = 97,8 s (≤ 120 ✓), tentative 2 = 82,8 s (≤ 90 ✓), composé
+   `90 + 97,8 + 82,8 + 21,5 = 292,1 s = 4,87 min` (≤ 5 min, 7,9 s sous le plafond de mon point 1
+   — donc **même cet exemple est un peu juste** : c'est bien un exercice de tuning, pas une
+   formalité).
+3. **Réénoncer les plafonds mesurés** de la table Decision 3 (120 s / 90 s / 210 s) comme
+   **dérivés** des deux constantes, pas comme des nombres posés à côté d'elles — sinon la même
+   désynchronisation reviendra.
+4. **Decision 6 inchangée** : `BELLIARD_BOSS_ENABLED` reste hors budget, et AC15 sur ce chemin
+   revient à Sacha avant que le flag ne shippe.
+
+**Statut de gate :** la fermeture de D-1 par la Rev. 4 est **NON CONFIRMÉE** — c'est un **FAIL**
+sur ce seul point, et il est de mon fait autant que du sien (je l'ai ratifiée). Le reste de la
+Rev. 4 (F13, F15, `triggerAtElapsedSeconds = 2,5 s`, R3-1/2/3/5/6, C-5…C-8, AC14/AC15) **tient**
+et n'est pas rouvert.
+
+**Impact build — volontairement nul sur la structure :** `PHOTO_MAX_ATTEMPTS` reste 2, la
+machine à phases, la présence/absence des CTA au cap et tout le contrat typé sont **inchangés**.
+Les deux constantes en jeu sont des **données de tuning**. **Lane A code contre les valeurs
+Rev. 4 et les remplacera par les valeurs Rev. 5** — à condition qu'elles vivent dans la table de
+constantes authored et nulle part en dur ailleurs (ce que F13/F14 exigent déjà). **Aucune lane
+n'est bloquée par D-1b.**
+
+**Ce qui n'est pas négociable côté QA :** T-6 n'est pas « prédit puis oublié ». **AC15 reste un
+gate condition** et se mesure contre le **F14 réécrit**, pas contre 262,1 s. Si le run mesuré
+dépasse la nouvelle borne, c'est un FAIL de recette design à l'étape 5, chez moi.
+
+**Cap d'itération :** 1 ronde sur D-1b (nous sommes déjà à 2 rondes + un delta sur ce set). Si la
+Rev. 5 ne tient pas la borne, je n'ouvre pas de ronde 2 : j'escalade à Bertrand les deux options
+chiffrées (`PHOTO_MAX_ATTEMPTS = 1`, ou dérogation explicite et écrite sur le chemin à deux
+tentatives).
+
+## Récapitulatif des verdicts
+
+| Finding | Verdict                                                                                       | Destinataire              |
+| ------- | --------------------------------------------------------------------------------------------- | ------------------------- |
+| **T-4** | **TRANCHÉ — R2-5 Ruling B fait foi.** Lane B débloquée. C-9/C-10/C-11 éditoriaux.             | lane B, Sacha, Tony, Inès |
+| **T-6** | **FAIL — D-1 rouvert (D-1b).** F14 à réécrire en temps mur, 2 constantes à re-tuner, 1 ronde. | Sacha (`game-designer`)   |
+| **G-4** | Règle proposée (temps mur, pire cas légal), appliquée immédiatement, escaladée avec G-3.      | Bertrand via `pm`         |
+
+_Karim — `lead-game-designer`, 2026-08-02, arbitrage T-4 / T-6 (stage 4)._
