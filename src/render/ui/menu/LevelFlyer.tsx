@@ -177,13 +177,16 @@ export function LevelFlyer({
 
   // Object-level transform/pull/opacity live on the (unclipped) `.flyer`; background, the
   // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
-  const flyerDynamic: React.CSSProperties = {
+  const flyerDynamic = {
     cursor: unlocked ? "pointer" : "default",
-    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -4 : 0)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
-    transition: `transform ${String(MOTION.flyerPull)}ms ease-out`,
+    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -22 : -8)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
+    transition: `transform ${String(MOTION.flyerPull)}ms ease-out, filter ${String(MOTION.flyerPull)}ms ease-out`,
+    // Pulled = lifted further off the wall, so the cast shadow drops lower and softens.
+    // Rest value lives in the CSS module's `.flyer` fallback.
+    ...(pulled ? { "--flyer-shadow": "drop-shadow(6px 26px 7px rgba(20, 18, 16, 0.6))" } : {}),
     animation: shaking ? `mufLockedShake ${String(MOTION.lockedShakeMs)}ms ease-in-out` : undefined,
     opacity: unlocked ? 1 : 0.85,
-  };
+  } as React.CSSProperties;
   const paperDynamic = {
     background: stock,
     "--flyer-clip": edge.clipPath,
