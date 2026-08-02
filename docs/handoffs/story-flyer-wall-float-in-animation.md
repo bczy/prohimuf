@@ -149,3 +149,31 @@ Ce qu'il faut en retenir, et qui ne périme pas :
 - Trois affirmations d'état périmées (inventaire de fichiers ×3, verdict du panel ×3) ont
   toutes la même cause : une valeur recopiée à la main au lieu d'être générée ou pointée.
   L'inventaire est désormais généré par commande ; le verdict est pointé, plus recopié.
+
+## Passe `simplify` (stage 5, avant le panel)
+
+19 fichiers · 1699 → 1684 lignes de code ajoutées (−15). Baseline verte avant/après
+(tsc, 1701 tests, eslint). Commit `e5e64b17`.
+
+**APPLIQUÉ** — trois lots, vert après chacun :
+
+- `FlyerWall.tsx` — deux commentaires jumeaux sur `playCascade` ; paragraphe périmé laissé
+  au-dessus du raffiné dans l'effet mouvement réduit ; les trois détections rejetées
+  recopiées du doc de décision (§5) réduites à un renvoi. C'est cette duplication même qui
+  avait produit le BLOQUANT « le doc contredit le code ».
+- `scripts/e2e-lib.mjs` — l'argument « ne pas recalculer la durée » tenu deux fois dans le
+  même bloc JSDoc ; gardé l'exemplaire qui porte le plafond des 105 niveaux.
+- `FlyerMotif.tsx` — prop `className` : un seul appelant, jamais renseignée.
+
+**PROPOSÉ** — non appliqué, demande un arbitrage de lane :
+
+- `LevelFlyer.tsx` + `FlyerMotif.tsx` — **cinq tables parallèles** indexées par le même
+  `levelId` (`MOTIF_BY_LEVEL_ID`, `MOTIF_PLACEMENT`, `MOTIF_SIZE_PX`, `MOTIF_TILT_DEG`,
+  `MOTIF_WEAR_SEED`), donc cinq lectures et cinq `?? défaut` par emblème. Ajouter un niveau
+  demande de toucher cinq endroits, et une entrée oubliée retombe silencieusement sur un
+  défaut — c'est la forme exacte du bug NADIR 94. Une seule table par niveau supprimerait
+  les défauts dispersés. → owner : `senior-architect` · non appliqué : déplace un export
+  public entre deux modules et impose de réécrire les tests des emblèmes, donc hors du
+  périmètre « mécanique et prouvé par la suite existante ».
+
+**REVERTED** : aucun. **Bugs repérés (non corrigés)** : aucun.
