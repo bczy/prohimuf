@@ -43,7 +43,7 @@ import { WEAPON_SPECS } from "@game/types/weapon";
 import type { LootSpec } from "@game/types/loot";
 import { CORE_ARCHETYPES, archetype, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
-import { hostageBossMarginIssue } from "@game/levels/validateLevel";
+import { hostageBossMarginIssue, deliveryBossMarginIssue } from "@game/levels/validateLevel";
 import type { CoreEnemyKind, EnemyKind } from "@game/types/enemy";
 
 // Resolve the active window pool from a roster: absent `windowWeights` ⇒ the
@@ -119,6 +119,10 @@ export function createInitialState(
   facade: FacadeMap,
   params: LevelParams = DEFAULT_LEVEL_PARAMS,
   roster?: LevelRoster,
+  // Street half-width carrier for the delivery/boss guard's travel legs (render-owned,
+  // same value `tickGameState` already receives). Optional: absent, the guard keeps
+  // its width-independent bound instead of going blind.
+  courierField?: CourierField,
 ): GameState {
   const deliverySpec = params.delivery ?? null;
   const hostageQteSpec = params.hostageQte ?? null;
@@ -151,6 +155,20 @@ export function createInitialState(
   });
   if (marginIssue !== null) {
     throw new Error(marginIssue.message);
+  }
+  // GUARD (panel PR #143 follow-up — the delivery mirror of the guard above). The boss
+  // branch of `tickGameState` early-returns before the delivery block, so a delivery still
+  // in flight when the timed finale fires would freeze on screen forever. Same ADR-0074 §3
+  // shape: the arithmetic lives in `validateLevel.ts`, thrown here with the REAL street
+  // half-width when the caller supplies it (useGameLoop always does).
+  const deliveryMarginIssue = deliveryBossMarginIssue({
+    delivery: deliverySpec,
+    bossQteSpec,
+    timeSeconds: params.timeSeconds,
+    streetHalfWidth: courierField?.halfWidth,
+  });
+  if (deliveryMarginIssue !== null) {
+    throw new Error(deliveryMarginIssue.message);
   }
   return {
     phase: "PLAYING",
