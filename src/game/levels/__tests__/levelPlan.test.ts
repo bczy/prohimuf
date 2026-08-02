@@ -667,6 +667,14 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     // Absolu, sans aucun ".." — la forme que la garde ratait (panel r7).
     { ...base, backdrop: { ...base.backdrop, file: "/etc/passwd" } },
     { ...base, props: [{ ...base.props[0], asset: "/etc/hostname" }] },
+    // Mauvais TYPE sur une clé connue : passait jusqu'au round 10, se scaffoldait,
+    // et faisait rougir tsc sur un module déclaré propre.
+    { ...base, archetypes: [{ ...vigile, shoots: "yes" }] },
+    { ...base, archetypes: [{ ...vigile, countsAsTarget: 1 }] },
+    { ...base, archetypes: [{ ...vigile, tint: 42 }] },
+    { ...base, archetypes: [{ ...vigile, artRetired: "oui" }] },
+    { ...base, backdrop: { ...base.backdrop, mode: "troncon-sequence" } },
+    { ...base, props: [{ ...base.props[0], row: "middle" }] },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

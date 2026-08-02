@@ -142,10 +142,9 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
   // guard per field. Three review rounds each surfaced another unchecked string
   // (`fiction.*`, then `backdrop.file`, then `props[].asset`) with the identical
   // failure: a "sound" verdict, a module scaffolded to disk, and `undefined`
-  // reaching a filesystem path or the menu card. This closes the class rather than
-  // the instances. (`archetypes[].spriteBase` is checked by the rules below;
-  // `backdrop.mode` is a one-literal union — a wrong value is a rule question, not
-  // a crash.)
+  // reaching a filesystem path or the menu card. Closes the MISSING-string half of the
+  // class ; the extra-key half is r8's check, the wrong-type half r10's, below.
+  // (`archetypes[].spriteBase` is checked by the rules further down.)
   const requiredStrings: (readonly [string, unknown, string])[] = [];
   if (isRecord(p.fiction)) {
     for (const key of ["name", "label", "district", "year"] as const) {
@@ -259,6 +258,66 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
   if (Array.isArray(p.props)) {
     (p.props as readonly unknown[]).forEach((prop, i) => {
       reportExtraKeys(prop, KNOWN_KEYS.prop, `props[${String(i)}]`);
+    });
+  }
+  // Les TYPES des champs qu'aucune borne ne regarde. Le round 3 affirmait « fermer la
+  // classe » (verdict sain → module scaffoldé → `tsc` rouge) ; c'était surestimé : il
+  // fermait les chaînes MANQUANTES, le round 8 les clés EN TROP, mais pas les VALEURS de
+  // mauvais type sur des clés connues (panel r10). Un `shoots: "yes"` ou un
+  // `backdrop.mode: "troncon-sequence"` passait, se scaffoldait, et faisait rougir `tsc`
+  // sur un fichier que l'outil venait de déclarer propre.
+  //
+  // Périmètre exact, vérifiable en lisant les deux tables côte à côte : les gardes de
+  // `validateLevelPlan` couvrent déjà kind, weight, variants, hp, bulletDamage, les deux
+  // durées, les trois deltas, aspect et spriteBase — la table ci-dessous prend tout le
+  // reste, donc chaque champ déclaré des trois formes a désormais l'un ou l'autre.
+  const typeChecks: (readonly [string, unknown, "boolean" | "string", boolean])[] = [];
+  if (Array.isArray(p.archetypes)) {
+    (p.archetypes as readonly unknown[]).forEach((a, i) => {
+      if (!isRecord(a)) return;
+      const at = `archetypes[${String(i)}]`;
+      typeChecks.push([`${at}.shoots`, a.shoots, "boolean", true]);
+      typeChecks.push([`${at}.countsAsTarget`, a.countsAsTarget, "boolean", true]);
+      typeChecks.push([`${at}.tint`, a.tint, "string", true]);
+      typeChecks.push([`${at}.artRetired`, a.artRetired, "boolean", false]);
+    });
+  }
+  for (const [field, value, expected, required] of typeChecks) {
+    if (!required && value === undefined) continue;
+    if (typeof value !== expected) {
+      issues.push(
+        planIssue(
+          "malformed",
+          field,
+          `${field}: expected a ${expected} — a wrong type here scaffolds a module tsc rejects`,
+        ),
+      );
+    }
+  }
+  // Les deux unions littérales, pour la même raison : rien d'autre ne les regarde
+  // (`validateLevel` travaille sur `LevelConfig`, qui ne porte pas `backdrop`), et le
+  // rendu branche sur `backdrop.mode === "single-wide"`.
+  if (isRecord(p.backdrop) && p.backdrop.mode !== "single-wide") {
+    issues.push(
+      planIssue(
+        "malformed",
+        "backdrop.mode",
+        `backdrop.mode: expected the literal "single-wide" (the only layout the renderer knows)`,
+      ),
+    );
+  }
+  if (Array.isArray(p.props)) {
+    (p.props as readonly unknown[]).forEach((prop, i) => {
+      if (!isRecord(prop) || prop.row === undefined) return;
+      if (prop.row !== "near" && prop.row !== "far") {
+        issues.push(
+          planIssue(
+            "malformed",
+            `props[${String(i)}].row`,
+            `props[${String(i)}].row: expected "near" or "far"`,
+          ),
+        );
+      }
     });
   }
   if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {

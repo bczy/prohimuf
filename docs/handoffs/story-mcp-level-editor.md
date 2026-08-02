@@ -86,6 +86,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       2 MINEUR), traités, voir §8
 - [x] **Panel CI — round 9 : CONDITIONAL** sur `758ee575` (0 BLOQUANT, 2 MAJEUR,
       1 MINEUR), traités, voir §8
+- [x] **Panel CI — round 10 : CONDITIONAL** sur `32efe777` (0 BLOQUANT, 2 MAJEUR,
+      2 MINEUR), traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -1050,3 +1052,32 @@ correctifs — dont le plus grave manquement au contrat de toute la série.
   avoir fermée. Table relue APRÈS l'await.
 - **[MINEUR] audit de dépendances non câblé en CI** — le finding demande lui-même de
   « suivre le hand-off ouvert », ce qui est déjà fait (liste en fin de shard). Sans action.
+
+### Round 10 — `32efe777` : CONDITIONAL (0 BLOQUANT, 2 MAJEUR, 2 MINEUR)
+
+Ce round ne porte PAS sur le mécanisme de concurrence (celui pour lequel j'ai recommandé
+le gel) : les deux MAJEUR visent le contrat de `validate`/`scaffold`, et ils sont fondés.
+
+- **La revendication « la classe est fermée » du round 3 était surestimée.** Elle l'était
+  pour les chaînes MANQUANTES ; le round 8 a fermé les clés EN TROP ; restaient les
+  VALEURS de mauvais type sur des clés connues — même conséquence exactement : verdict
+  sain, module écrit sur disque, `tsc` rouge sur un fichier que l'outil vient de déclarer
+  propre, donc critère §6 falsifié. Les deux MAJEUR sont deux instances de ce reste :
+  - **[MAJEUR] `backdrop.mode` jamais vérifié** — et mon commentaire l'écartait
+    explicitement (« a wrong value is a rule question, not a crash »), ce qui était faux :
+    aucune règle ne le regarde non plus (`validateLevel` travaille sur `LevelConfig`, qui
+    ne porte pas `backdrop`), et le rendu branche dessus. Un `mode: "troncon-sequence"`
+    se scaffoldait proprement. Garde littérale ajoutée, commentaire corrigé.
+  - **[MAJEUR] booléens et `tint` d'archétype jamais typés** — les bornes couvrent tous
+    les champs numériques et `spriteBase`, mais rien ne regardait `shoots`,
+    `countsAsTarget`, `tint` ni `artRetired`. Un `shoots: "yes"` passait.
+    **Périmètre désormais vérifiable** (et énoncé comme tel dans le code plutôt qu'affirmé
+    en bloc) : chaque champ déclaré des trois formes a soit une borne, soit un contrôle de
+    type — les deux tables se lisent côte à côte. `props[].row` ajouté au passage, même
+    classe, non signalé par le panel.
+- **[MINEUR] l'artefact de coordination flyer voyage dans cette PR** — déjà soulevé au
+  round 3 et déjà tranché : je maintiens la décision (dire vrai plutôt que retirer), et le
+  finding reconnaît lui-même qu'elle est divulguée. Le déplacer maintenant retirerait des
+  fichiers de la PR au moment du merge pour demander à une autre branche de les reprendre
+  — du churn contre un bénéfice de forme. Point noté, non actionné, assumé.
+- **[MINEUR] devDeps** — « no action required », l'attestation D2 tient.
