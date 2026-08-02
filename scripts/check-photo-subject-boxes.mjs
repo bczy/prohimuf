@@ -226,16 +226,62 @@ async function loadSpec() {
 }
 
 /**
- * Resolves a `sceneClock` time to the DELIVERED sprite's decoded frame + its px->su scale.
- * Expected shape once it lands: `{ decodedFrameAt(t): Promise<{W,H,data}>, suPerPxAt(t): number }`
- * (`decodedFrameAt` reuses `decodePng` from `e2e-lib.mjs`). THIS MAPPING DOES NOT EXIST YET —
- * it is lane C's own manifest wiring (`assetManifest.ts` `photoAssetPaths`, techplan §6 Lane
- * C) and is deliberately NOT invented here: guessing a scale would make this gate assert
- * against a number nobody authored. Until `assetManifest.ts` exports it, every mode below
- * reports SKIPPED with this exact reason rather than a silent, meaningless PASS.
+ * Resolves a `sceneClock` time to the DELIVERED sprite's decoded frame: `{ decodedFrameAt(t):
+ * Promise<{W,H,data}> }` (`decodedFrameAt` reuses `decodePng` from `e2e-lib.mjs`).
+ *
+ * The time->asset mapping is the structural correspondence §2.5's keyframe table already
+ * states ("Drawn subject" column): K0/K1 -> `commandant_wait`, K2/K3 -> `pair_facing`,
+ * K4/K5 -> `exchange_close`, K6/K7/K8 -> `berline_plate`. Derived from `track` (never a
+ * hand-typed asset list) by walking its boundaries — `track[1].t`/`track[3].t`/`track[5].t`
+ * are the three hold-segment ends the 9-keyframe shape (asserted in
+ * `deriveDeclaredIntervals`) always produces, so every declared keyframe/interval sample
+ * (which never crosses a hold boundary) resolves to exactly one asset.
+ *
+ * Also asserts every pose type carries `levelArt.json`'s own `pxPerSu` (dev-tooling-assets'
+ * per-asset density, ruling §1.3: "write the per-asset px/su into levelArt.json alongside the
+ * box" — a missing value here is an authoring gap the gate must not silently pass over, even
+ * though the geometry check below (render-placement model) does not consume it directly).
  */
-function loadAssetScaleMap() {
-  return null; // TODO(lane C): read from assetManifest.ts once photoAssetPaths lands.
+function loadAssetScaleMap(track) {
+  const levelArtPath = path.resolve(ROOT, "src/game/levels/levelArt.json");
+  const levelArt = JSON.parse(fs.readFileSync(levelArtPath, "utf8"));
+  const types = levelArt.photoQte?.types ?? {};
+
+  const boundary1 = track[1].t;
+  const boundary3 = track[3].t;
+  const boundary5 = track[5].t;
+  const keyFor = (t) => {
+    if (t <= boundary1) return "commandant_wait";
+    if (t <= boundary3) return "pair_facing";
+    if (t <= boundary5) return "exchange_close";
+    return "berline_plate";
+  };
+
+  const missing = [];
+  const noPxPerSu = [];
+  for (const key of ["commandant_wait", "pair_facing", "exchange_close", "berline_plate"]) {
+    const entry = types[key];
+    const file = entry && path.resolve(ROOT, "public", entry.asset);
+    if (!entry?.asset || !fs.existsSync(file)) missing.push(key);
+    if (typeof entry?.pxPerSu !== "number") noPxPerSu.push(key);
+  }
+  if (missing.length > 0) {
+    return { skipReason: `delivered PNG(s) missing: ${missing.join(", ")}` };
+  }
+  if (noPxPerSu.length > 0) {
+    return {
+      skipReason: `levelArt.json photoQte.types missing numeric "pxPerSu" (ruling §1.3): ${noPxPerSu.join(", ")}`,
+    };
+  }
+
+  return {
+    async decodedFrameAt(t) {
+      const { decodePng } = await import("./e2e-lib.mjs");
+      const key = keyFor(t);
+      const file = path.resolve(ROOT, "public", types[key].asset);
+      return decodePng(file);
+    },
+  };
 }
 
 async function main() {
@@ -282,32 +328,50 @@ async function main() {
   const track = spec.subjectTrack;
   const intervals = deriveDeclaredIntervals(track);
 
-  const scaleMap = loadAssetScaleMap();
-  if (scaleMap === null) {
+  const scaleMap = loadAssetScaleMap(track);
+  if (scaleMap.skipReason !== undefined) {
     skipped.push(
-      "no px->su scale mapping yet (assetManifest.ts photoAssetPaths not landed) — " +
-        "every keyframe and interval check below is SKIPPED, not passed.",
+      `${scaleMap.skipReason} — every keyframe and interval check below is SKIPPED, not passed.`,
     );
   } else {
-    // `scaleMap` resolves a time/keyframe to the DELIVERED sprite's decoded frame + its
-    // px->su scale (lane C's assetManifest.ts wiring). `subjectBoxAt(track, t)` is the LIVE
-    // value the game actually uses — the two must never be the same computation (testplan
-    // §7.2.a: "must sample the rendered animation frames, not a re-interpolation of the
-    // authored table against itself" — that would assert nothing, a green light for free).
-    const deliveredBoxAt = async (t) => {
+    // `scaleMap` resolves a time to the DELIVERED sprite's decoded frame (lane C's
+    // assetManifest.ts wiring). `subjectBoxAt(track, t)` is the LIVE value the game actually
+    // uses — the two must never be the same computation (testplan §7.2.a: "must sample the
+    // rendered animation frames, not a re-interpolation of the authored table against
+    // itself" — that would assert nothing, a green light for free).
+    //
+    // RENDER-PLACEMENT MODEL: the game places each pose sprite as a plane STRETCHED to
+    // exactly `targetBox.w x targetBox.h`, centred at `(targetBox.cx, targetBox.cy)` (the
+    // shared plane-sizing contract every other flipbook family in this codebase uses —
+    // enemies/hostages/boss — never a sub-rect crop). Position is therefore guaranteed BY
+    // CONSTRUCTION (the render places the whole canvas at the box); what this gate can and
+    // must still catch is a delivered PNG whose OPAQUE content does not fill that stretched
+    // canvas — i.e. an internal transparent margin that silently shrinks the effective drawn
+    // silhouette below the authored box (F12(1b), "the drawing IS the box"). `deliveredBoxAgainst`
+    // maps the sprite's own opaque pixel AABB into scene units by that same stretch-and-centre
+    // transform, so a full-bleed silhouette compares equal to `targetBox` and a padded one
+    // reports the exact shrunk edge(s).
+    const deliveredBoxAgainst = async (t, targetBox) => {
       const frame = await scaleMap.decodedFrameAt(t); // { W, H, data } — decodePng result
-      const suPerPx = scaleMap.suPerPxAt(t);
       const aabb = opaquePixelAabb(frame);
       if (aabb === null) {
         throw new Error(`no opaque pixel at t=${String(t)}s (fully transparent delivered frame)`);
       }
-      return pixelAabbToSceneBox(aabb, suPerPx);
+      const local = pixelAabbToSceneBox(aabb, 1); // scene box in RAW pixel units first
+      const sx = targetBox.w / frame.W;
+      const sy = targetBox.h / frame.H;
+      return {
+        cx: targetBox.cx + (local.cx - frame.W / 2) * sx,
+        cy: targetBox.cy + (local.cy - frame.H / 2) * sy,
+        w: local.w * sx,
+        h: local.h * sy,
+      };
     };
 
     // KEYFRAME mode — one AABB check per authored keyframe, delivered sprite vs authored box.
     for (const kf of track) {
       const authored = { cx: kf.cx, cy: kf.cy, w: kf.w, h: kf.h };
-      const delivered = await deliveredBoxAt(kf.t);
+      const delivered = await deliveredBoxAgainst(kf.t, authored);
       const cmp = compareBox(delivered, authored, edgeTolerance);
       if (!cmp.pass) {
         const bad = cmp.deltas.filter((d) => !d.pass).map((d) => d.edge);
@@ -323,7 +387,7 @@ async function main() {
       let brokeAt = null;
       for (const t of times) {
         const live = subjectBoxAt(track, t);
-        const box = await deliveredBoxAt(t);
+        const box = await deliveredBoxAgainst(t, live);
         delivered.push(box);
         const cmp = compareBox(box, live, edgeTolerance);
         if (!cmp.pass && brokeAt === null) {
