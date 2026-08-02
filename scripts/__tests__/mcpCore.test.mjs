@@ -217,9 +217,7 @@ describe("scaffold", () => {
     const id = "scaffolded";
     const result = scaffold({ plan: soundPlan(id) }, { rootDir });
     expect(result.ok).toBe(true);
-    expect(result.path).toBe(
-      path.join(rootDir, "src", "game", "levels", "generated", `${id}.ts`),
-    );
+    expect(result.path).toBe(path.join(rootDir, "src", "game", "levels", "generated", `${id}.ts`));
     expect(result.reminder).toMatch(/GENERATED_PLANS/);
     expect(result.reminder).toMatch(/index\.ts/);
 

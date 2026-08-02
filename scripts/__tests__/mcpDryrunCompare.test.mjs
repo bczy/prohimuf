@@ -47,26 +47,42 @@ describe("compareDryrunReport", () => {
   });
 
   it("rejects timerTicking: false (deterministic behavioural claim, exact match required)", () => {
-    const actual = { ...freshMatching, timerTicking: false, tempsFirstRead: 50, tempsSecondRead: 50 };
+    const actual = {
+      ...freshMatching,
+      timerTicking: false,
+      tempsFirstRead: 50,
+      tempsSecondRead: 50,
+    };
     const { ok, mismatches } = compareDryrunReport(actual, committed);
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.startsWith("timerTicking:"))).toBe(true);
   });
 
   it("rejects a report whose own timerTicking disagrees with its own temps readings", () => {
-    const actual = { ...freshMatching, timerTicking: true, tempsFirstRead: 40, tempsSecondRead: 50 };
+    const actual = {
+      ...freshMatching,
+      timerTicking: true,
+      tempsFirstRead: 40,
+      tempsSecondRead: 50,
+    };
     const { ok, mismatches } = compareDryrunReport(actual, committed);
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.includes("disagrees with the actual report's own"))).toBe(true);
   });
 
   it("accepts any localhost port in url — only the preview-seam query is pinned", () => {
-    const actual = { ...freshMatching, url: "http://localhost:41999/prohimuf/?preview=level&level=fixture" };
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:41999/prohimuf/?preview=level&level=fixture",
+    };
     expect(compareDryrunReport(actual, committed).ok).toBe(true);
   });
 
   it("rejects a url pointing at the wrong level id", () => {
-    const actual = { ...freshMatching, url: "http://localhost:5173/prohimuf/?preview=level&level=other" };
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:5173/prohimuf/?preview=level&level=other",
+    };
     const { ok, mismatches } = compareDryrunReport(actual, committed);
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.startsWith("url:"))).toBe(true);
@@ -80,14 +96,22 @@ describe("compareDryrunReport", () => {
   });
 
   it("rejects a hudSnippet for the wrong level name", () => {
-    const actual = { ...freshMatching, hudSnippet: freshMatching.hudSnippet.replace("Fixture", "Belliard") };
+    const actual = {
+      ...freshMatching,
+      hudSnippet: freshMatching.hudSnippet.replace("Fixture", "Belliard"),
+    };
     const { ok, mismatches } = compareDryrunReport(actual, committed);
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.includes('contain the level name "Fixture"'))).toBe(true);
   });
 
   it("rejects timerTicking: false on a report missing tempsFirstRead/tempsSecondRead, instead of silently agreeing (n2)", () => {
-    const actual = { ...freshMatching, timerTicking: false, tempsFirstRead: undefined, tempsSecondRead: undefined };
+    const actual = {
+      ...freshMatching,
+      timerTicking: false,
+      tempsFirstRead: undefined,
+      tempsSecondRead: undefined,
+    };
     const { ok, mismatches } = compareDryrunReport(actual, { ...committed, timerTicking: false });
     expect(ok).toBe(false);
     expect(mismatches.some((m) => m.startsWith("tempsFirstRead/tempsSecondRead:"))).toBe(true);
@@ -109,7 +133,9 @@ describe("compareDryrunReport", () => {
       url: "http://localhost:5173/other-base/?preview=level&level=second-level",
     };
     const expected = { ...committed, url: actual.url };
-    expect(compareDryrunReport(actual, expected, { base: "/other-base/", levelId: "second-level" }).ok).toBe(true);
+    expect(
+      compareDryrunReport(actual, expected, { base: "/other-base/", levelId: "second-level" }).ok,
+    ).toBe(true);
   });
 
   it("still rejects the default fixture url shape when a non-default base/levelId is expected (m5)", () => {

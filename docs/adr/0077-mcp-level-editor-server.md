@@ -56,6 +56,7 @@ un test : **le même cœur est appelé en bibliothèque par les scripts CI, sans
 navigateur** — deux surfaces, une implémentation.
 
 **D4 — Trois disciplines dures sur l'écriture** (décisions Bertrand du 2026-07-30, spec §2.1) :
+
 1. écriture **uniquement** sous `src/game/levels/generated/`, chemin **dérivé** de l'id déjà
    validé (namespace contraint, refus de tout `..` ou séparateur) — jamais d'un chemin fourni
    par l'appelant ;
@@ -89,7 +90,7 @@ l'unicité devient un invariant de validation.** Le renversement est **accordé 
   **throw**, pas l'enregistrement ; seul le throw part. `registerGeneratedLevels()`
   n'enregistre rien elle-même (l'enregistrement des archétypes reste à l'import) : elle
   ne fait qu'exécuter le fail-fast, et rappeler deux fois est un no-op.
-- La règle d'unicité gagne une forme *données* : `validateCatalogue(plans): LevelIssue[]`
+- La règle d'unicité gagne une forme _données_ : `validateCatalogue(plans): LevelIssue[]`
   (code `plan/duplicate-id`) dans `levelPlan.ts`, **source unique** de la règle —
   `assertDistinctPlanIds` devient un mince wrapper qui throw sur son résultat. Elle est
   appelée par l'outil `validate`, par `scaffold` avant écriture, et asservie par un test CI

@@ -73,7 +73,7 @@ function resolveInputPlan(input, plans) {
       code: "plan/missing-input",
       severity: "error",
       field: "",
-      message: 'validate requires either { plan } or { levelId }',
+      message: "validate requires either { plan } or { levelId }",
     },
   };
 }
@@ -151,9 +151,7 @@ function scanAssets(plan, rootDir) {
   const assetsDir = path.join(publicDir, "assets");
   const topLevelFiles = existsSync(assetsDir) ? readdirSync(assetsDir) : [];
   for (const a of plan.archetypes) {
-    const matches = topLevelFiles.filter(
-      (f) => f.startsWith(a.spriteBase) && f.endsWith(".png"),
-    );
+    const matches = topLevelFiles.filter((f) => f.startsWith(a.spriteBase) && f.endsWith(".png"));
     if (matches.length > 0) {
       present.push(...matches.map((f) => `assets/${f}`));
     } else {
@@ -240,7 +238,10 @@ function renderModuleSource(plan) {
 function writeAtomic(targetPath, contents) {
   const dir = path.dirname(targetPath);
   mkdirSync(dir, { recursive: true });
-  const tmpPath = path.join(dir, `.${path.basename(targetPath)}.tmp-${String(process.pid)}-${String(Date.now())}`);
+  const tmpPath = path.join(
+    dir,
+    `.${path.basename(targetPath)}.tmp-${String(process.pid)}-${String(Date.now())}`,
+  );
   writeFileSync(tmpPath, contents, "utf8");
   renameSync(tmpPath, targetPath);
 }
@@ -546,7 +547,11 @@ function escapeRegExp(str) {
  * instead of forking one (spec-mcp-level-editor §6, D3 "two surfaces, one
  * core"). Defaults are unchanged, so no existing caller moves.
  */
-export function compareDryrunReport(actual, expected, { base = DEFAULT_BASE, levelId = "fixture" } = {}) {
+export function compareDryrunReport(
+  actual,
+  expected,
+  { base = DEFAULT_BASE, levelId = "fixture" } = {},
+) {
   const mismatches = [];
 
   if (JSON.stringify(actual.pageErrors) !== JSON.stringify(expected.pageErrors)) {
@@ -556,14 +561,16 @@ export function compareDryrunReport(actual, expected, { base = DEFAULT_BASE, lev
   }
 
   if (actual.timerTicking !== expected.timerTicking) {
-    mismatches.push(`timerTicking: expected ${String(expected.timerTicking)}, got ${String(actual.timerTicking)}`);
+    mismatches.push(
+      `timerTicking: expected ${String(expected.timerTicking)}, got ${String(actual.timerTicking)}`,
+    );
   }
   if (!Number.isFinite(actual.tempsFirstRead) || !Number.isFinite(actual.tempsSecondRead)) {
     mismatches.push(
       `tempsFirstRead/tempsSecondRead: expected both to be finite numbers, got ` +
         `${JSON.stringify(actual.tempsFirstRead)} → ${JSON.stringify(actual.tempsSecondRead)}`,
     );
-  } else if ((actual.tempsSecondRead < actual.tempsFirstRead) !== actual.timerTicking) {
+  } else if (actual.tempsSecondRead < actual.tempsFirstRead !== actual.timerTicking) {
     mismatches.push(
       `timerTicking (${String(actual.timerTicking)}) disagrees with the actual report's own ` +
         `tempsFirstRead/tempsSecondRead (${String(actual.tempsFirstRead)} → ${String(actual.tempsSecondRead)})`,
@@ -597,7 +604,9 @@ export function compareDryrunReport(actual, expected, { base = DEFAULT_BASE, lev
     );
   }
   if (!(actual.hudSnippet ?? "").includes("Fixture")) {
-    mismatches.push(`hudSnippet: expected it to contain the level name "Fixture", got "${actual.hudSnippet}"`);
+    mismatches.push(
+      `hudSnippet: expected it to contain the level name "Fixture", got "${actual.hudSnippet}"`,
+    );
   }
 
   return { ok: mismatches.length === 0, mismatches };
