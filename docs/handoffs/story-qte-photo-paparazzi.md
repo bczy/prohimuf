@@ -176,3 +176,112 @@ approach are gameplay state, crisp/dull click is the sole T5 channel; **the K-1 
 **Stage 5 (design acceptance, mine):** Sacha playtests against **AC1–AC14**; I verdict the
 report. First three things I look at: the `[ LAISSER TOMBER ]` button works in one press (the
 invariant), AC14, and AC6b(d) drawn == box at the art composite.
+
+## stage-3. TECH PLAN — senior-architect (Winston) — 2026-08-01
+
+- claim: turn the gated design set into a buildable technical plan — answer the seven E-4 asks
+  with concrete structures, cut the dev lanes on non-overlapping paths, fix the build order, and
+  rule whether ADR-0077 suffices.
+  release: `docs/game-design/techplan-photo-qte.md` (12 sections, 9 headline decisions D-A…D-I)
+  \+ `docs/adr/0080-photo-leverage-cross-level-carry.md` (Proposed). File List:
+  `docs/game-design/techplan-photo-qte.md`, `docs/adr/0080-photo-leverage-cross-level-carry.md`,
+  `docs/adr/README.md` + `public/adr/index.html` (regenerated index, freshness gate green),
+  `docs/handoffs/story-qte-photo-paparazzi.md`, `docs/agent-handoffs.md`.
+- VERDICT: APPROVED for build — 3 lanes, one ordering constraint, one typed seam. **No production
+  code touched at this stage.**
+
+**The seven E-4 asks — three are free, four are contracts.** **(a)** tick-gate on `paused`:
+free — `useFrame` returns on `paused` (`useGameLoop.ts:327`) and the set-piece is a **fourth
+frozen-scene block of `tickGameState`** (the hostage/boss shape), so every gauge freezes; a
+design running beside the loop is rejected, and the property is asserted, not assumed. **(g)**
+decline without a level reload: free for the same reason — the level state was never destroyed,
+it rode `...state` with the clock frozen; **"retry from checkpoint" = re-entering the set-piece,
+not a level checkpoint** (a clarification the specs left implicit, now pinned). **(c)**
+byte-identity: the shipped additive-and-optional law (`bossQteSpec`/`lootSpec`), identity-tested.
+**(b)** two independent fields: `PhotoComposition` (mechanical, live) vs `PhotoFrameRecord[]`
+(semantic, sealed), and **the split is enforced by the projection types** — `photoSceneView` has
+no field able to express a verdict, `photoSheetView` returns `null` before `CONTACT_SHEET`, so
+the render **cannot** leak the secret. **(d)** `{t,cx,cy,w,h}[]` + **one evaluator**: the box is
+computed once per tick and carried on `photoQte.subjectBox`; the brackets read that carried
+value, so F12(1a) holds because there is **no second place that can compute it**. **(f)** the
+multiplier: authored **tiers** on the Niveau Final row (absent ⇒ ×1.00), resolved once into
+`BossQte.rewardMultiplier`, applied through **one** helper at the **three** lull sites, phases
+1-2 only, ordered multiplier → cut → clamp, compound floor asserted **non-strict `≥`** with
+ε = 0.35 quoted from ADR-0060. **(e)** the carry ⇒ its own ADR (below).
+
+**The trap E-4(f) was pointing at is worse than it looked, and it is now closed.**
+`shieldedLullSeconds` / `telegraphLeadSeconds` are **module constants in `BOSS_PHASE_TABLE`,
+shared by Belliard AND the Niveau Final** — there is no per-level tuning row today. A multiplier
+on the table or on `phaseTuning()` would hit both encounters, i.e. exactly the K-2 burn the gate
+warned about. Hence: authored data on the row, resolved into the runtime record, one application
+point. **Bonus property, free and worth having:** since `LULL_RESIDUAL_FLOOR (0.35) >
+SHIELD_BREAK_LULL_FLOOR_MARGIN (0.05)`, any multiplier passing the construction-time compound
+assert makes the runtime clamp **provably unreachable** — so AC12's "the −0.5 s cut is never
+silently eaten" stops being a playtest hope and becomes structural.
+
+**ADR verdict: ADR-0077 does NOT suffice — `docs/adr/0080-photo-leverage-cross-level-carry.md`
+is written (Proposed).** Six of seven asks land inside shipped patterns and need no ADR. The
+seventh does: the carry is **the first non-navigational cross-level state in muf** (ADR-0076 F1
+is explicit that a run is one attempt on one level, and levels are separated by the menu and
+possibly a browser reload), it needs a **sixth `muf_*` key**, it re-applies ADR-0076 D4's
+pure/impure split to a second feature, and it couples one level's outcome to another level's
+authored tuning. Decisions: **persisted** `muf_leverage`, **object** blob `{v, leverage}` so the
+deferred `hasPlaque` bit is an added FIELD not a migration (R2-4's trap priced: one field, one
+tier read, one scores-screen read — not 2 strings, not a migration), total parse, monotone merge,
+pure algebra in `src/game` + I/O in `src/hooks`, **banked when the player LEAVES the set-piece,
+not when Stalingrad is cleared** (contingency on clearing would re-couple an optional bonus to a
+mandatory success — the exact pressure K-4 removed; flagged to `pm` as one predicate to
+overrule). **Number 0080 self-allocated** (no producer in the loop, same posture as ADR-0077's
+own §Number): verified against the branch, `origin/main` and all 107 fetched remote refs (max
+visible 0077, itself claimed on three unmerged branches); **`producer` owns the merge-time
+re-check for 0077 AND 0080**. ADR index regenerated, freshness gate green.
+
+**Lanes — non-overlapping, one ordering constraint.** **A `dev-gameplay`** = `src/game/**`
+(minus `assetManifest.ts`) + `src/hooks/**`, TDD, runs first: A0 seam types + channel (releases
+B), A1 the determinism kernel, A2 the photo machine, A3 the boss lever + carry, A4 the bridge.
+**B `dev-r3f-render`** = `src/render/**` only: telephoto view, three-state brackets, diegetic HUD
+(CSS Modules + tokens, ADR-0046), contact sheet with the **R2-5 CTA shape verbatim**, mobile
+toggle button, `App.tsx` seed/persist wiring. **C `dev-tooling-assets`** = `levelArt.json`,
+`assetManifest.ts` (named exception: one file, one owner, for this story), `scripts/**` —
+independent from t=0, and the art request is the longest pole. **A2 and A3 are the same lane and
+must be SEQUENCED, not parallelised** (both touch `types/gameState.ts` and `levels.data.ts`).
+
+**Two decisions the lanes could not have made, and one lint the plan adds.** **D-B: the device
+fork dies in the bridge** — desktop hold-Space and the mobile toggle both resolve to one
+`raiseIntent: boolean` before crossing into `src/game`, which keeps every device word out of the
+pure layer AND makes **T-5 (resume `LOWERED`) one line on both devices** (clear the toggle latch
+when `paused` goes true; desktop is free). **D-H: extract the determinism kernel BEFORE writing
+the third copy** — `hash32`/`smoothstep` already exist **twice**, byte-identical in body, in
+`qteSystem.ts` and `bossQteSystem.ts`; a third copy in the photo sway is precisely the silent
+fork ADR-0077's Consequences hand to the review panel. Golden-vector test first, then the move;
+the shipped seed pins are the regression. And **`scripts/check-photo-subject-boxes.mjs`** (Lane
+C) makes **F12(1)(b) enforceable in CI**: the delivered sprite's opaque-pixel AABB vs the
+authored box at each of the 9 keyframes, tolerance imported from the game module — the only
+mechanism that catches a 4 % sprite shrink silently re-breaching F5a, which is R2-1's stated fear.
+
+**Open, cheap, non-blocking.** **Q-1 → `game-designer` + `ux-designer`:** UX §1.1 gives desktop
+an **absolute** mouse mapping, but the mechanic hangs F5b/F5c/AC6c on `PAN_RATE_MAX`; taken
+literally that makes F5c vacuous on desktop and AC6c a mobile-only criterion — two fairness
+models for one gated tuning. Plan builds the **rate-limited** form on both devices (D-I, ≈ 86 %
+of frame width per second at 251 mm — imperceptible); one branch to revert. **Q-2 → `pm`:**
+ratify ADR-0080 D3 (bank at exit). **To `game-designer`, editorial:** §1.1's phase table omits
+**`BRIEFING`**, which F13 counts and §1.3 makes skippable — the plan builds it as a phase of the
+machine (D-G).
+
+**Residues assigned.** **Amendment A1 → `game-designer` (Sacha)**, verbatim into
+`spec-boss-shield-break-tempo-shot.md` (own series, no re-gate); **C-1 → `narrative-designer`**
+(×0.75 → ×0.80); **C-2 → `game-designer`** (device fork); **C-3 → `game-designer` +
+`ux-designer`** (role names vs shipped strings); gate §4 transcriptions to their three lanes, in
+parallel with the build. **Doc↔code bug found and routed to `tech-writer` (Otis):**
+`spec-boss-shield-break-tempo-shot.md` still carries `Status: DRAFT (Rev. 2) — needs PASS before
+any dev implements it`, while **lever 6 is shipped in `bossQteSystem.ts`** and the photo gate
+cites the spec as GATED (ADR-0060). The stale status must be corrected **before** A1 is
+transcribed onto it — an amendment onto a "do not implement" header is a trap for the next
+reader.
+
+**Routed:** `qa-lead` (A3bis touch-count, A7bis bracket pixel-diff, A9 pause/resume, A14bis
+one-press decline, AC13(b) is wall-clock not an assert); `gpu-specialist` (low risk, **no perf
+gate requested** — one plate + ≤6 sprites on a frozen world; watch preload and per-frame material
+churn); `sound-designer` (`inCover(t)` is game state the audio lane reads, never re-derives;
+`exposed.focusHeld` is the single boolean behind the crisp/dull click); `lead-art` (E-6 unchanged,
+but F12(1) now has CI teeth); `pm` (Q-2 + the E-5 price).
