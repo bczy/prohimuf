@@ -40,6 +40,18 @@ Auto-revue des deux plans.
   seulement en CI réelle ; seeds libres de T5 sans cap (à borner si besoin, hors
   périmètre).
 
+## 2c. ADR-0078 — la surface CI (panel run 6) — 2026-08-02
+
+Le run 6 a établi que la ligne « ADR n/a » de la PR était une erreur de jugement :
+trois workflows `contents: write` (deux portant `POLLINATIONS_TOKEN`) qui résolvent
+un input de dispatch en module transpilé/exécuté par jiti sont une surface nouvelle,
+et ADR-0075 — le seul ADR cité — exclut explicitement SP2 de son périmètre
+(« nothing here presumes them »). `docs/adr/0078-sp2-paid-generation-ci-surface.md`
+acte les 7 décisions réellement prises (allowlist en profondeur y compris sur le
+chemin d'échec, double garde de confinement, verrou d'id + validation avant dépense,
+comptabilité du cap par commits de trace `--full-history`, sérialisation par level,
+idempotence au re-dispatch) et leurs limites assumées.
+
 ## Suivi
 
 - [x] PR #151 (specs+plans) : panel PASS (4 runs convergents) → MERGÉE (3ba17a47,
