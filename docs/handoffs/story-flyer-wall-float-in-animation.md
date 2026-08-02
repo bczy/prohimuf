@@ -24,13 +24,19 @@ alors même que l'arbitrage portait sur lui.
 
 État final des numéros, vérifié le 2026-08-02 :
 
-| Numéro | Titulaire                       | État                                            |
-| ------ | ------------------------------- | ----------------------------------------------- |
-| 0077   | `couverture-tsc-eslint-scripts` | **mergé sur `main`**                            |
-| 0078   | `flyer-cascade-session-key`     | cette branche — renumérotation **DÉJÀ FAITE**   |
-| 0079   | `mcp-level-editor-server`       | story MCP (PR #159), renumérotée en conséquence |
+| Numéro | Titulaire / prétendant                    | État                                              |
+| ------ | ----------------------------------------- | ------------------------------------------------- |
+| 0077   | `couverture-tsc-eslint-scripts`           | **mergé sur `main`** — définitif                  |
+| 0077   | `qte-photo-paparazzi-set-pieces` (#163)   | collision avec `main` — cette lane devra bouger   |
+| 0078   | `flyer-cascade-session-key` (#145)        | cette branche — renumérotation déjà faite         |
+| 0078   | `sp2-paid-generation-ci-surface` (#156)   | **collision avec #145** — l'une des deux bougera  |
+| 0079   | _(libre à l'instant T)_                   | cible naturelle des glissements ci-dessus         |
+| 0080   | `photo-leverage-cross-level-carry` (#163) | non mergé                                         |
+| 0081   | `mcp-level-editor-server`                 | story MCP (PR #159) — pris ici, hors zone de choc |
 
-**Aucun geste ne reste dû à cette lane** : la branche flyer s'est rebasée sur le nouveau
+**Alerte pour `producer`, découverte au balayage exhaustif (103/103 branches distantes inspectées le 2026-08-02)** : une SECONDE collision est déjà en place sur **0078** — `claude/flyer-wall-float-in-animation` (#145) et `feat/level-harness-sp2` (#156) le revendiquent toutes deux, et `design/qte-photo-paparazzi` (#163) doit en plus quitter 0077. La story MCP s'est donc rangée en **0081**, hors de la zone où ces trois glissements vont atterrir (0078/0079), plutôt que de camper sur le premier trou libre.
+
+**Aucun geste ne reste dû à cette lane sur le 0078 lui-même** : la branche flyer s'est rebasée sur le nouveau
 `main` et porte bien `docs/adr/0078-flyer-cascade-session-key.md`. Le ruling est exécuté.
 
 ### Leçon pour `producer` — l'allocation par arbitrage ne suffit pas

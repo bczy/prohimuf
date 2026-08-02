@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * The CALL-SITE guard (ADR-0079 D6, sign-off condition C3).
+ * The CALL-SITE guard (ADR-0081 D6, sign-off condition C3).
  *
  * Since the fail-fast left `generated/index.ts`'s module body, the only thing standing
  * between a duplicate generated id and a silently split-brained app (`LEVEL_ART`

@@ -86,7 +86,7 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
   fail-fast, because a colliding id would silently corrupt `LEVEL_ART` (last-wins)
   while `ALL_LEVELS.find` returns the other entry (first-wins), a split-brain no test
   fixture can represent without triggering it.
-  - **Amendment 2026-07-31 (ADR-0079 D6, narrow version).** The `throw` no longer fires
+  - **Amendment 2026-07-31 (ADR-0081 D6, narrow version).** The `throw` no longer fires
     at import but at the **bootstrap**: `registerGeneratedLevels()` (generated/index.ts)
     is called at `src/main.tsx`'s module body, before the first render — the same
     impossible-to-miss crash, one frame later. Why: story ③'s MCP `validate`/`scaffold`

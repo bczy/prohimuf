@@ -90,7 +90,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * `a.kind.startsWith(ns)`, `Object.entries(plan.gameplay.windowWeights)` — so on a
  * malformed input they do not report, they THROW (`TypeError: entries is not
  * iterable` for `{ id: "safe" }`). That breaks the `{issues}` contract of the MCP
- * tools, whose zod `planShape` is loose BY DECISION (ADR-0079 D3: a `LevelPlan`'s
+ * tools, whose zod `planShape` is loose BY DECISION (ADR-0081 D3: a `LevelPlan`'s
  * shape is `src/game`'s business, not the transport's) — so the verdict is ours to
  * give, in issues, never in an exception.
  *
@@ -548,7 +548,7 @@ export function validateLevelPlan(plan: LevelPlan): readonly LevelIssue[] {
  * `ALL_LEVELS.find` is first-wins, so one level would be played with the other's
  * decor, a split-brain no fixture can represent without triggering it.
  *
- * This is THE single implementation of the rule (ADR-0079 D6, amending ADR-0075 §6).
+ * This is THE single implementation of the rule (ADR-0081 D6, amending ADR-0075 §6).
  * It reports instead of throwing, so story ③'s MCP `validate`/`scaffold` tools can tell
  * an agent about a collision rather than dying on the import; `assertDistinctPlanIds`
  * (generated/index.ts) is the thin wrapper that turns the same result into the

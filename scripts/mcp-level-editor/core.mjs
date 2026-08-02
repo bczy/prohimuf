@@ -1,4 +1,4 @@
-// The pure core of the MCP level-editor tools (ADR-0079 D3): every rule that
+// The pure core of the MCP level-editor tools (ADR-0081 D3): every rule that
 // decides whether a plan is sound lives in `src/game/levels/**` already
 // (`validateLevelPlan`, `validateLevel`, `validateCatalogue`). This module only
 // COMPOSES those functions, resolves a level id to its plan, scans conventional
@@ -248,7 +248,7 @@ function writeAtomic(targetPath, contents) {
 
 /**
  * `scaffold({ plan, overwrite? }) → { ok, path, issues, reminder? }` (spec
- * §3/§5, ADR-0079 D4). Three hard disciplines, in order, none skipped:
+ * §3/§5, ADR-0081 D4). Three hard disciplines, in order, none skipped:
  *  1. the id must be a safe, separator-free namespace (checked before any
  *     disk access, and before `validate` — a `/` or `..` never even reaches
  *     the validators);
@@ -327,7 +327,7 @@ export function scaffold(
 // verification route booted straight into PLAYING, `?preview=level&level=<id>`
 // (spec-level-harness-sp1 §8, `src/render/scene/generatedHarness.ts`). Both need a
 // local vite dev server and, for `dryrun`, a local headless Chromium — no secret,
-// no network beyond localhost (ADR-0079 D5).
+// no network beyond localhost (ADR-0081 D5).
 
 const DEFAULT_PORT = 5173;
 // Mirrors `vite.config.ts`'s own default (`VITE_BASE`) — not re-read from that file

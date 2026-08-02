@@ -5,7 +5,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../mcp-level-editor/server.mjs";
 
 /**
- * The server stays a thin facade (ADR-0079 D3): this suite drives it exactly
+ * The server stays a thin facade (ADR-0081 D3): this suite drives it exactly
  * like a real MCP client would (JSON-RPC over an in-memory transport pair, no
  * stdio needed) and asserts only that `validate`/`inspect` DISPATCH to
  * `core.mjs` correctly — the actual validation rules are `core.mjs`'s test

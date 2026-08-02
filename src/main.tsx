@@ -9,7 +9,7 @@ import { registerGeneratedLevels } from "@game/levels/generated";
 // Bridge tokens.ts → CSS custom properties on :root before first paint (ADR-0046 D2).
 applyPrintTokens();
 
-// The generated-levels fail-fast (ADR-0079 D6, amending ADR-0075 §6): a duplicate id
+// The generated-levels fail-fast (ADR-0081 D6, amending ADR-0075 §6): a duplicate id
 // crashes here, on the app's first frame, instead of silently splitting the level
 // tables. Module body on purpose — never a React effect, StrictMode double-mounts
 // those. This ONE call site is guarded by bootstrapRegistration.test.ts.

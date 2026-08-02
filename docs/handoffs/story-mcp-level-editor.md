@@ -36,7 +36,7 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] PR #151 (specs+plans) : panel PASS → acceptation pm → merge (commit 3ba17a4, 2026-07-30)
 - [x] **Sign-off senior-architect au BUILD** (2026-07-31, §4) : (1) renversement ADR-0075 §6
       → **PASS avec conditions** (version ÉTROITE : seul le throw se déplace) ; (2) ADR du
-      serveur → **PASS**, `docs/adr/0079-mcp-level-editor-server.md`, index régénéré
+      serveur → **PASS**, `docs/adr/0081-mcp-level-editor-server.md`, index régénéré
 - [x] T1 (dev-gameplay, 2026-07-31) : fail-fast déplacé au bootstrap, **version étroite**
       (C1→C6 tenues) — `validateCatalogue` source unique dans `levelPlan.ts`,
       `registerGeneratedLevels()` au corps de `src/main.tsx`, garde du site d'appel
@@ -66,7 +66,7 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       never-throws (`validate` ET `scaffold`) et cumul one-shot prouvés par probes ;
       ses 2 LOW appliqués dans la foulée (phrase R2 déplacée dans le JSDoc de
       `validate`, probe du cumul promue en test commité)
-- [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0079; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
+- [x] **Numéro ADR** : ruling `producer` (Marion, 2026-08-02) — collision 0077 RESOLUE. Story MCP garde ADR-0081; branche flyer renumérote 0078 au rebase post-merge MCP. Handoff ouvert : `docs/handoffs/story-flyer-wall-float-in-animation.md` (créé 2026-08-02).
 - [x] PR draft → acceptation pm — **ACCEPTED**, voir §7
 - [x] **Panel CI (PR #159, autorité bloquante ADR-0063) — round 1 : FAIL** sur `ae1aa10b`
       (1 BLOQUANT, 2 MAJEUR, 1 MINEUR), les 4 findings traités, voir §8
@@ -241,13 +241,13 @@ l'enregistrement.**
   (couche pure, zéro React/Three). Seul le composition root (`src/main.tsx`) l'appelle ;
   aucun module de `src/render` ne le fait.
 - **C6 — Traçabilité.** Amendement daté de la Consequence d'ADR-0075 (« throws at IMPORT
-  time ») renvoyant à ADR-0079, sans renumérotation ni réécriture de la décision. Et
+  time ») renvoyant à ADR-0081, sans renumérotation ni réécriture de la décision. Et
   **correction de la spec §4.3** : la phrase « gardé par le test de pool de
   `generatedLevels.test.ts` » est fausse et doit être remplacée par C3.
 
 ### (b) ADR du serveur (T2) — **PASS**
 
-**ADR alloué : 0077** — `docs/adr/0079-mcp-level-editor-server.md`, index régénéré
+**ADR alloué : 0077** — `docs/adr/0081-mcp-level-editor-server.md`, index régénéré
 (`gen-adr-index.mjs --write` puis `--check` : _fresh — 77 ADR, registry in sync_, README +
 `public/adr/index.html`).
 
@@ -343,7 +343,7 @@ preuve de scaffold dans le VRAI `generated/`, et non en tmpdir), et les discipli
 ci-dessus sont non bloquantes et routées sans reprise de gate.
 
 Reste dû avant merge : `simplify`, puis le review-panel 4 reviewers + triage architecte, puis
-acceptation `pm`. Rappel du sign-off (b) : **re-vérifier le numéro ADR-0079 contre toutes les
+acceptation `pm`. Rappel du sign-off (b) : **re-vérifier le numéro ADR-0081 contre toutes les
 branches distantes juste avant le merge.**
 
 ---
@@ -446,7 +446,7 @@ retour anticipé). Pas de sérialisation nécessaire, contrat figé par ce parag
 
 | #                  | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Suite                                                                                                                                                                                                                                                                                      |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| n1                 | **CONFIRMÉ, et c'est mon texte.** ADR-0079 D6 dit « `registerGeneratedLevels()` reste idempotente et ré-enregistre sans effet observable » : faux, elle ne ré-enregistre rien — l'enregistrement des archétypes est resté au corps du module, comme le reste du même bullet le dit correctement. Phrase à remplacer par « reste idempotente : c'est une pure vérification ». Un ADR est l'artefact durable ; une phrase fausse dedans coûte plus cher qu'un bug. → **`tech-writer`, BLOQUANT.** |
+| n1                 | **CONFIRMÉ, et c'est mon texte.** ADR-0081 D6 dit « `registerGeneratedLevels()` reste idempotente et ré-enregistre sans effet observable » : faux, elle ne ré-enregistre rien — l'enregistrement des archétypes est resté au corps du module, comme le reste du même bullet le dit correctement. Phrase à remplacer par « reste idempotente : c'est une pure vérification ». Un ADR est l'artefact durable ; une phrase fausse dedans coûte plus cher qu'un bug. → **`tech-writer`, BLOQUANT.** |
 | n2                 | CONFIRMÉ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `timerTicking: false` passe sur un report sans `tempsFirstRead`/`tempsSecondRead` (`undefined < undefined` ⇒ `false === false`). Garde `Number.isFinite` sur les deux lectures avant la comparaison de cohérence interne. À plier dans l'édition m5. → `dev-tooling-assets`, non bloquant. |
 | n3                 | CONFIRMÉ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `labelOrder` vérifie la présence, pas l'ordre, alors que le JSDoc promet « the same ORDERED set ». Le fix honnête est d'implémenter l'ordre réel (tri des labels par `indexOf` dans le snippet) — 3 lignes, et la promesse du doc devient vraie. → `dev-tooling-assets`, non bloquant.     |
 | n4                 | CONFIRMÉ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `spriteBase` vide ⇒ `startsWith("")` matche tous les png de `public/assets/`. C'est une **règle de plan** ⇒ garde dans `validateLevelPlan` (`spriteBase` chaîne non vide), pas un rustine dans `scanAssets`. → `dev-gameplay`, non bloquant, même édition que M2.                          |
@@ -516,14 +516,14 @@ au §2 du handoff SP2 ; l'état du diff en change un :
   `^3.25 || ^4.0` du SDK. Rien à faire.
 - **W1 — finding que j'ajoute au panel (discipline de pin incohérente).**
   `@modelcontextprotocol/sdk` est en `^1.30.0` (caret) alors que `zod` et `vite-node` sont
-  pinnés à l'exact. C'est à l'envers : la Consequence d'ADR-0079 dit elle-même « protocole
+  pinnés à l'exact. C'est à l'envers : la Consequence d'ADR-0081 dit elle-même « protocole
   jeune, versions rapides » — la dépendance la plus volatile des trois est la seule laissée
   flottante, et un `yarn install` ultérieur peut casser l'outillage sans qu'aucun commit ne
   le montre. **Pin exact `1.30.0`.** → `dev-tooling-assets`, **BLOQUANT** (coût : un
   caractère ; bénéfice : la reproductibilité que les deux autres pins visent déjà).
 - `.mcp.json` gagne une seconde entrée qui lance `vite-node` : chaque session Claude
   démarre désormais un pipeline Vite et charge le graphe TS du jeu, même quand elle ne
-  touche à aucun level. C'est le coût qu'ADR-0079 a explicitement accepté ; je le laisse
+  touche à aucun level. C'est le coût qu'ADR-0081 a explicitement accepté ; je le laisse
   passer et je le **trace** pour la re-pesée annoncée à l'arrivée d'un troisième serveur.
 - `dryrun-fixture.mjs` reste hors de `yarn vitest run` (O3, précédent des `e2e-*.mjs`) :
   accepté, la logique pure comparée est couverte, elle, à chaque passe.
@@ -545,7 +545,7 @@ Conditions du passage à MERGE :
 3. **M2b + m3** — ordonnancement de `core.validate` (registre après plan-check) · `dev-tooling-assets`
 4. **m2, m6, m7** — garde is-main-module, listener `'error'`, ordre du `finally` · `dev-tooling-assets`
 5. **W1** — pin exact du SDK MCP · `dev-tooling-assets`
-6. **n1** — phrase fausse d'ADR-0079 D6 · `tech-writer`
+6. **n1** — phrase fausse d'ADR-0081 D6 · `tech-writer`
 7. Non bloquants mais **à faire atterrir dans la même branche** : m4, m5, n2, n3, n4, n5,
    n6b. m5 est le plus important des sept (seam SP2).
 
@@ -554,7 +554,7 @@ majeur (re-scaffold d'un level agrégé avec `overwrite: true` **qui passe** ; `
 plan malformé qui rend des issues **sans throw** ; registre non pollué après validation d'un
 plan refusé). Pas de nouveau tour de panel complet : les fixes sont locaux et bornés, je
 re-vérifie moi-même sur le diff incrémental. Rappel du sign-off (b), toujours dû :
-**re-vérifier le numéro ADR-0079 contre toutes les branches distantes juste avant le merge.**
+**re-vérifier le numéro ADR-0081 contre toutes les branches distantes juste avant le merge.**
 
 ### 6.7 Re-vérification incrémentale architecte (2026-08-01, `108c4ef2..9c35b344`)
 
@@ -578,7 +578,7 @@ exécutions. Pas de nouveau tour de panel, comme cadré au §6.6.
 | **m5** paramétrage          | `compareDryrunReport(actual, expected, { base, levelId })`, regex construite avec `escapeRegExp`, défauts inchangés. **Le seam SP2 est débloqué** : un second level réutilise ce comparateur au lieu d'en forker un.                                                                                                                                                                 | ✅      |
 | n2 / n3 / n5 / n6b          | Garde `Number.isFinite` sur les deux lectures ; `labelOrder` trie par position réelle (`indexOf`) ⇒ la promesse « same ordered set » devient vraie ; flag `i` retiré de `SAFE_ID` + message aligné ; `looksLikeThisDevServer` exige `id="root"` **et** `/@vite/client`.                                                                                                              | ✅      |
 | n4 `spriteBase`             | Garde dans `validateLevelPlan` sous `plan/archetype-bounds`, avec le motif écrit (préfixe de nom de fichier ⇒ vide = matche tout `public/assets/`). Au bon étage : c'est une règle de plan.                                                                                                                                                                                          | ✅      |
-| **n1** ADR-0079 D6          | Phrase fausse remplacée : « n'enregistre rien elle-même (l'enregistrement des archétypes reste à l'import) : elle ne fait qu'exécuter le fail-fast ». Exact.                                                                                                                                                                                                                         | ✅      |
+| **n1** ADR-0081 D6          | Phrase fausse remplacée : « n'enregistre rien elle-même (l'enregistrement des archétypes reste à l'import) : elle ne fait qu'exécuter le fail-fast ». Exact.                                                                                                                                                                                                                         | ✅      |
 
 Gates re-déclarées par la lane : tsc ✓, **1734 tests / 121 fichiers** ✓ (+19 depuis le triage),
 lint ✓.
@@ -626,7 +626,7 @@ lint ✓.
 Re-vérification faite contre **101 têtes distantes** (`git ls-remote --heads origin`, puis
 `git log --all --diff-filter=A -- 'docs/adr/0077-*.md'`) :
 
-- `docs/adr/0079-mcp-level-editor-server.md` — cette branche, revendiqué le **2026-07-31**.
+- `docs/adr/0081-mcp-level-editor-server.md` — cette branche, revendiqué le **2026-07-31**.
 - `docs/adr/0077-flyer-cascade-session-key.md` — commit `24762f7a`, **2026-08-01**, porté par
   `origin/claude/flyer-wall-float-in-animation` **et par elle seule**.
 
@@ -701,7 +701,7 @@ outil. Vérifié ligne à ligne :
 
 Aucune trace de timeline (story ②, toujours bloquée par sa réserve §7.1 — non touchée ici), de
 placeur de balcons (story ④), de génération d'assets (réservée à SP2) ou de transport MCP autre
-que stdio local dans le diff. L'ADR-0079 D2/D3 ferme explicitement toute extension de ces
+que stdio local dans le diff. L'ADR-0081 D2/D3 ferme explicitement toute extension de ces
 surfaces à un nouvel ADR — ce n'est pas seulement respecté aujourd'hui, c'est verrouillé pour
 demain. Confirmé par ma propre lecture de la spec/plan/ADR et par les vérifications de frontière
 répétées de l'architecte (§6.1, §6.5, §6.7) : rien à retrancher.
@@ -754,7 +754,7 @@ n'est laissé en dette silencieuse. Un seul point à porter à l'attention de Be
 le constat §3 sur la branche `feat/mcp-level-editor` jamais poussée — si des commits locaux
 existent encore de son côté, un coup d'œil avant de les considérer perdus, sinon rien à faire.
 
-Prêt pour merge dès que `producer`/l'architecte confirment le numéro ADR-0079 une dernière fois
+Prêt pour merge dès que `producer`/l'architecte confirment le numéro ADR-0081 une dernière fois
 juste avant le push sur `main` (rituel déjà cadré au §6.7, pas une nouvelle condition).
 
 — `pm` (John), 2026-08-02.
@@ -777,7 +777,7 @@ intégralement (arbres comparés, seul écart = les 4 fichiers SP3 hérités de 
   volontairement lâche), et que le fixture des tests masquait en fournissant toujours un
   `fiction` complet. Les 4 champs sont désormais exigés non vides ; probe : `validate`
   rend 4 issues `plan/malformed` ciblées et `scaffold` refuse d'écrire.
-- **[MINEUR] spec §4.2 disait encore `server.ts`** — fondé : ADR-0079 D1 dit trancher
+- **[MINEUR] spec §4.2 disait encore `server.ts`** — fondé : ADR-0081 D1 dit trancher
   cette hésitation même, et la phrase n'avait pas suivi. Corrigée, avec le renvoi à D1.
 - **[MINEUR] TOCTOU de `scaffold`** — **déjà arbitré** par l'architecte (§6.7, n6a :
   risque accepté, outil local mono-opérateur, écriture déjà tmp+rename atomique). Le
@@ -818,7 +818,7 @@ intégralement (arbres comparés, seul écart = les 4 fichiers SP3 hérités de 
 - **[MINEUR] table de cargaison de la PR fausse (7 .md annoncés, 6 réels)** — retenu et
   recompté depuis `git diff --name-status`, corps de PR corrigé.
 
-### Fusion de `main` + renumérotation ADR-0077 → **ADR-0079** (2026-08-02, après-midi)
+### Fusion de `main` + renumérotation ADR-0077 → **ADR-0081** (2026-08-02, après-midi)
 
 `main` a bougé (PR #160, #161) et la PR est repassée `dirty`. Deux constats à la fusion :
 
@@ -838,3 +838,10 @@ intégralement (arbres comparés, seul écart = les 4 fichiers SP3 hérités de 
    dédupliqué sa table, sa version est retenue), les deux index ADR régénérés par le script.
 
 Gates après fusion : tsc ✓, 1739 tests ✓ / 121 fichiers, lint ✓, format:check ✓.
+
+**Correction du numéro retenu, même jour** : la première allocation visait 0079 (premier
+trou libre, décidé sur une vérification bornée). Un balayage EXHAUSTIF (103/103 branches
+distantes, PR croisées) l'a corrigée : 0079 est libre à l'instant T mais c'est la cible
+naturelle de trois glissements déjà armés — #163 doit quitter 0077, et #145/#156 se
+disputent 0078. Camper sur 0079 aurait rejoué le pari perdu le matin même. La story prend
+donc **0081**, hors zone de choc ; les trous 0079/0080 sont assumés et documentés.

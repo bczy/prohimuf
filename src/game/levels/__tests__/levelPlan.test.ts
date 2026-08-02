@@ -625,7 +625,7 @@ describe("validateLevelPlan — LevelIssue contract (MCP §4.1)", () => {
 /**
  * Structural precondition (panel stage 6, M2a). `validateLevelPlan` is the entry door of
  * the MCP `validate`/`scaffold` tools, whose `planShape` zod schema is LOOSE BY DECISION
- * (ADR-0079 D3: the shape of a `LevelPlan` is `src/game`'s business, not the transport's).
+ * (ADR-0081 D3: the shape of a `LevelPlan` is `src/game`'s business, not the transport's).
  * So an agent can hand this function literally anything, and the contract is absolute:
  * **it returns issues, it never throws.** Before the fix, `{ id: "safe" }` blew up with
  * `TypeError: entries is not iterable` and broke the `{issues}` / `{ok,path,issues}`
@@ -807,7 +807,7 @@ describe("validateLevelPlan — spriteBase guard (n4)", () => {
 });
 
 /**
- * `validateCatalogue` is the SINGLE source of the id-uniqueness rule (ADR-0079 D6,
+ * `validateCatalogue` is the SINGLE source of the id-uniqueness rule (ADR-0081 D6,
  * sign-off condition C2): the same invariant that used to live as a bare `throw` in
  * `generated/index.ts`'s module body, now expressed as `LevelIssue`s so the MCP
  * `validate`/`scaffold` tools can REPORT a collision instead of dying on it. The

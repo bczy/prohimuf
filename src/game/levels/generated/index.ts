@@ -33,7 +33,7 @@ export function assertDistinctPlanIds(plans: readonly LevelPlan[]): void {
 }
 
 /**
- * The bootstrap fail-fast — ADR-0079 D6, a NARROW amendment to ADR-0075 §6: the throw
+ * The bootstrap fail-fast — ADR-0081 D6, a NARROW amendment to ADR-0075 §6: the throw
  * left the module body so an agent's MCP tool can import this catalogue mechanically
  * and REPORT a collision instead of dying on it. It did not disappear: the composition
  * root (`src/main.tsx`) calls this at module body, before the first render, so the app

@@ -133,7 +133,7 @@ describe("generated levels", () => {
 });
 
 /**
- * The narrow reversal of ADR-0075 §6 (ADR-0079 D6, sign-off condition C1/C2): the
+ * The narrow reversal of ADR-0075 §6 (ADR-0081 D6, sign-off condition C1/C2): the
  * `throw` moved from the module body to `registerGeneratedLevels()`, called once at the
  * composition root. The ARCHETYPE REGISTRATION stays at the module body — it is
  * idempotent, all-weight-0 and load-bearing for `validateLevel.ts`'s deliberate
