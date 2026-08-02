@@ -7,9 +7,9 @@
  * screenshot-diffable — there is no golden frame. This is the only mechanism that catches a
  * sprite whose delivered opaque silhouette drifted from the authored keyframe table (a 4%
  * shrink, a re-centred pose, an animation that grows mid-hold) — the exact regression
- * `SUBJECT_BOX_TOLERANCE` exists to bound.
+ * `subjectBoxEdgeTolerance` exists to bound.
  *
- * Imports `subjectBoxAt` and `SUBJECT_BOX_TOLERANCE` from `@game/systems/photoQteSystem`
+ * Imports `subjectBoxAt` and `subjectBoxEdgeTolerance` from `@game/systems/photoQteSystem`
  * (via `scripts/lib/game-alias-loader.mjs`, a narrow Node module hook that resolves the
  * `@game/*` tsconfig alias for plain `node` scripts) — NEVER re-implemented here (lane C
  * honour clause, techplan §6). The authored keyframe table and instants are imported from
@@ -97,17 +97,16 @@ export function pixelAabbToSceneBox(aabbPx, suPerPx) {
   return { cx, cy, w, h };
 }
 
-/** Per-edge tolerance: `max(0.40 su, 5% of that edge's OWN authored size)` (spec, one constant). */
-export function edgeTolerance(authoredSize, absoluteFloor) {
-  return Math.max(absoluteFloor, 0.05 * Math.abs(authoredSize));
-}
-
 /**
  * Compare a delivered box against the authored one, per edge (cx±w/2, cy±h/2), each within
- * `edgeTolerance`. Returns `{ pass, deltas }` — `deltas` names every edge that breached, so a
- * failure message never says just "box mismatch".
+ * the game's own `subjectBoxEdgeTolerance` (imported, never re-typed — lane C honour clause:
+ * the 0.40 su floor / 5% fraction are `@game/systems/photoQteSystem`'s numbers, not this
+ * script's). `edgeTolerance` is the imported evaluator, injected by the caller so this pure
+ * helper stays free of the game-module import (unit-tested without the alias loader).
+ * Returns `{ pass, deltas }` — `deltas` names every edge that breached, so a failure message
+ * never says just "box mismatch".
  */
-export function compareBox(actual, authored, absoluteFloor) {
+export function compareBox(actual, authored, edgeTolerance) {
   const authoredLeft = authored.cx - authored.w / 2;
   const authoredRight = authored.cx + authored.w / 2;
   const authoredTop = authored.cy - authored.h / 2;
@@ -125,7 +124,7 @@ export function compareBox(actual, authored, absoluteFloor) {
   ];
 
   const deltas = edges.map((e) => {
-    const tol = edgeTolerance(e.span, absoluteFloor);
+    const tol = edgeTolerance(e.span);
     const delta = Math.abs(e.actual - e.authored);
     return { edge: e.name, delta, tolerance: tol, pass: delta <= tol };
   });
@@ -134,21 +133,21 @@ export function compareBox(actual, authored, absoluteFloor) {
 }
 
 /** FLAT: `cy` must vary by <= tolerance across every sampled box in the interval. */
-export function checkFlat(boxes, absoluteFloor) {
+export function checkFlat(boxes, edgeTolerance) {
   const cys = boxes.map((b) => b.cy);
   const span = Math.max(...cys) - Math.min(...cys);
-  const tol = edgeTolerance(cys[0], absoluteFloor);
+  const tol = edgeTolerance(cys[0]);
   return { pass: span <= tol, span, tolerance: tol };
 }
 
 /** NO_GROW: `w` and `h` must each vary by <= tolerance across every sampled box in the interval. */
-export function checkNoGrow(boxes, absoluteFloor) {
+export function checkNoGrow(boxes, edgeTolerance) {
   const ws = boxes.map((b) => b.w);
   const hs = boxes.map((b) => b.h);
   const wSpan = Math.max(...ws) - Math.min(...ws);
   const hSpan = Math.max(...hs) - Math.min(...hs);
-  const wTol = edgeTolerance(ws[0], absoluteFloor);
-  const hTol = edgeTolerance(hs[0], absoluteFloor);
+  const wTol = edgeTolerance(ws[0]);
+  const hTol = edgeTolerance(hs[0]);
   return {
     pass: wSpan <= wTol && hSpan <= hTol,
     wSpan,
@@ -202,7 +201,7 @@ async function loadGameModule() {
   } catch (e) {
     throw new Error(
       "check-photo-subject-boxes: @game/systems/photoQteSystem is not landed yet " +
-        `(lane A — subjectBoxAt/SUBJECT_BOX_TOLERANCE, techplan §2.3). Nothing to check ` +
+        `(lane A — subjectBoxAt/subjectBoxEdgeTolerance, techplan §2.3). Nothing to check ` +
         `against until it ships. (${e.message})`,
     );
   }
@@ -260,7 +259,7 @@ async function main() {
     return;
   }
 
-  const { subjectBoxAt, SUBJECT_BOX_TOLERANCE } = photoQteSystem;
+  const { subjectBoxAt, subjectBoxEdgeTolerance } = photoQteSystem;
   if (typeof subjectBoxAt !== "function") {
     console.error(
       "[check-photo-subject-boxes] @game/systems/photoQteSystem has no subjectBoxAt export.",
@@ -268,14 +267,17 @@ async function main() {
     process.exit(1);
     return;
   }
-  if (typeof SUBJECT_BOX_TOLERANCE !== "number") {
+  if (typeof subjectBoxEdgeTolerance !== "function") {
     console.error(
-      "[check-photo-subject-boxes] @game/systems/photoQteSystem has no SUBJECT_BOX_TOLERANCE " +
-        "export — this gate must import the tolerance, never re-type it (lane C honour clause).",
+      "[check-photo-subject-boxes] @game/systems/photoQteSystem has no subjectBoxEdgeTolerance " +
+        "export — this gate must CALL the game's own tolerance evaluator, never re-type the " +
+        "0.40 su floor / 5% fraction itself (lane C honour clause).",
     );
     process.exit(1);
     return;
   }
+  // The evaluator this gate calls everywhere below — never the raw floor/fraction numbers.
+  const edgeTolerance = subjectBoxEdgeTolerance;
 
   const track = spec.subjectTrack;
   const intervals = deriveDeclaredIntervals(track);
@@ -306,7 +308,7 @@ async function main() {
     for (const kf of track) {
       const authored = { cx: kf.cx, cy: kf.cy, w: kf.w, h: kf.h };
       const delivered = await deliveredBoxAt(kf.t);
-      const cmp = compareBox(delivered, authored, SUBJECT_BOX_TOLERANCE);
+      const cmp = compareBox(delivered, authored, edgeTolerance);
       if (!cmp.pass) {
         const bad = cmp.deltas.filter((d) => !d.pass).map((d) => d.edge);
         problems.push(`keyframe t=${String(kf.t)}s: edge(s) ${bad.join(",")} breached tolerance`);
@@ -323,7 +325,7 @@ async function main() {
         const live = subjectBoxAt(track, t);
         const box = await deliveredBoxAt(t);
         delivered.push(box);
-        const cmp = compareBox(box, live, SUBJECT_BOX_TOLERANCE);
+        const cmp = compareBox(box, live, edgeTolerance);
         if (!cmp.pass && brokeAt === null) {
           brokeAt = { t, bad: cmp.deltas.filter((d) => !d.pass).map((d) => d.edge) };
         }
@@ -335,7 +337,7 @@ async function main() {
         );
       }
       if (iv.kind.includes("flat")) {
-        const flat = checkFlat(delivered, SUBJECT_BOX_TOLERANCE);
+        const flat = checkFlat(delivered, edgeTolerance);
         if (!flat.pass) {
           problems.push(
             `interval ${iv.id} FLAT breach: cy span ${flat.span.toFixed(3)}su > tolerance ${flat.tolerance.toFixed(3)}su`,
@@ -343,7 +345,7 @@ async function main() {
         }
       }
       if (iv.kind.includes("no_grow")) {
-        const noGrow = checkNoGrow(delivered, SUBJECT_BOX_TOLERANCE);
+        const noGrow = checkNoGrow(delivered, edgeTolerance);
         if (!noGrow.pass) {
           problems.push(
             `interval ${iv.id} NO_GROW breach: w span ${noGrow.wSpan.toFixed(3)}su ` +

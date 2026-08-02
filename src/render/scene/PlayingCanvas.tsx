@@ -19,11 +19,15 @@
  */
 
 import type { JSX, RefObject } from "react";
-import { Suspense } from "react";
+import { Suspense, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { GameScene } from "./GameScene";
 import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui/HUD";
 import type { LevelParams } from "@game/systems/stateMachine";
+import type { PhotoControlChannel } from "@hooks/useGameLoop";
+import type { PhotoPosture, PhotoSheetView } from "@render/ui/photo/photoSeam";
+import { ContactSheet } from "@render/ui/photo/ContactSheet";
+import { PhotoRaiseButton } from "@render/ui/controls/PhotoRaiseButton";
 import styles from "./App.module.css";
 
 interface Props {
@@ -66,6 +70,18 @@ export default function PlayingCanvas({
   vhs,
   reducedMotion,
 }: Props): JSX.Element {
+  // The photo set-piece's DOM surfaces live HERE, as siblings of the Canvas: the contact
+  // sheet is a screen (DOM, focusable CTAs) and the raise button is a touch control — neither
+  // can be drawn inside the R3F tree. `GameScene` pushes the two view values it owns
+  // (posture, sheet) and reads the control channel back; nothing here decides anything.
+  const photoChannelRef = useRef<PhotoControlChannel>({
+    raiseToggle: false,
+    pendingCta: null,
+    pendingSkip: false,
+  });
+  const [photoPosture, setPhotoPosture] = useState<PhotoPosture | null>(null);
+  const [photoSheet, setPhotoSheet] = useState<PhotoSheetView | null>(null);
+
   return (
     <>
       <Canvas
@@ -86,6 +102,9 @@ export default function PlayingCanvas({
             onDelivery={onDelivery}
             onHostageQte={onHostageQte}
             onBossQte={onBossQte}
+            onPhotoPosture={setPhotoPosture}
+            onPhotoSheet={setPhotoSheet}
+            photoChannelRef={photoChannelRef}
             canvasRef={canvasRef}
             playSfx={playSfx}
             levelParams={levelParams}
@@ -98,6 +117,23 @@ export default function PlayingCanvas({
           />
         </Suspense>
       </Canvas>
+
+      {/* Mobile raise/lower latch (UX §1.4, T-2) — mobile only, and only while the
+          set-piece holds the scene. The icon follows the TICK's posture, never the tap. */}
+      {isMobile && photoPosture !== null && (
+        <PhotoRaiseButton channelRef={photoChannelRef} posture={photoPosture} />
+      )}
+
+      {/* The second beat (D8): the only surface that ever discloses a verdict. `sheet` is
+          the tick's `photoSheetView` — `null` before `CONTACT_SHEET`, so this renders
+          nothing one frame early. The roll's authored size comes from the level params. */}
+      <ContactSheet
+        sheet={photoSheet}
+        filmCount={levelParams.photoQte?.filmCount ?? 0}
+        onCta={(cta) => {
+          photoChannelRef.current.pendingCta = cta;
+        }}
+      />
 
       {/* Life-loss vignette — DOM overlay atop the Canvas, driven by lifeFlash counter.
           The keyframe block is inlined here so it travels with the lazy chunk. */}

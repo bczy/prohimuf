@@ -4,7 +4,9 @@ import {
   SWEEP_HALF_WIDTH,
   createPlateMaterial,
   sweepBandCentre,
+  sweepPhaseAt,
 } from "../photoPlateMaterial";
+import type { CoverWindows } from "@game/types/photoQte";
 
 describe("sweepBandCentre", () => {
   it("travels the band across the frame, entering and leaving off-screen", () => {
@@ -54,5 +56,36 @@ describe("the plate material (lead-art sweep ruling)", () => {
     expect(material.uniforms.uSweepCentre.value).toBeCloseTo(-SWEEP_HALF_WIDTH, 10);
     expect(material.uniforms.uHasMap.value).toBe(0);
     material.dispose();
+  });
+});
+
+describe("sweepPhaseAt — the band's travel, from the tick's own clock", () => {
+  const cover: CoverWindows = {
+    firstOpenAt: 10,
+    periodSeconds: 8,
+    coverSeconds: 2,
+    tellSeconds: 1.8,
+  };
+
+  it("is 0 before the first window and ramps 0→1 across the cover", () => {
+    expect(sweepPhaseAt(cover, 0)).toBe(0);
+    expect(sweepPhaseAt(cover, 10)).toBe(0);
+    expect(sweepPhaseAt(cover, 11)).toBeCloseTo(0.5, 6);
+    expect(sweepPhaseAt(cover, 12)).toBe(1);
+  });
+
+  it("restarts on each period, so the second window sweeps identically to the first", () => {
+    expect(sweepPhaseAt(cover, 18.5)).toBeCloseTo(sweepPhaseAt(cover, 10.5), 12);
+    expect(sweepPhaseAt(cover, 26.5)).toBeCloseTo(sweepPhaseAt(cover, 10.5), 12);
+  });
+
+  it("holds at 1 between two windows instead of running past the band", () => {
+    expect(sweepPhaseAt(cover, 15)).toBe(1);
+  });
+
+  it("never returns NaN on a degenerate generator or clock", () => {
+    expect(sweepPhaseAt({ ...cover, periodSeconds: 0 }, 12)).toBe(0);
+    expect(sweepPhaseAt({ ...cover, coverSeconds: 0 }, 12)).toBe(0);
+    expect(sweepPhaseAt(cover, Number.NaN)).toBe(0);
   });
 });

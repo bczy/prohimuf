@@ -1,5 +1,6 @@
 import { Color, ShaderMaterial, Vector2 } from "three";
 import type { Texture } from "three";
+import type { CoverWindows } from "@game/types/photoQte";
 import { STOCK } from "@render/ui/print/tokens";
 
 /**
@@ -44,6 +45,26 @@ export function sweepBandCentre(phase: number): number {
   if (!Number.isFinite(phase)) return -SWEEP_HALF_WIDTH;
   const clamped = Math.max(0, Math.min(1, phase));
   return -SWEEP_HALF_WIDTH + clamped * (1 + 2 * SWEEP_HALF_WIDTH);
+}
+
+/**
+ * The band's normalised 0..1 travel at `sceneClock`, from the authored cover generator.
+ *
+ * Lane A did not project a `sweepPhase` on `PhotoSceneView` (the seam this lane asked for),
+ * so the ramp is derived here from the two values the render already receives — the tick's
+ * `sceneClock` and the authored `CoverWindows`. This states NO rule: WHETHER the band is
+ * drawn is entirely `PhotoSceneView.headlightsLit` (the game's call, D-J/R3-2); this is only
+ * WHERE it sits inside a window the game already opened. It stays a pure function of the
+ * tick's own clock, so `[ RECOMMENCER ]` replays the sweep frame-identically (F11/AC10).
+ */
+export function sweepPhaseAt(cover: CoverWindows, sceneClock: number): number {
+  if (!Number.isFinite(sceneClock) || !(cover.periodSeconds > 0) || !(cover.coverSeconds > 0)) {
+    return 0;
+  }
+  const since = sceneClock - cover.firstOpenAt;
+  if (since < 0) return 0;
+  const intoWindow = since % cover.periodSeconds;
+  return Math.max(0, Math.min(1, intoWindow / cover.coverSeconds));
 }
 
 const VERTEX_SHADER = /* glsl */ `

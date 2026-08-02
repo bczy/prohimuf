@@ -20,6 +20,7 @@ import type { HudData, HudDelivery, HudHostageQte, HudBossQte } from "@render/ui
 import type { LevelParams } from "@game/systems/stateMachine";
 import { isQteActive } from "@game/systems/qteSystem";
 import { isBossQteActive } from "@game/systems/bossQteSystem";
+import { isPhotoQteActive } from "@game/systems/photoQteSystem";
 import { ALL_LEVELS } from "@game/levels/levels";
 import { LevelBackdrop } from "./LevelBackdrop";
 import { ForegroundFrames } from "./ForegroundFrames";
@@ -32,6 +33,7 @@ import { LootCrate } from "./LootCrate";
 import { CourierSprite } from "./CourierSprite";
 import { HostageQteSprite } from "./HostageQteSprite";
 import { BossQteSprite } from "./BossQteSprite";
+import { PhotoQteLayer } from "./PhotoQteLayer";
 import { DeliveryVehicleSprite } from "./DeliveryVehicleSprite";
 import { BulletSprite } from "./BulletSprite";
 import { FeedbackLayer } from "./FeedbackLayer";
@@ -40,7 +42,8 @@ import { ImpactEffects } from "@render/effects/ImpactEffects";
 import { PlayerHitEffects } from "@render/effects/PlayerHitEffects";
 import { UrbanMotion } from "@render/effects/UrbanMotion";
 import { CrtPass } from "@render/effects/CrtPass";
-import type { ImpactChannel, PlayerHitChannel } from "@hooks/useGameLoop";
+import type { ImpactChannel, PhotoControlChannel, PlayerHitChannel } from "@hooks/useGameLoop";
+import type { PhotoPosture, PhotoSheetView } from "@render/ui/photo/photoSeam";
 import { useMouse } from "@hooks/useMouse";
 import { useTouchControls } from "@hooks/useTouchControls";
 import { createCameraPan, driveEdgeScroll, edgeScrollRamp } from "@game/systems/cameraPanSystem";
@@ -125,6 +128,12 @@ interface Props {
   onHostageQte?: (qte: HudHostageQte | null) => void;
   /** Surfaces boss-QTE HUD state (the "le Commandant" HP bar) to the DOM HUD. */
   onBossQte?: (qte: HudBossQte | null) => void;
+  /** Photo set-piece posture, `null` while it does not hold the scene (mobile button). */
+  onPhotoPosture?: (posture: PhotoPosture | null) => void;
+  /** The contact sheet, hoisted to the DOM sibling of the Canvas — it is a screen. */
+  onPhotoSheet?: (sheet: PhotoSheetView | null) => void;
+  /** DOM→bridge transport for the photo controls (raise latch, sheet CTA, briefing skip). */
+  photoChannelRef?: React.RefObject<PhotoControlChannel>;
   /** Mobile mode (ADR-0003): touch controls + stronger zoom; replaces edge-scroll. */
   isMobile?: boolean;
   /** CRT post-process toggle (prefs.crt). When true, mounts the composite pass
@@ -148,6 +157,9 @@ export function GameScene({
   onDelivery,
   onHostageQte,
   onBossQte,
+  onPhotoPosture,
+  onPhotoSheet,
+  photoChannelRef,
   isMobile = false,
   crt = false,
   vhs = false,
@@ -360,7 +372,14 @@ export function GameScene({
       : undefined,
     impactChannelRef,
     playerHitChannelRef,
+    photoChannelRef,
   );
+  // The set-piece holds the whole frame with ONE opaque plate, so the world behind it is
+  // fully occluded: `visible={false}` on the world group drops its ~73 draw calls (p50
+  // desktop, `gpu-specialist`) for the ~4 min the scene lasts. State, not a ref: the
+  // visibility is a render-tree fact and it flips exactly twice per set-piece.
+  const [photoPosture, setPhotoPosture] = useState<PhotoPosture | null>(null);
+  const photoActive = photoPosture !== null;
   const mouseRef = useMouse(canvasRef);
   // Desktop edge-scroll pan carried across frames so the camera can glide to rest
   // (inertial exit) after the pointer leaves the edge zone.
@@ -386,7 +405,16 @@ export function GameScene({
     if (isMobile || paused === true) return;
     // While EITHER QTE holds the scene frozen the cinematic zoom (useGameLoop) owns
     // the camera; skip edge-scroll so the two don't fight over its position.
-    if (isQteActive(stateRef.current.qte) || isBossQteActive(stateRef.current.bossQte)) return;
+    // Same rule for the photo set-piece (spec §3.3, site 3): while it holds the scene the
+    // pointer drives the VIEWFINDER, and an edge-scroll would pan the camera under a plate
+    // that is pinned to it — the world would slide behind the photo for no reason, and the
+    // camera would be left off-centre when the set-piece exits.
+    if (
+      isQteActive(stateRef.current.qte) ||
+      isBossQteActive(stateRef.current.bossQte) ||
+      isPhotoQteActive(stateRef.current.photoQte)
+    )
+      return;
     const { x: mouseX, y: mouseY } = mouseRef.current;
     const ortho = camera as OrthographicCamera;
 
@@ -408,87 +436,103 @@ export function GameScene({
 
   return (
     <>
-      <LevelBackdrop levelId={levelId} facadeH={facadeH} />
-      {mergedFacade.slots.map((slot, idx) => (
-        <EnemySprite
-          key={`slot-${String(idx)}`}
-          stateRef={stateRef}
-          slotIndex={idx}
-          screenPosition={slot.screenPosition}
-          size={slot.size}
-          baseZoom={baseZoom}
-        />
-      ))}
-      {/* single-wide (ADR-0057): the drawn décor bakes its own balcony ironwork,
-          so the code-drawn foreground railings would double it up — suppressed. */}
-      {!hideRailings &&
-        layout.mode !== "single-wide" &&
-        tiles.map((tile, i) => (
-          <group key={`fg-${String(i)}`} position={[tile.centreX, 0, 0]}>
-            <ForegroundFrames
-              zones={tile.zones}
-              facadeW={tile.width}
-              facadeH={facadeH}
-              style={ironworkStyle}
-              sillOffset={ironworkSillOffset}
-              drawScale={drawScale}
-              varyPerBuilding={layout.mode === "troncon-sequence"}
-              tileIndex={i}
-            />
-          </group>
+      {/* The WORLD group. Switched off wholesale while the photo set-piece holds the scene:
+          the plate is opaque and covers the frame, so every draw call in here is paid for a
+          pixel nobody sees. The CRT pass stays mounted below — it post-processes the plate
+          itself, so it is not occluded and dropping it would restyle the set-piece. */}
+      <group visible={!photoActive}>
+        <LevelBackdrop levelId={levelId} facadeH={facadeH} />
+        {mergedFacade.slots.map((slot, idx) => (
+          <EnemySprite
+            key={`slot-${String(idx)}`}
+            stateRef={stateRef}
+            slotIndex={idx}
+            screenPosition={slot.screenPosition}
+            size={slot.size}
+            baseZoom={baseZoom}
+          />
         ))}
-      {/* single-wide (ADR-0057): overlay the generated grille sprite in front of
+        {/* single-wide (ADR-0057): the drawn décor bakes its own balcony ironwork,
+          so the code-drawn foreground railings would double it up — suppressed. */}
+        {!hideRailings &&
+          layout.mode !== "single-wide" &&
+          tiles.map((tile, i) => (
+            <group key={`fg-${String(i)}`} position={[tile.centreX, 0, 0]}>
+              <ForegroundFrames
+                zones={tile.zones}
+                facadeW={tile.width}
+                facadeH={facadeH}
+                style={ironworkStyle}
+                sillOffset={ironworkSillOffset}
+                drawScale={drawScale}
+                varyPerBuilding={layout.mode === "troncon-sequence"}
+                tileIndex={i}
+              />
+            </group>
+          ))}
+        {/* single-wide (ADR-0057): overlay the generated grille sprite in front of
           the cops, bottom edge on the feet line — the image ironwork replacing
           the wrong baked grids in street-wide.png. */}
-      {!hideRailings &&
-        layout.mode === "single-wide" &&
-        tiles.map((tile, i) => (
-          <group key={`grille-${String(i)}`} position={[tile.centreX, 0, 0]}>
-            <WindowGrilles
-              levelId={levelId}
-              zones={tile.zones}
-              facadeW={tile.width}
-              facadeH={facadeH}
-            />
-          </group>
-        ))}
-      <NearForeground
-        levelId={levelId}
-        isMobile={isMobile}
-        facadeW={layout.mode === "single-facade" ? panelW : fullW}
-        facadeH={facadeH}
-        panels={layout.mode === "single-facade" ? PANELS : 1}
-        reducedMotion={reducedMotion}
-        stateRef={stateRef}
-      />
-      {/* Armament crate (ADR-0055 → ADR-0056): the single LOOT entity is now a static
+        {!hideRailings &&
+          layout.mode === "single-wide" &&
+          tiles.map((tile, i) => (
+            <group key={`grille-${String(i)}`} position={[tile.centreX, 0, 0]}>
+              <WindowGrilles
+                levelId={levelId}
+                zones={tile.zones}
+                facadeW={tile.width}
+                facadeH={facadeH}
+              />
+            </group>
+          ))}
+        <NearForeground
+          levelId={levelId}
+          isMobile={isMobile}
+          facadeW={layout.mode === "single-facade" ? panelW : fullW}
+          facadeH={facadeH}
+          panels={layout.mode === "single-facade" ? PANELS : 1}
+          reducedMotion={reducedMotion}
+          stateRef={stateRef}
+        />
+        {/* Armament crate (ADR-0055 → ADR-0056): the single LOOT entity is now a static
           SIDEWALK object at LOOT_STREET_Y — it reads only its world-X from the slot
           (`slot.screenPosition.x`, keyed by `loot.slotIndex`); its Y is decoupled to the
           street constant inside LootCrate, so it is no longer a window occupant. */}
-      <LootCrate stateRef={stateRef} slots={mergedFacade.slots} />
-      <CourierSprite stateRef={stateRef} paused={paused} />
-      <HostageQteSprite
-        stateRef={stateRef}
-        onHostageQte={onHostageQte}
-        reducedMotion={reducedMotion}
-      />
-      <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} reducedMotion={reducedMotion} />
-      <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
-      <BulletSprite stateRef={stateRef} />
-      {/* Ambient street life (vent steam + blowing litter). Suppressed for the
+        <LootCrate stateRef={stateRef} slots={mergedFacade.slots} />
+        <CourierSprite stateRef={stateRef} paused={paused} />
+        <HostageQteSprite
+          stateRef={stateRef}
+          onHostageQte={onHostageQte}
+          reducedMotion={reducedMotion}
+        />
+        <BossQteSprite stateRef={stateRef} onBossQte={onBossQte} reducedMotion={reducedMotion} />
+        <DeliveryVehicleSprite stateRef={stateRef} onHudChange={onDelivery} />
+        <BulletSprite stateRef={stateRef} />
+        {/* Ambient street life (vent steam + blowing litter). Suppressed for the
           whole boss fight and frozen on pause / hostage QTE / reduced motion. */}
-      <UrbanMotion
+        <UrbanMotion
+          stateRef={stateRef}
+          fullW={fullW}
+          facadeH={facadeH}
+          isMobile={isMobile}
+          paused={paused === true}
+          reducedMotion={reducedMotion}
+        />
+        <ImpactEffects channelRef={impactChannelRef} />
+        <PlayerHitEffects channelRef={playerHitChannelRef} reducedMotion={reducedMotion} />
+        <FeedbackLayer queueRef={feedbackRef} />
+        <CrosshairSprite stateRef={stateRef} cameraRef={camera} crtEnabled={crt} />
+      </group>
+      <PhotoQteLayer
         stateRef={stateRef}
-        fullW={fullW}
-        facadeH={facadeH}
-        isMobile={isMobile}
-        paused={paused === true}
-        reducedMotion={reducedMotion}
+        onPosture={(posture) => {
+          setPhotoPosture(posture);
+          onPhotoPosture?.(posture);
+        }}
+        onSheet={(sheet) => {
+          onPhotoSheet?.(sheet);
+        }}
       />
-      <ImpactEffects channelRef={impactChannelRef} />
-      <PlayerHitEffects channelRef={playerHitChannelRef} reducedMotion={reducedMotion} />
-      <FeedbackLayer queueRef={feedbackRef} />
-      <CrosshairSprite stateRef={stateRef} cameraRef={camera} crtEnabled={crt} />
       {crt && (
         <CrtPass
           tier={isMobile ? "lite" : "full"}

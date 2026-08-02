@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { subjectBoxEdgeTolerance } from "@game/systems/photoQteSystem";
 import {
   checkFlat,
   checkNoGrow,
   compareBox,
   deriveDeclaredIntervals,
-  edgeTolerance,
   opaquePixelAabb,
   pixelAabbToSceneBox,
   sampleTimes,
 } from "../check-photo-subject-boxes.mjs";
+
+// The gate's helpers take a tolerance FUNCTION now (imported from the game, never a raw
+// number) — these tests call the real evaluator, exactly as the CLI does.
+const edgeTolerance = subjectBoxEdgeTolerance;
 
 // A tiny synthetic 4x4 RGBA frame with a 2x2 opaque square at (1,1)-(2,2).
 function makeFrame() {
@@ -48,30 +52,21 @@ describe("pixelAabbToSceneBox", () => {
   });
 });
 
-describe("edgeTolerance", () => {
-  it("is the absolute floor when 5% of the span is smaller", () => {
-    expect(edgeTolerance(2.0, 0.4)).toBeCloseTo(0.4, 5); // 5% of 2.0 = 0.10 < 0.40
-  });
-  it("is 5% of the span when that exceeds the floor", () => {
-    expect(edgeTolerance(20.0, 0.4)).toBeCloseTo(1.0, 5); // 5% of 20.0 = 1.0 > 0.40
-  });
-});
-
 describe("compareBox", () => {
   const authored = { cx: 10, cy: 5, w: 4, h: 2 };
 
   it("passes an identical box", () => {
-    expect(compareBox(authored, authored, 0.4).pass).toBe(true);
+    expect(compareBox(authored, authored, edgeTolerance).pass).toBe(true);
   });
 
   it("passes a box within tolerance", () => {
     const near = { cx: 10.1, cy: 5, w: 4, h: 2 };
-    expect(compareBox(near, authored, 0.4).pass).toBe(true);
+    expect(compareBox(near, authored, edgeTolerance).pass).toBe(true);
   });
 
   it("fails and names the breached edge(s) when a box drifts past tolerance", () => {
     const shrunk = { cx: 10, cy: 5, w: 2, h: 2 }; // right edge moves 1.0su, > tol
-    const cmp = compareBox(shrunk, authored, 0.4);
+    const cmp = compareBox(shrunk, authored, edgeTolerance);
     expect(cmp.pass).toBe(false);
     const badEdges = cmp.deltas.filter((d) => !d.pass).map((d) => d.edge);
     expect(badEdges).toContain("right");
@@ -85,7 +80,7 @@ describe("checkFlat", () => {
       { cx: 1, cy: 9.0, w: 1, h: 1 },
       { cx: 2, cy: 9.05, w: 1, h: 1 },
     ];
-    expect(checkFlat(boxes, 0.4).pass).toBe(true);
+    expect(checkFlat(boxes, edgeTolerance).pass).toBe(true);
   });
 
   it("fails when cy drifts past tolerance", () => {
@@ -94,7 +89,7 @@ describe("checkFlat", () => {
       { cx: 1, cy: 9.0, w: 1, h: 1 },
       { cx: 2, cy: 9.9, w: 1, h: 1 }, // 0.9su drift, > tol
     ];
-    expect(checkFlat(boxes, 0.4).pass).toBe(false);
+    expect(checkFlat(boxes, edgeTolerance).pass).toBe(false);
   });
 });
 
@@ -104,7 +99,7 @@ describe("checkNoGrow", () => {
       { cx: 0, cy: 0, w: 7.5, h: 4.22 },
       { cx: 1, cy: 0, w: 7.5, h: 4.22 },
     ];
-    expect(checkNoGrow(boxes, 0.4).pass).toBe(true);
+    expect(checkNoGrow(boxes, edgeTolerance).pass).toBe(true);
   });
 
   it("fails when w grows past tolerance", () => {
@@ -112,7 +107,7 @@ describe("checkNoGrow", () => {
       { cx: 0, cy: 0, w: 7.5, h: 4.22 },
       { cx: 1, cy: 0, w: 8.5, h: 4.22 }, // 1.0su growth, > tol
     ];
-    expect(checkNoGrow(boxes, 0.4).pass).toBe(false);
+    expect(checkNoGrow(boxes, edgeTolerance).pass).toBe(false);
   });
 });
 

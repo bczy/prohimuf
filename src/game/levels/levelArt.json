@@ -350,27 +350,59 @@
     "sheet": "Photocopied fanzine xerox illustration, high-contrast black and white, coarse halftone toner dots: a blank photographic contact sheet flat and square to the viewer, a heavy black film border framing six empty rectangular windows in two columns and three rows with equal black gutters, a strip of square sprocket perforations down the outer edge of each column, the inside of all six windows one flat uniform bright magenta #FF3CDC field, hard crisp edges, flat ambient lighting, the whole sheet floating alone with every surrounding margin the same flat uniform bright magenta #FF3CDC field",
     "opening": "Flat 2D fanzine sprite, orthographic projection, long-telephoto compression, the whole subject group centred, whole silhouette touching all four frame edges, ",
     "style": ", photocopied fanzine xerox illustration, rough black ink linework, coarse halftone toner dots, high-contrast black and white, flat ambient lighting, hard crisp cut-out edges, on a flat uniform bright magenta #FF3CDC field filling every gap and every space between the shapes, no text",
+    "$structureComment": "STRUCTURE FIELDS BELOW (asset/size/seed/pxPerSu) added by dev-tooling-assets per the gate's write authorisation (§6: 'structure, ids, paths, sizes and seeds remain dev-tooling-assets'). Sizes are the DESKTOP GENERATION canvas from the resolution ruling (docs/art-direction/gates/photo-qte-resolution-and-sweep-ruling.md §1.1/§1.2) — the mobile 512-px variant is a PIPELINE DOWNSAMPLE of this same PNG, never a second generation (ruling §1.6, cap-2-batches applies once per asset). `pxPerSu` is the desktop generation's px-per-scene-unit on the pose's own box (ruling §1.3: 'write the per-asset px/su into levelArt.json alongside the box' so check-photo-subject-boxes.mjs's tolerance means the same thing on every asset) — the authored box itself lives in src/game/levels/photoQteBelliard.ts (subjectTrack), not duplicated here. `plate` carries no pxPerSu (it is décor, not a subject box; ruling §1.1: 2048x1152 = 20.48 px/su over the 100 su plate width, informational only). No `sheet` PNG: ruling §1.5 supersedes the draft's contact-sheet raster with a zero-asset two-layer DOM composite (plate crop + pose crop) — the `sheet` prompt string above is KEPT for the record/gate history but is DELIBERATELY NEVER DISPATCHED by gen-photo-sprites.mjs. Seeds 4900-4907, a fresh pinned range (no collision with boss 4870-4880, hostages 4812-4814, nearfg 6101-6108, vehicles/loot below 8128).",
+    "plateAsset": {
+      "asset": "assets/photoqte/plate.png",
+      "size": { "width": 2048, "height": 1152 },
+      "seed": 4900,
+      "sourceCrop": "assets/photoqte/plate-source-crop.png"
+    },
     "types": {
       "commandant_wait": {
-        "prompt": "a tall bare-headed french police commander in a knee-length overcoat standing still, feet planted flat side by side on one baseline, both arms hanging settled against the body, shoulders square, coat straight and closed, head level: a narrow upright column well over twice as tall as wide"
+        "prompt": "a tall bare-headed french police commander in a knee-length overcoat standing still, feet planted flat side by side on one baseline, both arms hanging settled against the body, shoulders square, coat straight and closed, head level: a narrow upright column well over twice as tall as wide",
+        "asset": "assets/photoqte/commandant_wait.png",
+        "size": { "width": 456, "height": 1024 },
+        "seed": 4901,
+        "pxPerSu": 75.85
       },
       "pair_facing": {
-        "prompt": "two men in profile facing across a wide gap, feet flat on one baseline, arms settled against the body: left a tall bare-headed commander in a dark long overcoat, right a shorter civilian, pale overcoat; behind them a dark saloon's rear, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper, one front door open"
+        "prompt": "two men in profile facing across a wide gap, feet flat on one baseline, arms settled against the body: left a tall bare-headed commander in a dark long overcoat, right a shorter civilian, pale overcoat; behind them a dark saloon's rear, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper, one front door open",
+        "asset": "assets/photoqte/pair_facing.png",
+        "size": { "width": 1024, "height": 576 },
+        "seed": 4902,
+        "pxPerSu": 42.67
       },
       "exchange_close": {
-        "prompt": "two large dark head shapes in three-quarter view spanning the frame width, cropped at the collarbones, held apart by a clear gap of bare magenta: left short hair, right a pale overcoat collar; below them two hands meet at centre passing a stiff pale envelope with a visibly thick paper edge, wrists level; toner dots large and sparse"
+        "prompt": "two large dark head shapes in three-quarter view spanning the frame width, cropped at the collarbones, held apart by a clear gap of bare magenta: left short hair, right a pale overcoat collar; below them two hands meet at centre passing a stiff pale envelope with a visibly thick paper edge, wrists level; toner dots large and sparse",
+        "asset": "assets/photoqte/exchange_close.png",
+        "size": { "width": 1024, "height": 576 },
+        "seed": 4903,
+        "pxPerSu": 60.24
       },
       "berline_plate": {
-        "prompt": "a dark saloon's rear square-on, parallel to the picture plane, a low wide block filling the frame, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper below, centred low a bright registration plate, crisp raised rim, its face one flat clean pale rectangle, smooth and free of toner; toner dots elsewhere large and sparse"
+        "prompt": "a dark saloon's rear square-on, parallel to the picture plane, a low wide block filling the frame, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper below, centred low a bright registration plate, crisp raised rim, its face one flat clean pale rectangle, smooth and free of toner; toner dots elsewhere large and sparse",
+        "asset": "assets/photoqte/berline_plate.png",
+        "size": { "width": 1024, "height": 576 },
+        "seed": 4904,
+        "pxPerSu": 136.53
       },
       "stamp_master": {
-        "prompt": "one closed hand-drawn oval loop of thick waxy black grease-pencil crayon, drawn large and hollow, with a blunt overshooting tail where the stroke closes"
+        "prompt": "one closed hand-drawn oval loop of thick waxy black grease-pencil crayon, drawn large and hollow, with a blunt overshooting tail where the stroke closes",
+        "asset": "assets/photoqte/stamp_master.png",
+        "size": { "width": 256, "height": 256 },
+        "seed": 4905
       },
       "stamp_bonus": {
-        "prompt": "one bold hand-drawn check stroke of thick waxy black grease-pencil crayon, a short down leg meeting a long rising leg, blunt ends"
+        "prompt": "one bold hand-drawn check stroke of thick waxy black grease-pencil crayon, a short down leg meeting a long rising leg, blunt ends",
+        "asset": "assets/photoqte/stamp_bonus.png",
+        "size": { "width": 256, "height": 256 },
+        "seed": 4906
       },
       "stamp_reject": {
-        "prompt": "two bold hand-drawn strokes of thick waxy black grease-pencil crayon crossing near their middles into a wide X, blunt overshooting ends"
+        "prompt": "two bold hand-drawn strokes of thick waxy black grease-pencil crayon crossing near their middles into a wide X, blunt overshooting ends",
+        "asset": "assets/photoqte/stamp_reject.png",
+        "size": { "width": 256, "height": 256 },
+        "seed": 4907
       }
     }
   },
