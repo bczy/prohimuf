@@ -5,10 +5,12 @@ authority figure through a telephoto lens instead of shooting him. This spec own
 **mechanic, the tuning and the 3C**; it is the `game-designer` deliverable of the ADR-0077
 design loop.
 **Author:** `game-designer` (Sacha) · **Date:** 2026-08-02
-**Status:** **Rev. 3** — relocation amendment (Bertrand's decision, override of gate ruling
-R-10) + the round-2 editorial correction C-2. Rev. 2's answers to K-1…K-4 stand. Still
-**needs `lead-game-designer` (Karim) DESIGN GATE PASS** before it reaches `senior-architect`
-(TECH PLAN) and before any dev implements it.
+**Status:** **Rev. 4** — closes the delta gate's blocking condition **D-1** (the frozen time
+encased in the Belliard mission is now bounded and costed, §1.3.a), acts rulings **R3-1 / R3-2 /
+R3-3 / R3-5 / R3-6**, and closes residues **C-2 / C-5 / C-6 / C-7 / C-8** and note **N-2**.
+Rev. 3's relocation and Rev. 2's answers to K-1…K-4 stand; **no window, keyframe, floor value or
+tier moved**. The verdict in force is the delta gate's **PASS delta** — this revision is its
+closure condition, back to `lead-game-designer` (Karim) for confirmation.
 
 ---
 
@@ -52,12 +54,13 @@ bloquantes pour F12(1).
 
 ---
 
-| Rev.     | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1        | 2026-08-01 | Initial spec.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| **2**    | 2026-08-01 | **K-1** F5 re-derived against **effective** slack (formula pinned in §3.3), `SWAY_AMP_X` 2.4 → **2.00 su** + dependent constants, F5 becomes a **three-leg** floor (sway share / untracked grace / pan authority), new `PAN_RATE_MAX`. **K-2** the full **9-keyframe `subjectTrack` table** is authored (§2.5) and floor **F12** added in three legs. **K-3** F10 becomes a **compound** floor against the gated `SHIELD_BREAK_LULL_CUT`, `rewardMultiplier` is **phase-scoped and Niveau-Final-scoped**, tiers re-tuned ×0.90/×0.80, R1 transcribed as **AMENDMENT A1** (§D7.2). **K-4** the **decline exit** is specified (§1.3) and the ≤ 2 min attempt budget becomes floor **F13** + AC13. |
-| **3**    | 2026-08-02 | **Relocation to Belliard** (Bertrand, override of R-10): sound cover re-derived on the **traffic-light cycle** (§4.1, `TRAIN_*` → `WAVE_*`, period re-derived from a 42 s two-phase cycle, **windows unmoved**), keyframe staging re-read on the **passage / reverse-out** geometry (§2.5, **no value moved**, two new art constraints), run-scoped carry renamed `Belliard → Niveau Final`, all Stalingrad/quai/métro references purged. **C-2** fixed: §1.2 posture is the T-2 **device fork**. No floor, window, keyframe or tier value changed.                                                                                                                                             |
-| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.** (R-10's host level is the **one** ratification Bertrand overrode — Rev. 3.)                                                                                                                                                                                                                                                                                                                                                                |
+| Rev.     | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | 2026-08-01 | Initial spec.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **2**    | 2026-08-01 | **K-1** F5 re-derived against **effective** slack (formula pinned in §3.3), `SWAY_AMP_X` 2.4 → **2.00 su** + dependent constants, F5 becomes a **three-leg** floor (sway share / untracked grace / pan authority), new `PAN_RATE_MAX`. **K-2** the full **9-keyframe `subjectTrack` table** is authored (§2.5) and floor **F12** added in three legs. **K-3** F10 becomes a **compound** floor against the gated `SHIELD_BREAK_LULL_CUT`, `rewardMultiplier` is **phase-scoped and Niveau-Final-scoped**, tiers re-tuned ×0.90/×0.80, R1 transcribed as **AMENDMENT A1** (§D7.2). **K-4** the **decline exit** is specified (§1.3) and the ≤ 2 min attempt budget becomes floor **F13** + AC13.                                                                                                                              |
+| **3**    | 2026-08-02 | **Relocation to Belliard** (Bertrand, override of R-10): sound cover re-derived on the **traffic-light cycle** (§4.1, `TRAIN_*` → `WAVE_*`, period re-derived from a 42 s two-phase cycle, **windows unmoved**), keyframe staging re-read on the **passage / reverse-out** geometry (§2.5, **no value moved**, two new art constraints), run-scoped carry renamed `Belliard → Niveau Final`, all Stalingrad/quai/métro references purged. **C-2** fixed: §1.2 posture is the T-2 **device fork**. No floor, window, keyframe or tier value changed.                                                                                                                                                                                                                                                                          |
+| **4**    | 2026-08-02 | **D-1 closed** (delta gate): the set-piece is INSIDE the mission, so its frozen time is now **bounded** — `PHOTO_MAX_ATTEMPTS = 2` mission-scoped, `BRIEFING` on attempt 1 only (retry = 62.8 s), new floors **F14** (150.6 s / composed 262.1 s = 4.37 min) and **F15** (8.0 s frozen-scene separation), `triggerAtElapsedSeconds = **2.5 s**` frozen for lane A. Rulings **R3-1** (21.0 s is the wave interval, 42 is never a value; two waves same duration/attack), **R3-2** (prohibition: nothing on the plate encodes cover but the headlights), **R3-3** (`BRIEFING` added to §1.1, carries the ellipse), **R3-5** (`enabledOnFirstRun = false`), **R3-6** (no rarity) acted. **C-5/C-6/C-7/C-8** fixed, **N-2** specified (§7.2.a), **AC14** and **AC15** added. **No window, keyframe, floor value or tier moved.** |
+| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.** (R-10's host level is the **one** ratification Bertrand overrode — Rev. 3.)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 **Design source (DECIDED upstream, not re-opened here):**
 [`docs/adr/0077-qte-photo-paparazzi-set-pieces.md`](../adr/0077-qte-photo-paparazzi-set-pieces.md)
@@ -85,8 +88,17 @@ shutter, semantic at the contact sheet (D8), dedicated 2D backdrop + key-pose sp
 
 **Cahier des charges verdict: [EXTENSION]** — conscious, documented. Prohibition (Atari ST, 1987) had no photo mini-game and no camera verb; ADR-0077 already records the extension and
 its justification. The core loop `Récupérer → Livrer → Éviter` is **untouched**: the
-set-piece plays _before_ the delivery (fiction §2.2), adds no rule to `Éviter`, and is
-**never a gate** (§7). This spec adds no loop verb.
+set-piece plays **inside the Belliard mission, at the very start of the night, before the
+first `Récupérer`** — it is **not** a pre-level scene and the word "pré-niveau" is false
+since Rev. 3 (**C-5**, gate ruling R3-3: the climb to the lucarne and the way back down are
+elided by the `BRIEFING` phase, §1.1). It adds no rule to `Éviter` and is **never a gate**
+(§7). This spec adds no loop verb.
+
+**Rev. 4 — what "inside the mission" costs, and how it is paid.** Encasting the set-piece in a
+90 s mission puts frozen time inside the "une mission = 3-5 minutes" promise. That is **D-1**,
+the gate's blocking condition, and it is closed by a **bounded** re-entry budget: §1.3
+(`PHOTO_MAX_ATTEMPTS`), floors **F14/F15** (§7), the authored trigger value (§8) and **AC15**
+(§9). Nothing else in the spec moved.
 
 **No code here.** Every number is a `game-designer` default, tunable, with its rationale,
 to be transcribed into `src/game/**` by `dev-gameplay` (pure, TDD) and drawn by
@@ -132,23 +144,32 @@ Forward-only, exactly like the house shell. The posture toggle the UX spec deleg
 (`ux/photo-qte-controls.md` §1.4) is a **sub-machine inside `ACTIVE`**, not a top-level phase.
 
 ```
-ESTABLISHING ──► ACTIVE ──┬─► SPOTTED   ─┐
+BRIEFING ──► ESTABLISHING ──► ACTIVE ──┬─► SPOTTED   ─┐
    2.0 s                  ├─► ROLL_END   ├─► DEVELOPING ──► CONTACT_SHEET ──► DONE
                           └─► SCENE_END ─┘     0.8 s          (player CTA)
 ```
 
 ### 1.1 Top-level phases
 
-| Phase           | Enter when                         | What runs                                                                                                                                       | Exit                                               |
-| --------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `ESTABLISHING`  | set-piece triggers                 | The wide plate holds, unzoomed. Camera **forced LOWERED**, shutter inert, `sceneClock` **frozen at 0**, suspicion frozen.                       | after `PHOTO_ESTABLISH_SECONDS = 2.0 s` → `ACTIVE` |
-| `ACTIVE`        | —                                  | `sceneClock` runs; the authored cadence (§3) plays; the posture sub-machine (§1.2) is live.                                                     | one of the three terminal conditions below         |
-| `SPOTTED`       | `suspicion ≥ SUSPICION_MAX`        | Targets scatter. Terminal, **non-lethal** (D7).                                                                                                 | → `DEVELOPING`                                     |
-| `ROLL_END`      | `film === 0` (after the decrement) | The roll is finished; the scene is over for Muf whatever happens in the passage.                                                                | → `DEVELOPING`                                     |
-| `SCENE_END`     | `sceneClock ≥ SCENE_DURATION`      | The berline is gone. The passive-failure route: a player who never presses ends here.                                                           | → `DEVELOPING`                                     |
-| `DEVELOPING`    | any terminal                       | `PHOTO_DEVELOP_SECONDS = 0.8 s` mechanical beat (wind-on / cut to black). No input.                                                             | → `CONTACT_SHEET`                                  |
-| `CONTACT_SHEET` | —                                  | The verdict (D8). Every frame shot is stamped (§4.4).                                                                                           | player CTA → `DONE`                                |
-| `DONE`          | —                                  | **Two exits, always** (§1.3): `Continuer`/`Décliner` **leaves** the set-piece and resumes the run; `Réessayer` restarts it from the checkpoint. | run resumes, or `ESTABLISHING` on retry            |
+| Phase           | Enter when                           | What runs                                                                                                                                                                                                                                              | Exit                                                                   |
+| --------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `BRIEFING`      | set-piece triggers (attempt 1)       | The hybrid briefing (ADR-0077 D4). `sceneClock` frozen at 0, suspicion frozen, no camera. **Carries the ellipse of the climb to the lucarne and of the way back down** (R3-3). Skippable at any time by the player, **never absent from the machine**. | player skip, or `PHOTO_BRIEFING_MAX_SECONDS = 25.0 s` → `ESTABLISHING` |
+| `ESTABLISHING`  | `BRIEFING` exits, or **retry entry** | The wide plate holds, unzoomed. Camera **forced LOWERED**, shutter inert, `sceneClock` **frozen at 0**, suspicion frozen.                                                                                                                              | after `PHOTO_ESTABLISH_SECONDS = 2.0 s` → `ACTIVE`                     |
+| `ACTIVE`        | —                                    | `sceneClock` runs; the authored cadence (§3) plays; the posture sub-machine (§1.2) is live.                                                                                                                                                            | one of the three terminal conditions below                             |
+| `SPOTTED`       | `suspicion ≥ SUSPICION_MAX`          | Targets scatter. Terminal, **non-lethal** (D7).                                                                                                                                                                                                        | → `DEVELOPING`                                                         |
+| `ROLL_END`      | `film === 0` (after the decrement)   | The roll is finished; the scene is over for Muf whatever happens in the passage.                                                                                                                                                                       | → `DEVELOPING`                                                         |
+| `SCENE_END`     | `sceneClock ≥ SCENE_DURATION`        | The berline is gone. The passive-failure route: a player who never presses ends here.                                                                                                                                                                  | → `DEVELOPING`                                                         |
+| `DEVELOPING`    | any terminal                         | `PHOTO_DEVELOP_SECONDS = 0.8 s` mechanical beat (wind-on / cut to black). No input.                                                                                                                                                                    | → `CONTACT_SHEET`                                                      |
+| `CONTACT_SHEET` | —                                    | The verdict (D8). Every frame shot is stamped (§4.4).                                                                                                                                                                                                  | player CTA → `DONE`                                                    |
+| `DONE`          | —                                    | **A leaving control, always** (§1.3): `Continuer`/`Décliner` **leaves** the set-piece and resumes the run; `Réessayer` — offered while the attempt budget lasts — restarts it.                                                                         | run resumes, or `ESTABLISHING` on retry                                |
+
+**`BRIEFING` is played ONCE per set-piece entry, not once per attempt (Rev. 4, D-1).** A retry
+re-enters at `ESTABLISHING`, never at `BRIEFING`: the player has read the briefing and Muf is
+already on the roof — replaying the ellipse of a climb he has not undone is both fiction-wrong
+and the single fattest block of frozen time in the attempt (25.0 s of the 87.8 s F13 budget).
+This is what makes attempt 2 cost **62.8 s** of authored time instead of 87.8 s, and it is
+load-bearing for **F14**. It is a mechanical rule, not a convenience: `BRIEFING` is entered iff
+`attemptIndex === 0`.
 
 **Establishing is forced-LOWERED on purpose.** It gives the player the wide read of the
 scene before any commitment, it makes the raise gesture the first thing they do, and it
@@ -223,12 +244,14 @@ which never pauses. That is the whole anti-abuse budget, and it is the non-punit
 again_ — which makes the set-piece a gate in the built screen, whatever §D7 and fiction §5.3
 assert in prose. An invariant that is only written down is not implemented.
 
-**Decision: `DONE` always offers exactly two controls, and one of them always leaves.**
+**Decision: `DONE` always offers a control that LEAVES, and it is always the primary one.**
+While the attempt budget lasts (§1.3.a) it offers exactly two, the second being `Réessayer`;
+once the budget is spent, the leaving control is alone.
 
-| Roll outcome                                                 | Leaving control          | Second control | Boss state carried out                     |
-| ------------------------------------------------------------ | ------------------------ | -------------- | ------------------------------------------ |
-| Contains a `MASTER` frame                                    | **`Continuer`**          | `Réessayer`    | `photoOutcome = master` / `master+bonus`   |
-| No `MASTER` frame (incl. `SPOTTED`, `ROLL_END`, `SCENE_END`) | **`Décliner`** (decline) | `Réessayer`    | `photoOutcome = none` ⇒ **×1.00 baseline** |
+| Roll outcome                                                 | Leaving control          | Second control                    | Boss state carried out                     |
+| ------------------------------------------------------------ | ------------------------ | --------------------------------- | ------------------------------------------ |
+| Contains a `MASTER` frame                                    | **`Continuer`**          | `Réessayer` — **iff budget left** | `photoOutcome = master` / `master+bonus`   |
+| No `MASTER` frame (incl. `SPOTTED`, `ROLL_END`, `SCENE_END`) | **`Décliner`** (decline) | `Réessayer` — **iff budget left** | `photoOutcome = none` ⇒ **×1.00 baseline** |
 
 - **The leaving control is the default/primary focus** on both branches — including the
   failure branch. Retry is offered, never imposed. (Copy for both labels is Yasmine's, gate
@@ -237,14 +260,85 @@ assert in prose. An invariant that is only written down is not implemented.
 - **`Décliner` is one press, and the run continues** from where the set-piece interrupted it,
   with the **Belliard** delivery intact and the Niveau Final boss at baseline. No penalty, no
   energy, no score, no quota (§6.4, F8). Declining is a legal way to play the game.
-- **Retry is not rate-limited**, but it is **budgeted**: floor **F13** caps one un-skipped
-  attempt at ≤ 90 s of authored time and AC13 measures the whole attempt (briefing → sheet →
-  press) at **≤ 2 min**. That is what keeps an optional 60 s scene from being fronted onto a
-  3-5 min mission as an unbounded loop.
+- **Retry is bounded — `PHOTO_MAX_ATTEMPTS = 2` per Belliard mission attempt (Rev. 4, D-1).**
+  See §1.3.a. Rev. 2's "retry is not rate-limited, but it is budgeted" was written when the
+  set-piece **preceded** the mission; encased in it, an unbounded loop breaks "une mission =
+  3-5 minutes" at the first extra try. Floors **F13** (one attempt) and **F14** (all attempts
+  - the composed mission) now bound both legs.
 - **`PHOTO_BRIEFING_MAX_SECONDS = 25.0 s`, skippable at any time** (the copy is fiction's,
   the cap is tuning). `CONTACT_SHEET_READ_BUDGET = 30.0 s` is a **design** budget measured at
   playtest, **not** an auto-dismiss timer: a verdict screen that closes itself is hostile and
   would defeat the whole two-beat feedback.
+
+### 1.3.a — D-1 CLOSED: the frozen time inside a Belliard mission is bounded and costed
+
+**The hole, in the gate's own words (D-1).** Rounds 1-2 granted the PASS on "the set-piece is
+outside the mission clock, so the 3-5 min constraint is not violated on its face". True at
+Stalingrad, where it **preceded** the mission. False at Belliard, where it is **encased**: a
+2-8 s trigger inside a 90 s mission, with `[ RECOMMENCER ]` unbounded ⇒ ≈ 5.9 min at two
+attempts. I take option **(a)** of the gate's three (bound the re-entries), because it is the
+only one that costs a counter and a copy line instead of an architecture (option b re-opens
+D-A and D-G) and because it does not weaken the constraint (option c does).
+
+**Decision 1 — `PHOTO_MAX_ATTEMPTS = 2` per Belliard mission attempt.** One entry plus exactly
+**one** `[ RECOMMENCER ]`. The counter is **mission-scoped**, not run-scoped and not
+save-scoped: leaving Belliard and replaying it gives a fresh budget. That is deliberate and it
+is what keeps ruling **R3-6 (no rarity) intact** — the proof stays farmable across runs, it is
+merely not farmable **inside one 90 s mission**, which is the only place the 3-5 min promise
+is measured.
+
+**Decision 2 — the cap is expressed through the existing gated exit, not a new one.** When
+`attemptIndex + 1 === PHOTO_MAX_ATTEMPTS`, `[ RECOMMENCER ]` is **absent** from `DONE` and the
+**leaving** control is the only one. The invariant "bonus, jamais gate" therefore holds
+**more** strongly at the cap than below it: the last state the player can be in is one press
+from the delivery. **R2-5 is untouched** — the two paired CTAs remain the form on the failure
+branch **for as long as retry is offered**, i.e. on attempt 1. A one-line copy for the
+exhausted state is Yasmine's (§10.3, hand-off F-1b); it is an acceptance, never a scolding.
+
+**Decision 3 — the frozen cost of one attempt, chiffré.**
+
+| Attempt                      | `BRIEFING` | `ESTABLISHING` | `ACTIVE` | `DEVELOPING` | **Authored frozen** | Measured wall-clock ceiling (AC13b/AC15) |
+| ---------------------------- | ---------- | -------------- | -------- | ------------ | ------------------- | ---------------------------------------- |
+| **1** (un-skipped)           | 25.0       | 2.0            | 60.0     | 0.8          | **87.8 s** (F13 ✓)  | ≤ **120 s** with the sheet read          |
+| **2** (retry, no `BRIEFING`) | —          | 2.0            | 60.0     | 0.8          | **62.8 s** (F13 ✓)  | ≤ **90 s** with the sheet read           |
+| **Total, budget exhausted**  |            |                |          |              | **150.6 s**         | ≤ **210 s**                              |
+
+**Decision 4 — the composed mission, defended against 3-5 min.** The played mission is 90 s and
+the only other frozen block reachable before it ends is the hostage duel (≈ 21.5 s worst case,
+techplan). Authored composition, worst legal case:
+
+> `90 (played) + 150.6 (photo, both attempts) + 21.5 (hostage) = **262.1 s = 4.37 min**` — inside
+> 3-5 min, with **≈ 38 s** of headroom under the hard ceiling for loading, transitions and the
+> player's own dithering on the contact sheet.
+
+A third attempt would put it at `324.9 s = 5.42 min` — **over**. That single line is why the cap
+is 2 and not 3, and it is the number to re-run if any of the four terms ever moves.
+
+**Decision 5 — `triggerAtElapsedSeconds = 2.5 s`, authored window `[2.0, 3.0]`.** The gate pinned
+the bottom of `[2, 8]`; here is the mechanical reason rather than the taste. The played time
+between the player leaving the contact sheet and the hostage duel freezing the world is
+`12 − t_p`. I set a floor — **F15, `FROZEN_SCENE_SEPARATION_FLOOR = 8.0 s` of played time
+between the exit of one frozen block and the entry of the next** — because two frozen scenes
+4 s apart do not read as a mission, they read as a cutscene with a joystick. At `t_p = 2.5` the
+separation is **9.5 s** ✓; at `t_p = 8.0` it is **4.0 s** ✗, which is precisely the value the
+gate called indefensible. Why 2.5 and not 2.0: at 2.0 s the player has barely produced one
+input and the freeze reads as "the level never started"; 2.5 s buys one full input beat of
+Belliard — the street is seen moving under the player's own hand — for 0.5 s of separation the
+floor can afford. **Lane A may freeze `triggerAtElapsedSeconds` at 2.5 s.**
+
+**Decision 6 — the Belliard boss branch is explicitly out of this budget, and I say so rather
+than hide it.** Behind `BELLIARD_BOSS_ENABLED`, timer expiry opens a boss QTE — a third frozen
+block, on a branch where the mission has already run its full 90 s. Its budget is gated
+elsewhere and I do not re-derive it here. **Rule: `F14` is stated for `BELLIARD_BOSS_ENABLED =
+false`; with the flag on, AC15 measures the composed path and the result comes back to me
+before that flag ships.** If it does not fit, the honest lever is the boss branch's own budget
+or `PHOTO_MAX_ATTEMPTS = 1` on that configuration — not a silent re-reading of 3-5 min.
+
+**On G-3 (the rule `lead-game-designer` escalated to Bertrand):** this spec satisfies the
+bounded-frozen-time condition **whether or not G-3 is adopted**. If G-3 passes, F14 is the
+written bound it demands. If Bertrand refuses G-3 and rules that frozen time counts against
+3-5 min in full, the composed number above (**4.37 min**) is still inside the constraint. The
+design does not depend on the ruling; only the vocabulary does.
 
 ---
 
@@ -615,9 +709,30 @@ already written: **21.0 s is not a light cycle, it is a wave interval**, and a 4
 cycle producing two evenly-spaced waves is period-correct for the junction the fiction names.
 (Had I read 21 s as the _cycle_ itself it would have been too brisk for a real junction, and
 had I taken a 42 s wave interval instead, a 60 s scene would hold **one** cover window: LA
-PLAQUE would fall in silence, F3 would break on a bonus, and the scene would have to grow to
-~90 s — dragging every keyframe with it. The two-phase reading is both the truthful one and
-the cheap one; that convergence is why it is the decision and not a rationalisation.)
+PLAQUE would fall in silence and F3 would break on a bonus. The two-phase reading is both the
+truthful one and the cheap one; that convergence is why it is the decision and not a
+rationalisation.)
+
+**RULING R3-1, ACTED — the two pins that come with the ratification.**
+
+1. **`WAVE_PERIOD = 21.0 s` is a WAVE INTERVAL and it is the only authored datum. The 42 s
+   cycle is a justification of fiction and NEVER a value.** No authored field, no constant, no
+   unit test, no audio brief and no art brief may contain **42**. Without this pin the next
+   reader "corrects" the period to 42 to match the junction and takes the nine keyframes with
+   him.
+2. **The two waves of the cycle may differ in CHARACTER, never in DURATION nor in ATTACK.**
+   `inCover(t)` is a single boolean and F3 assumes all three windows are worth **7.0 s**. A
+   shorter "turners" wave silently breaks the zero-suspicion run for whichever instant lands in
+   it. This is a **gameplay constraint on the E-7 brief**, not a mix preference (§10.4).
+
+**C-8 — the cost of the reading failing, stated correctly.** Rev. 3 announced "the cadence
+re-opens, the scene grows to ~90 s, the nine keyframes move". **That was pessimistic by one
+step and I withdraw it.** The fiction already carries the fallback — **the bakery's fournil**
+(shipped prop, `x_norm 0,340`, §10.4) — which is **mono-periodic**: it produces one wave every
+21 s with no two-phase reading required, and the whole mechanic reads `WAVE_*`, never "a car".
+So if `sound-designer` or `art-advisor` cannot support the two-phase junction, **the cadence
+does not re-open**: we switch source at **zero mechanical cost**. The real risk of R3-1 is
+**fiction + mix**, not **cadence**.
 
 | Field                | Default    | Rationale                                                                                                                                                                                                                                                                |
 | -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -642,6 +757,24 @@ avoid. The tell has **two** channels and both live at the top of the street: **a
 rising at the line) and **visual** (the packet's headlights swinging into the street, readable
 from the lucarne). The feu on the plate stays scenery and a light source. To `sound-designer`
 and `ux-designer` as a settled constraint, §10.4.
+
+**RULING R3-2, ACTED — the refusal is upheld and HARDENED into a prohibition.** The gate
+sustained my refusal and widened it; it is now written as an interdiction, to be cited together
+with the gated T-4 prohibition ("the needle is not a light meter"):
+
+> **No element of the scene plate may encode the cover state, with the single exception of the
+> packet's headlights.** The plate's traffic light is **scenery and a light source**: it may be
+> animated, it may not be read. Not **out of phase** (it teaches a false causal model — the
+> onde verte offsets it ≈ 7 s), and not **in phase** either (an unbudgeted free indicator:
+> patience would become legible without listening, which moves the difficulty F3 and §5.2
+> calibrate — a tuning change dressed up as an art note).
+
+Two consequences I own: (1) fiction §2.3's "bonus de lisibilité" is **declined at the gate
+(R3-2)** and is not to be re-proposed — recorded here so the refusal survives the next pass
+(**C-6**); (2) what the render projects from `inCover` is **the illumination / the headlights
+raking the mouth of the passage**, **never the colour of the plate's traffic light** — the
+techplan's D-J decision is right, its wording is not, and that is note **N-1** to
+`senior-architect` (§10.6 h).
 
 **Silence is the default state, cover is the exception.** A shutter release is classified by
 one boolean: `inCover(t)`. Nothing in between, no partial credit — the gauge stays countable
@@ -986,21 +1119,23 @@ House discipline (ADR-0035 D2, ADR-0034 G4/G5): every one of these is a unit-tes
 `createPhotoQte` (or equivalent) against the authored set-piece data, including any future
 difficulty curve.
 
-| ID      | Floor                                                                                                                                                                                       | Value / rule                                                                                                  | Set-piece #1 (**Belliard**, Rev. 3)                                   | Why it exists                                                                                                                                                                   |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **F1**  | Every instant's pose window ≥ `POSE_WINDOW_FLOOR`                                                                                                                                           | **1.6 s**                                                                                                     | 4.5 / 3.8 / **2.9** ✓                                                 | Must fit tell-read + reframe + `FOCUS_HOLD` + click within human reaction.                                                                                                      |
-| **F2**  | Every instant preceded by a tell ≥ `TELEGRAPH_LEAD_FLOOR`, strictly before `openAt`                                                                                                         | **1.2 s**                                                                                                     | **1.8** ✓ (computed need 1.42 s)                                      | No un-telegraphed instant ever ships. The zoom traverse must fit in the tell.                                                                                                   |
-| **F3**  | Every instant (master **and** bonus) overlaps a cover window by ≥ `COVER_OVERLAP_FLOOR`                                                                                                     | **1.2 s**                                                                                                     | 4.5 / **1.5** / 2.9 ✓                                                 | Guarantees a **zero-suspicion perfect run exists**. A bonus reachable only by risking the run is a trap, not a bonus. This is the anti-frustration floor that replaces a decay. |
-| **F4**  | Every instant's valid focal band is non-empty, inside `[FOCAL_MIN, FOCAL_MAX]`, ratio ≥ `FOCAL_BAND_FLOOR`                                                                                  | **1.10×**                                                                                                     | 2.03 / 2.04 / **1.43** ✓                                              | An instant you cannot legally frame is a bug shipped as difficulty.                                                                                                             |
-| **F5**  | **Three legs — see §7.1 below.** Sway share of **effective** slack · untracked grace on a moving subject · pan authority                                                                    | a: ≤ 60 % master / ≤ 80 % bonus · b: ≤ 100 % master / ≤ 130 % bonus · c: `PAN_RATE_MAX ≥ v_max + v_sway_peak` | a: 39 / **54** / **75 %** ✓ · b: 54 / **116 %** ✓ · c: 12.0 ≥ 10.19 ✓ | The mandatory shot is never a coin flip; a bonus may be hard; and "hard" never means "geometrically impossible". Calibrates `SWAY_AMP_X` and `PAN_RATE_MAX`.                    |
-| **F6**  | Film count                                                                                                                                                                                  | `≥ instantCount + 2` **and** `≤ 8`                                                                            | 6 (floor 5, ceiling 8) ✓                                              | Lower ⇒ a single mistake is fatal; higher ⇒ the contact sheet needs pagination (UX §4.1).                                                                                       |
-| **F7**  | Silent-shutter headroom `SUSPICION_MAX / SUSPICION_SHUTTER_EXPOSED`                                                                                                                         | **≥ 2**                                                                                                       | 100/34 = 2.94 ⇒ **2 silent frames survivable** ✓                      | Never spotted by a single mistake. Anti-"mort bullshit", non-lethal edition.                                                                                                    |
-| **F8**  | Non-lethality                                                                                                                                                                               | `SPOTTED` moves **no** energy, **no** score, ends **no** run, advances **no** quota                           | ✓                                                                     | ADR-0077 D7. Asserted as a zero-delta test, not a code-reading promise.                                                                                                         |
-| **F9**  | `SHUTTER_ARM_SECONDS + FOCUS_HOLD ≤ 0.5 ×` shortest pose window                                                                                                                             | 0.40 + 0.35 = 0.75 ≤ 1.45 ✓                                                                                   | ✓                                                                     | The arming rule must never eat the window it protects.                                                                                                                          |
-| **F10** | **COMPOUND** with the gated `SHIELD_BREAK_LULL_CUT` (§D7.2 amendment): `m × lull(p) − 0.5 ≥ telegraphLead(p) + ε`, `ε = 0.35 s`; `m` applies to **phases 1-2 of the Niveau Final row only** | `m ≥ ×0.781` (phase 2 binds) · shipped ×1.00 / ×0.90 / ×0.80                                                  | residual 0.65 / **0.38** / 0.35 s ✓                                   | The reward may never curve the boss's fairness floors away **nor silently eat a second gated lever** (§D7.1, K-3).                                                              |
-| **F11** | Determinism                                                                                                                                                                                 | no `Math.random`, no `Date.now`, no per-tick PRNG cursor, anywhere in the set-piece                           | ✓                                                                     | ADR-0077 guardrail; grep/lint-asserted like ADR-0034 Rev. 3.                                                                                                                    |
-| **F12** | **Subject-track honesty — three legs, see §7.2 below**                                                                                                                                      | drawn == box (± `SUBJECT_BOX_TOLERANCE`) · no transit before the tell · total on `[0, sceneDuration]`         | 9 keyframes §2.5 ✓                                                    | The brackets are the player's only live read: a box that disagrees with the picture, or that moves before its tell, turns "bien cadré" into a lie (K-2).                        |
-| **F13** | **Attempt budget** — authored time of one un-skipped attempt                                                                                                                                | `briefingMax + establish + sceneDuration + develop ≤ **90 s**`                                                | 25 + 2.0 + 60.0 + 0.8 = **87.8 s** ✓                                  | An optional set-piece may never front an unbounded loop onto the 3-5 min mission promise (K-4). The measured leg (≤ 2 min incl. reading the sheet) is AC13.                     |
+| ID      | Floor                                                                                                                                                                                       | Value / rule                                                                                                        | Set-piece #1 (**Belliard**, Rev. 3)                                   | Why it exists                                                                                                                                                                    |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F1**  | Every instant's pose window ≥ `POSE_WINDOW_FLOOR`                                                                                                                                           | **1.6 s**                                                                                                           | 4.5 / 3.8 / **2.9** ✓                                                 | Must fit tell-read + reframe + `FOCUS_HOLD` + click within human reaction.                                                                                                       |
+| **F2**  | Every instant preceded by a tell ≥ `TELEGRAPH_LEAD_FLOOR`, strictly before `openAt`                                                                                                         | **1.2 s**                                                                                                           | **1.8** ✓ (computed need 1.42 s)                                      | No un-telegraphed instant ever ships. The zoom traverse must fit in the tell.                                                                                                    |
+| **F3**  | Every instant (master **and** bonus) overlaps a cover window by ≥ `COVER_OVERLAP_FLOOR`                                                                                                     | **1.2 s**                                                                                                           | 4.5 / **1.5** / 2.9 ✓                                                 | Guarantees a **zero-suspicion perfect run exists**. A bonus reachable only by risking the run is a trap, not a bonus. This is the anti-frustration floor that replaces a decay.  |
+| **F4**  | Every instant's valid focal band is non-empty, inside `[FOCAL_MIN, FOCAL_MAX]`, ratio ≥ `FOCAL_BAND_FLOOR`                                                                                  | **1.10×**                                                                                                           | 2.03 / 2.04 / **1.43** ✓                                              | An instant you cannot legally frame is a bug shipped as difficulty.                                                                                                              |
+| **F5**  | **Three legs — see §7.1 below.** Sway share of **effective** slack · untracked grace on a moving subject · pan authority                                                                    | a: ≤ 60 % master / ≤ 80 % bonus · b: ≤ 100 % master / ≤ 130 % bonus · c: `PAN_RATE_MAX ≥ v_max + v_sway_peak`       | a: 39 / **54** / **75 %** ✓ · b: 54 / **116 %** ✓ · c: 12.0 ≥ 10.19 ✓ | The mandatory shot is never a coin flip; a bonus may be hard; and "hard" never means "geometrically impossible". Calibrates `SWAY_AMP_X` and `PAN_RATE_MAX`.                     |
+| **F6**  | Film count                                                                                                                                                                                  | `≥ instantCount + 2` **and** `≤ 8`                                                                                  | 6 (floor 5, ceiling 8) ✓                                              | Lower ⇒ a single mistake is fatal; higher ⇒ the contact sheet needs pagination (UX §4.1).                                                                                        |
+| **F7**  | Silent-shutter headroom `SUSPICION_MAX / SUSPICION_SHUTTER_EXPOSED`                                                                                                                         | **≥ 2**                                                                                                             | 100/34 = 2.94 ⇒ **2 silent frames survivable** ✓                      | Never spotted by a single mistake. Anti-"mort bullshit", non-lethal edition.                                                                                                     |
+| **F8**  | Non-lethality                                                                                                                                                                               | `SPOTTED` moves **no** energy, **no** score, ends **no** run, advances **no** quota                                 | ✓                                                                     | ADR-0077 D7. Asserted as a zero-delta test, not a code-reading promise.                                                                                                          |
+| **F9**  | `SHUTTER_ARM_SECONDS + FOCUS_HOLD ≤ 0.5 ×` shortest pose window                                                                                                                             | 0.40 + 0.35 = 0.75 ≤ 1.45 ✓                                                                                         | ✓                                                                     | The arming rule must never eat the window it protects.                                                                                                                           |
+| **F10** | **COMPOUND** with the gated `SHIELD_BREAK_LULL_CUT` (§D7.2 amendment): `m × lull(p) − 0.5 ≥ telegraphLead(p) + ε`, `ε = 0.35 s`; `m` applies to **phases 1-2 of the Niveau Final row only** | `m ≥ ×0.781` (phase 2 binds) · shipped ×1.00 / ×0.90 / ×0.80                                                        | residual 0.65 / **0.38** / 0.35 s ✓                                   | The reward may never curve the boss's fairness floors away **nor silently eat a second gated lever** (§D7.1, K-3).                                                               |
+| **F11** | Determinism                                                                                                                                                                                 | no `Math.random`, no `Date.now`, no per-tick PRNG cursor, anywhere in the set-piece                                 | ✓                                                                     | ADR-0077 guardrail; grep/lint-asserted like ADR-0034 Rev. 3.                                                                                                                     |
+| **F12** | **Subject-track honesty — three legs, see §7.2 below**                                                                                                                                      | drawn == box (± `SUBJECT_BOX_TOLERANCE`) · no transit before the tell · total on `[0, sceneDuration]`               | 9 keyframes §2.5 ✓                                                    | The brackets are the player's only live read: a box that disagrees with the picture, or that moves before its tell, turns "bien cadré" into a lie (K-2).                         |
+| **F13** | **Attempt budget** — authored time of one un-skipped attempt                                                                                                                                | `briefingMax + establish + sceneDuration + develop ≤ **90 s**`                                                      | attempt 1 = **87.8 s** ✓ · retry = **62.8 s** ✓                       | An optional set-piece may never front an unbounded loop onto the 3-5 min mission promise (K-4). The measured leg (≤ 2 min incl. reading the sheet) is AC13.                      |
+| **F14** | **Composed mission budget (Rev. 4, D-1)** — total frozen time reachable inside ONE Belliard mission attempt, and the composed mission against 3-5 min                                       | a: `briefing + attempts × (establish + scene + develop) ≤ **155 s**` · b: `90 + a + hostageWorst(21.5) ≤ **270 s**` | a: **150.6** ✓ · b: **262.1 s = 4.37 min** ✓                          | The set-piece is now INSIDE the mission (§1.3.a). Unbounded retries break "une mission = 3-5 minutes" at the first extra try. Stated for `BELLIARD_BOSS_ENABLED = false`.        |
+| **F15** | **Frozen-scene separation (Rev. 4, D-1)** — played seconds between the exit of one frozen block and the entry of the next, on the Belliard line                                             | **≥ 8.0 s**                                                                                                         | `12 − 2.5 = **9.5 s**` ✓ (would be 4.0 s at `t_p = 8`, ✗)             | Two frozen scenes a handful of played seconds apart stop reading as a mission. This is what pins `triggerAtElapsedSeconds` to the bottom of `[2, 8]` mechanically, not by taste. |
 
 ### 7.1 F5, in full — the three legs (**K-1**)
 
@@ -1046,6 +1181,35 @@ Asserted in code **against the authored keyframe table** (§2.5), never trusted:
    `t ∈ [0, sceneDuration]`, including before the first instant (K0) and after the last (K8);
    the first and last keyframes sit exactly on `t = 0` and `t = sceneDuration`.
 
+#### 7.2.a — N-2: what the F12(1) check must assert, and on WHAT (Rev. 4)
+
+The gate found a real enforcement hole and it is mine to close in spec form: three of my
+promises are **interval** properties, and `check-photo-subject-boxes.mjs` currently controls
+**at the keyframes**. A reverse-out that dips and comes back, or a hold pose that wanders and
+returns, passes at both ends and lies in between. **The shape of the control is mine; the step,
+the tooling and the implementation are `qa-lead` + `dev-tooling-assets`.**
+
+| #   | Property                                                      | Interval (not the endpoints)             | What must be asserted **at every sampled `t` of the interval**                                                                        |
+| --- | ------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Drawn == box** (F12(1b))                                    | the whole of `[0, 60.0]`, per segment    | `AABB(drawn(t))` vs `subjectTrack(t)` per edge, within `SUBJECT_BOX_TOLERANCE = max(0.40 su, 5 %)`.                                   |
+| 2   | **The reverse-out is FLAT** (art constraint 7, §10.5)         | `[53.0, 55.9]`                           | `abs(cy(AABB(drawn(t))) − 9.00) ≤ 0.40 su`. Sampling only 53.0 and 55.9 admits an arc; the constraint IS the absence of the arc.      |
+| 3   | **The reverse-out does NOT grow** (art constraint 8, §10.5)   | `[53.0, 55.9]`                           | `w, h` of `AABB(drawn(t))` vs the authored `7.50 × 4.22`, within the same tolerance — monotone growth is exactly what endpoints hide. |
+| 4   | **The two hold poses do not drift** (art constraint 6, §10.5) | `[K2, K3]` (19.2 s), `[K4, K5]` (14.7 s) | Same test against the **constant** authored box: idle animation lives inside the tolerance for the entire beat, not just at its ends. |
+
+Two rules on the sampling itself, because they are design properties and not tool choices:
+
+- **The step must be strictly finer than the shortest thing it must catch.** The shortest
+  interval under control is LA PLAQUE's 2.9 s; a step that samples it fewer than ~10 times
+  cannot distinguish a flat track from a shallow arc. `qa-lead` picks the number; a step that
+  produces fewer than 10 samples on `[53.0, 55.9]` does not satisfy this spec.
+- **Sample the ANIMATION, not the interpolation.** The point of the interval check is the
+  drawn sprite's real frames between keyframes. Sampling a re-interpolation of the authored
+  table against itself proves nothing and would be a green light that asserts nothing.
+
+Failing any of these is an **art re-delivery**, not a tolerance widening — and if the drawn
+reverse-out genuinely must arc or grow, that is a **re-author of K6/K7** which moves
+`3.103 su/s`, F5b, F5c, §3.3.b and AC6c: it comes back to me (§10.5 item 8).
+
 ---
 
 ## 8. Consolidated value table (the deliverable)
@@ -1053,35 +1217,39 @@ Asserted in code **against the authored keyframe table** (§2.5), never trusted:
 **System constants** (**Belliard**-first, exactly as the hostage QTE's wander constants are —
 promoted to authored fields only when a second set-piece needs to curve them):
 
-| Constant                     | Default                                         |     | Constant                    | Default                       |
-| ---------------------------- | ----------------------------------------------- | --- | --------------------------- | ----------------------------- |
-| `PHOTO_ESTABLISH_SECONDS`    | 2.0 s                                           |     | `SWAY_AMP_X`                | **2.00 su** _(Rev.2)_         |
-| `PHOTO_DEVELOP_SECONDS`      | 0.8 s                                           |     | `SWAY_AMP_Y`                | **1.125 su** _(Rev.2)_        |
-| `PHOTO_BRIEFING_MAX_SECONDS` | **25.0 s** _(new)_                              |     | `SWAY_LEG_DURATION`         | 0.55 s                        |
-| `CONTACT_SHEET_READ_BUDGET`  | **30.0 s** _(new, design budget — not a timer)_ |     | `SWAY_LEG_DURATION_RM`      | 1.30 s                        |
-| `SHUTTER_ARM_SECONDS`        | 0.40 s                                          |     | `MIN_LEG_DISPLACEMENT`      | **0.50 su** _(Rev.2)_         |
-| `FOCUS_HOLD`                 | 0.35 s                                          |     | `MAX_LEG_DISPLACEMENT`      | **2.60 su** _(Rev.2)_         |
-| `FOCAL_MIN` / `FOCAL_MAX`    | 35 / 300 mm                                     |     | `PAN_RATE_MAX`              | **12.0 su/s** _(new)_         |
-| `ZOOM_TRAVERSE_SECONDS`      | 2.2 s                                           |     | `SUSPICION_MAX`             | 100                           |
-| `FRAME_MARGIN`               | 0.04                                            |     | `SUSPICION_SHUTTER_EXPOSED` | +34                           |
-| `FILL_MIN`                   | 0.45                                            |     | `SUSPICION_SHUTTER_COVERED` | 0                             |
-| `FILL_MAX` (derived)         | 0.92                                            |     | `SUBJECT_BOX_TOLERANCE`     | **max(0.40 su, 5 %)** _(new)_ |
-| `TELEGRAPH_LEAD_PHOTO`       | 1.8 s                                           |     | `LULL_RESIDUAL_FLOOR` (ε)   | **0.35 s** _(new, boss-side)_ |
-| Floors **F1–F13**            | §7                                              |     |                             |                               |
+| Constant                     | Default                                         |     | Constant                        | Default                       |
+| ---------------------------- | ----------------------------------------------- | --- | ------------------------------- | ----------------------------- |
+| `PHOTO_ESTABLISH_SECONDS`    | 2.0 s                                           |     | `SWAY_AMP_X`                    | **2.00 su** _(Rev.2)_         |
+| `PHOTO_DEVELOP_SECONDS`      | 0.8 s                                           |     | `SWAY_AMP_Y`                    | **1.125 su** _(Rev.2)_        |
+| `PHOTO_BRIEFING_MAX_SECONDS` | **25.0 s** _(new)_                              |     | `SWAY_LEG_DURATION`             | 0.55 s                        |
+| `CONTACT_SHEET_READ_BUDGET`  | **30.0 s** _(new, design budget — not a timer)_ |     | `SWAY_LEG_DURATION_RM`          | 1.30 s                        |
+| `SHUTTER_ARM_SECONDS`        | 0.40 s                                          |     | `MIN_LEG_DISPLACEMENT`          | **0.50 su** _(Rev.2)_         |
+| `FOCUS_HOLD`                 | 0.35 s                                          |     | `MAX_LEG_DISPLACEMENT`          | **2.60 su** _(Rev.2)_         |
+| `FOCAL_MIN` / `FOCAL_MAX`    | 35 / 300 mm                                     |     | `PAN_RATE_MAX`                  | **12.0 su/s** _(new)_         |
+| `ZOOM_TRAVERSE_SECONDS`      | 2.2 s                                           |     | `SUSPICION_MAX`                 | 100                           |
+| `FRAME_MARGIN`               | 0.04                                            |     | `SUSPICION_SHUTTER_EXPOSED`     | +34                           |
+| `FILL_MIN`                   | 0.45                                            |     | `SUSPICION_SHUTTER_COVERED`     | 0                             |
+| `FILL_MAX` (derived)         | 0.92                                            |     | `SUBJECT_BOX_TOLERANCE`         | **max(0.40 su, 5 %)** _(new)_ |
+| `TELEGRAPH_LEAD_PHOTO`       | 1.8 s                                           |     | `LULL_RESIDUAL_FLOOR` (ε)       | **0.35 s** _(new, boss-side)_ |
+| `PHOTO_MAX_ATTEMPTS`         | **2** _(Rev.4, D-1 — §1.3.a)_                   |     | `FROZEN_SCENE_SEPARATION_FLOOR` | **8.0 s** _(Rev.4, F15)_      |
+| Floors **F1–F15**            | §7                                              |     |                                 |                               |
 
 **Authored per set-piece** (`photoQteSpec` — the data shape is `senior-architect`'s call):
 
-| Key                  | **Belliard** set-piece #1 (Rev. 3)                                                                                                                                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scenePlate`         | **la bouche du passage, rue Belliard** (`x_norm 0,372–0,408`), vue plongeante depuis la lucarne du haut de rue — `100 × 56.25 su` ≈ 13,0 × 7,3 m (art request: fiction Rev.3 §6)                                              |
-| `sceneDuration`      | 60.0 s                                                                                                                                                                                                                        |
-| `filmCount`          | 6                                                                                                                                                                                                                             |
-| `swaySeed`           | integer, **pinned at stage-5 `verify`** (§9 AC10 — the ADR-0034 K-5 discipline)                                                                                                                                               |
-| `coverWindows`       | **traffic waves** — `WAVE_PERIOD` 21.0 s, `WAVE_FIRST_OPEN` 10.0 s, `WAVE_COVER_SECONDS` 7.0 s, `WAVE_TELL_SECONDS` 1.8 s ⇒ [10,17] [31,38] [52,59] (§4.1)                                                                    |
-| `subjectTrack`       | **the 9-keyframe table of §2.5** — `{ t, cx, cy, w, h }[]`, linearly interpolated, total on `[0, 60.0]`                                                                                                                       |
-| `instants`           | the three rows of §4.2 (`openAt`, `closeAt`, `role`, tell)                                                                                                                                                                    |
-| `briefingMaxSeconds` | 25.0 s, skippable (§1.3)                                                                                                                                                                                                      |
-| `rewardMultiplier`   | **×0.90** master-only, **×0.80** master + ≥1 bonus, **×1.00** on decline — authored on the **Niveau Final** `bossQteSpec`, applied to **phases 1-2 only** (§D7.1, amendment §D7.2). Not a field of this set-piece's own data. |
+| Key                       | **Belliard** set-piece #1 (Rev. 3)                                                                                                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scenePlate`              | **la bouche du passage, rue Belliard** (`x_norm 0,372–0,408`), vue plongeante depuis la lucarne du haut de rue — `100 × 56.25 su` ≈ 13,0 × 7,3 m (art request: fiction Rev.3 §6)                                              |
+| `sceneDuration`           | 60.0 s                                                                                                                                                                                                                        |
+| `filmCount`               | 6                                                                                                                                                                                                                             |
+| `swaySeed`                | integer, **pinned at stage-5 `verify`** (§9 AC10 — the ADR-0034 K-5 discipline)                                                                                                                                               |
+| `coverWindows`            | **traffic waves** — `WAVE_PERIOD` 21.0 s, `WAVE_FIRST_OPEN` 10.0 s, `WAVE_COVER_SECONDS` 7.0 s, `WAVE_TELL_SECONDS` 1.8 s ⇒ [10,17] [31,38] [52,59] (§4.1)                                                                    |
+| `subjectTrack`            | **the 9-keyframe table of §2.5** — `{ t, cx, cy, w, h }[]`, linearly interpolated, total on `[0, 60.0]`                                                                                                                       |
+| `instants`                | the three rows of §4.2 (`openAt`, `closeAt`, `role`, tell)                                                                                                                                                                    |
+| `briefingMaxSeconds`      | 25.0 s, skippable (§1.3), **played on attempt 1 only** (§1.1)                                                                                                                                                                 |
+| `triggerAtElapsedSeconds` | **2.5 s** — authored window `[2.0, 3.0]`, **frozen and free for lane A** (D-1 closed, §1.3.a decision 5). Pinned by **F15** (`12 − 2.5 = 9.5 s ≥ 8.0`), not by taste. Above 4.0 s the floor breaks.                           |
+| `maxAttempts`             | **2** (one entry + one `[ RECOMMENCER ]`), **mission-scoped** — resets on a new Belliard mission, which is what keeps R3-6 (no rarity) intact (§1.3.a)                                                                        |
+| `enabledOnFirstRun`       | **false** — the set-piece does **not** trigger on the player's first Belliard run (ruling **R3-5**). The exact predicate is `pm`'s; the "not the first" is not.                                                               |
+| `rewardMultiplier`        | **×0.90** master-only, **×0.80** master + ≥1 bonus, **×1.00** on decline — authored on the **Niveau Final** `bossQteSpec`, applied to **phases 1-2 only** (§D7.1, amendment §D7.2). Not a field of this set-piece's own data. |
 
 ---
 
@@ -1108,7 +1276,7 @@ promoted to authored fields only when a second set-piece needs to curve them):
   the sweet spot holds with light counter-steer; 300 mm on LA PLAQUE is measurably worse than
   251 mm, and the degradation is visible from ≈ 258 mm up.
 - **AC6 — Cadence and floors.** Windows/tells/cover match §4.2 within cadence tolerance;
-  the **F1–F13** floors are asserted in code against the authored data (unit test), not just
+  the **F1–F15** floors are asserted in code against the authored data (unit test), not just
   observed. In particular **a zero-suspicion full-set run is achievable** (F3): master +
   both bonuses, needle never leaves rest.
 - **AC6b — Subject track (F12).** Unit tests on the authored keyframes: (a) brackets and the
@@ -1151,14 +1319,33 @@ promoted to authored fields only when a second set-piece needs to curve them):
   fits** the compressed phase-2 lull; the boss is beatable at ×1.00 (the set-piece is not a
   gate).
 - **AC13 — Bonus, never gate; and it is bounded (K-4, F13).** (a) On a roll with **no** master
-  proof — including a `SPOTTED` abort — the contact sheet shows **two** controls, the primary
-  one **leaves**, and **one press** returns the player to the **Belliard** delivery with the run
+  proof — including a `SPOTTED` abort — the contact sheet shows **two** controls **while the
+  attempt budget lasts** (see (d)), the primary one **leaves**, and **one press** returns the player to the **Belliard** delivery with the run
   intact and the boss at ×1.00. (b) The whole first-playthrough attempt, un-skipped and
   measured wall-clock at `verify` — briefing → set-piece → contact sheet → press — is
   **≤ 2 min**; the authored leg (F13) is asserted ≤ 90 s in a unit test. (c) The contact sheet
-  never auto-dismisses.
+  never auto-dismisses. **(d) — Rev. 4, D-1:** `[ RECOMMENCER ]` is offered on attempt 1 and
+  **absent** on attempt 2; on the exhausted sheet the single remaining control **leaves** in
+  one press; the attempt counter **resets** when a new Belliard mission starts (asserted, both
+  directions — a counter that never resets would smuggle in the rarity R3-6 forbids); a retry
+  enters at `ESTABLISHING`, **never** at `BRIEFING` (delta-asserted: attempt 2's authored time
+  is 62.8 s, not 87.8 s).
+- **AC14 — The frustration hunt (ADR-0077's own stage-5 ask).** Over a first-contact playtest:
+  no player burns a full roll without understanding why (the contact sheet names a reason per
+  frame); no instant is missed for a reason the player could not perceive (tell present, ≥ 1.8 s,
+  audible **and** visible); the `locked` bracket state makes `FOCUS_HOLD` learnable without copy;
+  and the exhausted-budget sheet reads as an ending, not as a punishment. Deviations are
+  reported as observations with the value I would move, one variable at a time.
+- **AC15 — The composed Belliard mission, chronometered (imposed by the gate, E-8).** At
+  `verify`, stopwatch the **total real time of one Belliard mission attempt including the
+  set-piece**, measured **twice**: (a) with **1** set-piece attempt, (b) with **2** (budget
+  exhausted). Report both against the 3-5 min constraint and against **F14b's 262.1 s
+  prediction**. Also report the **played** separation between leaving the contact sheet and the
+  hostage duel freezing (F15, predicted 9.5 s). If `BELLIARD_BOSS_ENABLED` is on, measure that
+  path too (§1.3.a decision 6). This is the measurement that closes or re-opens D-1 by
+  observation instead of by argument; it **adds to** AC13(b), it does not replace it.
 
-Sacha playtests the built set-piece against AC1–AC13 and reports PASS/deviations to
+Sacha playtests the built set-piece against **AC1–AC15** and reports PASS/deviations to
 `lead-game-designer` **before** the architect's integration review (pipeline stage 5).
 
 ---
@@ -1200,16 +1387,24 @@ exactly where her `PARIS-MINUIT` UNE variant belongs (fiction §5.3), gated on L
 adopted with **her three orders of magnitude intact** — 21.0 s / 7.0 s / 1.8 s — but re-derived
 rather than inherited (§4.1): the 21.0 s is a **wave interval**, not a light cycle, which needs
 a **42 s two-phase junction** to hold up. If `sound-designer` or `art-advisor` cannot support a
-42 s cycle feeding the street on both phases, that is not a mix note — it is a **cadence
-re-open**, and it costs the scene duration and all nine keyframes. One line back to me, please,
-before anyone absorbs it quietly. I also **decline** her §2.3 "bonus de lisibilité" (the
-on-plate feu's colour doubling the audio cue): the onde verte puts it ≈ 7 s out of phase with
-the tell. Reason in §4.1 — the feu stays a light source, and the visual tell is the packet's
-headlights at the top of the street.
+42 s cycle feeding the street on both phases, **the cadence does NOT re-open** — we switch to
+the **bakery fournil** fallback (mono-periodic, shipped prop, zero mechanical cost, §4.1 / §10.4).
+Rev. 3 announced a ~90 s re-author here and that was wrong; corrected in Rev. 4 (**C-8**). The
+residual risk is fiction + mix, not cadence. I also **decline** her §2.3 "bonus de lisibilité"
+(the on-plate feu's colour doubling the audio cue), and the gate **hardened the refusal into a
+prohibition (R3-2, §4.1)**: no element of the plate encodes cover except the headlights, neither
+out of phase nor in phase. Please mark it in fiction §2.3 as **declined at the gate** so it is
+not re-proposed (**C-6**).
 
-**Rev. 2 owes her one line back (gate F-1):** the contact sheet's failure branch now needs a
-**decline** CTA label alongside `Réessayer` (§1.3). Her variant (c) — _« Alors ils remettront
-ça. Ils remettent toujours ça. »_ — is already the right sentence for it; I need the button.
+**Rev. 4 — two copy asks, both one line:**
+
+- **F-1 (still open, Rev. 2):** the contact sheet's failure branch needs a **decline** CTA
+  label alongside `Réessayer` (§1.3). Her variant (c) — _« Alors ils remettront ça. Ils
+  remettent toujours ça. »_ — is already the right sentence; I need the button.
+- **F-1b (new, from D-1 / §1.3.a):** the **budget-exhausted** sheet — attempt 2, no retry
+  offered, one control that leaves. It must read as an **ending, not a punishment** (AC14):
+  the roll is finished, the night goes on. It is the same acceptance as variant (c), on a
+  screen where no second chance is being withheld — it simply is not on offer any more tonight.
 
 ### 10.4 To `sound-designer` (Malik) — gameplay data, not dressing
 
@@ -1220,19 +1415,25 @@ without looking at the needle, and the approach must be audible before it is vis
 **Rev. 3 — the source changed, the contract did not.** Not a métro; **a packet of vehicles
 released by the crossroads at the top of rue Belliard**. Three things I need from the mix:
 
-1. **The loop is a 42 s two-phase light cycle carrying two packets** (through traffic, then
-   turners), i.e. one wave every **21.0 s** (§4.1). The two waves may differ in character —
-   they must not differ in **duration** (7.0 s) or in **onset sharpness**, because both feed the
-   same `inCover(t)` boolean.
+1. **One wave every `WAVE_PERIOD` = 21.0 s** — that interval is the datum. The 42 s two-phase
+   light cycle carrying two packets (through traffic, then turners) is the **fiction that
+   justifies** the interval; **it is never a value** (ruling R3-1, pin 1): nothing you author,
+   name or test may contain **42**. **Gameplay constraint, not a mix preference (R3-1, pin 2):
+   the two waves may differ in character — they must NOT differ in duration (7.0 s) nor in
+   attack**, because both feed the same `inCover(t)` boolean and F3 assumes three windows of
+   equal worth. A shorter "turners" wave breaks the zero-suspicion run for whichever instant
+   falls in it.
 2. **The tell is the engines rising at the line** — 1.8 s, and it comes from the **top of the
    street, close to the affût**, not from the far end. It must be unmistakably "something is
    about to arrive", never "something is happening down there".
 3. **Silence must be genuinely dead** between waves (a rideau de fer, a néon, nothing else).
    The needle's whole lesson is that the safe state is the exception.
 
-Fiction's fallback if the light does not survive playtest is the **boulangerie's extractor**
-(fiction Rev.3 §2.3) — same period, same duty, same tell shape; it costs nothing mechanically
-because everything above reads `WAVE_*`, not "a car". The
+**The fallback, and its exact cost (R3-1).** If the two-phase junction does not survive your
+pass or the playtest, the source becomes the **boulangerie's fournil/extractor** (fiction Rev.3
+§2.3, shipped prop at `x_norm 0,340`) — **mono-periodic**: one wave every 21 s with no two-phase
+reading needed, same duty, same tell shape. **Mechanical cost: zero**, because everything above
+reads `WAVE_*` and never "a car". Say so plainly rather than stretching the junction fiction. The
 shutter's **crisp vs. dull** click is the sole mechanical feedback channel for T5 (§2.4) —
 an attentive ear must hear the difference with the visuals off.
 
@@ -1267,6 +1468,31 @@ an attentive ear must hear the difference with the visuals off.
    which moves `3.103 su/s`, F5b, F5c, §3.3.b and AC6c: it comes back to me, it is not absorbed
    in the art pass.
 
+**Rev. 4 adds the last constraint and a prohibition.** The gate re-issued E-6 at **7
+constraints** (it had gone out at 4): mapped onto this section's numbering they are — the
+needle is not a light meter (T-4), no interactive-glow vocabulary on the subject (F-4), item 5
+(drawn == box), item 6 (two non-drifting hold poses), item 7 (flat reverse-out), item 8 (no
+growth), and item 9 below. **The package is complete here; do not read it from the Rev. 3
+techplan, which lists only the street-continuity addition.**
+
+9. **Street continuity.** The plate must read as `street-wide.png` at first glance — the passage
+   at `x_norm 0,372–0,408` (exclusion zone, no prop pops there), the boulangerie at `0,340`, the
+   traffic light at `0,388` (the only tall prop, standing in front of the passage), the tagged
+   rideaux de fer. The décor is **cited, not invented** (`spec-belliard-street-wide-repositioning.md`
+   §0.2/§2.3).
+
+> **PROHIBITION (mine, ruling R3-2 — cite it together with T-4 "the needle is not a light
+> meter"): no element of the plate may encode the cover state, with the single exception of the
+> packet's headlights.** The traffic light is **scenery and a light source**: animate it freely,
+> it may not be read. Not out of phase (false causal model) and not in phase either (a free
+> unbudgeted indicator that would make patience legible without listening — that is a tuning
+> change wearing an art note's clothes, and it moves what F3 and §5.2 calibrate).
+
+**How items 6-8 will actually be checked (N-2, §7.2.a):** on **intervals**, not at the
+keyframes. A control that samples only `t = 53.0` and `t = 55.9` accepts a reverse-out that
+arcs or grows in between, and a control that samples only K2/K3 accepts a hold pose that
+wanders and comes back. The step is `qa-lead`'s; what must be asserted is in §7.2.a.
+
 Everything else in fiction Rev.3 §6 (backdrop = the passage mouth, rideaux de fer, boulangerie
 en amorce, feu tricolore, plunging view from the lucarne) is Yasmine's fiche and Nico's call;
 my only read-level ask on the backdrop is that **the mouth of the passage stay the darkest
@@ -1300,11 +1526,74 @@ levels stay byte-for-byte deterministic (AC11).
 - (g) **The decline exit** (§1.3) must return control to the interrupted delivery without a
   reload of the **Belliard** level state — it is an exit from the set-piece, not a level restart.
 
+**Rev. 4 adds three (D-1 closed + the gate's notes N-1/N-3):**
+
+- (h) **N-1 — what the render projects from `inCover` is the ILLUMINATION, never the light's
+  colour.** Techplan **D-J**'s decision is ratified without reserve (`trafficSignalPhase`,
+  13.5 s, wall clock, never the source of truth for cover; re-tuning `TRAFFIC_PHASES` to 21 s
+  is the D-F trap in costume). Its **wording** is what needs one line: the thing driven by
+  `inCover(spec.cover, sceneClock, …)` is **the packet's headlights / the lighting of the mouth
+  of the passage**, **not** the plate's traffic-light colour. The plate's feu does not consume
+  `inCover` (ruling R3-2, §4.1). Blocking for lane B's brief, not for the build.
+- (i) **N-3 closed — `triggerAtElapsedSeconds = 2.5 s` is free to freeze** (window `[2.0, 3.0]`,
+  §1.3.a decision 5, floor F15). Lane A is unblocked.
+- (j) **`PHOTO_MAX_ATTEMPTS = 2`, mission-scoped** (§1.3.a). Two shape asks: the counter lives
+  with the mission attempt, **not** with the run and **not** with the save (a persisted counter
+  would implement the rarity R3-6 forbids), and `BRIEFING` is entered iff `attemptIndex === 0`
+  (§1.1) — the 25.0 s it saves per retry is load-bearing for F14, not a nicety.
+
 ---
 
-## 11. Hand-off — Rev. 3 back to `lead-game-designer` (Karim)
+## 11. Hand-off — Rev. 4 back to `lead-game-designer` (Karim)
 
-### 11.0 Rev. 3 — the relocation amendment (2026-08-02)
+### 11.0 Rev. 4 — the delta-gate residues, closed (2026-08-02)
+
+**From:** `game-designer` (Sacha) · **To:** `lead-game-designer` (Karim) — closure of the
+**PASS delta** verdict's blocking condition and of my share of its residues. **Nothing here
+re-opens a ratified decision**; D-1 is answered inside the option set the gate framed.
+
+#### D-1 — CLOSED, chiffré, assertable (§1.3.a)
+
+I take **option (a)**: bound the re-entries, and let the already-gated `[ LAISSER TOMBER ]`
+carry the ceiling. It costs a counter and a copy line, it re-opens nothing, and it does not
+weaken the constraint the way option (c) would.
+
+| The answer                              | Value                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frozen time of **one attempt**, chiffré | attempt 1 = **87.8 s** authored (≤ 120 s measured) · retry = **62.8 s** (≤ 90 s measured) — the retry drops `BRIEFING` (25.0 s), §1.1                                                                                                                                                                                                                                                                                      |
+| **Retry bounding rule**                 | **`PHOTO_MAX_ATTEMPTS = 2`, mission-scoped.** At the cap, `[ RECOMMENCER ]` is **absent** and `[ LAISSER TOMBER ]` stands alone as the primary — the invariant "bonus jamais gate" holds _more_ strongly at the cap. **R2-5 untouched** (two paired CTAs remain the form while retry is offered). **R3-6 untouched** (the counter resets on a new Belliard mission — not rare, just not farmable inside one 90 s mission). |
+| **New floors**                          | **F14** (a: photo frozen total ≤ 155 s ⇒ **150.6** ✓ · b: `90 + a + 21.5 ≤ 270 s` ⇒ **262.1 s = 4.37 min** ✓) · **F15** (`FROZEN_SCENE_SEPARATION_FLOOR = 8.0 s` of played time between two frozen blocks)                                                                                                                                                                                                                 |
+| **`triggerAtElapsedSeconds`**           | **2.5 s**, authored window **`[2.0, 3.0]`** — **lane A may freeze it.** Pinned by F15 (`12 − 2.5 = 9.5 s ≥ 8.0`), not by taste; `t_p = 8` gives 4.0 s and breaks the floor, which is the value you called indefensible. 2.5 over 2.0 buys one full played input beat before the freeze, for 0.5 s the floor can afford.                                                                                                    |
+| **New AC**                              | **AC13(d)** (the cap, the reset, the retry entry point) and **AC15** (your E-8 stopwatch) — plus **AC14**, which your §5 cites and which the spec did not actually carry. It does now.                                                                                                                                                                                                                                     |
+| **What a 3rd attempt would cost**       | `324.9 s = 5.42 min` — **over**. That single line is the reason the cap is 2.                                                                                                                                                                                                                                                                                                                                              |
+| **Stated honestly, not hidden**         | F14 is derived for `BELLIARD_BOSS_ENABLED = false`. With the flag on, a third frozen block enters the same mission; AC15 measures that path and it comes back to me before the flag ships (§1.3.a decision 6).                                                                                                                                                                                                             |
+
+**On G-3 (E-3bis, Bertrand's):** the design holds **either way**. If G-3 is adopted, F14 is the
+written bound it demands. If Bertrand rules that frozen time counts in full, **4.37 min is still
+inside 3-5 min**. Only the vocabulary depends on the ruling.
+
+#### Rulings taken as acted decisions
+
+| Ruling   | Where it now lives                                                                                                                                                                                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **R3-1** | §4.1 + §10.4 item 1: `WAVE_PERIOD = 21.0 s` is the **wave interval** and the **only** datum; **42 appears nowhere** in data, tests, audio or art briefs. Two waves may differ in character, **never in duration (7.0 s) nor attack** — a gameplay constraint on E-7, not a mix note. |
+| **R3-2** | §4.1 + §10.5: refusal **hardened into a prohibition** — no element of the plate encodes cover except the headlights, **neither out of phase nor in phase**; the feu is scenery and a light source. Cited alongside T-4. Consequence N-1 forwarded to Winston (§10.6 h).              |
+| **R3-3** | §1.1: `BRIEFING` is in the phase table and **carries the ellipse** of the climb and the way down; skippable for the player, never absent from the machine.                                                                                                                           |
+| **R3-5** | §8: `enabledOnFirstRun = false`. The set-piece does **not** trigger on the first Belliard run. Predicate to `pm`, the "not the first" is not.                                                                                                                                        |
+| **R3-6** | §1.3.a + §8: **no rarity.** The attempt cap is deliberately **mission-scoped**, and AC13(d) asserts the reset in both directions so nobody turns the counter into persistence.                                                                                                       |
+
+#### My residues, closed
+
+| ID      | Status            | Where                                                                                                                                                                   |
+| ------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C-2** | closed            | §1.2, since Rev. 3 — the T-2 device fork; every posture rule reads the **state**, never the input.                                                                      |
+| **C-5** | closed            | Cahier-des-charges verdict (§ head) + §1.1 — "pré-niveau" and "before the loop" are gone; the set-piece is **inside** the mission.                                      |
+| **C-6** | closed            | §4.1 (R3-2 block) + §10.3 — the "bonus de lisibilité" is marked **declined at the gate**, with the ask to Yasmine to mark it in her §2.3.                               |
+| **C-7** | closed            | §11.4 — ADR-0077 **is** on the branch (`docs/adr/0077-…`, verified) and **E-1 is CLOSED**. The false line is deleted, not softened.                                     |
+| **C-8** | closed            | §4.1 (bakery fallback at **zero mechanical cost**, the ~90 s claim withdrawn) + §1.1 (`BRIEFING` in the phase table).                                                   |
+| **N-2** | closed, spec-side | §7.2.a — the four interval properties, what must be asserted at every sample, and two rules on the sampling. Step + implementation to `qa-lead` / `dev-tooling-assets`. |
+
+### 11.0.a Rev. 3 — the relocation amendment (2026-08-02)
 
 **From:** `game-designer` (Sacha) · **To:** `lead-game-designer` (Karim) — for information and
 one small ruling; then `sound-designer`, `concept-artist` / `lead-art`, `senior-architect`.
@@ -1323,16 +1612,16 @@ override of R-10). Everything Karim ruled in rounds 1 and 2 stands except that o
 | Do the 9 keyframes survive the passage / reverse-out?     | **Yes, with zero values moved** — and `3.103 su/s` becomes ≈ **0.40 m/s**, i.e. physically right for a reverse (§2.5). Two **new art constraints** are the price.     |
 | Anything the relocation makes _worse_?                    | **One thing, and I flag it loudly**: the Niveau-Final-only scope of `rewardMultiplier` lost its "Belliard comes first anyway" safety net (§D7.1, Rev. 3 box).         |
 
-**Rulings I am asking Karim for (two, both small):**
+**Rulings I asked Karim for (two, both small) — BOTH RULED at the delta gate; kept here for the
+trail, answered in §11.0:**
 
-1. **The 42 s two-phase reading of the junction.** It is the load-bearing fiction assumption
-   under the whole cadence. If `art-advisor` / `sound-designer` cannot support it, the cadence
-   re-opens and the scene grows to ≈ 90 s with all nine keyframes — I want that stated as a
-   known cost now, not discovered at stage 5.
+1. **The 42 s two-phase reading of the junction.** → **RATIFIED (R3-1)** with two pins.
+   ~~"the cadence re-opens and the scene grows to ≈ 90 s"~~ — **withdrawn (C-8)**: the bakery
+   fournil fallback is mono-periodic, so failure costs **fiction + mix, not cadence** (§4.1).
 2. **My refusal of fiction §2.3's "bonus de lisibilité"** (the on-plate feu's colour as a
    second cover read). Reason: the onde verte offsets it ≈ 7 s from the audio tell, so it would
-   teach a false model. If Karim wants the colour channel anyway, it needs its own phase
-   authored and it is no longer free.
+   teach a false model. → **SUSTAINED and HARDENED into a prohibition (R3-2)**: neither out of
+   phase nor in phase, the in-phase version being an unbudgeted difficulty change (§4.1).
 
 **C-2 (round-2 editorial correction) is closed** — §1.2 now specs the T-2 device fork
 (hold Space desktop / tap-to-toggle mobile) and states explicitly that every posture rule
@@ -1380,16 +1669,39 @@ the focal bands, windows, telegraph and traverse arithmetic you re-derived. **Un
 
 ### 11.4 Still open, not mine
 
-**E-1 remains open and it still gates everything**: `docs/adr/0077-…` is **not on this branch**
-(checked again this round). Every value above is provisional on it. E-2 (§8.3 ideological flag)
-and E-3 (G-1/G-2) are Bertrand's. E-4 grew by four asks in §10.6 (d)-(g) — the run-scoped
-**Belliard → Niveau Final** carry (e) is the one with real architecture in it, and Rev. 3 makes
-it **longer-lived** (level 1 → final, not late-game → final). E-5 (`pm`, progression + deferred
-UNE variant) **gains one question from Rev. 3**: the return night rue Belliard now has to be
-placed relative to the **Belliard boss encounter**, and §D7.1's Rev. 3 box explains why that
-ordering must never be allowed to leak into the reward. E-6 (`lead-art`, now **four** F12
-constraints: §10.5 items 5-8), E-7 (`sound-designer`, **source changed, cadence unmoved** — the
-new brief is §10.4, and the 42 s two-phase cycle is the one thing that needs confirming).
+**E-1 is CLOSED (C-7, corrected in Rev. 4).** `docs/adr/0077-qte-photo-paparazzi-set-pieces.md`
+**is on this branch** — the gate read it and compared it at round 2 with zero divergence, and I
+verified the file myself this round. Rev. 3's line saying otherwise was stale and a false line in
+a hand-off becomes a false line in the next one; it is deleted, not softened. **No value in this
+spec is provisional on E-1 any more.**
+
+**E-3bis (Bertrand, new):** **G-3** — does frozen scene time count against "une mission =
+3-5 minutes"? My §1.3.a holds under either answer; see §11.0. **E-2** (§8.3 ideological flag)
+and **E-3** (G-1/G-2) remain Bertrand's.
+
+**E-4** (`senior-architect`) grew to seven asks — §10.6 (d)-(g) from Rev. 2/3, plus **(h) N-1**
+(what projects from `inCover` is the illumination, never the light's colour), **(i) N-3 closed**
+(`triggerAtElapsedSeconds = 2.5 s`, lane A unblocked) and **(j)** the mission-scoped attempt
+counter. The run-scoped **Belliard → Niveau Final** carry (e) is still the one with real
+architecture in it, and the relocation makes it **longer-lived** (level 1 → final).
+
+**E-5** (`pm`): **Q-3 is tranchée by the design — the set-piece does NOT trigger on the first
+Belliard run (R3-5)**; the predicate is yours, the "not the first" is not (§8,
+`enabledOnFirstRun`). **Q-4 is CLOSED, no rarity (R3-6)** — do not send it back as a balance
+problem; if the lever plays too strong, the honest knob is the Niveau Final tier row
+(×0.90/×0.80). **Q-2**: banking at clear contradicts K-4 — decide it knowing that. And the
+return night's placement relative to the **Belliard boss encounter** must never leak into the
+reward (§D7.1, ruling R3-4: the Belliard encounter stays ×1.00 forever, and that is not an
+oversight — diffusion takes days, not minutes).
+
+**E-6** (`lead-art`) is re-issued at **7 constraints plus one prohibition** — read it from
+**§10.5**, which is complete, not from the techplan. **E-7** (`sound-designer`): source changed,
+**cadence unmoved**; brief in §10.4, with R3-1's two pins (21.0 s is the datum, 42 is not a
+value; two waves, same duration and attack) and the zero-cost bakery fallback.
+
+**E-8** (`qa-lead`, imposed by the gate): **AC15** is transcribed in §9. **N-2** is specified in
+**§7.2.a** — the interval properties and what must be asserted; the sampling step and the
+implementation are yours with `dev-tooling-assets`.
 
 **What I do NOT decide:** the fiction and cast (`narrative-designer`), controls,
 accessibility envelope and HUD dress (`ux-designer`), the look (`lead-art`), the sound

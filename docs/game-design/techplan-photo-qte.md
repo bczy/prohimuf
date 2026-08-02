@@ -15,19 +15,21 @@
 
 **Decision (final, overrides gate ruling R-10):** the first set-piece is hosted on **Belliard**,
 the shipped level 1. **No new level is built.** The hide is a roof dormer at the top of the
-street; the scene plays at the mouth of the passage (`x_norm 0,372–0,408`); the sound cover is
-the traffic-light cycle at `x_norm 0,388` (fiction Rev.3 §2.1–§2.4, §9.0).
+street; the scene plays at the mouth of the passage (`x_norm 0,372–0,408`); the sound cover is the
+**packet of vehicles released by the carrefour** at the top of the street (the traffic light at
+`x_norm 0,388` is its fictional cause, never a readable indicator — R3-2/N-1)
+(fiction Rev.3 §2.1–§2.4, §9.0).
 
 **What that changes in this plan — the whole delta, in one place:**
 
-| #   | Change                                                                                                                                                                                                                                             | Where          |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 1   | The carry's source level: **Belliard → Niveau Final**. The mechanism (persisted, monotone, `muf_leverage`, object blob, pure algebra + bridge I/O) is **unchanged**; only the source row moves.                                                    | §5, ADR-0080   |
-| 2   | `photoQteSpec` is authored on the **Belliard** row — which already authors `hostageQte`, `loot` and (behind the flag) `bossQteSpec`. The Rev.2 exclusivity invariant is **withdrawn and replaced** by a serialisation invariant + a runtime guard. | **D-K**, §2.7  |
-| 3   | Belliard is **no longer byte-identical** — it gains the spec. The guarantee is reformulated and its test moves to a level that authors no spec.                                                                                                    | §2.6 E-4(c)    |
-| 4   | The sound cover rides a **shipped, live, wall-clock render prop** (`trafficSignalPhase`, 13.5 s cycle). It must not become the cover's source of truth.                                                                                            | **D-J**        |
-| 5   | Lane C loses nothing it had (it never built a level) but its manifest target moves to `belliard` — the **first-play preload**, which is a heavier place to put a 1280×768 plate.                                                                   | §6 Lane C, §7  |
-| 6   | Two new questions for `pm` (progression placement, farmability). **Q-2 stays open.**                                                                                                                                                               | §8bis Q-3, Q-4 |
+| #   | Change                                                                                                                                                                                                                                                             | Where         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| 1   | The carry's source level: **Belliard → Niveau Final**. The mechanism (persisted, monotone, `muf_leverage`, object blob, pure algebra + bridge I/O) is **unchanged**; only the source row moves.                                                                    | §5, ADR-0080  |
+| 2   | `photoQteSpec` is authored on the **Belliard** row — which already authors `hostageQte`, `loot` and (behind the flag) `bossQteSpec`. The Rev.2 exclusivity invariant is **withdrawn and replaced** by a serialisation invariant + a runtime guard.                 | **D-K**, §2.7 |
+| 3   | Belliard is **no longer byte-identical** — it gains the spec. The guarantee is reformulated and its test moves to a level that authors no spec.                                                                                                                    | §2.6 E-4(c)   |
+| 4   | The cover's fictional cause sits next to a **shipped, live, wall-clock render prop** (`trafficSignalPhase`, 13.5 s cycle). It must not become the cover's source of truth, and **the light's colour never encodes cover** — only the packet's headlights do (N-1). | **D-J**       |
+| 5   | Lane C loses nothing it had (it never built a level) but its manifest target moves to `belliard` — the **first-play preload**, which is a heavier place to put a 1280×768 plate.                                                                                   | §6 Lane C, §7 |
+| 6   | Progression placement and farmability: **both closed by the delta gate** — Q-3 **NO** (never on a first Belliard run ⇒ `LevelParams.photoQteEnabled`), Q-4 **closed, no scarcity**. **Q-2 stays open**; **D-1 blocks the `triggerAtElapsedSeconds` value only.**   | §8bis, §2.6   |
 
 Not changed by the relocation, and deliberately re-affirmed: the frozen-scene block (D-A), the
 device-neutral input (D-B), the single evaluator (D-C), the projection split (D-D), the boss
@@ -147,8 +149,10 @@ at up to `PAN_RATE_MAX`. At 251 mm that is ≈ 86 % of the frame width per secon
 from absolute at human speeds, identical fairness maths on both devices, and one AC set instead
 of two. Cheap to revert to pure-absolute (one branch) if design rules otherwise.
 
-**D-J — The set-piece's traffic light is drawn FROM `inCover(sceneClock)`. `trafficSignalPhase`
-is NOT the cover's source of truth, and is not touched.** _(New, Rev.3.)_ The relocation hangs the
+**D-J — The set-piece's lighting (headlights / passage-mouth illumination) is drawn FROM
+`inCover(sceneClock)`. `trafficSignalPhase` is NOT the cover's source of truth, and is not
+touched. The traffic light's COLOUR is decor and is never a projection of `inCover`.**
+_(New, Rev.3 · reworded after gate note N-1, 2026-08-02.)_ The relocation hangs the
 cover on a prop that is **already live in code**, and that prop is the wrong clock in three
 independent ways. `src/render/scene/trafficSignal.ts` is a decorative near-foreground signal
 (ADR-0047) driven by `state.clock.elapsedTime` in `NearForeground.tsx`:
@@ -163,10 +167,16 @@ independent ways. `src/render/scene/trafficSignal.ts` is a decorative near-foreg
    non-reproducible: AC10 ("same seed + same inputs ⇒ byte-identical scene") would fail on the
    only signal the player actually reads.
 
-**Decision:** the light drawn inside the set-piece surface is a **projection of `photoQte`** —
-`inCover(spec.cover, sceneClock, sceneDuration)` plus the tell window, both already pure functions
-of §2.3. The street's `NearForeground` feu stays **byte-untouched, decorative, and off-screen**
-while the set-piece holds the full screen, so the two never disagree in front of the player.
+**Decision (reworded, gate note N-1).** The **only** visual inside the set-piece surface that is a
+projection of `photoQte` is the **illumination of the passage mouth by the headlights of the
+vehicle packet** — `inCover(spec.cover, sceneClock, sceneDuration)` plus the tell window, both
+already pure functions of §2.3. The traffic light drawn on the plate is **decor and a static light
+source**: it may be animated, its **colour is never read from `inCover` and never encodes the
+cover state**, neither in phase nor out of phase. That prohibition is the gate's (R3-2, and the
+same family as T-4 "l'aiguille n'est pas un posemètre") and it is binding on the Lane B brief:
+**no element of the scene encodes cover except the headlights.** The street's `NearForeground` feu
+stays **byte-untouched, decorative, and off-screen** while the set-piece holds the full screen, so
+the two never disagree in front of the player.
 The fiction's "un objet déjà shippé fait tout le travail" is a **narrative** continuity claim, not
 a code-reuse instruction — recorded here so no one wires `trafficSignalPhase` into the tick and
 calls it reuse. **Rejected explicitly:** retuning `TRAFFIC_PHASES` to 21 s to make the two agree —
@@ -452,9 +462,15 @@ export const PHOTO_LEVERAGE_STORAGE_KEY = "muf_leverage";
 
 ### 2.6 Wiring into `stateMachine.ts`
 
-- `LevelParams` gains `photoQte?: PhotoQteSpec | null` and `photoLeverage?: PhotoLeverage`.
-- `createInitialState` seeds `photoQteSpec`, `photoQte: null`, and
-  `photoLeverage: params.photoLeverage ?? "none"` on `GameState`.
+- `LevelParams` gains `photoQte?: PhotoQteSpec | null`, `photoLeverage?: PhotoLeverage` and —
+  **Rev.3, after the delta gate closed Q-3 with NO** — `photoQteEnabled?: boolean`
+  (absent ⇒ `true`, so no existing caller or test changes).
+- `createInitialState` seeds `photoQte: null`,
+  `photoLeverage: params.photoLeverage ?? "none"`, and
+  `photoQteSpec: params.photoQteEnabled === false ? null : (params.photoQte ?? null)` on
+  `GameState`. **The progression predicate lives in `App.tsx handlePlay`** (the same seam that
+  already reads persisted state for `photoLeverage`); the pure layer reads a spec, never storage,
+  and a disabled run collapses onto the already-tested null-spec path (A-T7).
 - **New block 1a, placed BEFORE the hostage block (1b)**, mirroring it exactly:
 
 ```ts
@@ -947,7 +963,9 @@ against the A0 types before A2 exists.
   site 3).
 - **MODIFY** `src/render/ui/hud/types.ts` + `HUD.tsx` — the `HudPhotoQte` projection (§3.4).
 - **MODIFY** `src/render/scene/App.tsx` — `handlePlay` seeds `LevelParams.photoLeverage` from
-  `loadPhotoLeverage()`; a new effect persists `recordPhotoLeverage(hudData.photoOutcome)` when
+  `loadPhotoLeverage()` **and `LevelParams.photoQteEnabled` from the progression predicate
+  (Q-3 closed NO: never on a first Belliard run — predicate authored by `pm`)**; a new effect
+  persists `recordPhotoLeverage(hudData.photoOutcome)` when
   it appears (mirror of the funnel write, same idempotence guard).
 
 **Honor:** **the render decides nothing.** No containment test, no fill computation, no verdict,
@@ -998,6 +1016,31 @@ cheaper and one more expensive:
   **This is what makes "the art and the keyframe table are ONE deliverable" (E-6(3), gated décor
   aim-honesty ruling) enforceable in CI instead of at a gate**, and it is the only mechanism that
   catches a 4 % sprite shrink silently re-breaching F5a (R2-1's stated fear).
+
+  **Rev.3 extension — INTERVAL checking, not keyframe-only (gate note N-2).** A keyframe-only
+  check asserts **none** of the three interval promises: a reverse manoeuvre that dips then
+  returns passes at both ends of `[53.0 ; 55.9]` (E-6(5)/(6)), and a hold pose that drifts in the
+  middle passes at K2/K3 and K4/K5 (E-6(4)). The script therefore has **two modes**:
+  - **Keyframe mode** (as above) — the delivered sprite's opaque AABB vs the authored box at each
+    of the 9 keyframes.
+  - **Interval mode** — for each declared interval, sample the **delivered animation frames**
+    (or, for a static pose, the pose sprite held over the interval) at a fixed step and assert,
+    at **every** sample: (i) the opaque AABB stays within `SUBJECT_BOX_TOLERANCE` of the box
+    **linearly interpolated** from the bounding keyframes (this is the same evaluator the game
+    uses — `subjectBoxAt`, imported, never re-implemented); (ii) for `FLAT` intervals, `cy`
+    varies by ≤ tolerance across the whole sample set; (iii) for `NO_GROW` intervals, `w` and `h`
+    vary by ≤ tolerance across the whole sample set. Non-zero exit names the **first offending
+    sample time**, not just the interval.
+
+  **Declared intervals (authored data, alongside the keyframe table — not hard-coded in the
+  script):** `K2→K3` (19.2 s, hold, no drift) · `K4→K5` (14.7 s, hold, no drift) ·
+  `[53.0 ; 55.9]` (reverse manoeuvre, `FLAT` + `NO_GROW`).
+
+  **Sampling step: NOT set here.** It is a QA/tooling call (`qa-lead` + `dev-tooling-assets`),
+  bounded by two requirements this plan does impose: the step must be **≤ the delivered animation's
+  own frame interval** (so no delivered frame escapes the check) and the sample set must be
+  **deterministic** (same inputs ⇒ same verdict), because CI failure messages become art hand-offs.
+  Tolerance is the same imported `SUBJECT_BOX_TOLERANCE` — no second constant.
 
 **Honor:** no game rule in `scripts/`; the tolerance constant is **imported from the game
 module**, never re-typed in the script.
@@ -1070,9 +1113,26 @@ neutral default**, so nothing breaks between A0 and A4.
 | **(f)** `rewardMultiplier`                           | Authored **tiers** on the Niveau Final `bossQteSpec` row (absent ⇒ ×1.00), resolved once into `BossQte.rewardMultiplier`, applied through **one** helper at the three lull sites, **phases 1-2 only**, ordered multiplier → cut → clamp, compound floor asserted **non-strict `≥`** with ε = 0.35 quoted from ADR-0060. Plus the derived proof that the clamp is unreachable at any legal `m`.                                                     | §4            |
 | **(g)** decline exits without a level reload         | **Free by construction.** The level state was never destroyed — it rode `...state` with the clock frozen. The exit clears the sub-record; the next tick resumes. "Retry from checkpoint" = re-entering the set-piece, not a level checkpoint.                                                                                                                                                                                                      | D-A           |
 
-## 8bis. Open questions — two, both cheap, neither blocking the build
+## 8bis. Open questions — after the Rev.3 delta gate: ONE still open (Q-2), plus one blocked value
 
-- **Q-1 → `game-designer` + `ux-designer` (one line each).** D-I rate-limits the desktop
+**Status after the delta gate (2026-08-02):** **Q-1 ratified** by the gate (rate-limit both
+devices, one fairness model, one AC set — build the rate-limited form, no branch to revert).
+**Q-3 closed NO. Q-4 closed, no scarcity.** **Q-2 alone remains `pm`'s.** None of this blocks the
+build; what **is** blocked is a single authored value, see D-1 below.
+
+- **D-1 (gate condition, blocking one value — NOT the build).** The gate re-opened "une mission =
+  3-5 minutes": the set-piece is now **inside** a 90 s mission and `[ RECOMMENCER ]` is not
+  bounded in number, so total **frozen** time reachable within one mission attempt is unbounded.
+  Closure is `game-designer` + `pm` + gate (Sacha bounds the frozen retry time and will deliver the
+  `triggerAtElapsedSeconds` window); **I do not decide it here** and this plan proposes no
+  mechanism. **Dependency recorded for Lane A: do not freeze `triggerAtElapsedSeconds` (nor author
+  any re-entry cap) until D-1 closes.** Everything else in Lane A proceeds: the ordering invariant
+  (§2.7), the D-K runtime guard and A-T12 are written against the **constraint**
+  (`photo < hostage − SAFETY_MARGIN_SECONDS`), not against a value, so the value lands last and
+  changes no code. If D-1 closes on a bounded number of re-entries, that bound is **authored data
+  plus one counter in the photo record** — additive, inside A2, no new edge in the build graph and
+  no seam change for Lanes B/C (the CTA shape on the exhausted branch is design's, per R2-5).
+- **Q-1 → RATIFIED by the gate (rate-limit both devices).** D-I rate-limits the desktop
   viewfinder to `PAN_RATE_MAX`, where UX §1.1 says absolute mouse mapping. Taken literally,
   absolute makes F5c vacuous and AC6c a mobile-only criterion — two fairness models for one
   gated tuning. **Recommendation: rate-limit both devices** (at 251 mm, 12 su/s ≈ 86 % of the
@@ -1085,25 +1145,34 @@ neutral default**, so nothing breaks between A0 and A4.
   the beat firing in the first ten seconds, "bank at level clear" would mean most first-time
   photographers lose the proof they just took — which is why I still recommend the exit-write.
   Confirm or overrule: it is one predicate.
-- **Q-3 → `pm` (new, Rev.3). Does the set-piece fire on the player's FIRST Belliard run?**
-  Fiction §2.4 frames it as "une nuit de **retour** rue Belliard, pas la nuit du tutoriel" and
-  explicitly leaves the progression placement to `pm`. Today a `photoQteSpec` is unconditional
-  authored data on a row: author it and it fires every run, including the very first. **If `pm`
-  wants it gated on progression, it must NOT become a second storage read inside the pure layer.**
-  The architecturally clean route is the existing seam: `App.tsx handlePlay` already computes
-  `LevelParams` from persisted state, so a boolean (`photoQteEnabled`, derived from `muf_progress`
-  or the funnel) threads through the same path as `photoLeverage`, and the pure layer keeps seeing
-  authored data only. Cost: one `LevelParams` field, one predicate in `handlePlay`, **no new key,
-  no new ADR**. V1 recommendation: **unconditional**, and let "retour" read as narrative framing.
-- **Q-4 → `pm` + `game-designer` (new, Rev.3). The proof is now farmable, and that is a design
-  question, not an architecture one.** Belliard is always unlocked, `[ RECOMMENCER ]` re-enters a
-  byte-identical scene (AC10), and the merge is monotone (ADR-0080 D1) — so any patient player
-  banks `master-bonus` on level 1 and meets the final boss at ×0.80 by default. Under Rev.2 the
-  proof sat one level before its payoff; under Rev.3 it sits three, with unlimited retries in
-  between. **No architectural change is proposed:** the retry, the monotone merge and the
-  exit-write are each gated design decisions, and undoing any of them to make the reward scarce
-  would re-open R2-4, AC10 or K-4. If design wants scarcity, the honest lever is **tuning**
-  (the tiers on the Niveau Final row), not the carry.
+- **Q-3 — CLOSED by the gate (R3-5): the set-piece does NOT fire on the player's first Belliard
+  run.** My V1 recommendation ("unconditional, let 'retour' read as narrative framing") is
+  **overruled**, and for reasons that are design's, not mine: G-1's exception was granted on
+  "apprenable sans copy" and it breaks if four verbs land before the player has learned the first
+  two; and an unconditional trigger aggravates D-1 exactly where it is most expensive. **The route
+  I costed is the one that ships**, so the correction is a status change, not a redesign:
+  `App.tsx handlePlay` computes `LevelParams` from persisted state, so **one new `LevelParams`
+  field `photoQteEnabled: boolean`** (derived from `muf_progress` / the funnel) threads through the
+  same path as `photoLeverage`; `shouldTriggerPhotoQte` reads it alongside the D-K guard, and
+  **the pure layer still sees authored data only — no second storage read inside `src/game`**.
+  Cost confirmed: one `LevelParams` field, one predicate in `handlePlay`, **no new storage key, no
+  new ADR**. Consequences: (i) it is **Lane A work, inside A2**, and it adds no edge to the build
+  graph (same files); (ii) the exact predicate stays `pm`'s — "not the first run" is the gate's and
+  is not `pm`'s to re-litigate; (iii) **A-T7 gains a case**: `photoQteEnabled: false` ⇒ Belliard is
+  tick-identical to `main` across the whole run, which is the same additive-and-optional law as a
+  null spec; (iv) `qa-lead`'s first-play measurement (AC13(b)) must state which of the two paths it
+  is capturing.
+- **Q-4 — CLOSED by the gate (R3-6): farmability is ACCEPTED, no scarcity mechanism, at any
+  level.** Belliard is always unlocked, `[ RECOMMENCER ]` re-enters a byte-identical scene (AC10),
+  and the merge is monotone (ADR-0080 D1) — so any patient player banks `master-bonus` and meets
+  the final boss at ×0.80. That is the assumed consequence of three gated decisions (deterministic
+  learnable scene, unpunished retry, deliberately modest reward), **not a defect**. Ratified as I
+  wrote it: if the lever ever reads too strong, the honest instrument is **tuning the tiers on the
+  Niveau Final row**, never the carry, never a retry limit, never expiry or a one-shot. Any future
+  scarcity proposal re-opens K-4/R2-4/AC10 at the gate. **Q-4 is off `pm`'s list.** (Note the
+  boundary with D-1: bounding _re-entries within one mission attempt_ is a **pacing** decision, and
+  if D-1 closes on option (a) it is **not** a scarcity mechanism and does not contradict R3-6 —
+  the leverage stays bankable across runs.)
 - **Non-blocking, to `game-designer`:** mechanic §1.1's phase table omits **`BRIEFING`**, which
   F13 counts and §1.3 makes skippable. This plan builds it as a phase of the machine (D-G); the
   spec should say so on its next editorial pass.
@@ -1165,7 +1234,14 @@ taken on a branch not fetched here. **`producer` owns the merge-time re-check fo
    played set-piece, not only around it (A-T12(b)); (ii) **AC13(b)'s wall-clock first-play
    measurement now measures the game's real cold-boot path**, since the host level is the first
    thing a new player loads. With the named preload group (§6 Lane C) the expected delta is zero —
-   which is exactly why it must be measured rather than assumed.
+   which is exactly why it must be measured rather than assumed. **(iii) AC15, imposed by the
+   delta gate (E-8) — it is yours to run:** stopwatch the **total wall-clock time of one Belliard
+   mission attempt including the set-piece**, at **1** and at **2** set-piece attempts, and report
+   both against the 3-5 min constraint. It is the observation that closes or re-opens D-1; it
+   **adds to** AC13(b) and does not replace it. Two notes from this lane: report it against the
+   path that ships (Q-3 ⇒ the set-piece does not fire on a first run, so the measurement is on a
+   later run with `photoQteEnabled: true`), and report **played** time and **wall-clock** time
+   separately — the level timer is frozen throughout, which is precisely why the two diverge.
 2. **`tech-writer` (Otis) — Rev.3.** `docs/game-design/README.md` and any story/handoff shard still
    describing the set-piece as a Stalingrad beat are now stale. The relocation is a Bertrand
    decision of 2026-08-02 overriding gate ruling R-10; the fiction carries it in §2 and §9.0, this
@@ -1180,24 +1256,43 @@ taken on a branch not fetched here. **`producer` owns the merge-time re-check fo
    before the trigger at ~5 s. That is a memory/bandwidth read, not a frame-budget verdict.
 4. **`sound-designer` (Malik).** The cover windows are **game state**, already in the pure layer
    (`inCover(t)`), and the render/audio lane reads them — it never re-derives the cadence.
-   **Rev.3, and please read D-J before writing the brief:** the fiction hangs the cover on the
-   traffic light, and that light **exists in code** (`trafficSignal.ts`) on a **13.5 s wall-clock**
-   cycle that neither pauses nor rewinds. It is decor, it stays decor, and it is **not** your
-   cadence. Your loop is driven by `inCover(spec.cover, sceneClock, …)` — 21 s period, 7 s cover,
+   **Rev.3, and please read D-J before writing the brief:** the cover's fictional cause is the
+   carrefour, and the traffic light **exists in code** (`trafficSignal.ts`) on a **13.5 s
+   wall-clock** cycle that neither pauses nor rewinds. It is decor, it stays decor, and it is
+   **not** your cadence. Your source is the **packet of vehicles** it releases (tell = the engines
+   rising at the line, near the hide). Your loop is driven by `inCover(spec.cover, sceneClock, …)` — 21 s period, 7 s cover,
    1.8 s tell — the same booleans the visuals read. Exact values remain `game-designer`'s.
    `PhotoQteTickResult.exposed.focusHeld` is the **sole** signal for the crisp-vs-dull click; it
    is a boolean produced by the tick, so the audio channel and the visual flash cannot disagree.
-5. **`lead-art` (Nico).** E-6's four constraints are unchanged by this plan, and one of them now
-   has teeth: F12(1) ("the drawn subject and the keyframe table are ONE deliverable") is enforced
-   by `scripts/check-photo-subject-boxes.mjs` in CI (§6 Lane C), against
-   `SUBJECT_BOX_TOLERANCE = max(0.40 su, 5 %)` imported from the game module. The two
-   non-drifting hold poses (K2→K3, K4→K5) are checked by the same script at their keyframes.
-   **Rev.3 adds a fifth constraint, and it is a gate criterion, not a style note:** the plate is a
-   **re-framing of a shipped décor**, not a new place. It must read as the same street as
-   `assets/levels/belliard/street-wide.png` at first glance — passage mouth (`x_norm 0,372–0,408`),
-   boulangerie in amorce (`0,340`), feu tricolore (`0,388`), tagged shutters. Recommend handing
-   `concept-artist` a **crop of the shipped file** as reference input, and judging continuity at
-   the gate alongside style.
+5. **`lead-art` (Nico) — E-6 REISSUED AT SEVEN CONSTRAINTS** (gate §2.3/§5: the plan previously
+   routed the street-continuity criterion **in place of** the two new art constraints; both are
+   required, so the packet is now the full seven). F12(1) has teeth: it is enforced by
+   `scripts/check-photo-subject-boxes.mjs` in CI (§6 Lane C) against
+   `SUBJECT_BOX_TOLERANCE = max(0.40 su, 5 %)` imported from the game module.
+   1. The needle is **not a light meter** (T-4).
+   2. The subject does **not** carry interactive-glow vocabulary (F-4).
+   3. **The drawing IS the box** at the 9 keyframes, within `SUBJECT_BOX_TOLERANCE` (F12(1)).
+   4. **Two non-drifting hold poses** (K2→K3, 19.2 s; K4→K5, 14.7 s) — checked **over the
+      interval**, not only at the bracketing keyframes (see §6 Lane C).
+   5. **NEW — the reverse manoeuvre is FLAT**: `cy` constant at 9.00 over `[53.0 ; 55.9]`, drift
+      ≤ `SUBJECT_BOX_TOLERANCE`.
+   6. **NEW — the reverse manoeuvre does NOT grow**: box `7.50 × 4.22` constant over
+      `[53.0 ; 55.9]` (manoeuvre quasi-parallel to the image plane). If the car must approach,
+      that is **not an art note to absorb** — it is a rewrite of K6/K7 that moves 3.103 su/s,
+      F5b, F5c, §3.3.b and AC6c, and it goes back to the gate.
+   7. **Street continuity** (Rev.3, a gate criterion, not a style note): the plate is a
+      **re-framing of a shipped décor**, not a new place. It must read as the same street as
+      `assets/levels/belliard/street-wide.png` at first glance — passage mouth
+      (`x_norm 0,372–0,408`), boulangerie in amorce (`0,340`), feu tricolore (`0,388`), tagged
+      shutters. Recommend handing `concept-artist` a **crop of the shipped file** as reference
+      input, and judging continuity at the gate alongside style.
+
+   **Plus the gate's prohibition (R3-2 / N-1), which is design's and not negotiable at art level:**
+   **no element of the plate encodes the cover state except the headlights of the vehicle packet**;
+   the traffic light is decor and a light source — animatable, never readable.
+   Constraints 4, 5 and 6 are **interval** constraints: see §6 Lane C for the interval sampling the
+   CI script must perform, since a keyframe-only check asserts none of them.
+
 6. **`pm` (John).** Q-2 above rides with E-5; the E-5 price for un-deferring the `PARIS-MINUIT`
    UNE variant is quantified in §5.3.
 
@@ -1222,4 +1317,29 @@ critical path are **unchanged**. Nothing here re-opens a gated design decision, 
 needs a fourth gate pass — the fiction (Rev.3 §9.0) routes the design-side consequences to their
 own lanes.
 
-_Winston — `senior-architect`, 2026-08-01, stage 3 · amended Rev.3, 2026-08-02._
+**Post-delta-gate corrections (2026-08-02) — STILL APPROVED for build.** The delta gate PASSed
+with one blocking condition (D-1) and three notes to me; all three are applied here, and none of
+them changes a type, a signature or the lane split:
+
+- **N-1 applied — D-J reworded.** Its decision is untouched (`trafficSignalPhase` is never the
+  cover's source of truth); its **wording** was reintroducing the very channel R3-2 prohibits.
+  What projects from `inCover` is the **headlights / passage-mouth illumination**, never the
+  traffic light's colour. The prohibition is now carried into the Lane B brief, the E-6 packet,
+  the Malik note and the Rev.3 amendment header, which all said "the cover rides the traffic
+  light".
+- **N-2 applied — `check-photo-subject-boxes.mjs` gains interval mode** (§6 Lane C). A
+  keyframe-only check asserted **none** of the two new art constraints nor the non-drifting hold
+  poses; the script now samples the declared intervals against the same imported evaluator and
+  tolerance. Sampling step is `qa-lead` + `dev-tooling-assets`, bounded by two requirements.
+- **E-6 reissued at seven constraints** (§11.5). The plan was routing street continuity **in place
+  of** the two new constraints instead of **in addition to** them.
+- **N-3 recorded** (§8bis, D-1): Lane A does not freeze `triggerAtElapsedSeconds`, and authors no
+  re-entry cap, until D-1 closes. `game-designer` bounds the frozen retry time and delivers the
+  window; I neither pre-empt nor design that bound. Should it land, it is authored data plus a
+  counter — additive, inside A2, no build-graph edge, no seam change.
+- **Q-3 closed NO / Q-4 closed / Q-1 ratified / AC15 imposed on `qa-lead`** — taken as binding and
+  reflected in §2.6, §6 Lane B and §11.1. Q-3 costs exactly what I costed: one `LevelParams`
+  field, one predicate in `handlePlay`, no new key, no ADR.
+
+_Winston — `senior-architect`, 2026-08-01, stage 3 · amended Rev.3, 2026-08-02 · post-delta-gate
+corrections, 2026-08-02._

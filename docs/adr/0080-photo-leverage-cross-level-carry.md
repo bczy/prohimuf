@@ -231,7 +231,10 @@ stops being a playtest hope and becomes a structural guarantee. Legal multiplier
   that:** the retry, the monotone merge and the exit-write are each gated decisions (R2-4, AC10,
   K-4), and undoing one to make the reward scarce would re-open a gate. If design wants scarcity,
   the lever is the **tiers on the Niveau Final row** — authored data, one line, no ADR.
-  Routed to `pm` + `game-designer` as tech plan §8bis Q-4.
+  Routed to `pm` + `game-designer` as tech plan §8bis Q-4 — **and CLOSED there by the delta gate
+  (R3-6, 2026-08-02): farmability is accepted, no scarcity mechanism of any kind.** Any future
+  proposal to make the proof rare (retry limit, expiry, one-shot, contingency on level survival)
+  re-opens K-4/R2-4/AC10 at the gate rather than amending this ADR.
 - **The host level was already crowded, and the photo set-piece had to learn to queue
   (2026-08-02).** Belliard authors a hostage duel (12 s) and a boss finale (timer expiry) with a
   margin invariant already asserted at load. The set-piece serialises with both by a runtime

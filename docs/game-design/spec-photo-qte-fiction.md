@@ -1,7 +1,8 @@
 # QTE photo paparazzi — fiction du PREMIER set-piece
 
 **Author:** `narrative-designer` (Yasmine) · **Gate:** `lead-game-designer` (Karim) —
-status **Rev.3, amendement post-gate** · **Date:** 2026-08-02 ·
+status **Rev.3, amendement post-gate — purge des résidus du contrôle delta (C-1 / C-4 / C-5 /
+C-6, cf. §9.0bis)** · **Date:** 2026-08-02 ·
 **Frame:** `docs/adr/0077-qte-photo-paparazzi-set-pieces.md` (Proposed)
 
 ---
@@ -203,10 +204,18 @@ Pourquoi ce lieu et pas un autre :
 - **Il est adjacent au porche du boss.** Trente mètres. Le Commandant tient une porte et
   encaisse dans la ruelle d'à côté (§1.3).
 - **Il a sa lumière.** Le **feu tricolore** est planté juste devant, `x_norm 0,388` — c'est le
-  seul prop haut du niveau (`spec-belliard-street-wide-repositioning.md` §2.3). Il éclaire par
-  intermittence la sortie du passage : c'est **lui** qui rend la plaque lisible au départ de la
-  berline (§3.2, instant 3), et c'est **lui** qui porte la couverture sonore (§2.3). Un objet
-  déjà shippé fait tout le travail.
+  seul prop haut du niveau (`spec-belliard-street-wide-repositioning.md` §2.3). Il **allume la
+  bouche du passage en permanence** : c'est lui qui rend l'endroit éclairable, et c'est le
+  carrefour sur lequel il est synchronisé qui porte la couverture sonore (§2.3). En revanche
+  **ce n'est pas lui qui rend la plaque lisible** : la plaque se lit **parce que les phares du
+  paquet de véhicules rasent la bouche du passage** pendant la fenêtre (§3.2, instant 3). Un
+  objet déjà shippé fait le décor, la vague fait la lecture.
+
+  > **C-4 (contrôle delta Rev.3).** L'attribution est **bloquante** : si c'était la couleur du
+  > feu qui éclairait la plaque, l'onde verte (~7 s) désynchroniserait l'éclairage de la fenêtre
+  > de couverture et l'argument **structurel** de F3 sur l'instant 3 tomberait. La lisibilité de
+  > la plaque est portée par les **phares**, point. Voir aussi §2.3 (R3-2).
+
 - **Le contraste B&N est gratuit.** Un homme en manteau **clair** dans une bouche d'ombre
   **noire** : le read se fait au ton, à 300 mm, en photocopié. Le passage est le fond le moins
   cher et le plus lisible du niveau.
@@ -241,10 +250,31 @@ Trois raisons de préférer cette source à toute autre :
    Maréchaux qui coule toute la nuit : diesel, scooters, un bus. Zéro anachronisme, zéro
    technologie à dater.
 
-**Bonus de lisibilité (à `sound-designer` + `ux-designer`, pas une exigence de ma lane) :** le
-feu étant **visible** dans le décor, sa couleur peut doubler l'information sonore sans un mot
-de tutoriel. Je le signale ; l'arbitrage (et le risque « ça se lit comme un feu de circulation
-qu'on doit respecter ») ne m'appartient pas.
+**~~Bonus de lisibilité~~ — PROPOSITION DÉCLINÉE AU GATE (R3-2). Ne pas re-proposer.**
+
+J'avais signalé, **en déclinant explicitement la propriété du point** (« à `sound-designer` +
+`ux-designer`, pas une exigence de ma lane »), que la couleur du feu pouvait doubler
+l'information sonore — en nommant moi-même le risque (« ça se lit comme un feu de circulation
+qu'on doit respecter »). `game-designer` a refusé dans son périmètre, le gate a **soutenu et
+durci en interdiction** :
+
+> **Aucun élément de la planche n'encode l'état de couverture, à l'exception des phares du
+> paquet en haut de la rue.** Le feu tricolore de la planche est un **décor et une source de
+> lumière** : il peut être animé, il ne peut **jamais** être lu — ni **hors phase** (l'onde
+> verte le met ≈ 7 s en décalage du tell audio : modèle causal faux), ni **en phase**
+> (indicateur gratuit non budgété : la patience deviendrait lisible sans écouter, donc un
+> changement de tuning déguisé en note d'art). Même famille que la prohibition T-4 (l'aiguille
+> n'est pas un posemètre) ; les deux se citent ensemble.
+
+**Frontière de lane, pas conflit de pairs.** Je n'ai jamais possédé ce point : je l'ai signalé
+et rendu. Le refus de Sacha et l'interdiction de Karim ne me contredisent pas, ils tranchent
+dans un périmètre que j'avais laissé ouvert. Acté ici pour que le point ne remonte pas au
+prochain passage.
+
+**Conséquence pour ma lane, et elle est simple :** le seul canal de couverture est **le son**
+(la vague) ; le seul canal **visuel** admis est **les phares du paquet**. Aucune de mes strings
+ne mentionne la couleur du feu, et §4.1 ligne 9 (KENZA) enseigne la couverture **par le bruit**,
+jamais par un vert.
 
 **Alternative en une ligne, si le feu ne tient pas au playtest :** le **fournil de la
 BOULANGERIE** (devanture shippée, `x_norm 0,340`) — l'extracteur du four qui se relance en
@@ -252,16 +282,24 @@ cycle, soufflerie pleine puis silence, avec le moteur qui monte avant de souffle
 même déterminisme, period-correct (on cuit la nuit en 1998), mais moins lisible à l'écran parce
 qu'aucun objet ne le montre.
 
-### 2.4 Moment — une nuit de retour rue Belliard, 23 h 40, avant le camion
+### 2.4 Moment — une nuit de retour rue Belliard, 23 h 40, tout au début de la nuit
 
-**23 h 40, une livraison rue Belliard, avant que le camion arrive.** Muf est monté en avance ;
-la scène dure le temps de quelques cycles de feu.
+**23 h 40, une livraison rue Belliard, au tout début du niveau, avant le premier chargement.**
+La scène dure le temps de quelques vagues.
 
 Quatre raisons :
 
-1. **Ça ne gate rien.** Le set-piece se joue **avant** la boucle `Récupérer → Livrer → Éviter`,
-   comme une scène pré-niveau qui serait jouable — jamais au milieu d'une livraison. La règle
-   « une mission = 3-5 minutes » tient : le set-piece est **court, et hors du chrono**.
+1. **Ça ne gate rien.** Le set-piece se joue **dans** le niveau, au tout début — **avant le
+   premier chargement** et bien avant le camion — et **jamais au milieu d'une livraison
+   engagée**. Il ne consomme pas le chrono de mission : la scène est gelée. **C-5 (contrôle
+   delta Rev.3) :** les formulations « avant la boucle » et « scène pré-niveau » sont
+   **retirées** — elles étaient vraies à Stalingrad, elles sont fausses depuis la
+   relocalisation, et elles induiraient un dev en erreur. **L'ellipse de la montée sur le toit
+   (et de la redescente) est portée par la phase `BRIEFING`** (techplan D-G ; §4.1 ligne 8,
+   « Tu montes sur le toit ») : skippable pour le joueur, jamais absente de la machine.
+   _Note : la borne « une mission = 3-5 minutes » face au **nombre de re-entrées** est
+   l'objet de la condition D-1 du contrôle delta — arbitrage `game-designer` +
+   `senior-architect` + `pm`, pas ma lane. Voir §9.0bis pour ce que j'y dois en copy._
 2. **Ça justifie la solitude.** Muf seul, sur le zinc, avant tout le monde : ni foule ni sono,
    donc le silence entre deux verts est crédible, donc le risque au déclenchement l'est aussi.
 3. **Ça ne casse pas le premier gig.** La rue est la même, la **nuit** ne l'est pas : c'est un
@@ -299,11 +337,11 @@ au lieu d'être un collectible décoratif.
 
 ### 3.2 Les trois instants
 
-| #   | Instant       | Ce qu'on voit                                                                                                                                                  | Statut               | Ce que la photo prouve                                                                      |
-| --- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
-| 1   | **L'ARRIVÉE** | La berline s'engage dans le passage et s'arrête, feux éteints. Le manteau clair descend. Le Commandant sort du fond du passage — les deux hommes se font face. | **Bonus**            | Qu'ils étaient là, ensemble, la même nuit. Circonstance, pas preuve.                        |
-| 2   | **L'ÉCHANGE** | Une enveloppe passe de la main du manteau clair à celle du Commandant, qui l'empoche. **Les deux visages et les deux mains dans le même cadre.**               | **PREUVE MAÎTRESSE** | L'acte. Sans les deux visages **et** l'enveloppe, la photo ne prouve rien.                  |
-| 3   | **LA PLAQUE** | La berline ressort du passage en marche arrière ; en passant sous le feu, l'immatriculation est lisible une poignée de secondes.                               | **Bonus**            | **Qui** paie. C'est le bonus qui transforme « un flic ripou » en « un flic à qui on doit ». |
+| #   | Instant       | Ce qu'on voit                                                                                                                                                                       | Statut               | Ce que la photo prouve                                                                      |
+| --- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
+| 1   | **L'ARRIVÉE** | La berline s'engage dans le passage et s'arrête, feux éteints. Le manteau clair descend. Le Commandant sort du fond du passage — les deux hommes se font face.                      | **Bonus**            | Qu'ils étaient là, ensemble, la même nuit. Circonstance, pas preuve.                        |
+| 2   | **L'ÉCHANGE** | Une enveloppe passe de la main du manteau clair à celle du Commandant, qui l'empoche. **Les deux visages et les deux mains dans le même cadre.**                                    | **PREUVE MAÎTRESSE** | L'acte. Sans les deux visages **et** l'enveloppe, la photo ne prouve rien.                  |
+| 3   | **LA PLAQUE** | La berline ressort du passage en marche arrière ; **les phares du paquet qui descend la rue** rasent la bouche du passage et l'immatriculation est lisible une poignée de secondes. | **Bonus**            | **Qui** paie. C'est le bonus qui transforme « un flic ripou » en « un flic à qui on doit ». |
 
 C'est ce triptyque qui fait vivre le double trade-off du zoom de l'ADR-0077 §3 sans aucune
 règle plaquée :
@@ -515,9 +553,12 @@ Trois points que le dev ne doit pas avoir à deviner :
    le montre, on ne le commente pas.
 2. **(b) couvre « L'ÉCHANGE + n'importe quel bonus ».** La ligne 2 de (b) parle de la plaque ;
    si le seul bonus obtenu est l'arrivée, on joue **(a)** — règle simple, pas de troisième
-   palier : **(b) exige la plaque, sinon (a)**. Côté mécanique la récompense R1 est plate
-   (un bonus quelconque = ×0.75) ; côté fiction seule la plaque nomme le client, donc seule
-   elle change le texte. Les deux lanes ne se contredisent pas : R1 paie l'effort, (b)
+   palier : **(b) exige la plaque, sinon (a)**. Côté mécanique la récompense R1 est plate —
+   **un bonus quelconque vaut le palier haut, quel qu'il soit** (aujourd'hui ×0,80, appliqué
+   aux **phases 1-2** du boss ; la **phase 3 reste ×1.00** — cf. R2-2). Le palier ×0,75 a été
+   **retiré en Rev.2** : il cassait le plancher composé de la phase 2. La mécanique est la
+   source de vérité des valeurs ; la fiction cite le **mécanisme**, pas le nombre. Côté
+   fiction seule la plaque nomme le client, donc seule elle change le texte. Les deux lanes ne se contredisent pas : R1 paie l'effort, (b)
    raconte l'information.
 3. **Le refus est une sortie, pas une fin.** Le joueur qui refuse continue sa run normalement,
    avec le boss en baseline. Aucune string ne lui dit qu'il a « perdu » quelque chose.
@@ -606,7 +647,7 @@ Le VISUEL appartient à `concept-artist` → `lead-art`. Voici ce qu'ils ont bes
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Le Commandant**            | La cible. Silhouette **déjà ratifiée** — tête nue, tenue de commandement, ni casque ni bouclier.                                                                                                                                                                                                                                      | `attend dans l'ombre` · `face à face` · `reçoit l'enveloppe` (main tendue, visage de trois quarts) · `empoche`.                                                          |
 | **L'homme au manteau clair** | Le client. Civil, manteau clair (contraste B&N maximal avec le Commandant sombre : le read se fait au ton, pas à la couleur). Jamais nommé, visage lisible.                                                                                                                                                                           | `descend de voiture` · `face à face` · `tend l'enveloppe`.                                                                                                               |
-| **La berline**               | L'identification. Feux éteints à l'arrivée, plaque lisible au départ sous le feu tricolore.                                                                                                                                                                                                                                           | `arrêtée` · `en départ, plaque lisible`.                                                                                                                                 |
+| **La berline**               | L'identification. Feux éteints à l'arrivée, plaque lisible au départ **sous les phares du paquet** (jamais « sous le feu » — C-4).                                                                                                                                                                                                    | `arrêtée` · `en départ, plaque lisible`.                                                                                                                                 |
 | **Backdrop du set-piece**    | **Rev.3 —** la bouche du passage rue Belliard : faille d'ombre entre deux immeubles, rideaux de fer taggés de part et d'autre, la devanture de la BOULANGERIE en amorce à gauche, le **feu tricolore** planté devant. Vue plongeante depuis la lucarne du bout de la rue. Un paquet de phares qui descend la rue = la fenêtre sonore. | Backdrop 2D dédié (ADR-0077 §9) — **pas** un zoom dans `street-wide.png`, mais la **même rue**, reconnaissable au premier coup d'œil (rideaux taggés, boulangerie, feu). |
 | **Planche contact**          | Le verdict. B&N photocopié, bords de perforation, croix au feutre gras sur ce qui compte.                                                                                                                                                                                                                                             | Surface UI — `ux-designer` + art flow.                                                                                                                                   |
 
@@ -635,11 +676,15 @@ qu'ils référencent aujourd'hui sont des sprites **déjà shippés**.
 
 ## 7. Conformité boucle / scope
 
-- **Boucle intouchable.** Le set-piece se joue **hors** de `Récupérer → Livrer → Éviter`, avant
-  le camion. `Éviter` n'acquiert aucune règle nouvelle. PASS.
+- **Boucle intouchable.** Le set-piece se joue **dans** le niveau mais **hors** des verbes
+  `Récupérer → Livrer → Éviter` : scène gelée, tout au début de la nuit, avant le premier
+  chargement (C-5). `Éviter` n'acquiert aucune règle nouvelle, aucun verbe n'est ajouté à la
+  boucle. PASS — **sauf** la question du temps réel cumulé par les re-entrées, ouverte par
+  D-1 (hors de ma lane).
 - **`une mission = 3-5 min`.** Set-piece court + une scène de 11 répliques + une planche
-  contact de 2-4 répliques, skippables en un bouton. La photo ne rallonge pas la livraison :
-  elle la précède. Le gate impose un budget **briefing + set-piece + planche ≤ 2 min** en
+  contact de 2-4 répliques, skippables en un bouton. La photo ne consomme pas le chrono de
+  mission (scène gelée) — mais depuis la relocalisation elle est **dedans**, donc le temps réel
+  cumulé des re-entrées est un point ouvert (D-1, arbitrage hors fiction). Le gate impose un budget **briefing + set-piece + planche ≤ 2 min** en
   première lecture non skippée : les scripts §4 y tiennent (11 + 4 répliques max), et le
   chemin de refus n'ajoute **aucune** ligne (§4.3).
 - **Chaque échec a une raison explicite.** (c) §4.3 nomme la cause **par terminal** — pellicule
@@ -710,6 +755,26 @@ Ce que chaque lane doit récupérer :
 **Aucun niveau à construire. Aucun dialogue shippé modifié.** Le seul asset neuf reste la
 planche 2D dédiée déjà exigée par l'ADR-0077 D9 — donc le budget art est **inchangé**, et le
 niveau Stalingrad qu'on n'écrit plus est une **économie sèche**.
+
+### 9.0bis Purge des résidus du CONTRÔLE DELTA Rev.3 (2026-08-02)
+
+**De :** `narrative-designer` (Yasmine) · **À :** `lead-game-designer` (Karim).
+**Objet :** fermeture des résidus éditoriaux qui me nomment dans le verdict PASS delta.
+Aucune décision rouverte, aucune valeur inventée, zéro string joueur modifiée.
+
+| ID       | État                    | Où                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **C-1**  | **FAIT** (enfin)        | §4.4 point 2 : le palier **×0,75 est retiré** (il cassait le plancher composé de la phase 2). La fiction cite désormais **le mécanisme** — « un bonus quelconque = le palier haut » — et mentionne les valeurs courantes ×0,90 / ×0,80 **scopées aux phases 1-2**, la **phase 3 restant ×1.00** (R2-2), en désignant la mécanique comme source de vérité. Plus aucune occurrence de 0,75 **comme valeur en vigueur** — les seules restantes sont ce retrait-ci et sa mention en §4.4. |
+| **C-4**  | **FAIT**                | §2.2 (puce lumière) réécrite : le feu **allume la bouche du passage en permanence** ; ce sont **les phares du paquet** qui rendent la plaque lisible **pendant la fenêtre**. Propagé à §3.2 instant 3 et à la fiche berline §6. L'argument structurel de F3 sur l'instant 3 tient.                                                                                                                                                                                                    |
+| **C-5**  | **FAIT**                | §2.4 point 1 : « avant la boucle » et « scène pré-niveau » retirés. Le set-piece est **dans** le niveau, tout au début, avant le premier chargement ; l'ellipse de la montée est la phase `BRIEFING`. Propagé à §7 (deux puces).                                                                                                                                                                                                                                                      |
+| **C-6**  | **FAIT**                | §2.3 : le « bonus de lisibilité » est barré et marqué **DÉCLINÉ AU GATE (R3-2)**, avec l'interdiction de Karim citée verbatim et rapprochée de T-4. Ne pas re-proposer.                                                                                                                                                                                                                                                                                                               |
+| **R3-2** | **ACTÉ**                | §2.3 : je grave que j'avais **décliné la propriété** du point. Ce n'est **pas** un conflit de pairs — c'est une **frontière de lane** : j'ai signalé et rendu, Sacha a tranché chez lui, Karim a durci. Rien à arbitrer entre nous.                                                                                                                                                                                                                                                   |
+| C-7, C-8 | **pas les miens**       | Lane `game-designer` (Sacha) : §11.4 périmée sur E-1, et §4.1 / §1.1.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| N-1…N-3  | **pas les miens**       | Lane `senior-architect` (Winston). N-1 me concerne seulement comme **cohérence** : c'est le même canal que C-4 — l'éclairement/les phares, jamais la couleur du feu.                                                                                                                                                                                                                                                                                                                  |
+| **D-1**  | **OUVERT, pas ma lane** | Arbitrage `game-designer` + `senior-architect` + `pm`. **Ce que je dois si l'option (a) est retenue** (borner les re-entrées) : **une ligne de copy** sur la branche d'échec une fois le plafond atteint — `[ RECOMMENCER ]` disparaît, `[ LAISSER TOMBER ]` reste seul. Elle ne rouvre ni R2-5 (deux CTA pairs tant que le retry est offert) ni les libellés. Je l'écris sur demande, en une passe.                                                                                  |
+
+**Ce qui n'a pas bougé :** aucune string joueur (§4.1 / §4.3 / §4.4) n'est modifiée par cette
+purge — les corrections portent sur des notes de conception et des attributions causales.
 
 ### 9.1 Réponse aux conditions du gate (Rev.2 — inchangée)
 
