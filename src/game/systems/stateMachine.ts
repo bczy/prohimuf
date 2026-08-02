@@ -811,7 +811,8 @@ export function tickGameState(
       energy: newEnergy,
       qteSpec: state.qteSpec,
       qte,
-      bossQte: finaleSpec !== null ? createBossQte(finaleSpec) : state.bossQte,
+      // ADR-0080: the carry parameterises the finale, and ONLY where tiers are authored.
+      bossQte: finaleSpec !== null ? createBossQte(finaleSpec, state.photoLeverage) : state.bossQte,
       deliveryVehicle,
       elapsedSeconds,
       kills: newKills,

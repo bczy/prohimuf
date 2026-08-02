@@ -1,4 +1,5 @@
 import type { Vec2 } from "@game/types/vector";
+import type { PhotoLeverageTiers } from "@game/types/photoLeverage";
 
 /**
  * Boss QTE encounter — "le Commandant" (ADR-0051). A cinematic capstone duel that
@@ -121,6 +122,13 @@ export interface BossQteSpec {
    * promotion (multiple props) is the deferred F3 seam.
    */
   readonly decorProp?: { readonly position: Vec2; readonly armPhaseIndex: number };
+  /**
+   * Photo-proof leverage tiers (ADR-0080, amendment A1 to spec-boss-shield-break-tempo-shot).
+   * Authored on the Niveau Final row ONLY. Absent ⇒ ×1.00 at every leverage value ⇒ the
+   * encounter is byte-identical — which is what keeps Belliard's own Commandant untouched
+   * while the player holds a proof earned minutes earlier on that same level.
+   */
+  readonly photoLeverageTiers?: PhotoLeverageTiers;
 }
 
 /**
@@ -314,4 +322,10 @@ export interface BossQte {
   readonly resultRemaining: number;
   /** The establishing "boss" warning is shown (true during ZOOMING). */
   readonly warning: boolean;
+  /**
+   * Resolved ONCE at `createBossQte` from `(spec.photoLeverageTiers, leverage)`; 1.0 by
+   * default. Applied through `shieldedLullOf` at the point of use, phases 1-2 only — never
+   * to the shared `BOSS_PHASE_TABLE` (the D-F trap).
+   */
+  readonly rewardMultiplier: number;
 }

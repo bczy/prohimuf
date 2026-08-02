@@ -7,6 +7,8 @@ import type {
 } from "@game/types/bossQte";
 import type { Vec2 } from "@game/types/vector";
 import { hash32, smoothstep } from "@game/systems/hash";
+import { photoRewardMultiplier } from "@game/systems/photoLeverageSystem";
+import type { PhotoLeverage } from "@game/types/photoLeverage";
 
 // Boss QTE encounter — "le Commandant" (ADR-0051, extended by ADR-0052). A SEPARATE,
 // additive pure system (D1): it does NOT modify the frozen, shipped hostage QTE
@@ -225,6 +227,32 @@ export const SHIELD_BREAK_LULL_CUT = 0.5;
  *  runtime row in `createBossQte`). At shipped values the cut never reaches the floor
  *  (0.7 s > 0.35 s); the floor protects future re-tunes only. */
 export const SHIELD_BREAK_LULL_FLOOR_MARGIN = 0.05;
+
+/**
+ * ε for the F10 compound floor — a QUOTATION of §6-B's own worst shipped headroom (phase 3:
+ * 0.70 − 0.35), not a preference. Because `LULL_RESIDUAL_FLOOR (0.35) >
+ * SHIELD_BREAK_LULL_FLOOR_MARGIN (0.05)`, any multiplier that passes the construction-time
+ * compound assert leaves `base − CUT ≥ tell + 0.35 > tell + 0.05 = floor` — i.e. the runtime
+ * `Math.max(…, floor)` clamp below is PROVABLY UNREACHABLE at every legal multiplier. That
+ * turns AC12 ("the −0.5 s cut is observed to actually apply, never silently clamped away")
+ * from a playtest hope into a structural guarantee.
+ */
+export const LULL_RESIDUAL_FLOOR = 0.35;
+
+/**
+ * THE single application point of the photo-proof multiplier (ADR-0080, techplan §4.2).
+ *
+ * Phase-scoped to indices 0 and 1 (R2-2): phase 3 is byte-identical at every leverage value,
+ * so the finale's own fairness floors can never be curved away by a reward.
+ *
+ * It is applied HERE, at the point of use, and never to `BOSS_PHASE_TABLE` or `phaseTuning`:
+ * those are MODULE constants shared by Belliard and the Niveau Final, so a multiplier on the
+ * table would compress the boss of the very level the player just photographed — the D-F trap,
+ * and the exact failure mode the shield-break story's K-2 already burned this crew on.
+ */
+export function shieldedLullOf(row: BossPhaseTuning, phaseIndex: number, m: number): number {
+  return phaseIndex <= 1 ? m * row.shieldedLullSeconds : row.shieldedLullSeconds;
+}
 
 /**
  * Whether the lowered shield cover prop presents its FIXED hit point right now (spec §6-C): iff
@@ -632,7 +660,9 @@ export function shouldTriggerBossFinale(
  * `FINISHER_HOLD_SECONDS` > 0; the renfort descriptor is sane; and any authored `decorProp`
  * has a finite anchor-relative position and an in-range integer `armPhaseIndex`.
  */
-export function createBossQte(spec: BossQteSpec): BossQte {
+export function createBossQte(spec: BossQteSpec, leverage: PhotoLeverage = "none"): BossQte {
+  // Resolved ONCE, here, from AUTHORED tiers on this row (absent ⇒ 1.0 ⇒ byte-identical).
+  const rewardMultiplier = photoRewardMultiplier(spec.photoLeverageTiers, leverage);
   // C6: reject non-finite authored numerics up front — NaN/Infinity slips past the
   // integer/`Math.max` guards and can wedge the sub-machine open forever.
   const numerics: readonly number[] = [
@@ -701,6 +731,22 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     // STRICTLY > the phase tell (asserted vs. the runtime row, spec §5/AC2). The `Math.max(…, floor)`
     // clamp then guarantees a shortened lull can never reach ≤ the tell — the window telegraph is
     // never swallowed by a self-inflicted compression.
+    // F10 (COMPOUND, spec §7 / §D7.2 amendment A1) — the reward may never curve the boss's
+    // fairness floors away NOR silently eat the gated shield-break cut. Asserted on the
+    // RUNTIME row (multiplier included), phases 1-2 only, and NON-STRICT `≥` on purpose:
+    // with ε quoted from ADR-0060, phase 3 at ×1.00 sits at exactly 0.70 = 0.35 + 0.35, so a
+    // strict `>` would fail the SHIPPED baseline. Do not "tighten" this in review (R2-2).
+    if (i <= 1) {
+      const lull = shieldedLullOf(row, i, rewardMultiplier);
+      if (lull - SHIELD_BREAK_LULL_CUT < row.telegraphLeadSeconds + LULL_RESIDUAL_FLOOR) {
+        throw new Error(
+          `BossQteSpec invariant (F10, ADR-0080): at ×${String(rewardMultiplier)} the phase ${String(i + 1)} lull ` +
+            `(${lull.toFixed(3)}s) minus the shield-break cut leaves less than ` +
+            `telegraphLeadSeconds + ${String(LULL_RESIDUAL_FLOOR)}s of residual. The comparison ` +
+            `is NON-STRICT on purpose — phase 3 at x1.00 sits exactly on it.`,
+        );
+      }
+    }
     const shieldCutFloor = row.telegraphLeadSeconds + SHIELD_BREAK_LULL_FLOOR_MARGIN;
     if (!(shieldCutFloor > row.telegraphLeadSeconds)) {
       throw new Error(
@@ -850,6 +896,10 @@ export function createBossQte(spec: BossQteSpec): BossQte {
   // The surge onset is telegraphed by the preceding SHIELDED lull ≥ the tell floor — asserted
   // when the surge phase is one this spec actually runs.
   if (RENFORT_SURGE.phaseIndex < spec.phaseCount) {
+    // Multiplier-INDEPENDENT on purpose: this asserts the surge is TELEGRAPHABLE at the
+    // authored baseline. The multiplier only ever shortens phases 1-2, and F10 above already
+    // bounds that shortening against the same tell floor, so reading the raw row here cannot
+    // let a shorter runtime lull through unasserted.
     const surgeLull = phaseTuning(RENFORT_SURGE.phaseIndex).shieldedLullSeconds;
     if (surgeLull < BOSS_TELEGRAPH_LEAD_FLOOR) {
       throw new Error(
@@ -878,9 +928,11 @@ export function createBossQte(spec: BossQteSpec): BossQte {
     }
   }
 
-  const firstLull = phaseTuning(0).shieldedLullSeconds;
+  // The opening lull the player actually meets ⇒ it MUST carry the multiplier (phase 0).
+  const firstLull = shieldedLullOf(phaseTuning(0), 0, rewardMultiplier);
   return {
     phase: "ZOOMING",
+    rewardMultiplier,
     stance: "SHIELDED",
     telegraphActive: false,
     stanceRemaining: firstLull,
@@ -1097,7 +1149,11 @@ export function tickBossQte(
           ...qte,
           phase: "ACTIVE",
           stance: "SHIELDED",
-          stanceRemaining: phaseTuning(qte.phaseIndex).shieldedLullSeconds,
+          stanceRemaining: shieldedLullOf(
+            phaseTuning(qte.phaseIndex),
+            qte.phaseIndex,
+            qte.rewardMultiplier,
+          ),
           telegraphActive: false,
           zoomRemaining: 0,
           warning: false,
@@ -1271,7 +1327,11 @@ export function tickBossQte(
           // The break ends → resume normal cycling at the (already-advanced) phase.
           phaseBreakRemaining = 0;
           stance = "SHIELDED";
-          stanceRemaining = phaseTuning(phaseIndex).shieldedLullSeconds;
+          stanceRemaining = shieldedLullOf(
+            phaseTuning(phaseIndex),
+            phaseIndex,
+            qte.rewardMultiplier,
+          );
         } else if (staggerRemaining > 0) {
           // ADR-0052 lever 3 — the stagger ends → open a BONUS EXPOSED window (tempo flip).
           staggerRemaining = 0;
@@ -1298,17 +1358,18 @@ export function tickBossQte(
           const closingRenfort = isRenfortWindow(phaseIndex, phaseWindowIndex);
           const closingRow = phaseTuning(phaseIndex);
           stance = "SHIELDED";
-          stanceRemaining = closingRow.shieldedLullSeconds;
+          const base = shieldedLullOf(closingRow, phaseIndex, qte.rewardMultiplier);
+          stanceRemaining = base;
           chargedWindow = false;
           // Lever 6 — consume a pending shield-break tempo cut on THIS ordinary lull open, sizing
           // it to `max(lull − cut, floor)` where `floor = tell + margin` keeps it STRICTLY above
           // the phase tell (spec §4/§6-B). Non-cumulative: one pending flag → one 0.5 s cut.
           if (shieldBreakPending) {
             const floor = closingRow.telegraphLeadSeconds + SHIELD_BREAK_LULL_FLOOR_MARGIN;
-            stanceRemaining = Math.max(
-              closingRow.shieldedLullSeconds - SHIELD_BREAK_LULL_CUT,
-              floor,
-            );
+            // Amendment A1 point 2, in THIS order: 1) multiplier (phases 1-2 only, already in
+            // `base`) 2) the gated cut 3) the existing clamp — which the F10 assert proves is
+            // unreachable at every legal multiplier, so the cut always actually applies.
+            stanceRemaining = Math.max(base - SHIELD_BREAK_LULL_CUT, floor);
             shieldBreakPending = false;
           }
           if (bossHp > 0 && (closingCharged || !windowChipped)) {

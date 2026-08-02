@@ -296,6 +296,12 @@ export const LEVELS: readonly LevelConfig[] = [
       // 1). Re-sited from the harness speaker-stack {1.4,0.2}; the mur d'enceintes is the reserved
       // F3 second prop (needs the decorProps[] promotion, not authored — a correct-course, not now).
       decorProp: { position: { x: 0.2, y: 1.5 }, armPhaseIndex: 1 },
+      // Photo-proof leverage tiers (ADR-0080 / amendment A1). Authored HERE and NOWHERE else:
+      // Belliard, Vitry, Stalingrad, the tutorial and the dev harness author none, so their
+      // encounters resolve to x1.00 by ABSENCE. Applied to phases 1-2 only, at the point of
+      // use, never to the shared BOSS_PHASE_TABLE. The legal wall (m >= x0.781, phase 2 binds)
+      // is enforced by the F10 compound assert in `createBossQte`, not by this comment.
+      photoLeverageTiers: { master: 0.9, masterBonus: 0.8 },
     },
   },
 ];

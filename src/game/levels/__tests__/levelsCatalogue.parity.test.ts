@@ -22,10 +22,11 @@ import PRE from "./fixtures/levelsCatalogue.pre.json";
  * the commit of the flip and re-read this test. Do NOT make the comparison flag-aware: the
  * fixture stays dumb and literal (ruling: `senior-architect`, stage-6 panel triage).
  *
- * SECOND SANCTIONED WITHDRAWAL (photo set-piece, ADR-0077): `belliard` now authors a
- * `photoQte`. The fixture gained that ONE key, on that ONE row, and nothing else moved —
- * which is the point: the parity claim still covers every pre-existing value, and the new
- * authored field is recorded rather than papered over with a flag-aware comparison.
+ * SECOND SANCTIONED WITHDRAWAL (photo set-piece, ADR-0077/ADR-0080): `belliard` now authors a
+ * `photoQte`, and `niveau-final`'s `bossQteSpec` a `photoLeverageTiers`. The fixture gained
+ * those TWO keys, on those two rows, and nothing else moved — which is the point: the parity
+ * claim still covers every pre-existing value, and the new authored fields are recorded rather
+ * than papered over with a flag-aware comparison.
  *
  * `toStrictEqual` is deliberate: the fixture carries NO `bossQteSpec` key on the levels that
  * author none, so a regression that made the conditional spread emit `bossQteSpec: undefined`

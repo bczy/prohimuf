@@ -327,6 +327,10 @@
             "y": 1.5
           },
           "armPhaseIndex": 1
+        },
+        "photoLeverageTiers": {
+          "master": 0.9,
+          "masterBonus": 0.8
         }
       }
     }
