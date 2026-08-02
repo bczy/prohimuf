@@ -1029,9 +1029,12 @@ props failure never blocks skins landing and vice versa):
   `fill-sprite-holes.mjs` (+ `--check` gate) → commit `public/assets/enemy_*.png`.
 - **props** — `gen-nearfg-sprites.mjs --plan` → a loop over
   `gen-nearfg-sprites.mjs --plan <id> --list`'s output calling
-  `check-nearfg-style.mjs --file <path> --kind <kind>` per prop (process
-  substitution — `done < <(cmd)` — NOT a pipe into `while read`, which would
-  run the loop in a subshell and silently swallow a `fail=1`) → commit
+  `check-nearfg-style.mjs --file <path> --kind <kind>` per prop. La liste est
+  capturée par une affectation simple (`list=$(… --list)`, visible de `set -e`)
+  puis lue par here-string (`done <<< "$list"`) : ni pipe vers `while read` (le
+  corps tournerait dans un sous-shell et avalerait `fail=1`), NI substitution de
+  process `done < <(cmd)` (qui masquerait le code de sortie de `--list` lui-même
+  — un PASS creux). Épinglé par `gen-plan-sprites-workflow.test.mjs` → commit
   `public/assets/nearfg/<id>/`.
 
 Never on `main`. Dry-run tested (no real runner) in

@@ -139,3 +139,17 @@ it("FAILS (non-zero) when the plan's prop file is missing — real bash run", ()
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+/**
+ * Garde anti-dérive doc↔code (panel #156 run 10) : SCRIPTS.md décrivait le gate
+ * props comme utilisant `done < <(cmd)` — exactement l'anti-pattern que le step
+ * refuse (il masquerait le code de sortie de --list, donc un PASS creux). Un
+ * mainteneur suivant la doc aurait réintroduit la régression. La doc ne peut plus
+ * recommander ce que le test interdit.
+ */
+it("SCRIPTS.md ne recommande pas la substitution de process pour le gate props", () => {
+  const doc = fs.readFileSync(path.join(REPO_ROOT, "scripts", "SCRIPTS.md"), "utf8");
+  const section = doc.slice(doc.indexOf("- **props** —"), doc.indexOf("Never on `main`"));
+  expect(section).not.toMatch(/substitution\s*—?\s*`done < <\(/);
+  expect(section).toMatch(/here-string|<<</);
+});

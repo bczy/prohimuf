@@ -101,3 +101,17 @@ async function loadValidateLevelPlan(jiti) {
   }
   return mod.validateLevelPlan;
 }
+
+/**
+ * L'unique lecture de l'option `--plan <id>` (panel #156 run 10) : le bloc était
+ * recopié à l'identique dans les trois générateurs, libre de diverger dès que le
+ * contrat du flag bouge (`--plan=id`, resserrement de la forme…). Rend `null`
+ * quand le flag est absent — l'appelant choisit alors son mode hérité.
+ */
+export function planIdFromArgs(args) {
+  const i = args.indexOf("--plan");
+  if (i === -1) return null;
+  const levelId = args[i + 1];
+  if (!levelId || levelId.startsWith("--")) throw new Error("--plan requires a level id");
+  return levelId;
+}

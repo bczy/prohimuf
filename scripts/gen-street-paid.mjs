@@ -36,7 +36,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { loadPlan } from "./lib/loadPlan.mjs";
+import { loadPlan, planIdFromArgs } from "./lib/loadPlan.mjs";
 import { resolveBackdropFile } from "./lib/planPaths.mjs";
 import { buildPaidPrompt, seedFromLevelId } from "./lib/paidPrompt.mjs";
 import { skip } from "./lib/idempotent.mjs";
@@ -154,10 +154,8 @@ async function runLegacyMode() {
 
 async function main() {
   const args = process.argv.slice(2);
-  const i = args.indexOf("--plan");
-  if (i !== -1) {
-    const levelId = args[i + 1];
-    if (!levelId || levelId.startsWith("--")) throw new Error("--plan requires a level id");
+  const levelId = planIdFromArgs(args);
+  if (levelId !== null) {
     await runPlanMode(levelId);
     return;
   }

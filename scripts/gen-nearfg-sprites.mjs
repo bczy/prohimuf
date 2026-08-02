@@ -57,7 +57,7 @@ import { readToken, genUrl, withRetry, keyAndDown, cyanPreviewCanvas } from "./l
 import { sleep } from "./lib/pollinations.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
-import { loadPlan } from "./lib/loadPlan.mjs";
+import { loadPlan, planIdFromArgs } from "./lib/loadPlan.mjs";
 import { promptDescriptor } from "./lib/planNamespace.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -181,10 +181,8 @@ export async function generateOne(token, assembledPrompt, seed, width, height) {
 
 /** Resolve the prop list: `--plan <id>` (T5) or the levelArt.json table (default). */
 async function resolveProps(args) {
-  const i = args.indexOf("--plan");
-  if (i === -1) return loadNearForegroundArt();
-  const levelId = args[i + 1];
-  if (!levelId || levelId.startsWith("--")) throw new Error("--plan requires a level id");
+  const levelId = planIdFromArgs(args);
+  if (levelId === null) return loadNearForegroundArt();
   const plan = await loadPlan(levelId);
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
   const opening = json.nearForegroundArt?.opening ?? "";

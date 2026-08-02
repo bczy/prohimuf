@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadPlan } from "../lib/loadPlan.mjs";
+import { loadPlan, planIdFromArgs } from "../lib/loadPlan.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -74,5 +74,22 @@ describe("loadPlan — validation du plan (panel #156 run 4)", () => {
     } finally {
       fs.rmSync(file);
     }
+  });
+});
+
+describe("planIdFromArgs — l'unique lecture de --plan (panel #156 run 10)", () => {
+  it("rend null quand le flag est absent (mode hérité)", () => {
+    expect(planIdFromArgs(["--force"])).toBeNull();
+  });
+
+  it("rend l'id quand il est fourni", () => {
+    expect(planIdFromArgs(["--plan", "fixture", "--force"])).toBe("fixture");
+  });
+
+  it.each([
+    ["valeur manquante", ["--plan"]],
+    ["suivi d'un autre flag", ["--plan", "--force"]],
+  ])("jette quand le flag est %s", (_label, args) => {
+    expect(() => planIdFromArgs(args)).toThrow(/--plan requires a level id/);
   });
 });

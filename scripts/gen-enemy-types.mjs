@@ -75,7 +75,7 @@ import { sleep, fetchWithRetry, fluxUrl, buildRequestUrl } from "./lib/pollinati
 import { loadHeroRegistry, heroForSlot, heroRawUrl, resolveRepoSha } from "./lib/heroes.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
-import { loadPlan } from "./lib/loadPlan.mjs";
+import { loadPlan, planIdFromArgs } from "./lib/loadPlan.mjs";
 import { promptDescriptor } from "./lib/planNamespace.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -278,10 +278,8 @@ async function generateExtraFrame(e, i, out, frame1Fresh, registry, repo, sha) {
 
 /** Resolve the enemy list: `--plan <id>` (T5) or the levelArt.json table (default). */
 async function resolveEnemies(args) {
-  const i = args.indexOf("--plan");
-  if (i === -1) return loadEnemies();
-  const levelId = args[i + 1];
-  if (!levelId || levelId.startsWith("--")) throw new Error("--plan requires a level id");
+  const levelId = planIdFromArgs(args);
+  if (levelId === null) return loadEnemies();
   const plan = await loadPlan(levelId);
   const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
   const style = json.enemies?.style ?? "";
