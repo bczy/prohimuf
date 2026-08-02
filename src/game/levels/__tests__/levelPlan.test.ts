@@ -646,6 +646,13 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, gameplay: { ...base.gameplay, windowWeights: undefined } },
     { ...base, archetypes: [null] },
     { ...base, props: [{ asset: "a.png" }] },
+    // fiction is an object but its strings are missing/blank: nothing downstream
+    // checks them, so this used to pass as "sound" and render "undefined" on the
+    // menu card once aggregated (CI panel MAJEUR).
+    { ...base, fiction: {} },
+    { ...base, fiction: { ...base.fiction, name: "" } },
+    { ...base, fiction: { ...base.fiction, district: undefined } },
+    { ...base, fiction: { ...base.fiction, year: 1998 } },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

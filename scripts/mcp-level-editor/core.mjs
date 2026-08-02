@@ -289,6 +289,11 @@ export function scaffold(
     };
   }
 
+  // Known TOCTOU between this check and the write, TRIAGED AND ACCEPTED by the
+  // architect (panel §6.7, n6a): a single-operator local tool has no concurrent
+  // writers, and the write itself is already tmp+rename atomic, so the worst case
+  // is a race that does not occur in the tool's usage model. Documented here so it
+  // is not re-litigated each review round.
   if (existsSync(targetPath) && !overwrite) {
     return {
       ok: false,
@@ -382,6 +387,11 @@ async function ensureDevServer({
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
     if (spawnError !== null) {
+      // A failed spawn is not always fatal: two calls racing on a cold port both
+      // see "no server", both spawn, and the loser dies on EADDRINUSE while the
+      // winner's server is still coming up. Re-poll once before giving up — if
+      // the winner is serving, reuse it (proc: null, so we never kill THEIRS).
+      if (await isServerUp(url)) return { url, proc: null };
       throw new Error(`dryrun/preview: failed to start the dev server: ${spawnError.message}`);
     }
     if (await isServerUp(url)) return { url, proc };

@@ -70,6 +70,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
 - [x] PR draft → acceptation pm — **ACCEPTED**, voir §7
 - [x] **Panel CI (PR #159, autorité bloquante ADR-0063) — round 1 : FAIL** sur `ae1aa10b`
       (1 BLOQUANT, 2 MAJEUR, 1 MINEUR), les 4 findings traités, voir §8
+- [x] **Panel CI — round 2 : CONDITIONAL** sur `b3e96f5c` (0 BLOQUANT, 1 MAJEUR,
+      3 MINEUR), les 4 findings traités, voir §8
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -747,3 +749,34 @@ Prêt pour merge dès que `producer`/l'architecte confirment le numéro ADR-0077
 juste avant le push sur `main` (rituel déjà cadré au §6.7, pas une nouvelle condition).
 
 — `pm` (John), 2026-08-02.
+
+### Round 2 — `b3e96f5c` : CONDITIONAL (0 BLOQUANT, 1 MAJEUR, 3 MINEUR)
+
+Note de contexte : la run du panel sur `1e75721d` a de nouveau été **annulée**, cette
+fois par le force-push du rebase de la branche sur un `main` plus récent (docs SP3) —
+2 reviewers avaient rendu, 2 tournaient encore, d'où le « 2 jobs failed ». Même
+mécanisme de supersession que les trois précédents, même diagnostic trompeur du
+workflow (cf. le chantier CI relevé ci-dessus). Le rebase a préservé le travail
+intégralement (arbres comparés, seul écart = les 4 fichiers SP3 hérités de `main`).
+
+- **[MAJEUR] `plan.fiction` : les sous-champs n'étaient jamais vérifiés** — fondé et
+  sérieux : `planShapeIssues` ne contrôlait que l'objecthood de `fiction`, et rien en
+  aval ne regarde `name`/`label`/`district`/`year`. Un `fiction: {}` recevait donc un
+  verdict **« sain »** (`issues: []`), `scaffold` écrivait le module, et la carte de menu
+  affichait littéralement « undefined » une fois le level agrégé. Exactement la classe
+  d'entrée que la story rend atteignable (JSON arbitraire d'agent + `planShape` zod
+  volontairement lâche), et que le fixture des tests masquait en fournissant toujours un
+  `fiction` complet. Les 4 champs sont désormais exigés non vides ; probe : `validate`
+  rend 4 issues `plan/malformed` ciblées et `scaffold` refuse d'écrire.
+- **[MINEUR] spec §4.2 disait encore `server.ts`** — fondé : ADR-0077 D1 dit trancher
+  cette hésitation même, et la phrase n'avait pas suivi. Corrigée, avec le renvoi à D1.
+- **[MINEUR] TOCTOU de `scaffold`** — **déjà arbitré** par l'architecte (§6.7, n6a :
+  risque accepté, outil local mono-opérateur, écriture déjà tmp+rename atomique). Le
+  finding le concède lui-même (« Not critical for a single-operator dev tool »). Décision
+  inchangée ; l'arbitrage est maintenant inscrit en commentaire au point de garde pour
+  qu'il ne soit pas re-plaidé à chaque tour.
+- **[MINEUR] course de `ensureDevServer` sur port froid** — retenu, correctif appliqué :
+  deux appels concurrents voyaient tous deux « pas de serveur », le perdant mourait sur
+  EADDRINUSE au lieu de réutiliser le serveur du gagnant. Sur échec de spawn, on
+  re-sonde une fois avant d'abandonner — et on rend `proc: null`, donc on ne tue jamais
+  le serveur d'autrui.

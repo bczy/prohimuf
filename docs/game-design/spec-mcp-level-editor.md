@@ -62,7 +62,8 @@ serveur** — tout invariant nouveau va dans `validateLevelPlan`/`validateLevel`
 
 ### 4.2 Le serveur
 
-`scripts/mcp-level-editor/server.ts` (stdio, SDK officiel), entrée `.mcp.json`. Le
+`scripts/mcp-level-editor/server.mjs` (stdio, SDK officiel — l'hésitation `.ts`/`.mjs`
+de ce paragraphe est tranchée par ADR-0077 D1), entrée `.mcp.json`. Le
 serveur ne détient **aucun secret** : la génération payée reste en CI ; `dryrun`/
 `preview` n'utilisent que vite + Playwright locaux.
 

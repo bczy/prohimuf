@@ -137,6 +137,24 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       issues.push(planIssue("malformed", field, `${field}: expected an object`));
     }
   }
+  // `fiction`'s own strings, not just its objecthood: they are the menu card's
+  // visible text, and nothing downstream checks them. A `fiction: {}` would pass
+  // every other guard, scaffold to disk, and render a literal "undefined" on the
+  // card once a human aggregates the level (CI panel MAJEUR on b3e96f5c).
+  if (isRecord(p.fiction)) {
+    for (const key of ["name", "label", "district", "year"] as const) {
+      const value = p.fiction[key];
+      if (typeof value !== "string" || value.trim().length === 0) {
+        issues.push(
+          planIssue(
+            "malformed",
+            `fiction.${key}`,
+            `fiction.${key}: expected a non-empty string (it shows on the level's menu card)`,
+          ),
+        );
+      }
+    }
+  }
   if (isRecord(p.gameplay) && !isRecord(p.gameplay.windowWeights)) {
     issues.push(
       planIssue(
