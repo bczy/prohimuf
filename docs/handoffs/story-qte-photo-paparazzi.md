@@ -926,3 +926,39 @@ le focus par défaut, y compris sur la branche d'échec »; le techplan §6 lane
 « focus initial sur `[ RECOMMENCER ]` ». J'ai implémenté le techplan (focus `[ RECOMMENCER ]`
 tant que le budget de tentatives le permet, sinon le contrôle qui quitte). Un mot de
 `lead-game-designer` suffit à inverser: c'est une ligne dans `ContactSheet.tsx`.
+
+## Lane A (dev-gameplay, Amelia) — A0→A4 livrés
+
+Ordre imposé par le techplan respecté : A0 (seam) committé seul et annoncé, puis A1 (kernel
+déterministe) avant tout hash, puis A2 (machine + intégration), A3 (levier boss + report),
+A4 (pont). A2 et A3 séquencées, jamais parallèles (fichiers partagés).
+
+| Étape       | Commit                          | Contenu                                                                                                              |
+| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| A0          | `861ccb42`                      | `types/photoQte.ts`, `types/photoLeverage.ts`, `types/narrative.ts` (déplacement de type pur), `PhotoControlChannel` |
+| A0bis (T-2) | dans `5847bd4d` (arbre partagé) | `attemptIndex` estampillé, `maxAttempts` retiré du spec authored                                                     |
+| A1          | dans `56c462d7` (arbre partagé) | `systems/hash.ts` + golden vectors, `qteSystem`/`bossQteSystem` re-pointés                                           |
+| A2          | `21dd6418`, `93ed5c75`          | kernel + machine + 4e bloc scène-gelée + invariant d'ordre + row Belliard                                            |
+| A3          | `18a20e6b`, `cd0df33a`          | report `muf_leverage` (pur + storage) et levier boss (tiers authored, F10)                                           |
+| A4          | `1781ed7d`                      | `PhotoInput` device-neutre, canaux additifs, gardes QTE, `HudData.photoQte`                                          |
+| simplify    | `a5e6edfa`                      | dégraissage du diff, tolérance unique exportée                                                                       |
+
+**File List.** `src/game/types/{photoQte,photoLeverage,narrative,gameState,level,bossQte,input}.ts` ·
+`src/game/systems/{hash,photoQteSystem,photoLeverageSystem,stateMachine,bossQteSystem,qteSystem}.ts` ·
+`src/game/levels/{photoQteBelliard,levels.data,validateLevel}.ts` ·
+`src/hooks/{useGameLoop,useMouse,useKeyboard,useTouchControls,photoLeverageStorage}.ts` ·
+tests : `photoQteKernel`, `photoQteSystem`, `photoQteStateMachine`, `photoLeverageSystem`,
+`bossPhotoLever`, `hash`, `photoLeverageStorage`, `photoBridgeSeam`.
+
+**Deux mains tendues aux autres lanes.**
+
+1. **Lane C** — `subjectBoxEdgeTolerance(size)` et `SUBJECT_BOX_TOLERANCE` sont exportés de
+   `photoQteSystem`. `check-photo-subject-boxes.mjs` re-tape encore le `0.05` dans son propre
+   `edgeTolerance` : appelez l'export, c'est exactement le demi-fork que la règle « la
+   tolérance vient du module de jeu » existe pour empêcher.
+2. **Lane B** — le seam `App.tsx` (prédicat de progression, override
+   `window.__MUF_NO_SETPIECE__`, effet `recordPhotoLeverage`) n'est PAS fait : `src/render` est
+   votre lane et le fichier était édité en parallèle. Le report est déjà sur
+   `GameState.photoLeverage` (mergé, monotone) — il se lit sur la state ref, pas besoin d'un
+   second canal dans `HudData`. Le garde §3.3 site 3 (edge-scroll, `GameScene.tsx`) reste aussi
+   à vous ; les sites 1 et 2 sont faits.
