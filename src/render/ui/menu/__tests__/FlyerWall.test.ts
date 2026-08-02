@@ -165,12 +165,19 @@ describe("LevelFlyer stacking gap — clears the pulled shadow in every layout",
 
 /**
  * The rack clips on BOTH edges. The top was pinned in round 1; this pins the bottom against
- * the pulled shadow's downward reach, which round 3 pointed out was covered by nothing but
- * a hand-picked 28.
+ * what actually reaches it: the pulled shadow's downward drop AND the scale growth, since
+ * `transform-origin: center` grows the box downward as much as upward.
+ *
+ * Like its sibling above, this assertion is quiet while the constant stays derived — it
+ * exists to fire the day someone replaces the derivation with a literal that only clears
+ * today's numbers. Probed with exactly that mutation, not with a change to an input the
+ * constant is computed from (which it would follow, proving nothing).
  */
 describe("FlyerWall short-landscape rack — pulled shadow does not get cropped below", () => {
-  it("keeps the rack's bottom padding above the pulled shadow's drop", () => {
-    expect(RACK_PAD_BOTTOM_PX).toBeGreaterThanOrEqual(PULLED_SHADOW_DROP_PX);
+  it("keeps the rack's bottom padding above the shadow drop plus the scale growth", () => {
+    expect(RACK_PAD_BOTTOM_PX).toBeGreaterThanOrEqual(
+      PULLED_SHADOW_DROP_PX + FLYER_PULL_SCALE_HEADROOM_PX,
+    );
   });
 });
 

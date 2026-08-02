@@ -169,9 +169,11 @@ const PULLED_SHADOW_CSS = `drop-shadow(${String(FLYER_PULLED_SHADOW.dx)}px ${Str
  * Derived, not hand-tuned, for exactly the reason round 1 of the review panel caught on the
  * sibling rack: a literal that was "obviously enough" stopped being enough the moment the
  * pull grew, and nothing said so. The binding constraint is the pulled sheet's cast shadow
- * reaching down into the gap (offset + blur) — that reach, 33px, outruns the 18px the
- * pulled sheet itself travels up, so it is the shadow and not the lift that sets this
- * number — plus `FLYER_STACK_SHADOW_PAD_PX` of slack. Comes out at 37px.
+ * reaching down into the gap (`dy + blur`) rather than the distance the sheet itself
+ * travels up (`|pulled| - |rest|`) — the shadow outruns the lift, so the shadow sets this
+ * number — plus `FLYER_STACK_SHADOW_PAD_PX` of slack. No figures quoted here on purpose:
+ * the previous copy of this line still said 18px for a travel that became 14 when `rest`
+ * moved from -4 to -8, which is the drift this whole PR was about.
  */
 export const FLYER_STACK_GAP_PX =
   FLYER_PULLED_SHADOW.dy + FLYER_PULLED_SHADOW.blur + FLYER_STACK_SHADOW_PAD_PX;

@@ -28,9 +28,13 @@
      `FLYER_STACK_GAP_PX`, derived from the pulled cast shadow's reach + the scale headroom
      and pinned by FlyerWall.test.ts. It was a bare literal until the review panel pointed
      out that this is the same shape as the rack bug — a number that is "obviously enough"
-     until the pull grows and nothing says otherwise. The fallback only covers a flyer
-     rendered outside the component (tests/SSR), never the shipped path. */
-  margin-bottom: var(--flyer-stack-gap, 37px);
+     until the pull grows and nothing says otherwise. NO fallback value on purpose: a
+     literal here would be a second copy of the same number, free to drift from the
+     constant exactly like the ones the earlier rounds had to hunt down. The component
+     always sets the property (pinned by the emission test); if it somehow did not, the
+     declaration drops to the initial 0 rather than to a stale number pretending to be
+     right. */
+  margin-bottom: var(--flyer-stack-gap);
   outline: none;
   transform-origin: center;
   box-shadow: none;
