@@ -39,6 +39,7 @@ import {
 } from "@game/systems/photoQteSystem";
 import type { PhotoInput, PhotoQteSpec } from "@game/types/photoQte";
 import type { PhotoLeverage } from "@game/types/photoLeverage";
+import { mergePhotoLeverage } from "@game/systems/photoLeverageSystem";
 import {
   isBossQteActive,
   shouldTriggerBossFinale,
@@ -395,6 +396,12 @@ export function tickGameState(
     // At the cap `tickPhotoQte` never returns this exit, so there is no unbounded loop here.
     const next = r.exit === "retry" ? createPhotoQte(photoQte.spec, photoQteAttempts) : r.qte;
     if (r.exit === "retry") photoQteAttempts += 1;
+    // ADR-0080: the carry is banked on the tick the player LEAVES, whatever the exit — the
+    // photograph exists the moment it is in the box, so the proof is not contingent on
+    // surviving Belliard. Merged monotonically INTO the state, so the bridge has one field
+    // to watch and persist and the pure layer still never touches storage.
+    const photoLeverage =
+      r.settled === null ? state.photoLeverage : mergePhotoLeverage(state.photoLeverage, r.settled);
     return {
       ...state,
       // The pointer still moves; nothing else does.
@@ -403,6 +410,7 @@ export function tickGameState(
       elapsedSeconds: state.elapsedSeconds,
       photoQte: next,
       photoQteAttempts,
+      photoLeverage,
       // F8, asserted as a ZERO-DELTA test: energy, score, lives, kills and the quota are
       // untouched. Only the transient channels are cleared, exactly as the duel does.
       impactEvents: [],

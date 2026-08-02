@@ -279,3 +279,29 @@ describe("the retry loop is bounded by the LEVEL state, not by the record (T-2, 
     expect(state.photoQte?.phaseRemaining).toBeCloseTo(PHOTO_ESTABLISH_SECONDS, 1);
   });
 });
+
+describe("ADR-0080 — the carry is banked on the EXIT, monotonically, in the pure state", () => {
+  it("declining banks `none` and never downgrades a carry loaded from a previous run", () => {
+    const params = paramsOf({ photoQte: BELLIARD_PHOTO_QTE, photoLeverage: "master-bonus" });
+    let state = createInitialState(FACADE, params);
+    expect(state.photoLeverage).toBe("master-bonus");
+    let guard = 0;
+    while (state.photoQte === null && guard < 100000) {
+      state = tick(state, 1);
+      guard++;
+    }
+    state = tick(state, 1, input({ skipBriefing: true }));
+    guard = 0;
+    while (state.photoQte !== null && guard < 400000) {
+      state = tick(state, 1, input({ cta: "decline" }));
+      guard++;
+    }
+    // A blank roll on a replay is the NORMAL case on level 1 — it must cost nothing.
+    expect(state.photoLeverage).toBe("master-bonus");
+  });
+
+  it("a level with no set-piece carries the loaded value untouched", () => {
+    const state = tick(createInitialState(FACADE, paramsOf({ photoLeverage: "master" })), 600);
+    expect(state.photoLeverage).toBe("master");
+  });
+});
