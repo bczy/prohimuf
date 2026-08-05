@@ -1,11 +1,22 @@
 # PORTRAIT-ROBOT — fiction spec (« TÊTE À CONNAÎTRE »)
 
 **Author:** `narrative-designer` (Yasmine) · **Gate:** `lead-game-designer` (Karim) —
-status **ROUND 2 — conditions du gate appliquées** · **Date:** 2026-08-05
+status **ROUND 3 — sortie anticipée re-signifiée** · **Date:** 2026-08-05
 
 ---
 
 ## 0. Journal de révision
+
+**Round 3 (2026-08-05)** — entrée : problème de design ratifié par Bertrand — le joueur à 3/4 qui se
+croit fini n'a plus aucun geste ; la **sortie anticipée** (`Escape` / retour Android) devient une
+affordance permanente et **change de sens** : elle ne dit plus « j'abandonne », elle dit « c'est
+parti comme ça ». Pas de bouton de validation réintroduit.
+
+| #   | Origine        | Ce que j'ai fait                                                                                                                                  |
+| --- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R10 | Sortie re-signifiée | **§6.2 neuve** — libellé permanent `ÇA PART COMME ÇA`, deux variantes (immédiate / confirmée), ligne de sortie KENZA `Bon. On imprime ce qu'on a.` |
+| R11 | Cohérence      | `Tu raccroches ?` / `JE RACCROCHE` **retirés** de l'IHM (§6.1 mis à jour, §4.9 note d'abandon réécrite). Non recyclés de force ; parqués en §6.2 pour un éventuel vrai quit-to-menu. |
+| R12 | Interdit lexical | **Verdict rendu sur `imprimer`** — §4.11 amendée : autorisé à l'**impersonnel** uniquement, interdit à l'impératif 2ᵉ personne. La règle opposable est durcie, pas assouplie. |
 
 **Round 2 (2026-08-05)** — entrée : `docs/game-design/design-gate-portrait-robot.md` §7 (4 conditions),
 §8 (amendements B1/B2/B3, A12bis→A16), §3 (valeurs canoniques). La §3 du gate prime sur toute valeur
@@ -350,9 +361,11 @@ _La symétrie est le squelette de la scène : **`Là. Bouge plus.`** d'un côté
 est sortie), **`Ma carte est morte.`** de l'autre (le temps a gagné). Deux fins, deux causes, jamais
 un « tu as perdu »._
 
-**À l'abandon confirmé** (Échap / retour Android, garde UX conservée) : **même ligne**. Le gate
-traite l'abandon comme une expiration anticipée (A2/A12bis) et la fiction n'a aucune raison d'en
-faire un cas à part — on ne moralise pas le joueur qui raccroche.
+**À la sortie anticipée** (affordance permanente, §6.2) : **pas cette ligne** — R11. La carte n'est
+pas morte, c'est le joueur qui a rendu la main. La ligne de sortie est `Bon. On imprime ce qu'on a.`
+(§6.2) : même seconde moitié, donc même symétrie, un seul mot d'écart pour dire qui a décidé. Le
+verdict qui suit (`PARTIAL` ou `FAILED`) est résolu à l'identique — la fiction ne fait aucun cas à
+part, et surtout ne moralise personne.
 
 ### 4.10 La ligne qui relance vers la suite
 
@@ -380,10 +393,35 @@ soumission ou une confirmation est éliminée.** Résultat :
 | Aide `bande {n}/4` (§4.4)                       | **COUPÉE** | Plus de bande active au doigt (A4-bis).                                 |
 | §5 « la réussite ouvre un numéro »              | **OK**  | Décrit une conséquence, pas un geste. Aucun « quand tu es sûr », aucun « envoie », aucun « confirme » ailleurs dans la spec — **vérifié ligne à ligne**. |
 
+| Sortie anticipée `ÇA PART COMME ÇA` (§6.2)      | **VIT** | Sujet grammatical = **la page**, pas le joueur. Ne présuppose aucune justesse. Voir l'amendement ci-dessous. |
+| `Tu raccroches ?` / `JE RACCROCHE` (§6.1)       | **RETIRÉ** | Copie d'abandon devenue fausse : la sortie n'est plus un renoncement (R11).       |
+
 **Règle opposable, valable pour toute copie future de cette scène :** aucun texte joueur ne peut
 contenir un impératif d'envoi (`envoie`, `valide`, `confirme`, `sors la tête`, `quand tu es sûr`,
 `t'es prêt ?`). La scène n'a pas de moment où le joueur dit « c'est lui » — **c'est le montage qui le
 dit à sa place**. Un seul verbe est autorisé pour décrire l'action du joueur : **faire glisser**.
+
+#### Amendement R12 — le cas `imprimer`
+
+Question posée franchement : en habillant la sortie avec l'imprimerie, est-ce que je réintroduis le
+geste de validation par la porte de derrière ? **Non — sous une condition que j'écris ici pour qu'on
+puisse me l'opposer.**
+
+Le critère qui définit la liste noire n'est pas « verbe d'action terminale », c'est **verbe qui
+présuppose que la réponse du joueur est la bonne**. `valide`, `confirme`, `quand tu es sûr` :
+tous fabriquent une certitude que la scène refuse (§6, cliché n°2). `envoie` : le joueur est le sujet
+et il émet un jugement. **`imprimer` ne présuppose rien** — le zine part *de toute façon*, juste
+ou faux ; c'est déjà écrit dans la ligne de buzzer shippée en spec (§4.9 : `On imprime ce qu'on a.`)
+et dans le tampon `TIRÉ QUAND MÊME`. Imprimer n'est pas un verdict, c'est une **fatalité de
+fabrication**. C'est même l'exact contraire d'une validation : on imprime *aussi* la mauvaise tête.
+
+**Condition opposable :** `imprimer` n'est autorisé qu'à l'**impersonnel ou à la 3ᵉ personne**
+(`on imprime`, `ça part au tirage`, `c'est photocopié`). Il est **interdit à l'impératif adressé au
+joueur** — `Imprime !`, `Imprime quand t'es prêt`, `IMPRIMER` en libellé de bouton. Un impératif
+remet le joueur en position de sujet qui émet, et à ce moment-là `imprime` **est** `envoie` avec un
+costume d'époque. La liste noire de §6 est donc étendue : **`imprime` (impératif 2ᵉ pers.)**,
+`tire` / `tirer` au sens d'imprimer à l'impératif, `au tirage !`. Aucun libellé d'IHM de cette scène
+ne contient de verbe conjugué à la 2ᵉ personne. Aucun.
 
 ### 4.12 Replis si les slots sont plus étroits
 
@@ -515,6 +553,8 @@ recherche` · `traquer` / `retrouver le type` · `justice` · `interroger`.
 - **Le vocabulaire de la validation** (nouveau, R5/B1) : `valider`, `confirmer`, `envoyer`,
   `soumettre`, `terminer`, `es-tu sûr ?`. La scène n'a plus d'acte de validation — aucun mot ne doit
   en inventer le fantôme. Seul verbe d'action joueur autorisé : **faire glisser**.
+  **Extension R12 :** s'ajoutent `imprime` / `imprimer` / `tire` **à l'impératif adressé au joueur**
+  (impersonnel toujours autorisé — critère et raisonnement complets en §4.11, amendement R12).
 
 ### 6.1 Passe de conformité sur les libellés d'IHM (condition 4 du gate)
 
@@ -529,24 +569,130 @@ Chaque chaîne d'écran ajoutée par l'UX, passée contre la liste ci-dessus. **
 | `TÉLÉCARTE · {n} UNITÉS`          | **CADUC**   | → `TÉLÉCARTE` seul, 9 car., jauge sans nombre (§4.5). Repli `CARTE`.               |
 | « temps restant » / `{n} s`       | **REJETÉ**  | Interdit reconduit (A6/A13). Aucun chiffre décroissant à l'écran.                  |
 | Compteur `{n} sur {total}`        | **CONFORME** | Lisibilité d'état, pas feedback (A8). Chiffres nus, aucun libellé.                 |
-| Message de confirmation d'abandon | **RÉÉCRIT** | voir ci-dessous.                                                                   |
+| Message de confirmation d'abandon | **CADUC**   | `Tu raccroches ?` / `JE RACCROCHE` retirés (R11). → **§6.2**, la sortie n'est plus un abandon. |
+| Affordance de sortie permanente   | **NOUVEAU** | `ÇA PART COMME ÇA` — §6.2.                                                        |
 
-**Le message d'abandon — réécrit.** La garde `Escape` est conservée (A2), mais son motif n'est plus
-« tu risques de perdre une vie » (supprimé, A1) : c'est **« la scène se résout à l'état courant »**.
-Aucun texte joueur ne doit dire ça dans ces termes — c'est du vocabulaire de spec.
+**Le message d'abandon — retiré, pas réécrit.** Round 2 l'avait écrit comme un renoncement : on
+repose le combiné, `Tu raccroches ?`, `JE RACCROCHE`. La copie était bonne et elle dit maintenant la
+mauvaise chose. Voir §6.2.
 
-| Slot            | Copy (FR)                                  | Max     |
-| --------------- | ------------------------------------------ | ------- |
-| Question        | `Tu raccroches ?`                           | 16 car. |
-| Sous-ligne      | `Ce qui est sur la planche part comme ça.`  | 42 car. |
-| Bouton rester   | `NON`                                       | 4 car.  |
-| Bouton quitter  | `JE RACCROCHE`                              | 14 car. |
+### 6.2 LA SORTIE ANTICIPÉE — « ça part comme ça » (round 3)
 
-_`Tu raccroches ?` est la seule métaphore juste : on est dans une cabine, l'abandon est un combiné
-qu'on repose. `Ce qui est sur la planche part comme ça` dit l'évaluation à l'état courant **sans un
-mot de système**, et rappelle au passage que le zine part de toute façon. `JE RACCROCHE` à la
-première personne, comme le joueur qui l'assume — jamais `QUITTER`, jamais `ABANDONNER` (registre de
-défaite, et la scène ne connaît pas la défaite sèche)._
+**Le problème de fiction, tel qu'il m'a été posé.** La sortie anticipée existe déjà et résout la
+scène comme le buzzer. Elle devient **visible en permanence** (l'UX la spécifie), parce que le joueur
+à 3/4 qui se croit fini n'a plus rien à faire de ses mains pendant 20 secondes. Elle sert donc
+**deux joueurs opposés avec les mêmes mots** : celui qui a fini et qui est fier, celui qui a renoncé
+et qui veut que ça s'arrête. Une copie triomphante humilie le second ; une copie de renoncement vole
+sa fin au premier.
+
+**Le fait qui tranche, et il est cruel :** au 4/4 le montage se verrouille **tout seul** (§4.6). Donc
+**aucun joueur qui presse cette sortie n'a réellement fini.** Le fier se trompe — il est à 3/4 ou
+moins, l'auto-verrouillage l'aurait devancé. Un libellé triomphant ne serait pas seulement
+maladroit : il serait **factuellement faux**, à chaque pression, sans exception. Et un libellé de
+défaite serait tout aussi faux, parce que ce joueur-là a fait son travail et croit de bonne foi
+l'avoir bien fait.
+
+**La sortie de piège :** ne rien dire du joueur. Dire ce qui arrive **à la page**. Le zine part de
+toute façon — c'est le canon de la scène depuis le round 1 (`TIRÉ QUAND MÊME`, `On imprime ce qu'on
+a.`). Une phrase dont le **sujet grammatical est la planche, pas le joueur**, ne peut ni féliciter ni
+humilier : elle constate un départ à l'imprimerie. Le fier y lit « c'est prêt, ça part » ; celui qui
+renonce y lit « tant pis, ça part comme ça ». **Deux lectures, une seule phrase, aucune des deux
+fausse.** L'ambivalence n'est pas une prudence de rédaction ici, c'est la vérité de l'état du jeu :
+personne, joueur compris, ne sait si la tête est bonne.
+
+#### Chaîne canonique — l'affordance permanente
+
+| Slot                        | Copy (FR)             | Max         | Note                                                        |
+| --------------------------- | --------------------- | ----------- | ------------------------------------------------------------- |
+| **Libellé permanent**       | `ÇA PART COMME ÇA`    | **16 car.** | Plafond dur. Sujet = la page. Aucun verbe à la 2ᵉ personne.   |
+| Repli (slot étroit)         | `ÇA PART`             | **8 car.**  | Perd la nuance de haussement d'épaules, garde le sens.        |
+| Repli extrême               | `AU TIRAGE`           | **9 car.**  | Dernier recours. `tirage` est canon (23 exemplaires, §4.9).   |
+
+_`comme ça` fait tout le travail. Sans lui, `ÇA PART` est neutre-administratif ; avec lui, c'est un
+haussement d'épaules qui se lit indifféremment comme « en l'état, et c'est bien » ou « en l'état, et
+tant pis ». C'est du français parlé de 1998, pas un libellé d'IHM. Il reprend mot pour mot la
+sous-ligne du round 2 (`Ce qui est sur la planche part comme ça`), qui était déjà la bonne phrase —
+elle était juste rangée derrière la mauvaise question._
+
+**Interdits sur ce libellé, opposables :** `TERMINER`, `VALIDER`, `ENVOYER`, `IMPRIMER`, `J'AI FINI`,
+`PRÊT`, `QUITTER`, `ABANDONNER`, `JE RACCROCHE`, et toute 1ʳᵉ personne (`J'ENVOIE`, `J'IMPRIME`) —
+la 1ʳᵉ personne remet le joueur en sujet qui affirme, exactement ce que §4.11 interdit.
+
+#### Variante A — sortie immédiate (pas de confirmation)
+
+Une pression, la scène se résout. Rien à écrire de plus que le libellé, plus la ligne de sortie :
+
+| Slot                                   | Copy (FR)                     | Max         | Joué à                    |
+| -------------------------------------- | ----------------------------- | ----------- | ------------------------- |
+| Ligne de sortie (KENZA, sans image)    | `Bon. On imprime ce qu'on a.` | **28 car.** | sortie anticipée, avant le tampon |
+
+_Miroir exact des deux autres ouvertures de verdict — `Là. Bouge plus.` (§4.6), `Ma carte est morte.
+On imprime ce qu'on a.` (§4.9). **Un seul mot d'écart avec la ligne de buzzer**, et il dit qui a
+décidé : le temps, ou toi. `Bon.` est le mot le plus ambivalent du français parlé — satisfaction
+et résignation dans la même syllabe, dit exactement pareil par le fier et par celui qui lâche. C'est
+lui qui tient les deux joueurs, et il coûte quatre lettres._
+
+#### Variante B — ARBITRÉE (A17, gate §9) : double appui sur la même cible
+
+**La modale est morte, la confirmation reste.** Le gate conserve une garde — l'asymétrie est réelle
+(un appui accidentel coûte la scène entière, définitivement, contre ~1 s de friction une fois par
+run ; et un swipe horizontal raté qui se résout en tap est le scénario nominal) — mais il refuse
+l'écran à deux boutons, **pour le motif exact de mon objection** : un « t'es sûr ? » est un bouton de
+validation avec de la latence, et une overlay masquerait les bandes au moment de la dernière
+vérification.
+
+**Forme retenue :** premier appui = armement, second appui dans les 2,0 s = ça part, désarmement
+silencieux ensuite. Pas d'écran, pas de question, pas de second bouton. **Un seul texte de
+confirmation existe désormais : le libellé de l'état armé.**
+
+| Slot                          | Copy (FR)         | Max         | Appareil |
+| ----------------------------- | ----------------- | ----------- | -------- |
+| **État armé — desktop**       | `ENCORE UN COUP`  | **14 car.** | desktop  |
+| **État armé — mobile**        | `ENCORE`          | **6 car.**  | mobile   |
+
+_Pourquoi celui-là._ Il tient les trois contraintes d'un coup : **pas une question** (aucun point
+d'interrogation, aucune demande d'assentiment — c'est un constat d'état, « il en reste un ») ;
+**aucun verbe conjugué**, donc pas de 2ᵉ personne, l'interdit §4.11 tient sans exception ; et il ne
+juge toujours ni la tête ni le joueur — le fier y lit « encore un et ça part », celui qui renonce y
+lit la même chose. `un coup` est du français de rue de 1998 et couvre exactement le geste (un appui
+de plus), sans emprunter un mot d'interface. Le désarmement est **muet** : on ne dit pas au joueur
+qu'il a laissé passer sa fenêtre, ça ferait un reproche là où il n'y a qu'un non-événement — le
+libellé revient à l'état repos, point.
+
+**Interdit sur ce slot :** toute mention de la fenêtre de 2,0 s en mots (`2 s`, `vite`, `dépêche`) —
+règle des chiffres à l'écran (A6/A13) ; le compte à rebours visuel appartient à l'UX. Interdits
+reconduits : `CONFIRMER`, `SÛR ?`, `OK`, `VRAIMENT`, `T'ES SÛR`.
+
+#### Répartition mobile / desktop — chaînes définitives
+
+Gabarit UX : mobile ≤ **8 car.** (icône obligatoire, libellé optionnel), desktop ≤ **20 car.** avec
+icône. **Aucun choix n'est laissé au dev :**
+
+| État        | Desktop (≤ 20 car.)          | Mobile (≤ 8 car.)   |
+| ----------- | ---------------------------- | ------------------- |
+| **Repos**   | `ÇA PART COMME ÇA` (16 car.) | `ÇA PART` (8 car.)  |
+| **Armé**    | `ENCORE UN COUP` (14 car.)   | `ENCORE` (6 car.)   |
+
+`AU TIRAGE` (9 car.) est **retiré des replis** : il dépasse le gabarit mobile et n'a aucun usage
+desktop, où la chaîne pleine passe. Il ne reste nulle part.
+
+_Sur mobile, `comme ça` saute — c'est ce que le gabarit permet et c'est la bonne perte : la nuance de
+haussement d'épaules est portée par le contexte (une planche à moitié faite, une jauge qui descend)
+autant que par les mots, et `ÇA PART` garde l'essentiel, à savoir que le sujet est la page et pas le
+joueur. Sur desktop la phrase complète tient, on la garde ; les deux appareils lisent la même chose,
+l'un plus bavard que l'autre. Jamais l'inverse : pas de libellé mobile qui dirait quelque chose que
+le desktop ne dit pas._
+
+**Ce que l'arbitrage n'emporte PAS : la ligne de sortie KENZA `Bon. On imprime ce qu'on a.`
+(28 car.) survit intacte.** Elle appartenait à la sortie elle-même, pas à la variante B. Elle se joue
+**après le second appui**, avant le tampon, exactement comme la ligne de buzzer §4.9 se joue après
+l'expiration. L'état armé ne la déclenche pas ; un désarmement silencieux ne déclenche rien du tout.
+
+**Ce que devient `JE RACCROCHE` :** parqué, pas recyclé. Si un vrai chemin de sortie du jeu existe un
+jour depuis cette scène (retour au menu, run abandonné — un geste qui n'imprime rien), `Tu
+raccroches ?` / `JE RACCROCHE` est la copie prête et juste. Tant que ce chemin n'existe pas, la
+chaîne ne sert nulle part. Une scène qui n'a plus d'abandon n'a pas besoin qu'on lui en garde le mot
+sous le coude.
 
 ---
 
@@ -576,8 +722,18 @@ défaite, et la scène ne connaît pas la défaite sèche)._
   le tampon, sous 1,4 s. S'il n'existe pas, c'est le repli fusionné — dis-le-moi, je ne veux pas
   l'apprendre à l'implémentation.
 
-**Pour `ux-designer` (Tony) :** les chaînes de §6.1 sont les définitives. Le message d'abandon y est
-écrit en entier ; ne le paraphrase pas.
+**Pour `ux-designer` (Tony) :** les chaînes de §6.1 sont les définitives. Le message d'abandon est
+**mort** (R11) — l'affordance permanente de sortie et ses deux variantes sont en **§6.2**, écrites en
+entier, plafonds compris. Ne les paraphrase pas, et ne rajoute ni pictogramme de porte/croix qui
+retournerait le libellé en « quitter », ni compteur d'état à côté (A16).
+
+**Pour `lead-game-designer` (Karim) — round 3 :**
+
+- **Q11 — variante A ou B ?** Les deux sont écrites (§6.2). Ma recommandation : **A** (immédiate) ;
+  une confirmation reconstruit le bouton de validation supprimé par B1.
+- **Q12 — verdict `imprimer`.** §4.11 amendement R12 : autorisé à l'impersonnel, interdit à
+  l'impératif 2ᵉ personne. Si tu juges le critère trop fin pour être tenu par les lanes suivantes,
+  dis-le et je bannis le verbe en entier — je perds `On imprime ce qu'on a.` (×2) et je réécris.
 
 ---
 

@@ -4,12 +4,58 @@
 **jointives** (`LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`) sous chrono continu (jauge télécarte,
 sans unité affichée). **Validation automatique** dès 4/4, aucun CTA.
 **Auteur :** `ux-designer` (Tony) · **Date création :** 2026-08-05 · **Round 2 :** 2026-08-05 ·
-**Round 3 :** 2026-08-05
-**Statut :** RÉVISÉ round 3 — applique trois arbitrages directs de Bertrand (suppression du CTA,
-chrono continu, drag desktop tranché en Option B) instruits par
-`docs/game-design/design-gate-portrait-robot.md` §8 « Amendements post-gate » et sa §3 mise à jour,
-et fait droit à la maquette Figma `muf — Design System` › `Écrans · Portrait-robot` (mobile
-844×390, desktop 1440×900) qui **fait référence**.
+**Round 3 :** 2026-08-05 · **Round 4 :** 2026-08-05
+**Statut :** RÉVISÉ round 4 — trou d'ergonomie identifié par `game-designer` (joueur à 3/4 sans
+aucun geste, jusqu'à 20 s devant une jauge qui se vide) comblé par une **sortie anticipée**
+rhabillée en affordance permanente à l'écran (« j'ai fini, imprime »), ratifiée par Bertrand : pas
+de retour du CTA de validation. §2.8 (nouvelle), §3, §5.4, §7, §9.1/§9.2 mis à jour.
+
+## Journal de révision (round 4)
+
+**Le trou identifié.** Depuis B1 (round 3), la scène se verrouille seule à 4/4, sans CTA. Mais un
+joueur qui est à 3/4 et se croit fini n'a plus aucun geste disponible — il ne peut qu'attendre
+l'expiration du chrono (jusqu'à 20 s à `normal`) devant une jauge qui se vide sans qu'il sache s'il
+a une porte de sortie. `game-designer` documente que c'est l'état normal de l'échec honnête, pas un
+cas rare (`PARTIAL` à 3/4 est une issue attendue du design, pas un accident) — donc pas un problème
+marginal à ignorer.
+
+**Solution ratifiée par Bertrand — pas de retour du CTA.** On ne réintroduit pas un bouton de
+validation. On rhabille la **sortie anticipée déjà existante** (§7, la garde `Escape`/retour) : elle
+résout la scène à l'état courant exactement comme le buzzer de fin de chrono — mais son sens change.
+Elle ne signifie plus « j'abandonne » (aucune connotation d'échec, cohérent avec A1 : aucune perte de
+vie n'a jamais été en jeu sur cette scène) : elle signifie **« j'ai fini, imprime »**. Exigence
+explicite : cette sortie doit être une **affordance permanente à l'écran**, jamais un `Escape` caché
+— un raccourci clavier invisible ne résout pas le problème d'un joueur qui ne sait pas qu'il a une
+porte.
+
+**Ce qui a changé, concrètement :**
+
+1. **Le bouton `[✕]` de coin déjà présent au HUD (§1.1, §1.2, §9) change de rôle et de sens**, pas de
+   position ni de gabarit. Il portait déjà `Escape`/retour avec confirmation légère (§7) ; il devient
+   la sortie anticipée « imprime ». Aucun nouvel élément n'est ajouté au layout — voir §2.8 pour le
+   motif de ce choix (ne PAS ajouter une deuxième cible).
+2. **Nouvelle §2.8** : spec complète de l'affordance — pourquoi elle n'est PAS un CTA malgré sa
+   permanence, traitement visuel distinctif, gabarit de copie pour `narrative-designer`.
+3. **Confirmé retenu, mécanisme tranché en armé/tir (A17, `lead-game-designer`)** — §2.8.3 : premier
+   appui arme (2,0 s, chrono non mis en pause), second appui sur la même cible sort ; plus d'overlay
+   (masquait cible/bandes, réintroduisait un CTA à deux boutons). Nouvelle §2.8.3bis : état armé
+   distinct du verrouillage §2.5 par portée/durée, jamais par la couleur seule. §2.8.4 tranche
+   l'accessibilité du double-appui : `Escape` et l'activation clavier du bouton résolvent en un seul
+   appui (une action clavier délibérée vaut confirmation en soi), le double-appui chronométré reste
+   réservé au pointeur.
+4. **§7 fusionnée avec §2.8** : il n'existe plus deux concepts distincts (« abandon » et
+   « validation anticipée ») mais un seul bouton, un seul comportement, une seule confirmation — la
+   copie de la confirmation change de registre (narrative-designer), pas son mécanisme.
+5. **§3, §5.4, §9.1, §9.2** mis à jour avec les cotes exactes de la cible (elle existait déjà en
+   layout — seules le rôle, le libellé et l'aria changent, gabarit et position inchangés donc la
+   jointure des 4 bandes et la parité des deux visages ne bougent PAS).
+
+**Entrée ajoutée pour ce round :** trou d'ergonomie signalé par `game-designer` (3/4 sans geste
+disponible, 2026-08-05) ; arbitrage Bertrand du même jour (pas de retour du CTA, rhabillage de la
+sortie anticipée, affordance permanente non cachée) ; copie exacte réservée à `narrative-designer`
+(registre « j'ai fini, imprime »).
+
+---
 
 ## Journal de révision (round 3)
 
@@ -468,6 +514,185 @@ elle aussi "**fais glisser une bande pour changer**" — plus de fork nécessair
 copies : c'est le même geste nommé de la même façon sur les deux appareils, seul le nom de
 l'appareil qui l'exécute (souris/doigt) change si la copie a besoin de le préciser.
 
+### 2.8 Sortie anticipée — affordance permanente, PAS un CTA (round 4)
+
+**Le problème qu'elle résout.** Depuis B1, la scène n'a plus qu'une seule sortie automatique : 4/4.
+Un joueur à 3/4 (ou moins) qui pense avoir fini — ou qui veut simplement couper court avant
+l'expiration — n'a **aucun geste** pour le faire savoir : il subit le chrono jusqu'au bout. C'est
+l'état normal de `PARTIAL`, pas un cas limite. La sortie anticipée résout la scène **au même titre
+que le buzzer de fin de chrono** — même verdict calculé sur l'état courant des 4 bandes (`IDENTIFIED
+/ PARTIAL / FAILED`, §6), pas un abandon qui sanctionnerait davantage.
+
+**Où elle vit — aucun nouvel élément, on rhabille l'existant.** Le bouton `[✕]` de coin déjà présent
+au HUD (§1.1 desktop, §1.2 mobile, §9) est le seul candidat : il occupe déjà la position en dehors
+de la zone de tâche (médaillon + bandes), il a déjà un mécanisme de confirmation câblé (§7), et
+surtout — **ajouter une deuxième cible serait la vraie faute UX ici** : la scène aurait alors deux
+sorties visibles (l'ancienne `Escape`/retour ET une nouvelle « fini ») que le joueur devrait
+distinguer sous chrono, exactement le genre de choix ambigu que cette scène s'interdit ailleurs (A16,
+un seul signal, jamais deux concurrents). Un seul bouton, un seul sens désormais : peu importe qu'on
+le presse en pensant « j'ai fini » ou « je veux sortir », le résultat est identique — résolution à
+l'état courant. Position et gabarit du bouton ne bougent PAS : la jointure des 4 bandes (§0 bis) et
+la parité de taille des deux visages (§0.1, §1.2) restent intactes, aucune hauteur n'est reprise aux
+bandes ou au médaillon pour cette affordance.
+
+**Comment elle se distingue visuellement d'un CTA de validation — c'est l'exigence centrale.** Un CTA
+de validation (le `SORTIR LA TÊTE` supprimé en round 3) aurait été : centré ou pleine largeur en bas
+d'écran, dans l'axe de lecture principal, rempli (fond plein), grande cible, libellé verbal d'action
+("SORTIR", "VALIDER"). Cette affordance doit être son opposé point par point :
+
+| Dimension | CTA (supprimé, round 3) | Sortie anticipée (§2.8) |
+| --- | --- | --- |
+| Position | Bande dédiée, bas d'écran, pleine largeur | Coin HUD (haut), hors de l'axe cible↔bandes |
+| Poids visuel | Fond plein, contour marqué | Icône seule (glyphe), pas de fond plein, pas de glow (cohérent avec le médaillon, §9.1) |
+| Taille | Cible large, texte verbal | Icône compacte + libellé court optionnel (gabarit §2.8.4) |
+| Hiérarchie | Action principale attendue de tous | Action secondaire, disponible mais jamais mise en avant — un joueur qui ne la voit jamais et atteint 4/4 n'a rien perdu |
+| Focus par défaut | (aurait été le focus naturel en fin de tâche) | **Jamais focus par défaut**, ni au clavier ni au lecteur d'écran (§2.8.5) |
+
+Le motif ergonomique : si cette cible ressemble ne serait-ce qu'un peu à un bouton d'appel à
+l'action, un joueur va croire qu'il DOIT l'actionner pour valider chaque bande réglée — et la
+mécanique d'auto-verrouillage à 4/4 (qui ne demande justement aucune action) s'effondre dans sa
+tête. Elle doit se lire comme une porte de sortie **discrète mais permanente et atteignable**, pas
+comme la prochaine étape attendue.
+
+#### 2.8.1 Gabarit de copie (pour `narrative-designer`)
+
+Le libellé n'est pas écrit ici — registre « j'ai fini, imprime » (cabine/fanzine), à `narrative-
+designer`. Contrainte de gabarit que la copie doit respecter :
+
+- **Mobile (844×390, HUD 32px) :** icône seule obligatoire (24×24px visuel) ; libellé texte
+  **optionnel**, seulement s'il tient sur **≤ 8 caractères** en capitales à 14px effectif à côté de
+  l'icône sans repousser la jauge télécarte (le HUD porte déjà le bandeau `TÊTE À CONNAÎTRE`, omis
+  en premier si l'espace manque — §9.1). Si aucun libellé ne tient, icône seule + `aria-label`
+  complet côté accessibilité (§2.8.5).
+- **Desktop (1440×900, HUD 56px) :** icône + libellé, **≤ 20 caractères** en capitales, à droite du
+  HUD, aligné avec l'ancien emplacement `✕ Échap`.
+- **Vérifié contre la copie livrée par `narrative-designer` :** libellé permanent proposé « ÇA PART
+  COMME ÇA » (16 caractères) — tient sur desktop (≤ 20). Ne tient PAS dans le budget mobile (≤ 8) :
+  c'est le repli déjà prévu par `narrative-designer`, « ÇA PART » (7 caractères), qui s'applique en
+  mobile. Aucun des deux gabarits ne plie — le repli existait déjà côté narratif, la règle des ≤ 8
+  caractères mobile reste inchangée.
+- Le libellé (mobile comme desktop) doit être un verbe d'accomplissement (« fini », « imprime »),
+  jamais un verbe d'abandon (« quitter », « abandonner ») — c'est le changement de sens central de ce
+  round. La confirmation (§2.8.3) porte le même registre, pas de fork de ton entre bouton et
+  confirmation.
+
+#### 2.8.2 Icône — distincte du glyphe `✕`
+
+Le glyphe `✕` (croix de fermeture) est visuellement une négation/annulation — il contredit le nouveau
+sens (« j'ai fini », un accomplissement). Remplacé par un glyphe positif cohérent avec la fiction
+cabine (ex. tampon/imprimante — rendu exact = `lead-art`), à condition qu'il reste visuellement
+**différent** de tout élément de CTA (pas de fond plein, pas de forme pilule pleine largeur — §2.8).
+
+#### 2.8.3 Confirmé — FORME CANONIQUE : armé/tir en deux appuis (A17, `lead-game-designer`)
+
+**Confirmé est retenu** — mes trois motifs (zone de mistap au pouce en coin d'écran paysage,
+résolution irréversible à n'importe quel état, aucun chemin de récupération interne à la scène) sont
+ceux que retient `lead-game-designer` (arbitrage A17,
+`docs/game-design/design-gate-portrait-robot.md` §9). **Le mécanisme change en revanche : plus
+d'overlay/modale.** Deux motifs, qui touchent directement cette spec, tranchent contre l'overlay :
+une overlay masquerait la cible et les bandes au moment précis où le joueur ferait sa dernière
+vérification avant de sortir ; et une modale à deux boutons réintroduirait un CTA par la fenêtre —
+exactement ce que le re-skin de §2.8 cherche à éviter en réutilisant l'existant plutôt qu'en ajoutant
+un élément. **Forme canonique : premier appui = armement, second appui sur la MÊME cible dans les
+2,0 s = sortie ; désarmement silencieux au-delà.** Le chrono ne se met **pas** en pause pendant
+l'armement (contrainte dure A17) — sinon l'armement deviendrait un bouton « geler le temps pour
+réfléchir », ce que rien d'autre dans la scène ne permet (D5.5, RotateOverlay excepté).
+
+- **Premier appui (armement).** Tap/clic sur l'icône n'exécute rien : il fait passer le bouton en
+  **état armé** (§2.8.3bis) pendant 2,0 s. Le chrono continue de se vider normalement — l'armement
+  n'est pas un abri.
+- **Second appui, dans les 2,0 s, sur la même cible.** Résout la scène à l'état courant des 4 bandes,
+  exactement comme le verrouillage (§2.5) ou l'expiration du chrono (§6) le font pour leurs propres
+  déclencheurs.
+- **Aucun second appui dans les 2,0 s.** Désarmement automatique, retour à l'état de repos —
+  **visible** (§2.8.3bis), pas silencieux au sens d'invisible : seuls le son et l'haptique sont
+  omis, l'état visuel doit clairement retomber pour qu'un joueur qui revient tard sur le bouton ne le
+  retrouve pas armé par erreur (piège au second appui tardif, explicitement évité).
+- **Un appui ailleurs à l'écran pendant la fenêtre d'armement** (sur une bande, un chevron, dans le
+  vide) ne désarme PAS immédiatement par lui-même — la fenêtre de 2,0 s court jusqu'à son terme
+  indépendamment des autres gestes, pour ne pas ajouter une deuxième façon de désarmer à retenir. Le
+  chrono d'armement est strictement lié à la cible, rien d'autre à l'écran n'interfère avec lui.
+
+**Variante immédiate — gardée en trace du choix, non retenue.** Résoudre au premier appui sans
+armement reste documentée comme option écartée : elle aurait le coût irréversible sans aucun garde-
+fou, rejetée par les trois motifs ci-dessus et par A17.
+
+#### 2.8.3bis État armé — se distingue du verrouillage (§2.5), ne s'y confond jamais
+
+Les deux ne doivent jamais se lire pareil : l'un est **une question posée au joueur** (armé),
+l'autre est **la fin de la scène** (verrouillé, §2.5). Ils sont différenciés par portée, durée et
+poids, pas par une teinte :
+
+| | État **armé** (§2.8.3) | État **verrouillé** (§2.5) |
+| --- | --- | --- |
+| Portée | Anneau/liseré **local, autour du bouton seul** | Cadre plein autour de **toute** la surface de bandes |
+| Durée | **Transitoire, 2,0 s**, réversible par timeout | **Terminal**, ne retombe jamais |
+| Ce qu'il signifie | « Un second appui va sortir » — réversible | « La scène est finie » — irréversible |
+| Reduced-motion | Anneau apparaît en un cut, pas de compte à rebours animé requis pour comprendre l'état (§D5.1) ; le retrait au désarmement est également un cut | Cadre + tampons apparaissent en un cut (inchangé, §2.5) |
+| Son | Clic d'armement bref, distinct du clic de cran (§2.3.4) et du sting de verrouillage | Sting de verrouillage, plus long (§2.5) |
+
+Le désarmement (retour de l'anneau à l'état de repos, en un cut sous reduced-motion ou par un retrait
+bref sinon) est **visuellement visible**, seuls le son et l'haptique d'armement ne se répètent pas à
+l'envers — sans ce retour visible, un joueur qui revient sur la cible après les 2,0 s croirait
+qu'elle est encore armée et un appui produirait un résultat qu'il n'a pas anticipé (ré-armement, pas
+sortie).
+
+#### 2.8.4 Socle clavier et accessibilité du double-appui — TRANCHÉ
+
+**Le double-appui n'est PAS reproduit tel quel au clavier ni pour `Escape`.** Motif, c'est le point
+le plus intéressant ouvert par A17 : un geste chronométré à deux temps (2,0 s) est un motif
+**hostile** aux lecteurs d'écran (qui doivent d'abord localiser l'annonce, puis agir dans une fenêtre
+courte, sans avoir vu l'état armé apparaître à l'écran) et aux troubles moteurs (précision temporelle
+en plus de la précision spatiale — double peine). Reproduire le double-appui au clavier serait
+transférer un problème de mistap tactile vers un problème d'accessibilité pire que celui qu'on
+corrige.
+
+- **`Escape` : activation unique, résout immédiatement** (pas d'armement). Motif : atteindre `Escape`
+  exige une action déjà déliberée (viser une touche précise, pas un tap étalé sur un coin d'écran) —
+  le risque de mistap qui justifie l'armement au pointeur (§2.8.3, mistap du pouce en bord d'écran)
+  n'a pas d'équivalent clavier. C'est cohérent avec §2.1 : aucune autre action clavier de cette scène
+  n'est protégée par une double-confirmation (les flèches ↑↓←→ n'en ont pas besoin non plus).
+- **Activation clavier du `<button>` (`Enter`/`Espace` sur focus)** : **même règle — activation
+  unique, résout immédiatement.** Une activation clavier explicite vaut confirmation en soi : elle
+  suppose déjà d'avoir tabulé jusqu'à ce bouton précis (dernier de l'ordre de tabulation, ci-dessous)
+  puis d'avoir appuyé sur une touche dédiée — deux gestes délibérés distincts qui ne partagent aucun
+  mécanisme avec le tap accidentel de coin d'écran. Imposer un second `Enter` dans les 2,0 s
+  ajouterait une contrainte temporelle sans réduire aucun risque réel identifié pour ce canal.
+- La cible visible (armé/tir) reste un **ajout** pour le pointeur uniquement, jamais un remplacement
+  du socle clavier — les deux canaux (pointeur à deux temps, clavier à un temps) coexistent en
+  permanence et produisent le même résultat final (résolution à l'état courant), seul le nombre
+  d'étapes pour y parvenir diffère selon le canal, par design.
+
+#### 2.8.5 Accessibilité (le reste, inchangé dans son principe)
+
+- **Rôle/libellé :** `<button>` réel, `aria-label` complet indépendant de la longueur du libellé
+  visuel (ex. gabarit : "Imprimer le portrait maintenant — termine la scène avec l'état actuel des 4
+  bandes", texte exact = `narrative-designer`) ; l'état armé s'expose via `aria-pressed="true"`
+  pendant les 2,0 s (seul `aria-pressed` de toute la scène, exception assumée : c'est un état
+  transitoire du bouton lui-même, pas un état de bande que D5.4 interdit par ailleurs) et un
+  `aria-live="polite"` annonce l'armement une fois à son déclenchement (pointeur uniquement — au
+  clavier, l'activation résout directement, §2.8.4, donc rien à annoncer d'intermédiaire).
+- **Ordre de tabulation :** dernier élément du DOM interactif de la scène — après les 4 bandes et
+  leurs chevrons. Un joueur au clavier/lecteur d'écran rencontre la tâche principale avant la sortie.
+- **Jamais de focus par défaut.** Ni à l'entrée de la scène (`ENTRÉE`, §6), ni après un cran de
+  swipe/drag/chevron, ni après une annonce `aria-live` (D5.5) : le focus ne doit jamais se poser sur
+  ce bouton sans une action explicite du joueur. Motif : un focus involontaire suivi d'un `Enter`
+  réflexe (habitude de valider un formulaire) déclencherait une résolution immédiate au clavier
+  (§2.8.4) sans qu'aucune intention n'existe.
+- **Cible ≥ zone déjà spécifiée en §9** (§9.1/§9.2, aire équivalente à 44×44px minimum même si la
+  forme n'est pas strictement carrée dans le HUD compact mobile).
+
+**Acceptance (§2.8) :** capture montrant l'icône au coin HUD sans fond plein ni glow, distincte du
+médaillon/bandes ; capture de l'état armé (anneau local au bouton) côte à côte avec l'état verrouillé
+(cadre global) démontrant la différence de portée ; test e2e `Tab` confirmant l'ordre (bandes →
+chevrons → sortie anticipée en dernier) ; test confirmant qu'aucun focus n'atterrit sur ce bouton
+sans interaction explicite du joueur ; test simulant tap→armement→pas de second tap→désarmement
+visible après 2,0 s, sans effet sur l'état des 4 bandes ; test tap→armement→second tap < 2,0 s→
+résolution avec le verdict correspondant à l'état courant ; test vérifiant que le chrono continue de
+se vider pendant la fenêtre d'armement ; test `Enter`/`Espace` sur le bouton focusé résolvant en un
+seul appui (pas d'armement) ; test `Escape` résolvant en un seul appui, identique au comportement
+clavier du bouton.
+
 ---
 
 ## 3. Cibles tactiles — chiffré
@@ -486,7 +711,8 @@ l'appareil qui l'exécute (souris/doigt) change si la copie a besoin de le préc
   `pointerdown` + hystérésis en deux phases décrit en §2.3.4 : la sécurité ne dépend plus d'un
   espace à l'écran.
 - **Plus de CTA à cibler** : la validation est automatique (§2.5). Aucune cible tactile de type
-  bouton principal ne subsiste hors des chevrons et du bouton retour `[✕]`.
+  bouton principal ne subsiste hors des chevrons et de la sortie anticipée (§2.8) — cette dernière
+  est volontairement traitée en cible secondaire (coin HUD, icône compacte), pas en cible principale.
 - **Quand 4 bandes + HUD ne tiennent PAS** (écran < ~300px de hauteur utile, cas extrême type petit
   téléphone avec barre de navigation OS visible) : le HUD passe à 28px (jauge seule, pas de
   libellé), et les bandes compressent leur padding interne (pas leur cible de swipe — jamais en
@@ -627,14 +853,19 @@ d'assertion que le texte annoncé ne contient jamais de chiffre de secondes/unit
   (niveau suivant)`. Pas un sous-état de `PLAYING`, pas de gel du monde ni de réemploi du shell
   ADR-0030 — la scène n'a pas de monde à figer, elle vit entre deux niveaux. Nommage/placement
   exact dans `App.tsx` = `senior-architect`.
-- **Échap / bouton retour** : suit la convention `Escape` déjà câblée globalement
-  (`App.tsx:314`) — **mais spécifiquement pour cette scène**, `Escape` n'expulse pas directement
-  vers `TITLE` sans confirmation si la scène est engagée mi-résolution. Motif reformulé (A1/A2,
-  round 2) : **aucune perte de vie n'est en jeu** (perte de vie interdite sur cette scène, toutes
-  issues confondues) — la garde existe parce qu'un abandon en cours **résout la scène à l'état
-  courant** exactement comme l'expiration du chrono (aucun raccourci de sortie ne doit produire un
-  résultat non évalué). Confirmation légère ("Abandonner ?") avant de quitter, sur `Escape` comme
-  sur le bouton retour Android.
+- **Échap / bouton de coin — fusionné avec la sortie anticipée (round 4, §2.8).** Il n'existe plus
+  deux comportements distincts (« Escape quitte vers `TITLE` » vs « la scène se résout »). `Escape`
+  et le bouton visible du HUD (§1.1, §1.2, §9, §2.8) déclenchent désormais **le même comportement
+  unique** : la scène se résout à l'état courant des 4 bandes, exactement comme l'expiration du
+  chrono (§6) — jamais une expulsion directe vers `TITLE`. Motif reformulé (A1/A2 round 2,
+  réaffirmé round 4) : **aucune perte de vie n'est en jeu** sur cette scène, toutes issues
+  confondues ; la sortie anticipée n'est donc plus un abandon pénalisant, c'est une résolution
+  volontaire au même titre que le verrouillage 4/4 (§2.5). La confirmation prend deux formes
+  distinctes selon le canal (A17, §2.8.3/§2.8.4) : **armé/tir en deux appuis dans les 2,0 s** pour le
+  tap/clic sur le bouton visible du HUD (protège le mistap de pouce en coin d'écran) ; **activation
+  unique** pour `Escape` et pour `Enter`/`Espace` sur ce même bouton une fois focusé au clavier (une
+  action clavier délibérée vaut confirmation en soi, §2.8.4) ; le bouton retour Android suit le même
+  régime que le tap/clic (armé/tir).
 - **Rotation en pleine scène** : la scène EST son propre layout court-paysage (§1.2) — aucune
   bascule dynamique supplémentaire pour une rotation paysage→paysage. Portrait→paysage suit la
   garde `RotateOverlay` globale (`App.tsx:278`) ; le chrono est **en pause** derrière l'overlay
@@ -647,9 +878,11 @@ d'assertion que le texte annoncé ne contient jamais de chiffre de secondes/unit
 Toutes les questions du round 1 et du round 2 sont closes. Nombre de bandes/variantes = A5,
 verrouillage indicatif = A8/CUT, chrono sous `RotateOverlay` = A7, sanction/payoff = A1/A10,
 mini-crop = A8/CUT, **mapping desktop = Option B, §2.2/§2.6, tranché par Bertrand sur Figma (§8 B3
-du gate)**. Il ne reste, pour cette lane, **aucune question ouverte** sur ce round : les trois
-arbitrages traités ici (CTA, chrono continu, drag desktop) ferment le dernier point renvoyé au
-round 2.
+du gate)**.
+
+**Round 4 : close par A17.** Confirmé vs immédiat pour la sortie anticipée est tranché — **confirmé,
+en armé/tir à deux appuis** (§2.8.3, `docs/game-design/design-gate-portrait-robot.md` §9). Aucune
+question ouverte restante pour cette lane sur ce round.
 
 ---
 
@@ -665,7 +898,8 @@ pas une proposition à arbitrer. Le style (couleurs, typo, texture, glow) reste 
 
 | Zone | x | y | largeur | hauteur | Contenu |
 | --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 844 | 32 | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, jauge télécarte continue (sans nombre) centrée/à droite, bouton retour `✕` en coin, ≥ 44×44px cible |
+| HUD | 0 | 0 | 844 | 32 | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, jauge télécarte continue (sans nombre) centrée |
+| Sortie anticipée (§2.8) | 780 | 0 | 64 | 32 | Icône seule (24×24px visuel, glyphe distinct de `✕`, §2.8.2), pas de fond plein/glow ; libellé texte optionnel si ≤ 8 caractères tiennent sans repousser la jauge (§2.8.1) ; hit area **64×32px (2048px², ≥ l'aire d'une cible 44×44px)** — compromis largeur/hauteur imposé par le HUD 32px, aire équivalente documentée pour `lead-game-designer` |
 | Médaillon | 0 | 32 | **236 (28 %)** | 358 | Portrait cible page 23, fixe, contour distinct (pas de glow — §5, gate), même hauteur que le bloc de bandes en face (parité de taille des deux visages) ; tap/long-press = overlay plein écran temporaire |
 | Bloc de bandes (surface unique, jointive) | 236 | 32 | 608 (72 %) | 358 | 4 bandes empilées, **aucune séparation entre elles** |
 | Bande (×4) | 236 | 32 + i×68 | 608 | **68** | Libellé (`LA COUPE`/…) à gauche, image de variante centrée, compteur `{n}/{total}` à droite, chevrons ◁▷ semi-transparents **dessinés dans** la bande, jamais comme trait de séparation (44×44px cible, zone de swipe/drag = toute la bande) |
@@ -689,7 +923,8 @@ confirmation d'abandon (overlay léger par-dessus, pas plein écran).
 
 | Zone | x | y | largeur | hauteur | Contenu |
 | --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 1440 | 56 | Bandeau `TÊTE À CONNAÎTRE` à gauche, jauge télécarte continue au centre, `✕ Échap` à droite |
+| HUD | 0 | 0 | 1440 | 56 | Bandeau `TÊTE À CONNAÎTRE` à gauche, jauge télécarte continue au centre |
+| Sortie anticipée (§2.8) | 1320 | 6 | 80 | 44 | Icône (glyphe distinct de `✕`, §2.8.2) + libellé ≤ 20 caractères (§2.8.1), `Échap` en légende à proximité ; cible 44×44px pleine (marge HUD 56px suffisante, pas de compromis d'aire nécessaire côté desktop) |
 | Portrait cible (page 23) | 40 | 76 | **576 (40 %)** | 480 | Grand format, fixe |
 | Portrait reconstruction | 824 | 76 | **576 (40 %)** | 480 | Même taille que la cible ; se construit en direct au fil des drags/clics de chevron |
 | Gap central | 616 | 76 | 208 | 480 | Zone tampon (peut porter un élément narratif léger, `lead-art`/`narrative-designer`) |
@@ -717,3 +952,8 @@ pointeur en pré-relâchement, §2.6) ; relâchement à mi-chemin (retour visuel
   commun quelle que soit la paire de variantes affichée (contrainte à opposer au gate art, cohérent
   avec la règle de raccord de `lead-art`, gate §5).
 - Plus de CTA sur aucune des deux cibles : la validation est **automatique** (§2.5).
+- **Sortie anticipée (§2.8, round 4) : cible permanente, jamais un CTA.** Position/gabarit fixés en
+  §9.1/§9.2 ci-dessus. Traitement visuel obligatoire : icône seule ou icône + libellé court, jamais
+  de fond plein ni de glow, jamais dans l'axe de lecture cible↔bandes, jamais focus par défaut. Elle
+  réutilise le bouton de coin déjà présent (ex-`✕`/Échap) — aucune hauteur n'est reprise aux bandes
+  jointives (§0 bis, §1.2) ni au médaillon (§0.1) pour l'accueillir.

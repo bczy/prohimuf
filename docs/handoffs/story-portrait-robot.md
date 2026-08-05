@@ -409,3 +409,66 @@ clavier `Entrée`, chrono, geste desktop). **ADR-0081** cite la copie canon et l
     quatre grandeurs de §1.2bis.
   - `concept-artist` (Maud) : §7.1 toujours ouvert, prompts inchangés — le tranchage se durcit, la
     planche ne change pas.
+
+---
+
+## 11. RATIFICATIONS BERTRAND + ARBITRAGES DE CLÔTURE — lead-game-designer (Karim) — 2026-08-05 — DONE
+
+- **fichier :** `docs/game-design/design-gate-portrait-robot.md` — mis à jour **en place**
+  (§3 canon, §6.4, §8/A2, **§9 « Ratifications Bertrand » neuf**). La §3 reste la seule source de
+  vérité de tuning.
+- **claim :** journaliser les trois réponses de Bertrand (lecture du dossier complet) et rendre les
+  deux arbitrages qu'elles me laissaient. **Le dossier se clôt, il ne se rouvre pas.**
+
+**Les trois ratifications**
+
+| #   | Réponse                                                          | Portée               | Effet                                             |
+| --- | ---------------------------------------------------------------- | -------------------- | ------------------------------------------------- |
+| R-1 | Sortie anticipée = « j'ai fini, imprime » — « Ok très bien »      | story · canon §3     | Désaccord Sacha n°1 **clos → décision** (gate A17) |
+| R-2 | Règle A1c — « valide ça »                                        | **PROJET**           | Sort de la story, devient règle de projet          |
+| R-3 | Visages entiers puis découpe des bandes                          | art · ADR-0080       | Fait acquis, risque « bande par bande » **clos**   |
+
+**Mes deux arbitrages (gate §9)**
+
+- **A17 — sortie anticipée.** (a) Elle **ne peut jamais produire `IDENTIFIED`**, et **la question
+  est vide par construction** : `IDENTIFIED` s'évalue sur événement d'entrée (A12bis) + invariant
+  `initialStateAllWrong` (A14) ⇒ il n'existe aucun instant où le joueur est à 4/4 et encore en
+  `ACTIVE`. La ligne du canon §3 reste, comme **assertion de régression (AC7-b)**, pas comme
+  mécanisme — un `if` défensif côté dev signalerait un bug ailleurs. (b) **Confirmation
+  CONSERVÉE, sans modale** : armement au 1ᵉʳ appui, sortie au 2ᵉ appui sur la **même** cible dans
+  **2,0 s**, désarmement silencieux ensuite ; **chrono NON mis en pause** pendant l'armement (sinon
+  c'est un bouton « geler le temps »). Motif : un mistap coûte **la scène entière et
+  définitivement** (forward-only, 1 occurrence/run) contre ~1 s sur 35 pour la garde — et le mistap
+  n'est pas théorique, le geste primaire est un swipe/drag au milieu des bandes. (c) **Critère
+  anti-CTA fixé** (canon §3) : *est interdit tout contrôle dont l'activation peut produire
+  `IDENTIFIED` ou évaluer une réussite* — c'est la **fonction** qui décide, pas la forme du geste ;
+  la sortie n'est donc pas un « double-tap pour imprimer » au sens de §7 3-bis. (d) **Effet de bord
+  nommé** : `PARTIAL` redevient soumettable, la phrase « strictement moins farmable » d'A12bis est
+  **corrigée** ; barème inchangé (400 vs 1500, et le joueur abandonne tout son temps restant ⇒
+  stratégie dominée). Aucune contre-mesure.
+- **A18 — palier de mi-parcours (2ᵉ désaccord Sacha) : ACCORDÉ sur le fond, constante dérivée.**
+  Son diagnostic `hard` est juste (deux cues à 5,0 s d'intervalle fusionnent en rampe). Je refuse le
+  littéral `17,0` — canon : **`max(timerSeconds/2 ; PALIER_URGENCE + 7,0)` s restants** ⇒
+  28,0 / 17,5 / **17,0** (valeurs de Sacha à l'identique). L'objet opposable est la **distance
+  minimale de 7,0 s** = le temps de corriger réellement une bande. **Bord fermé :** si le
+  mi-parcours calculé ≥ `timerSeconds`, il **n'est pas joué** (pas de cue à t=0).
+
+- **release :** design gate PORTRAIT-ROBOT **CLOS**. Plus aucun désaccord de lane ouvert.
+  A1/A2/A3/A5/A6/A8/A10/A11/A12/A12bis/A14/A15/A16 intacts ; `timerSeconds`, seuils
+  4/4 · 3/4 · ≤ 2/4, paliers absolus 10,0 / 5,0 s et les trois barèmes **inchangés d'une unité**.
+- **next :**
+  - `pm` (John) : **inscrire A1c dans `_bmad-output/guidelines/PROJECT_GUIDELINES.md`** — « une
+    scène interstitielle modifie le capital d'énergie initial du niveau **suivant**, jamais
+    l'énergie du niveau écoulé ». Règle de projet, plus une règle de story.
+  - `game-designer` (Sacha) : porter A17/A18 dans `spec-portrait-robot.md` — §2.1 (sortie),
+    §4.1 (paliers, formule dérivée), §7 3-bis (critère anti-CTA), §4.2 (`PARTIAL` soumettable,
+    correction d'A12bis), **AC13 : supprimer la branche « si Karim refuse le plancher, 15,0 s »**,
+    **AC16 : ajouter le protocole des deux appuis**. Transcription, pas reconception.
+  - `ux-designer` (Tony) : affordance permanente de sortie (≥ 44×44 px) + **états armé/désarmé**,
+    sans modale ; `Échap` en deux temps ; copie ni « valider » ni « abandonner ».
+  - `narrative-designer` (Yasmine) : copie de la sortie anticipée (2 états : au repos / armé),
+    en plus du libellé de jauge déjà dû.
+  - `senior-architect` (Winston) : A17 ajoute un sous-état d'IHM **hors modèle de jeu** (armement) —
+    à cadrer dans ADR-0081 ; A18 ajoute **une** constante dérivée, aucune branche.
+  - `lead-art` (Nico) : R-3 ratifiée, ta §5 et ADR-0080 D5 sont le fait acquis ; la génération
+    bande-par-bande n'est plus une option à évaluer.

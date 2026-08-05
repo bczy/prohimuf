@@ -76,9 +76,11 @@ ratifie comme **conséquence narrative obligatoire, pas décorative** : à `FAIL
 suivant. Un échec qui ne produit qu'un chiffre serait un échec sans beat ; un échec qui ne produit
 qu'un beat serait sans enjeu. On prend les deux : **−20 énergie + le beat**.
 
-**A1c — nouvelle règle, parce que les guidelines sont muettes.** La scène étant post-niveau (A2),
+**A1c — RÈGLE DE PROJET, RATIFIÉE par Bertrand le 2026-08-05 (§9).** ~~nouvelle règle, parce que les
+guidelines sont muettes~~ — elle n'est plus « proposée », elle est acquise et dépasse cette story.
+La scène étant post-niveau (A2),
 une sanction d'énergie appliquée « tout de suite » ne coûte rien (le niveau est fini) et un bonus
-d'énergie serait mangé par le clamp à 100. **Règle proposée et appliquée ici :** une issue de scène
+d'énergie serait mangé par le clamp à 100. **Règle ~~proposée~~ RATIFIÉE et appliquée ici :** une issue de scène
 interstitielle modifie le **capital d'énergie initial du niveau suivant** (`ENERGY_INITIAL` local),
 jamais l'énergie du niveau écoulé. Corollaire : **il n'y a pas de récompense en énergie** (elle
 serait toujours clampée) — la récompense est score + payoff. C'est pourquoi le `+25` de Sacha
@@ -105,9 +107,11 @@ littéralement vraie au lieu d'être plaquée sur un gel de fusillade.
 
 **Skippabilité.** Les **répliques** d'entrée et de sortie sont skippables en un geste (guidelines
 §5.3). La **phase interactive ne l'est pas** : ce n'est pas une cutscene, elle a une issue et un
-coût. `Escape` / retour Android ⇒ confirmation légère (garde UX §7 **conservée**), et l'abandon
-confirmé **résout la scène à l'état courant**, exactement comme l'expiration du chrono (A7). Aucun
-chemin de sortie ne produit un résultat non évalué.
+coût. `Escape` / retour Android ⇒ confirmation légère (garde UX §7 **conservée**), et la sortie
+confirmée **résout la scène à l'état courant**, exactement comme l'expiration du chrono (A7). Aucun
+chemin de sortie ne produit un résultat non évalué. → **Rhabillée en « j'ai fini, imprime » et
+requalifiée par A17 (§9) : ce n'est plus un abandon, la confirmation devient un double appui sur
+une affordance permanente.**
 
 ### A3 — Fréquence → **une fois par RUN. Pas une par niveau.**
 
@@ -364,7 +368,7 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | `timerSeconds` | **35** · `easy` **56** · `hard` **30** (`Prefs.difficulty`) | A7 |
 | ~~Unité de chrono~~ | ~~**1 unité = 2,5 s** ⇒ 14 unités · paliers 7 / 4 / 2 unités~~ | ~~A7~~ — **supprimé par B2**, voir ci-dessous |
 | Affichage du chrono | **Jauge continue** qui se vide, sans nombre à l'écran (ni unités, ni secondes). Habillage télécarte conservé | **B2 · A13** |
-| Paliers de tension | **50 % de `timerSeconds`** (17,5 / 28,0 / 15,0 s restants selon difficulté) · **10,0 s restants** · **5,0 s restants** — les deux derniers en **secondes absolues, identiques dans les 3 difficultés** | **A13** (refonte de A7) |
+| Paliers de tension | **Mi-parcours : `max(timerSeconds / 2 ; PALIER_URGENCE + 7,0)` s restants** ⇒ 28,0 (`easy`) / 17,5 (`normal`) / **17,0** (`hard`) · **Urgence : 10,0 s restants** · **Dernier : 5,0 s restants** — les deux derniers en **secondes absolues, identiques dans les 3 difficultés**. Si le mi-parcours calculé ≥ `timerSeconds`, il n'est **pas** joué (pas de cue à t=0) | **A13** amendé par **A18** |
 | Chrono sous `RotateOverlay` | **Pause** | A7 |
 | ~~`confirmGuardSeconds`~~ | ~~**1,0** (CTA inerte à l'entrée)~~ | ~~Sacha §4.1~~ — **supprimé par B1** (plus de CTA à garder) |
 | `initialStateAllWrong` | **`true`** — invariant de seed : à l'entrée en `ACTIVE`, les 4 bandes affichent une variante **fausse** (0/4 garanti). Remplace la garde anti-validation accidentelle | **A14** (remplace `confirmGuardSeconds`) |
@@ -374,7 +378,10 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | `partialThreshold` | **3/4 — atteignable UNIQUEMENT au buzzer ou à l'abandon.** Il n'existe plus d'acte de soumission volontaire | **A12bis** (amende A9) |
 | `failedThreshold` | **≤ 2/4** au buzzer ou à l'abandon | Sacha §4.2, ratifié |
 | Ordre de résolution (anti-issue-fantôme) | Le test 4/4 se fait **à chaque changement d'état de bande**, avant tout tick de chrono ; l'expiration n'est évaluée **que si aucun verrouillage n'a eu lieu**. Un 4/4 posé dans la même frame que l'expiration ⇒ **`IDENTIFIED`** | **A12bis** |
-| Timeout / abandon | **Évalué à l'état courant** — aucun échec sec. Ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé) ⇒ issues possibles : `PARTIAL` ou `FAILED` | A2 · **A12bis** |
+| Timeout / sortie anticipée | **Évalué à l'état courant** — aucun échec sec. Ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé) ⇒ issues possibles : `PARTIAL` ou `FAILED` | A2 · **A12bis** |
+| **Sortie anticipée** (ex-« abandon ») | **RATIFIÉE comme geste « j'ai fini, imprime »** — affordance **visible en permanence** (≥ 44×44 px), pas un `Escape` caché. Résout à l'état courant. **Jamais** un abandon dans la copie, **jamais** une validation dans la fonction | **A17 · Bertrand 2026-08-05** |
+| Confirmation de la sortie anticipée | **OUI, conservée, mais sans modale** : cible **armée au 1ᵉʳ appui, confirmée au 2ᵉ appui sur la MÊME cible** dans une fenêtre de **2,0 s** ; désarmement silencieux à l'expiration. **Le chrono ne se met pas en pause** pendant l'armement. `Échap` clavier suit le même protocole en deux temps | **A17** |
+| Critère anti-CTA (opposable) | Est interdit tout contrôle dont l'activation **peut produire `IDENTIFIED`** ou évaluer une réussite. La sortie anticipée ne le peut pas par construction ⇒ elle n'est **pas** un CTA. C'est le critère, pas la forme du geste | **A17** (précise §7 3-bis de la spec M) |
 | `IDENTIFIED` | **0 vie · 0 énergie · +1500 score · payoff +20 s** | A1 · A10 |
 | `PARTIAL` | **0 vie · 0 énergie · +400 score · payoff +10 s** | A1 · A10 |
 | `FAILED` | **0 vie · −20 énergie initiale du niveau suivant · 0 score · beat obligatoire** | A1 · A1b |
@@ -383,7 +390,7 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | Cible | **Visible en permanence** · médaillon ≥ **28 %** de largeur en mobile paysage | A8 |
 | Geste primaire tactile | **swipe horizontal sur la bande visée** = variante ±1 sur CETTE bande. Pas de tap de sélection, pas de bande « active » au doigt. Chevrons ◀ ▶ conservés en affordance + cible d'accessibilité (≥ 44×44 px), jamais comme geste primaire | **A4-bis · Bertrand 2026-08-05** (renverse A4) |
 | Geste primaire desktop | ~~à trancher sur maquette Figma~~ → **OPTION B : drag horizontal à la souris sur la bande visée** = variante ±1 sur CETTE bande. Même modèle mental que le swipe tactile, un seul geste à documenter pour les deux classes d'appareil. Clic sur chevron conservé en affordance + cible d'accessibilité | **B3 · Bertrand 2026-08-05** |
-| Geste clavier | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA) · Échap = confirmation d'abandon | A2 · UX §2.1 · **B1** |
+| Geste clavier | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA, `Entrée` bindée à rien) · ~~Échap = confirmation d'abandon~~ → **Échap = sortie anticipée, en deux appuis (A17)** | A2 · UX §2.1 · **B1 · A17** |
 | Bandeau / ~~CTA~~ | **`TÊTE À CONNAÎTRE`** / ~~**`SORTIR LA TÊTE`**~~ — **le CTA n'existe plus dans l'IHM** (B1). La réplique KENZA « Sors-moi une tête, une seule » reste au dialogue | A6 · **B1** |
 | Déterminisme | Fonction pure hachée de `portraitSeed` · zéro `Math.random` / `Date.now` | ADR-0034 · Sacha §0 |
 
@@ -449,10 +456,13 @@ Le brief de Nico n'est pas dans mon gate. Trois points de contact à traiter ent
 3. **A7 — `easy` à 56 s sort de la fourchette historique 30-40 s.** Choix assumé : accessibilité
    avant fidélité. Si tu veux le plancher historique en toutes difficultés, dis-le, mais alors on
    perd l'échappatoire pour les joueurs lents et il faut l'écrire comme tel.
-4. **A1c est une règle neuve.** Les guidelines ne disent rien du destin de l'énergie **entre** deux
-   niveaux. J'ai posé : une scène interstitielle modifie le capital initial du niveau suivant,
-   jamais l'énergie du niveau écoulé. À intégrer aux guidelines si tu la valides — elle servira à
-   toute scène interstitielle future.
+4. ~~**A1c est une règle neuve.**~~ → **RATIFIÉE par Bertrand le 2026-08-05 (« valide ça »).**
+   Elle n'est plus proposée, elle n'est plus une escalade, et elle **sort du périmètre de cette
+   story** : « une scène interstitielle modifie le capital d'énergie initial du niveau **suivant**,
+   jamais l'énergie du niveau écoulé » devient une **règle de projet**, applicable à toute scène
+   interstitielle future. Inscription dans
+   `_bmad-output/guidelines/PROJECT_GUIDELINES.md` : **due par `pm`**, en parallèle de ce cycle.
+   Ici, A1c est du **canon acquis** — plus rien à décider. Voir §9.
 5. **A12 — le gel du twist « ton propre portrait-robot »** immobilise la meilleure idée du lot
    jusqu'au Niveau Final. Je l'approuve ; c'est un pari de calendrier, il t'appartient de le casser.
 6. **A11 est un couperet.** Si le payoff A10 n'est pas ressenti au playtest, `pm` et moi coupons la
@@ -713,3 +723,128 @@ n'ont pas bougé d'une unité.
    à délivrer n'est pas la même), mais c'est une constante de plus pour le dev. Si tu préfères une
    seule valeur, la bonne est **2,6 s partout** — jamais 1,4 s partout, ce qui écraserait les
    corrections à `FAILED` et casserait la non-négociable §5 règle 4.
+
+---
+
+## 9. Ratifications Bertrand — 2026-08-05 (après lecture du dossier complet)
+
+Trois réponses de Bertrand. Elles **ferment** ; ce §9 journalise ce qu'elles ferment et rend les
+deux arbitrages qu'elles laissaient à ma charge. **Le dossier ne se rouvre pas dessus.**
+
+| #   | Réponse de Bertrand                                                    | Portée                        | État               |
+| --- | ---------------------------------------------------------------------- | ----------------------------- | ------------------ |
+| R-1 | Sortie anticipée rhabillée en « j'ai fini, imprime » — « Ok très bien » | Story · canon §3              | **RATIFIÉ → A17**  |
+| R-2 | Règle A1c — « valide ça »                                              | **Projet** (dépasse la story) | **RATIFIÉ → §6.4** |
+| R-3 | Voie de production art : visages entiers puis découpe des bandes        | Art · ADR-0080                | **RATIFIÉ**        |
+
+### A17 — La sortie anticipée : ce que la ratification règle, et ce qu'elle me laissait
+
+**Ce qui est acquis (R-1).** La sortie `Escape` / retour Android n'est plus un **abandon**, c'est le
+geste **« j'ai fini, imprime »**. Elle résout à l'état courant, exactement comme le buzzer. Le
+premier « désaccord maintenu » de Sacha (spec M, round 3, §Désaccords 1) **cesse d'être un
+désaccord : il devient une décision**, et le temps mort qu'il documentait (jusqu'à 20 s de vide subi
+par l'état modal de l'échec honnête) est **fermé**. Le livrable AC16 est **confirmé bloquant** :
+affordance visible en permanence, ≥ 44×44 px, copie qui ne lit ni « valider » ni « abandonner »
+(`ux-designer` pour l'affordance, `narrative-designer` pour la copie).
+
+**Arbitrage 1 — cette sortie peut-elle produire `IDENTIFIED` ? NON, et la question est vide par
+construction.** Je l'ai vérifiée au lieu de l'inventer :
+
+- `IDENTIFIED` est évalué **sur événement d'entrée**, pas sur tick (A12bis) : dès que l'état devient
+  4/4, la phase **est déjà terminée**.
+- Il n'existe donc **aucun instant** où le joueur est à 4/4 et encore en `ACTIVE` — donc aucun
+  instant où il pourrait presser la sortie en étant à 4/4.
+- L'invariant `initialStateAllWrong` (A14) ferme le seul chemin restant (un 4/4 dès l'entrée).
+
+**Conséquence :** mon §8/A12bis (« un abandon ne peut jamais verrouiller ») **tient sans
+modification**, et il tient désormais pour une raison plus forte qu'avant — ce n'est plus une règle
+de barème qu'on applique, c'est un **état inatteignable**. Aucune règle nouvelle n'est ajoutée : la
+ligne « ne peut jamais produire `IDENTIFIED` » reste au canon §3 comme **assertion de régression**
+(AC7-b), pas comme mécanisme. Un dev qui devrait écrire un `if` pour l'empêcher a un bug ailleurs.
+
+**Arbitrage 2 — la confirmation est-elle conservée ? OUI, mais elle change de forme : deux appuis
+sur la même cible, pas de modale.** L'asymétrie décide, et elle est brutale :
+
+- coût d'un appui accidentel = **la scène entière**, définitivement (machine forward-only, **une
+  occurrence par run**, elle ne se rejoue jamais — A3/§2.3). Le joueur perd le payoff, le score, et
+  encaisse potentiellement le −20 d'énergie ;
+- coût de la confirmation = **~1 s sur 35**, une fois par run.
+- Et le risque de mistap n'est **pas** théorique depuis A4-bis : la cible vit sur un écran où le
+  geste primaire est un **swipe/drag horizontal**, au milieu des bandes. Un swipe raté qui se
+  résout en tap est le scénario nominal, pas le cas rare.
+
+**Mais la modale est refusée** : elle masquerait la cible et les bandes au moment précis où le
+joueur veut vérifier une dernière fois, et une modale à deux boutons **réintroduit un CTA** par la
+fenêtre. Forme retenue, au canon §3 : **1ᵉʳ appui = armement** (la cible change d'état, la copie
+devient explicite), **2ᵉ appui sur la même cible dans les 2,0 s = sortie**, désarmement silencieux
+au-delà. **Le chrono ne se met pas en pause pendant l'armement** — sinon l'armement devient un
+bouton « geler le temps pour réfléchir », et c'est un exploit gratuit.
+
+**L'objection que je dois traiter moi-même, parce qu'elle est réelle :** « deux appuis pour
+imprimer » ressemble au *double-tap pour imprimer* que la spec M interdit en §7 3-bis. **Ce n'est
+pas le même objet, et je fixe le critère qui les sépare** (canon §3) : *est interdit tout contrôle
+dont l'activation peut produire `IDENTIFIED` ou évaluer une réussite.* La sortie anticipée ne le
+peut pas — arbitrage 1 ci-dessus. **Le critère est la fonction, pas la forme du geste.** `pm` et
+`ux-designer` s'en servent comme test : si un jour un contrôle proposé peut produire une réussite,
+c'est un CTA, il tombe sous B1, quel que soit son libellé.
+
+**Effet de bord nommé plutôt que subi : `PARTIAL` redevient partiellement soumettable.** A12bis
+écrivait que le 3/4 était devenu « strictement moins farmable ». **C'est désormais faux au pied de
+la lettre** et je le corrige ici au lieu de laisser deux textes se contredire : un joueur à 3/4
+peut délibérément imprimer pour empocher +400 et +10 s. **Le barème ne bouge pas pour autant** —
+400 contre 1500, et surtout le joueur **abandonne tout le temps restant** dans lequel il pouvait
+atteindre 4/4. Se contenter d'un 3/4 est une stratégie **dominée**, pas un farm : elle échange une
+chance réelle de 1500 contre 400 certains. Aucune contre-mesure. Position réévaluable au stage 5
+**sur observation de playtest**, comme A16.
+
+### A18 — Palier de mi-parcours : le plancher de Sacha est ACCORDÉ, avec sa constante dérivée
+
+**Son argument, examiné sur le fond.** En `hard` (30 s), un mi-parcours strictement à 50 % tombe à
+**15,0 s restants**, soit **5,0 s** avant le palier d'urgence (10,0 s). Deux cues KENZA à 5 s
+d'intervalle ne se perçoivent pas comme deux paliers : ils fusionnent en rampe — ce que le choix
+« paliers, pas crescendo » (§6 de la spec M) existe précisément pour éviter. Le chiffre est juste,
+le diagnostic est juste, et il ne coûte **ni branche conditionnelle, ni valeur d'issue, ni
+`timerSeconds`** : il déplace un palier de **copie seule**, et seulement en `hard`.
+
+**ACCORDÉ.** Une correction : je refuse le littéral `17,0` comme constante libre — c'est un nombre
+magique qui se désynchronisera le jour où le palier d'urgence bougera. La règle canonique est
+**`max(timerSeconds / 2 ; PALIER_URGENCE + 7,0)` secondes restantes**, `PALIER_URGENCE = 10,0` ⇒
+17,0 en `hard`, valeurs de Sacha à l'identique (28,0 / 17,5 / 17,0). La distance minimale de
+**7,0 s** est le vrai objet de design : c'est le temps de **corriger réellement une bande**
+(balayage des 6 variantes ≈ 1,5 s + comparaison), donc le palier de mi-parcours reste
+**actionnable** au lieu d'être un constat. C'est cette phrase qui est opposable, pas le 17.
+
+**Trou de bord fermé au passage** (il ne l'était dans aucune des deux versions) : si un
+`timerSeconds` futur descendait sous ~24 s, le plancher dépasserait la durée de la scène et le cue
+tomberait **à t = 0**. Règle : **si le mi-parcours calculé ≥ `timerSeconds`, il n'est pas joué du
+tout.** Une scène assez courte n'a pas de milieu à annoncer.
+
+Conséquence pour l'aval : l'AC13 de la spec M est **confirmé dans sa branche « plancher »** — la
+valeur `hard` attendue est **17,0 s restants**, la mention « si `lead-game-designer` refuse, retour
+à 15,0 » devient caduque et doit sauter.
+
+### R-3 — Voie de production art : ratifiée, le risque est clos
+
+« À la limite fais les visages en entier, et après découpe les bandes » = exactement la
+recommandation `lead-art` §5 et la décision d'ADR-0080. **Ce n'est plus une question ouverte, c'est
+un fait acquis.** Le risque « et si on générait bande par bande » (raccords multiplicatifs,
+gabarits incohérents) est **clos définitivement** : la génération bande-par-bande n'est plus une
+option à évaluer, et sa réouverture serait une escalade Bertrand, pas une décision de lane. La
+**règle de raccord** et l'**atomicité du gabarit** demandées par `lead-art` restent opposables au
+gate art — elles deviennent d'ailleurs faciles à tenir, puisqu'un seul visage entier par jeu de
+variantes garantit le raccord par construction. Le **plafond 24 assets / 1 gabarit** (A5) est
+inchangé.
+
+### Ce que ces ratifications NE changent pas
+
+**A1** (énergie seule, zéro vie), **A2** (interstitiel), **A3** (1/run), **A5** (4 bandes ·
+6 variantes · 1 gabarit · composition des leurres), **A6** (vocabulaire), **A8**, **A10** (payoff
++20/+10/0 s), **A11** (le couperet), **A12** (gel du twist), **A12bis** (régime des issues),
+**A14**, **A15**, **A16** : **intacts**. `timerSeconds`, les seuils 4/4 · 3/4 · ≤ 2/4, les deux
+paliers absolus (10,0 / 5,0 s) et les trois barèmes d'issue **n'ont pas bougé d'une unité**.
+
+### Statut du dossier après ce §9
+
+**Aucun désaccord de lane n'est plus ouvert.** Les deux réserves de Sacha (round 3) sont tranchées :
+la première par ratification Bertrand + A17, la seconde par A18 en sa faveur. La §3 reste la seule
+source de vérité de tuning ; le TECH PLAN travaille dessus.

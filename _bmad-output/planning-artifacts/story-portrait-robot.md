@@ -125,7 +125,7 @@ divergence, justified above, not an oversight.
 | AC2 | A run reaches the narrative trigger point | the photofit scene opens | exactly 4 zones (cheveux/yeux/nez/bouche) are shown, target portrait visible, countdown running, free selection on both axes (no forced auto-scroll) |
 | AC3 | The player is in the scene | they move between zones and cycle variants | selection is instant, reversible, and un-timed per trait — only the overall countdown enforces urgency, per the recon's confirmed mechanic |
 | AC4 | The countdown expires OR the player submits | resolution happens | a plain-language outcome message names success or failure explicitly (no silent state change), per §5 Non-Négociable #4 |
-| AC5 | The scene resolves (success or failure) | the run continues | `energy` is adjusted accordingly (cost on failure, no cost or a bonus on success — magnitudes owned by `game-designer`); no life is subtracted directly |
+| AC5 | The scene resolves (success or failure) | the run continues | **RESOLVED — design gate A1/A1c (2026-08-05), now a ratified project rule (`PROJECT_GUIDELINES.md` §7, amendment 2026-08-05).** `FAILED` applies **−20 energy to the initial energy capital of the next level** (never to the elapsed level's energy); `PARTIAL`/`IDENTIFIED` apply **0 energy** (no energy reward — it would be clamped at 100 regardless, per the new rule; the reward is score + the A10 gameplay payoff). No life is subtracted, ever, on any outcome. |
 | AC6 | The resolved identity (correct or not) exists in run state | a later run event references that identity | the player sees a visible callback (recognition, warning, or confirmation) — if this callback does not exist, the feature fails its own justification (Why section) and ships incomplete |
 | AC7 | The faces are produced | any asset is generated or reviewed | they conform to the house BD-comics art direction (`docs/art-direction.md`), not a photo-digitized/dithered pastiche — per Bertrand's 2026-08-05 arbitration |
 | AC8 | A run is played start to finish | the photofit scene is encountered | it occurs at most once per run, at its single narrative trigger — never as a repeating per-level checkpoint |
@@ -135,7 +135,10 @@ divergence, justified above, not an oversight.
 
 1. **Exact timer value (30-40s range) and variant-pool size per zone** — `game-designer`, tuning
    against the "visual proximity of variants is the real difficulty lever" finding (recon §7).
-2. **Energy cost/reward magnitudes** on failure/success — `game-designer`.
+2. ~~**Energy cost/reward magnitudes** on failure/success — `game-designer`.~~ **CLOSED — design
+   gate A1/A1c, see AC5.** `FAILED` = −20 energy applied to next level's initial capital; no other
+   outcome touches energy. Not reopened to tuning: it now follows a ratified project rule
+   (`PROJECT_GUIDELINES.md` §7).
 3. **Which narrative beat triggers it, and what it unlocks downstream** — `narrative-designer`,
    must trace to the existing cast (§7) and produce the AC6 payoff; this is the load-bearing design
    question for the whole feature's justification.
@@ -172,8 +175,8 @@ divergence, justified above, not an oversight.
 
 - **Design loop (`game-designer` + `narrative-designer` + `ux-designer`, in parallel, gated by
   `lead-game-designer`):**
-  - `game-designer`: timer value, variant-pool size, energy cost/reward tuning, confirm the
-    proximity-of-variants difficulty lever (Open Q1, Q2, Risk 2).
+  - `game-designer`: timer value, variant-pool size, confirm the proximity-of-variants difficulty
+    lever (Open Q1, Risk 2). Energy magnitudes are closed (Open Q2 — see AC5), not a tuning input.
   - `narrative-designer`: the trigger beat, the target identity's trace to the existing cast, and
     the downstream recognition payoff that this whole feature's justification depends on
     (Open Q3, AC6).

@@ -7,6 +7,7 @@
 **Date :** 2026-04-10
 **Session :** Brainstorming initial
 **Amendement :** 2026-07-10 — §8 Scope mobile (ADR-0003)
+**Amendement :** 2026-08-05 — §7 Énergie aux scènes interstitielles (design gate portrait-robot §A1c, ADR-0079)
 
 ---
 
@@ -230,6 +231,19 @@ src/
 - **31 décembre 1999** — bug de l'an 2000,
  Paris en délire,
  flics débordés
+
+### Énergie aux scènes interstitielles
+
+> **Une scène interstitielle modifie le capital d'énergie INITIAL du niveau SUIVANT, jamais
+> l'énergie du niveau écoulé. Corollaire : il n'y a pas de récompense en énergie — elle serait
+> toujours mangée par le clamp à 100. La récompense d'une scène interstitielle est le score et son
+> payoff de gameplay.**
+>
+> Motif : la scène est post-niveau ; une sanction appliquée "tout de suite" ne coûte rien (le
+> niveau est fini) et un bonus serait clampé à 100. Sans cette règle, chaque future scène
+> interstitielle réinventerait sa propre réponse.
+>
+> *(Amendement 2026-08-05 — design gate portrait-robot §A1c, ADR-0079)*
 
 ---
 
