@@ -7,6 +7,8 @@ import {
   stepPortraitScene,
   tickPortraitScene,
   PORTRAIT_BAND_ORDER,
+  REVEAL_SECONDS_IDENTIFIED,
+  REVEAL_SECONDS_UNRESOLVED,
 } from "@game/systems/portraitRobotSystem";
 import { TEST_CATALOGUE, at } from "@game/systems/__tests__/portraitFixtures";
 
@@ -40,13 +42,63 @@ function winningIntent(scene: PortraitScene): PortraitIntent {
 }
 
 describe("ADR-0079 D8.2 — time cannot run on a resolved scene", () => {
-  it("tick is the identity on a RESOLVED scene, for any dt", () => {
+  it("tick freezes the verdict, the board and the chrono on a RESOLVED scene", () => {
     const resolved = applyPortraitIntent(sceneAt(3, 12), winningIntent(sceneAt(3, 12)));
     expect(resolved.phase).toBe("RESOLVED");
 
     for (const dt of [0, -0, 1 / 60, -1, -1e9, 1e9, Number.MAX_VALUE, NaN, Infinity, -Infinity]) {
+      // Everything but the reveal hold is untouched — `revealSeconds` is the ONE field a
+      // resolved scene still spends (panel M7), and it is compared apart just below.
+      expect({ ...tickPortraitScene(resolved, dt), revealSeconds: 0 }).toEqual({
+        ...resolved,
+        revealSeconds: 0,
+      });
+    }
+  });
+
+  it("a non-advancing dt leaves the resolved scene IDENTICAL, allocation included", () => {
+    const resolved = applyPortraitIntent(sceneAt(3, 12), winningIntent(sceneAt(3, 12)));
+    for (const dt of [0, -0, -1, -1e9, NaN, -Infinity]) {
       expect(tickPortraitScene(resolved, dt)).toBe(resolved);
     }
+  });
+
+  /**
+   * Panel M7 — the reveal hold used to be a `setTimeout` in the phase component, so it
+   * kept running behind `RotateOverlay` and the scene handed over while the player was
+   * being asked to rotate the device. As a `dt` accumulator in the scene, a paused frame
+   * hands no `dt` and the hold simply does not advance: the pause is honoured BY
+   * CONSTRUCTION, not by a guard someone has to remember to add.
+   */
+  describe("the reveal hold is a dt accumulator in the scene (M7)", () => {
+    const resolved = () => {
+      const base = sceneAt(3, 12);
+      return applyPortraitIntent(base, winningIntent(base));
+    };
+
+    it("counts the reveal down to exactly 0, and stops there", () => {
+      let scene = resolved();
+      expect(scene.revealSeconds).toBe(REVEAL_SECONDS_IDENTIFIED);
+      for (let i = 0; i < 600; i += 1) scene = tickPortraitScene(scene, 1 / 60);
+      expect(scene.revealSeconds).toBe(0);
+      expect(scene.result?.outcome).toBe("IDENTIFIED");
+      // Still resolved, still the same verdict — the hold ending is a handover cue only.
+      expect(scene.phase).toBe("RESOLVED");
+    });
+
+    it("PAUSE = no dt = no advance, for as many frames as the pause lasts", () => {
+      let scene = tickPortraitScene(resolved(), 0.5);
+      const held = scene.revealSeconds;
+      for (let i = 0; i < 240; i += 1) scene = tickPortraitScene(scene, 0);
+      expect(scene.revealSeconds).toBe(held);
+      expect(tickPortraitScene(scene, 0.25).revealSeconds).toBeCloseTo(held - 0.25, 10);
+    });
+
+    it("the hold is the scene's number, per outcome — the component holds none", () => {
+      const expired = tickPortraitScene(sceneAt(2, 1e-9), 1);
+      expect(expired.result?.outcome).toBe("FAILED");
+      expect(expired.revealSeconds).toBe(REVEAL_SECONDS_UNRESOLVED);
+    });
   });
 
   it("a late tick cannot overwrite a verdict", () => {
@@ -98,8 +150,10 @@ describe("ADR-0079 D8.3 — the frame fold settles the buzzer race", () => {
     expect(expired.result?.outcome).toBe("PARTIAL");
 
     const after = stepPortraitScene(expired, [winningIntent(scene)], 0.016);
-    expect(after).toBe(expired);
+    // The board and the verdict are frozen; only the reveal hold spends the frame (M7).
+    expect({ ...after, revealSeconds: 0 }).toEqual({ ...expired, revealSeconds: 0 });
     expect(after.result?.outcome).toBe("PARTIAL");
+    expect(after.revealSeconds).toBeLessThan(expired.revealSeconds);
   });
 
   it("permutation test — every fold the hook could produce, with the entry before the tick", () => {

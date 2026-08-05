@@ -44,13 +44,28 @@ describe("gate §3 — the tuning table is written here and nowhere else", () =>
   it("the payoff table: score, energy and wave hold per issue", () => {
     expect(
       levelModifierFromPortrait({ outcome: "IDENTIFIED", correctCount: 4, scoreDelta: 1500 }),
-    ).toEqual({ energyDelta: 0, firstWaveDelaySeconds: 20, narrativeBeat: "IDENTIFIED" });
+    ).toEqual({
+      scoreDelta: 1500,
+      energyDelta: 0,
+      firstWaveDelaySeconds: 20,
+      narrativeBeat: "IDENTIFIED",
+    });
     expect(
       levelModifierFromPortrait({ outcome: "PARTIAL", correctCount: 3, scoreDelta: 400 }),
-    ).toEqual({ energyDelta: 0, firstWaveDelaySeconds: 10, narrativeBeat: "PARTIAL" });
+    ).toEqual({
+      scoreDelta: 400,
+      energyDelta: 0,
+      firstWaveDelaySeconds: 10,
+      narrativeBeat: "PARTIAL",
+    });
     expect(
       levelModifierFromPortrait({ outcome: "FAILED", correctCount: 1, scoreDelta: 0 }),
-    ).toEqual({ energyDelta: -20, firstWaveDelaySeconds: 0, narrativeBeat: "FAILED" });
+    ).toEqual({
+      scoreDelta: 0,
+      energyDelta: -20,
+      firstWaveDelaySeconds: 0,
+      narrativeBeat: "FAILED",
+    });
   });
 
   it("no LevelModifier can express a life loss (gate A1, story AC5)", () => {
@@ -63,6 +78,7 @@ describe("gate §3 — the tuning table is written here and nowhere else", () =>
       "energyDelta",
       "firstWaveDelaySeconds",
       "narrativeBeat",
+      "scoreDelta",
     ]);
   });
 });

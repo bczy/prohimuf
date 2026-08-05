@@ -60,6 +60,7 @@ describe("energyDelta lands on the NEXT level's capital, through the existing cl
 
   it("an absurd malus is clamped, never negative", () => {
     const modifier: LevelModifier = {
+      scoreDelta: 0,
       energyDelta: -10_000,
       firstWaveDelaySeconds: 0,
       narrativeBeat: "FAILED",
@@ -77,11 +78,43 @@ describe("energyDelta lands on the NEXT level's capital, through the existing cl
   });
 });
 
+/**
+ * Panel B1 + architect arbitration §6.2 — the score is the ONE field of the modifier that
+ * settles the scene that just played. It travels in `LevelModifier` (single output
+ * channel) but it is NOT spent by the next level's build; the shell applies it at the exit
+ * of the portrait phase. These are the pure half of the seam: the value the shell reads,
+ * observed at arrival, and the proof that the next level does not consume it.
+ */
+describe("scoreDelta crosses in the modifier and settles the PAST (§6.2)", () => {
+  it("carries the gate barème from the resolved scene, verdict by verdict", () => {
+    const barème = { IDENTIFIED: 1500, PARTIAL: 400, FAILED: 0 } as const;
+    for (const outcome of ["IDENTIFIED", "PARTIAL", "FAILED"] as const) {
+      const result = { outcome, correctCount: 4, scoreDelta: barème[outcome] };
+      expect(levelModifierFromPortrait(result).scoreDelta).toBe(barème[outcome]);
+    }
+  });
+
+  it("the next level does NOT spend it — its score still starts at 0", () => {
+    const modifier = levelModifierFromPortrait({
+      outcome: "IDENTIFIED",
+      correctCount: 4,
+      scoreDelta: 1500,
+    });
+    const state = createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, modifier });
+    expect(state.score).toBe(0);
+  });
+});
+
 describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
   const held = (seconds: number) =>
     createInitialState(FACADE_01, {
       ...DEFAULT_LEVEL_PARAMS,
-      modifier: { energyDelta: 0, firstWaveDelaySeconds: seconds, narrativeBeat: "IDENTIFIED" },
+      modifier: {
+        scoreDelta: 0,
+        energyDelta: 0,
+        firstWaveDelaySeconds: seconds,
+        narrativeBeat: "IDENTIFIED",
+      },
     });
 
   it("the street starts empty and the hold is seeded", () => {

@@ -73,6 +73,28 @@ export const PALIER_MID_MIN_GAP_SECONDS = 7.0;
 export const REVEAL_SECONDS_IDENTIFIED = 1.4;
 export const REVEAL_SECONDS_UNRESOLVED = 2.6;
 
+/**
+ * How long the COMPLETE corrected face is held at the end of the reveal, before the
+ * phase hands over (story AC4).
+ *
+ * `revealSeconds` is not dead time: the reveal walks the four verdicts top to bottom,
+ * correcting each wrong band visibly, and then holds the whole face for this tail.
+ * `revealBandStepSeconds` derives the per-band step from the two numbers above, so
+ * the timeline is written ONCE, here, and the render layer reads it instead of
+ * re-deriving a 0,45 s of its own (ADR-0079 A5 — the same breach `RESULT_HOLD_SECONDS
+ * = 2.2` was, panel M8).
+ */
+export const REVEAL_HOLD_TAIL_SECONDS = 0.8;
+
+/**
+ * Seconds each band's verdict takes during the reveal: 0,45 s on `PARTIAL`/`FAILED`
+ * (there are corrections to read) and 0,15 s on `IDENTIFIED` (there are none — the
+ * sweep only confirms). Derived, never authored twice.
+ */
+export function revealBandStepSeconds(revealSeconds: number): number {
+  return Math.max(0, (revealSeconds - REVEAL_HOLD_TAIL_SECONDS) / PORTRAIT_BAND_ORDER.length);
+}
+
 /** Score barème (gate §3). */
 export const PORTRAIT_SCORE: Readonly<Record<PortraitOutcome, number>> = {
   IDENTIFIED: 1500,
@@ -365,6 +387,9 @@ function applySelection(scene: PortraitScene, intent: PortraitIntent): PortraitS
 
   let next: number;
   if (intent.kind === "CYCLE") {
+    // Any integer delta, wrapped on the band's REAL length — a banked drag of N crans
+    // is one entry, and a band that does not have 6 variants wraps on what it has.
+    if (!Number.isInteger(intent.delta)) return scene;
     next = (((current + intent.delta) % n) + n) % n;
   } else {
     if (!Number.isInteger(intent.index) || intent.index < 0 || intent.index >= n) return scene;
@@ -406,10 +431,22 @@ export function applyPortraitIntent(scene: PortraitScene, intent: PortraitIntent
  *
  * A non-finite or non-positive `dt` advances nothing: time never runs backwards, which is
  * what keeps `palier` monotone without a second monotonicity guard.
+ *
+ * **On a RESOLVED scene the only thing that moves is `revealSeconds`** (panel M7). The
+ * verdict, the board and the chrono are frozen for good — D8.2's identity holds where it
+ * matters — but the reveal hold is a `dt` ACCUMULATOR here rather than a `setTimeout` in
+ * the component, and that is what makes it honour the pause **by construction**: a paused
+ * frame simply hands no `dt`. A wall clock in the component kept running behind
+ * `RotateOverlay` and the phase ended while the player was looking at a rotate prompt.
+ * The render layer reads `revealSeconds === 0` as "hand over"; it holds no timer and no
+ * number of its own (ADR-0079 A5).
  */
 export function tickPortraitScene(scene: PortraitScene, dt: number): PortraitScene {
-  if (scene.phase !== "ACTIVE") return scene;
   const advance = Number.isFinite(dt) && dt > 0 ? dt : 0;
+  if (scene.phase !== "ACTIVE") {
+    if (scene.revealSeconds <= 0 || advance === 0) return scene;
+    return { ...scene, revealSeconds: Math.max(0, scene.revealSeconds - advance) };
+  }
   const remaining = Math.max(0, scene.remainingSeconds - advance);
   if (remaining <= 0) {
     return resolvePortraitScene({
@@ -452,6 +489,10 @@ export function stepPortraitScene(
  */
 export function levelModifierFromPortrait(result: PortraitResult): LevelModifier {
   return {
+    // The one field of the modifier that settles the PAST (hand-off §6.2): the shell
+    // spends it at the exit of the portrait phase, not at the next `createInitialState`.
+    // Carried here anyway because the scene has exactly one output channel.
+    scoreDelta: result.scoreDelta,
     energyDelta: PORTRAIT_ENERGY_DELTA[result.outcome],
     firstWaveDelaySeconds: PORTRAIT_WAVE_HOLD_SECONDS[result.outcome],
     narrativeBeat: result.outcome,

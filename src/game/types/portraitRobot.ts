@@ -186,9 +186,22 @@ export type PortraitPalier = "NONE" | "MID" | "URGENT" | "LAST";
  * intent arriving after the end is a no-op, never a throw.
  */
 export type PortraitIntent =
-  /** Move one variant along in `band`, wrapping. Carries its band, so no cursor is implied. */
-  | { readonly kind: "CYCLE"; readonly band: PortraitBandId; readonly delta: 1 | -1 }
-  /** Address a slot directly (keyboard `1..6`, a desktop drag crossing several crans at once). */
+  /**
+   * Move `delta` variants along in `band`, wrapping. Carries its band, so no
+   * cursor is implied.
+   *
+   * `delta` is any integer, not `1 | -1`, and that is an ORDERING guarantee, not
+   * a convenience: a desktop drag banks N crans and must land N crans from the
+   * board the FOLD holds, not from the board React last rendered. Expressed as an
+   * absolute `SET(index + crans)` the hook had to read a stale selection and the
+   * result depended on what else was in the inbox that frame (panel run-1 minor,
+   * « `SET` absolu calculé sur un état non folded »). Relative is
+   * order-independent by construction, so no consumer needs to know the fold's
+   * schedule. It also removes the hook's need to wrap, which is where the
+   * "wrap on 6 instead of on the band's real length" bug lived.
+   */
+  | { readonly kind: "CYCLE"; readonly band: PortraitBandId; readonly delta: number }
+  /** Address a slot directly (keyboard `1..6`). */
   | { readonly kind: "SET"; readonly band: PortraitBandId; readonly index: number }
   /**
    * Move the keyboard / screen-reader cursor. Exists ONLY for that path;

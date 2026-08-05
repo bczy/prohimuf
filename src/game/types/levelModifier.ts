@@ -36,6 +36,25 @@ import type { PortraitOutcome } from "@game/types/portraitRobot";
  */
 export interface LevelModifier {
   /**
+   * Points the finished scene owes the run — the `PORTRAIT_SCORE` barème
+   * (1500 / 400 / 0), applied ONCE at the exit of the interstitial phase.
+   *
+   * ## THIS FIELD IS THE ONE THAT SETTLES THE PAST
+   *
+   * `LevelModifier` carries TWO temporalities and this is the asymmetry
+   * (architect's arbitration, hand-off §6.2): `scoreDelta` **règle la scène qui
+   * vient de se jouer**, while `energyDelta` and `firstWaveDelaySeconds` **arm
+   * the level that follows**. It travels in this type because the scene has ONE
+   * output channel and a second return channel was refused — not because it has
+   * the same schedule as its neighbours.
+   *
+   * So: `createInitialState` deliberately IGNORES it (a test pins that). Do not
+   * move it into the next level's build "par symétrie" — deferring it would drop
+   * the points of the last scene of a run from the final score, which is a
+   * high-score bug, the most expensive kind in player trust.
+   */
+  readonly scoreDelta: number;
+  /**
    * Signed delta applied to the NEXT level's initial energy capital, via the
    * existing `applyEnergy(ENERGY_INITIAL, delta)` clamp — so a malus can never
    * produce a negative or out-of-range capital.
