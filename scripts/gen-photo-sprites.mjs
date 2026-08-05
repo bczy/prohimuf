@@ -161,7 +161,29 @@ async function makeCrop() {
 // choice (img2img street-continuity conditioning, ruling §2). Overridable for a one-off A/B
 // against another paid image-editing model that also accepts `image=` (e.g. `nanobanana-2`,
 // `seedream-pro`) WITHOUT touching this file — a Bertrand-sanctioned re-roll, not a default.
-const PLATE_MODEL = process.env.PLATE_MODEL || "nanobanana-2";
+const PLATE_MODEL = process.env.PLATE_MODEL || "kontext";
+
+// img2img EDIT models on the paid farm (kontext, and nanobanana-2 tried as an A/B) do NOT
+// honour the requested width/height for an edit — both were observed returning a non-PNG at
+// their own fixed edit resolution (kontext: JPEG 1024x1024) regardless of the `width`/`height`
+// query params, undocumented behaviour that contradicts APIDOCS.md's per-param table. Rather
+// than keep guessing at a model that might respect arbitrary pixel dims (none of the
+// documented img2img-capable models — kontext, gptimage, seedream, klein, nanobanana —
+// promise it), the dimension CONTRACT is restored the same way `--downsample-mobile` already
+// does it in this file: an explicit, logged resize pass after generation, never a silent
+// write of whatever shape the provider felt like returning.
+async function resizeToTarget(buf, width, height, label) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(buf);
+  if (img.width === width && img.height === height) return buf; // already exact — no-op
+  console.log(
+    `  [resize] ${label} — provider returned ${img.width}x${img.height} → stretched to ${width}x${height}`,
+  );
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toBuffer("image/png");
+}
 
 // ── Generation (flux, or kontext img2img for the plate via the PAID farm) ────
 async function generate(a) {
@@ -177,7 +199,7 @@ async function generate(a) {
       `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_MODEL} img2img (paid), ref=${imageUrl}`,
     );
     try {
-      return await fetchWithRetry(
+      const buf = await fetchWithRetry(
         genPaidUrl({
           prompt: a.prompt,
           seed: a.seed,
@@ -187,6 +209,7 @@ async function generate(a) {
           imageUrl,
         }),
       );
+      return await resizeToTarget(buf, a.width, a.height, `${a.key} (${PLATE_MODEL})`);
     } catch (e) {
       // Gate §4 C4 — pre-authorised fallback: plain `flux` on the SAME paid endpoint (still
       // exact-res, still no anonymous-tier downscale). Loud on purpose (::warning:: GH Actions
@@ -200,7 +223,7 @@ async function generate(a) {
         (a.key === "plate" ? " (an ELIMINATORY criterion for the plate)" : "") +
         ` — verify the result against the gate before merge.`;
       console.warn(`::warning::${msg}`);
-      return fetchWithRetry(
+      const buf = await fetchWithRetry(
         genPaidUrl({
           prompt: a.prompt,
           seed: a.seed,
@@ -209,6 +232,7 @@ async function generate(a) {
           model: "flux",
         }),
       );
+      return await resizeToTarget(buf, a.width, a.height, `${a.key} (flux fallback)`);
     }
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
