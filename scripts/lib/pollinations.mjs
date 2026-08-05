@@ -173,7 +173,20 @@ export function fetchImage(url, redirects = 0) {
         }
         const chunks = [];
         res.on("data", (c) => chunks.push(c));
-        res.on("end", () => resolve(Buffer.concat(chunks)));
+        res.on("end", () => {
+          const buf = Buffer.concat(chunks);
+          // Attached as plain own properties, not a new return shape: a
+          // Buffer is still a Buffer to every existing caller (fs.writeFile,
+          // PNG.sync.read, @napi-rs/canvas's loadImage, …), none of which
+          // enumerate or care about extra properties. This is how a 200
+          // response's httpStatus/Content-Type reach a caller that needs to
+          // validate the body BEFORE handing it to a format-specific decoder
+          // (see slice-portrait-plate.mjs's ensurePngBuffer) without changing
+          // fetchImage/fetchWithRetry's contract for the other 15 call sites.
+          buf.httpStatus = res.statusCode;
+          buf.contentType = res.headers["content-type"];
+          resolve(buf);
+        });
       })
       .on("error", reject);
     req.setTimeout(120000, () => req.destroy(new Error("request timeout")));

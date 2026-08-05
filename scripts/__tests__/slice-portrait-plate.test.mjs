@@ -3,6 +3,7 @@ import { PNG } from "pngjs";
 import {
   detectRegistration,
   computeVerticalScale,
+  ensurePngBuffer,
   PLATE_WIDTH,
   PLATE_HEIGHT,
   PLATE_MARGIN_PX,
@@ -188,5 +189,93 @@ describe("computeVerticalScale — sign-guarded scale (art brief §8 C-B)", () =
     const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
     const { scale } = computeVerticalScale(eyeNominalAbs, noseNominalAbs);
     expect(scale).toBeGreaterThan(0);
+  });
+});
+
+// RE-PANEL run 3995325a: a plate response that isn't a valid PNG must abort
+// with a diagnostic naming the HTTP status / Content-Type / body size / first
+// 200 chars — NOT reach pngjs and produce its illegible "unrecognised content
+// at end of stream". Every fixture below is either a genuine encoder output
+// (the JPEG is produced by @napi-rs/canvas itself, not hand-typed bytes) or
+// literal prose/JSON text — no fixture is reverse-engineered from what the
+// checker under test wants to see, per the pattern that masked the last two
+// defects in this story.
+function withMeta(buf, { httpStatus, contentType }) {
+  buf.httpStatus = httpStatus;
+  buf.contentType = contentType;
+  return buf;
+}
+
+describe("ensurePngBuffer — content guard before the PNG decoder (RE-PANEL run 3995325a)", () => {
+  it("passes a genuine PNG through unchanged", async () => {
+    const png = new PNG({ width: 4, height: 4 });
+    png.data.fill(0);
+    const buf = withMeta(PNG.sync.write(png), { httpStatus: 200, contentType: "image/png" });
+    const out = await ensurePngBuffer(buf);
+    expect(out).toBe(buf);
+  });
+
+  it("aborts on an HTML error page served with HTTP 200, naming status/Content-Type/size/preview", async () => {
+    const html =
+      "<!DOCTYPE html><html><head><title>503 Service Unavailable</title></head>" +
+      "<body><h1>Service Unavailable</h1><p>The upstream generator is overloaded, try again " +
+      "later.</p></body></html>";
+    const buf = withMeta(Buffer.from(html, "utf8"), { httpStatus: 200, contentType: "text/html" });
+
+    let error;
+    try {
+      await ensurePngBuffer(buf);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeDefined();
+    expect(error.message).toMatch(/not a recognisable PNG or JPEG/);
+    expect(error.message).toMatch(/HTTP status: 200/);
+    expect(error.message).toMatch(/Content-Type: text\/html/);
+    expect(error.message).toMatch(new RegExp(`body size: ${buf.length} bytes`));
+    expect(error.message).toMatch(/Service Unavailable/); // part of the 200-char preview
+  });
+
+  it("aborts on a JSON queue/moderation response served with HTTP 200", async () => {
+    const json = JSON.stringify({
+      status: "queued",
+      message: "Your request is in the moderation queue, poll again shortly.",
+      queuePosition: 7,
+    });
+    const buf = withMeta(Buffer.from(json, "utf8"), {
+      httpStatus: 200,
+      contentType: "application/json",
+    });
+
+    await expect(ensurePngBuffer(buf)).rejects.toThrow(/not a recognisable PNG or JPEG/);
+    await expect(ensurePngBuffer(buf)).rejects.toThrow(/Content-Type: application\/json/);
+    await expect(ensurePngBuffer(buf)).rejects.toThrow(/queued/);
+  });
+
+  it("decodes and re-encodes a genuine JPEG to PNG (Pollinations serving the wrong format)", async () => {
+    const { createCanvas } = await import("@napi-rs/canvas");
+    const canvas = createCanvas(16, 12);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#336699";
+    ctx.fillRect(0, 0, 16, 12);
+    // Genuine JPEG bytes from the encoder itself — not hand-typed magic bytes
+    // stapled onto arbitrary data.
+    const jpegBuf = withMeta(canvas.toBuffer("image/jpeg"), {
+      httpStatus: 200,
+      contentType: "image/jpeg",
+    });
+
+    const out = await ensurePngBuffer(jpegBuf);
+    // Re-encoded output must itself be a valid, decodable PNG of the same
+    // pixel dimensions — proves this is a real decode+re-encode, not a stub.
+    const decoded = PNG.sync.read(out);
+    expect(decoded.width).toBe(16);
+    expect(decoded.height).toBe(12);
+  });
+
+  it("aborts on a truncated/empty body", async () => {
+    const buf = withMeta(Buffer.alloc(0), { httpStatus: 200, contentType: "image/png" });
+    await expect(ensurePngBuffer(buf)).rejects.toThrow(/not a recognisable PNG or JPEG/);
+    await expect(ensurePngBuffer(buf)).rejects.toThrow(/body size: 0 bytes/);
   });
 });

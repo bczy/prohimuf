@@ -689,8 +689,90 @@ async function fetchPlate(plateArg) {
   return fetchWithRetry(url);
 }
 
+// ── Response-body content guard (RE-PANEL run 3995325a) ──────────────────
+// pngjs's own failure on a bad body ("unrecognised content at end of
+// stream") names neither the HTTP status, nor the Content-Type, nor what the
+// bytes actually are — an HTML error page, a JSON queue/moderation response,
+// and a truncated body all land on the SAME illegible pngjs exception. That
+// run's 1.3s duration (real FLUX generations take tens of seconds elsewhere
+// in this repo) is itself evidence nothing was decoded. This mirrors the
+// confidence-gated tick detection above: don't hand an unvalidated body to a
+// format-specific decoder and let it fail illegibly downstream — check first,
+// name what's wrong.
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
+
+function hasMagic(buf, magic) {
+  return buf.length >= magic.length && buf.subarray(0, magic.length).equals(magic);
+}
+
+// Ground truth is the magic bytes, not the declared Content-Type header (a
+// dumb proxy/CDN can mislabel a genuinely valid body) — but the header is
+// still surfaced in every diagnostic message below, since it's part of what
+// `lead-art` needs to name the actual failure mode (HTML/JSON/wrong-format).
+function bodyDiagnostic(buf) {
+  const httpStatus = buf.httpStatus ?? "unknown";
+  const contentType = buf.contentType ?? "unknown";
+  const preview = buf
+    .subarray(0, 200)
+    .toString("utf8")
+    // eslint-disable-next-line no-control-regex -- deliberately scrubbing control bytes from a binary-body preview so it prints legibly.
+    .replace(/[\x00-\x08\x0e-\x1f]/g, "?");
+  return (
+    `HTTP status: ${httpStatus}\n` +
+    `Content-Type: ${contentType}\n` +
+    `body size: ${buf.length} bytes\n` +
+    `first 200 chars: ${JSON.stringify(preview)}`
+  );
+}
+
+/** Validates the fetched plate body BEFORE it reaches `PNG.sync.read`.
+ * A genuine PNG (magic bytes match) passes through unchanged. A genuine JPEG
+ * (Pollinations is known to serve one depending on request parameters) is
+ * decoded and re-encoded to PNG via `@napi-rs/canvas` — the SAME
+ * normalisation `gen-level-art.mjs`'s `normalizeSize` already performs on a
+ * fetched Pollinations buffer — because pngjs (this file's only decoder)
+ * understands PNG alone, and the committed manifest contract is PNG output.
+ * Anything else (HTML error page, JSON queue/moderation response, truncated
+ * body) aborts with the full diagnostic instead of an opaque pngjs
+ * exception. */
+export async function ensurePngBuffer(buf) {
+  if (hasMagic(buf, PNG_MAGIC)) return buf;
+
+  if (hasMagic(buf, JPEG_MAGIC)) {
+    let canvasLib;
+    try {
+      canvasLib = await import("@napi-rs/canvas");
+    } catch (e) {
+      throw new Error(
+        "plate response is a JPEG, not the PNG this pipeline requires, and @napi-rs/canvas " +
+          `is not installed to decode/re-encode it (${e.message}) — install it in CI before ` +
+          "this step (see gen-courier-sprites.yml's install step).\n" +
+          bodyDiagnostic(buf),
+      );
+    }
+    const { createCanvas, loadImage } = canvasLib;
+    const img = await loadImage(buf);
+    const canvas = createCanvas(img.width, img.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    console.log(
+      `[slice-portrait-plate] plate response was a JPEG (Content-Type: ` +
+        `${buf.contentType ?? "unknown"}) — decoded and re-encoded to PNG`,
+    );
+    return canvas.toBuffer("image/png");
+  }
+
+  throw new Error(
+    "plate response is not a recognisable PNG or JPEG — refusing to hand it to the PNG " +
+      "decoder (art brief §8 C-B: a body that fails validation is rejected here, not passed " +
+      `through to fail illegibly downstream).\n${bodyDiagnostic(buf)}`,
+  );
+}
+
 async function runReal(plateArg) {
-  const buf = await fetchPlate(plateArg);
+  const rawBuf = await fetchPlate(plateArg);
+  const buf = await ensurePngBuffer(rawBuf);
   const plate = PNG.sync.read(buf);
   if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
     throw new Error(

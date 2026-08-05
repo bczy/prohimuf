@@ -265,6 +265,35 @@ describe("fetchWithRetry — non-retryable vs. transient failures", () => {
   });
 });
 
+describe("fetchImage — attaches httpStatus/contentType to a successful buffer", () => {
+  // slice-portrait-plate.mjs's ensurePngBuffer needs the response's status
+  // and Content-Type to build an actionable diagnostic BEFORE handing an
+  // unvalidated body to a format-specific decoder (RE-PANEL run 3995325a) —
+  // this is how that metadata survives fetchImage/fetchWithRetry's Buffer
+  // return type without changing it for the other 15 call sites.
+  beforeEach(() => {
+    https.get.mockReset();
+  });
+
+  it("sets buf.httpStatus and buf.contentType from the 200 response", async () => {
+    const res = fakeResponse(200, { "content-type": "image/png" });
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "data") fn(Buffer.from("fake-png-bytes"));
+      if (ev === "end") fn();
+      return res;
+    });
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(res);
+      return fakeRequest();
+    });
+
+    const buf = await fetchImage("https://image.pollinations.ai/img");
+    expect(buf.httpStatus).toBe(200);
+    expect(buf.contentType).toBe("image/png");
+    expect(Buffer.isBuffer(buf)).toBe(true);
+  });
+});
+
 describe("fetchImage authentication", () => {
   // A 200 response that drives the data/end path so fetchImage's promise resolves.
   function okResponse() {

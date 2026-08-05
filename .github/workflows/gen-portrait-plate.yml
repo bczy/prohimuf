@@ -58,6 +58,16 @@ jobs:
           # install of the one non-builtin import, before the paid FLUX call.
           npm install --no-save --legacy-peer-deps --ignore-scripts pngjs@7.0.0
 
+      - name: Install @napi-rs/canvas (JPEG fallback decode, see ensurePngBuffer)
+        run: |
+          # Pollinations is known to serve a JPEG instead of the requested PNG
+          # depending on request parameters (RE-PANEL run 3995325a); pngjs only
+          # understands PNG, so slice-portrait-plate.mjs's ensurePngBuffer
+          # decodes/re-encodes a JPEG response via @napi-rs/canvas before it
+          # ever reaches PNG.sync.read. Pinned to the package.json version,
+          # same shape as gen-courier-sprites.yml's install step.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
       - name: Generate + slice + measure the portrait plate (FLUX)
         # FORCE=1 so a re-dispatch overwrites a previously-rejected/committed
         # set. No --plate flag: the real pipeline always fetches from FLUX in CI.
