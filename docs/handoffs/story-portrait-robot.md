@@ -324,9 +324,33 @@ scores that misprediction openly rather than hiding it in an estimate.
 
 ---
 
-## 5. VERIFY — qa-lead (Inès) — *awaiting dev completion*
+## 5. VERIFY — qa-lead (Inès) — 2026-08-05 — **QUALITY GATE : FAIL**
 
-*Placeholder: quality gate (desktop tsc/vitest/lint + e2e gesture flow), game-designer playtest vs. spec, ux-designer device gesture review (desktop 1280×800 + mobile touch), composite gate.*
+- **Rapport complet :** `docs/qa/plan-story-portrait-robot.md` (couverture AC par AC, verdict sur
+  les 10 écarts déclarés par les lanes, specs de régression R1→R7 et d'e2e E1→E5).
+- **Les trois vérifications Rév. 1 de §3.3 étape 3 : PASSÉES toutes les trois**, dans l'app buildée
+  via `?preview=portrait` — (a) course du buzzer ⇒ `IDENTIFIED` à 60,2 fps **et** à 19,6 fps
+  (bridage CPU ×20), 4ᵉ bande tirée entre 0,018 s et 0,311 s restantes ; (b) entrée **0/4 sur 6
+  graines** ; (c) **3 changements de la région `aria-live` sur 2 221 frames**, un par palier.
+- **4 findings BLOQUANTS (dont 1 corrigé pendant le gate) :**
+  1. ~~**HEAD (`485d6bbe`) portait un feedback par bande** (`data-correct=…`), test A16 **ROUGE**~~
+     — **corrigé pendant le gate** par `dev-r3f-render` (`7c4a8947`), 15/15 verts. Reste au journal
+     comme finding de process : le diff n'avait pas été relu (la ligne venait d'une sonde QA
+     ramassée par un commit de lane sur le même arbre de travail).
+  2. **`narrativeBeat` produit, jamais consommé** ⇒ gate A1b et story **AC6** non satisfaits
+     (`dev-gameplay` + `dev-r3f-render`).
+  3. **`Échap` résout la scène en UN appui** contre A2/A17b/§11 (deux temps) — écart non déclaré
+     (`lead-game-designer` arbitre, `dev-r3f-render` exécute).
+  4. **`validatePortrait` n'a aucun appelant en production** ⇒ le saut de phase d'ADR-0080 D3
+     n'existe pas et le `plateChecksum` est inerte (`dev-gameplay` + `dev-tooling-assets`).
+- **Majeurs :** `aria-valuenow` mute ~60×/s et expose les secondes ; une liaison `Enter` **survit**
+  à la mutation (trou de couverture prouvé) ; reptation AC4 non livrée ; gabarit cible↔construction
+  non 1:1 sur mobile ; **zéro e2e** sur la scène ; aucun canal audio de palier.
+- **Non vérifiable à ce stade :** tout le fond visuel (placeholders), la courbe de difficulté
+  (matrice provisoire uniforme), le geste tactile réel. **CI-DEFERRED** (escaladé à `producer`) :
+  la chaîne complète niveau → portrait → niveau suivant, faute de run scripté — l'e2e E5 la lève.
+- **next :** `dev-r3f-render` (B1, B3), `dev-gameplay` (B2, B4, R1/R2), `dev-tooling-assets`
+  (E1→E5), `lead-game-designer` (arbitrage `Échap`), `producer` (CI-DEFERRED). Re-gate après B1→B4.
 
 ---
 
