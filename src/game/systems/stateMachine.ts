@@ -348,8 +348,19 @@ export function tickGameState(
     };
   }
 
+  // The held first wave (ADR-0079 D4) is a GIFT OF TIME: it must not be paid for with the
+  // level's own clock, or the payoff funds itself and the reward is nil. So while the hold
+  // runs, the THREE level clocks — `elapsedSeconds` (the delivery/QTE script), `timeRemaining`
+  // (the level timer) and `courierTimer` (the street's spawn clock) — are frozen, exactly as
+  // they are during a QTE beat: the street is empty, nothing the level scripts can happen yet.
+  // Everything else keeps ticking (crosshair, bullets, energy): the player may move and shoot
+  // into an empty street, they simply do not spend the level for it.
+  // Decremented HERE rather than at the spawn guard below so both readers see one value.
+  const waveHoldRemaining = Math.max(0, state.waveHoldRemaining - delta);
+  const levelDelta = waveHoldRemaining > 0 ? 0 : delta;
+
   // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
-  const elapsedSeconds = state.elapsedSeconds + delta;
+  const elapsedSeconds = state.elapsedSeconds + levelDelta;
 
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
@@ -422,21 +433,33 @@ export function tickGameState(
   // (ADR-0079 D4). ONE guard on ONE branch: while the hold is live neither the spawn nor
   // the wave rollover fires, both of which sit downstream of `allDead`, so an empty
   // street cannot silently inflate `wave` to 4 before the first enemy appears. The hold
-  // is decremented in the same tick and the guard reads the POST-decrement value, so the
-  // wave seats on the tick the hold reaches 0 rather than one frame later.
-  const waveHoldRemaining = Math.max(0, state.waveHoldRemaining - delta);
-  const allDead = waveHoldRemaining <= 0 && tickedEnemies.every((e) => e.state === "DEAD");
+  // is decremented above and the guard reads the POST-decrement value, so the wave seats on
+  // the tick the hold reaches 0 rather than one frame later.
+  //
+  // `tickedEnemies.length > 0` is NOT belt-and-braces: `every()` on an EMPTY array is `true`,
+  // so on the tick the hold expires the still-empty street read as "all dead" and rolled the
+  // wave over — the level the player EARNED started at wave 2 and the payoff became a
+  // punishment. A wave rollover requires a wave that was actually played.
+  const allDead =
+    waveHoldRemaining <= 0 &&
+    tickedEnemies.length > 0 &&
+    tickedEnemies.every((e) => e.state === "DEAD");
+  // The hold's own release: the tick it reaches 0, wave 1 SEATS — same wave number, the
+  // one `createInitialState` refused to seat. It is a distinct event from a rollover
+  // precisely because it must not increment `wave`.
+  const holdReleased = state.waveHoldRemaining > 0 && waveHoldRemaining <= 0;
   const newWave = allDead ? state.wave + 1 : state.wave;
   // On a wave rollover, exclude the live crate's slot so a fresh enemy never seats
   // on it (ADR-0055 D5 co-location guard, direction b). `state.loot` is the pre-tick
   // crate; its slot is stable across the tick. The assault's reserved slots are
   // excluded ALONGSIDE it — a UNION, never a replacement, or D5 reopens in silence.
-  const activeEnemies: readonly Enemy[] = allDead
-    ? spawnWave(newWave, facade, windowPoolFor(roster), [
-        ...(state.loot !== null ? [state.loot.slotIndex] : []),
-        ...reservedSlots,
-      ])
-    : tickedEnemies;
+  const activeEnemies: readonly Enemy[] =
+    allDead || holdReleased
+      ? spawnWave(newWave, facade, windowPoolFor(roster), [
+          ...(state.loot !== null ? [state.loot.slotIndex] : []),
+          ...reservedSlots,
+        ])
+      : tickedEnemies;
 
   // 3b. Armament crate (ADR-0055 D5 / ADR-0056): advance / spawn the LOOT crate.
   // Runs only on the normal-tick path, so a QTE freeze never spawns or resolves a
@@ -476,7 +499,7 @@ export function tickGameState(
   let couriersSpawned = state.couriersSpawned;
   if (courierField !== undefined) {
     couriers = tickCouriers(couriers, delta, courierField);
-    courierTimer -= delta;
+    courierTimer -= levelDelta;
     // Per-level roster gate: only spawn couriers when this level's street roster
     // includes "courier" (absent roster ⇒ legacy courier-only behaviour).
     if (courierTimer <= 0 && streetSpawnsCourier(roster?.streetSpawns)) {
@@ -719,7 +742,7 @@ export function tickGameState(
   }
 
   // 9. Tick timer (bonus enemies add seconds back)
-  const timeRemaining = tickTimer(state.timeRemaining, delta) + trigger.timeDelta;
+  const timeRemaining = tickTimer(state.timeRemaining, levelDelta) + trigger.timeDelta;
   if (timeRemaining <= 0) {
     // Timer expired. On a BOSS level (spec authored, none fired yet) the boss is the level's
     // TIMED FINALE (ADR-0059): CREATE it and stay in-play (phase PLAYING, timeRemaining 0) so the

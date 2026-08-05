@@ -25,7 +25,7 @@ const TIMER = 35;
 function sceneAt(n: number, remaining: number, seed = 7): PortraitScene {
   const base = createPortraitScene(TEST_CATALOGUE, seed, TIMER);
   const selection = base.puzzle.truth.map((slot, i) =>
-    i < n ? slot : (base.puzzle.initialSelection[i] as number),
+    i < n ? slot : (base.puzzle.initialSelection[i]!),
   );
   return { ...base, selection, remainingSeconds: remaining };
 }
@@ -35,7 +35,7 @@ function winningIntent(scene: PortraitScene): PortraitIntent {
   return {
     kind: "SET",
     band: PORTRAIT_BAND_ORDER[3] as "mouth",
-    index: scene.puzzle.truth[3] as number,
+    index: scene.puzzle.truth[3]!,
   };
 }
 
@@ -108,8 +108,8 @@ describe("ADR-0079 D8.3 — the frame fold settles the buzzer race", () => {
     // Two entries are needed to reach 4/4; the hook may deliver them in either order,
     // batched or one per frame, and may interleave irrelevant entries.
     const entries: readonly PortraitIntent[] = [
-      { kind: "SET", band: "nose", index: truth[2] as number },
-      { kind: "SET", band: "mouth", index: truth[3] as number },
+      { kind: "SET", band: "nose", index: truth[2]! },
+      { kind: "SET", band: "mouth", index: truth[3]! },
       { kind: "FOCUS", band: "eyes" },
     ];
 

@@ -191,8 +191,8 @@ describe("seed-sweep — the regression guard on the arithmetic (ADR-0080 D3)", 
     for (const seed of [0, 1, 17, 999, 2 ** 31]) {
       const puzzle = drawPortraitPuzzle(FACE_CATALOGUE, seed);
       FACE_CATALOGUE.bands.forEach((band, i) => {
-        const slot = puzzle.truth[i] as number;
-        const variantIndex = (puzzle.order[i] as readonly number[])[slot] as number;
+        const slot = puzzle.truth[i]!;
+        const variantIndex = (puzzle.order[i]!)[slot]!;
         expect(isEligibleTruth(band.distances, variantIndex, band.variants.length)).toBe(true);
       });
     }

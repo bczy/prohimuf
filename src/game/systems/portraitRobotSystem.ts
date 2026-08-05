@@ -32,8 +32,16 @@ import type { LevelModifier } from "@game/types/levelModifier";
 // Gate §3 — canonical tuning. Nothing below is re-declared anywhere else.
 // ---------------------------------------------------------------------------
 
-/** The four bands, in draw order (gate §3 `stripCount` = 4, figé). */
-export const PORTRAIT_BAND_ORDER: readonly PortraitBandId[] = ["hair", "eyes", "nose", "mouth"];
+/**
+ * The four bands, in draw order (gate §3 `stripCount` = 4, figé).
+ *
+ * Declared as a `const` TUPLE, not as `readonly PortraitBandId[]`: the render
+ * lane's gesture hook resolves a `data-band` attribute against it and the system
+ * reads `[0]` as the initial cursor, and both were paying a `!`/`as` assertion
+ * for a length the literal already proves. It is also the single declaration of
+ * that order — no lane re-types the four ids (panel run-1, `BAND_IDS`).
+ */
+export const PORTRAIT_BAND_ORDER = ["hair", "eyes", "nose", "mouth"] as const satisfies readonly PortraitBandId[];
 
 /** Hard ceiling, gate A5. Six variants per band, one gabarit, 24 assets. */
 export const VARIANTS_PER_BAND = 6;
@@ -157,8 +165,10 @@ function seededShuffle(n: number, seed: number): number[] {
   for (let i = n - 1; i > 0; i -= 1) {
     s = xorshift32(s);
     const j = s % (i + 1);
-    const tmp = out[i] as number;
-    out[i] = out[j] as number;
+    // `i` and `j` are both in `[0, n)` by the loop bound and the modulo, so the
+    // fallbacks are for the index signature, never for a case: `out` is dense.
+    const tmp = out[i] ?? i;
+    out[i] = out[j] ?? j;
     out[j] = tmp;
   }
   return out;
@@ -233,7 +243,9 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
       .filter((i) => isEligibleTruth(band.distances, i, n));
     const pool = eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
 
-    const truthIndex = pool[portraitHash(seed, bandIndex, 0) % pool.length] as number;
+    // `pool` is non-empty here (the `n === 0` band returned above), so the `?? 0`
+    // is the index signature's tax and not a fallback the draw can take.
+    const truthIndex = pool[portraitHash(seed, bandIndex, 0) % pool.length] ?? 0;
     const bandOrder = seededShuffle(n, portraitHash(seed, bandIndex, 1));
     const truthSlot = bandOrder.indexOf(truthIndex);
 
@@ -275,7 +287,7 @@ export function createPortraitScene(
     phase: "ACTIVE",
     puzzle,
     selection: puzzle.initialSelection,
-    focusedBand: PORTRAIT_BAND_ORDER[0] as PortraitBandId,
+    focusedBand: PORTRAIT_BAND_ORDER[0]!,
     remainingSeconds: timerSeconds,
     timerSeconds,
     palier: palierFor(timerSeconds, timerSeconds),

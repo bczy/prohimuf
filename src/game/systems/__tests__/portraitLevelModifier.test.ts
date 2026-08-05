@@ -109,13 +109,48 @@ describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
     state = tick(state, 0.02);
     expect(state.waveHoldRemaining).toBe(0);
     expect(state.enemies.length).toBeGreaterThan(0);
+    // REGRESSION (panel B2). `every()` on an EMPTY array is `true`, so the released hold
+    // read as "wave cleared" and rolled the wave over: the level the player EARNED started
+    // at wave 2 and the payoff was a punishment. The wave the hold held back is wave ONE.
+    expect(state.wave).toBe(1);
+  });
+
+  it("wave 1 is a full wave, and the rollover to 2 still needs it played", () => {
+    // Same release, then the freshly seated wave is wiped: THAT is a rollover.
+    let state = held(0.02);
+    state = tick(state, 0.03);
+    expect(state.wave).toBe(1);
+    const seated = state.enemies.length;
+    expect(seated).toBe(createInitialState(FACADE_01).enemies.length);
+
+    state = tick({ ...state, enemies: state.enemies.map((e) => ({ ...e, state: "DEAD" as const })) });
     expect(state.wave).toBe(2);
+    expect(state.enemies.length).toBeGreaterThan(0);
+    expect(state.enemies.every((e) => e.state !== "DEAD")).toBe(true);
   });
 
   it("the hold never goes negative", () => {
     let state = held(1);
     for (let i = 0; i < 200; i += 1) state = tick(state);
     expect(state.waveHoldRemaining).toBe(0);
+  });
+
+  it("the level clocks are FROZEN while the hold runs — the payoff does not pay for itself", () => {
+    let state = held(2);
+    for (let i = 0; i < 60; i += 1) state = tick(state);
+    expect(state.waveHoldRemaining).toBeCloseTo(1, 5);
+    // The three level clocks: the timer, the delivery/QTE script, the courier spawn clock.
+    expect(state.timeRemaining).toBe(DEFAULT_LEVEL_PARAMS.timeSeconds);
+    expect(state.elapsedSeconds).toBe(0);
+    expect(state.courierTimer).toBe(createInitialState(FACADE_01).courierTimer);
+  });
+
+  it("the clocks resume on the tick the hold is released", () => {
+    let state = held(DT / 2);
+    state = tick(state);
+    expect(state.waveHoldRemaining).toBe(0);
+    expect(state.elapsedSeconds).toBeCloseTo(DT, 6);
+    expect(state.timeRemaining).toBeLessThan(DEFAULT_LEVEL_PARAMS.timeSeconds);
   });
 
   it("a zero hold is the legacy path — wave 1 is seated at creation", () => {

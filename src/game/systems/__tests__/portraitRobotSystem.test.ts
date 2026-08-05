@@ -144,7 +144,7 @@ describe("the chrono is a dt accumulator, never a clock (ADR-0079 D2)", () => {
 describe("applyPortraitIntent is total (ADR-0082 D1)", () => {
   it("CYCLE wraps in both directions and carries its own band", () => {
     const scene = fresh();
-    const start = scene.selection[1] as number;
+    const start = scene.selection[1]!;
     let s = scene;
     for (let i = 0; i < VARIANTS_PER_BAND; i += 1) {
       s = applyPortraitIntent(s, { kind: "CYCLE", band: "eyes", delta: 1 });
@@ -197,7 +197,7 @@ describe("resolvePortraitScene is the single exit (ADR-0079 D6/D8.1)", () => {
     const at = (n: number) => ({
       ...scene,
       selection: scene.puzzle.truth.map((slot, i) =>
-        i < n ? slot : (scene.puzzle.initialSelection[i] as number),
+        i < n ? slot : (scene.puzzle.initialSelection[i]!),
       ),
     });
     expect(resolvePortraitScene(at(4)).result).toEqual({
@@ -246,7 +246,7 @@ describe("the early exit (gate A17)", () => {
     const at3 = {
       ...scene,
       selection: scene.puzzle.truth.map((slot, i) =>
-        i < 3 ? slot : (scene.puzzle.initialSelection[i] as number),
+        i < 3 ? slot : (scene.puzzle.initialSelection[i]!),
       ),
     };
     const abandoned = applyPortraitIntent(at3, { kind: "ABANDON" });
@@ -264,8 +264,8 @@ describe("the early exit (gate A17)", () => {
       expect(scene.phase).toBe("ACTIVE");
       scene = applyPortraitIntent(scene, {
         kind: "SET",
-        band: band as PortraitBandId,
-        index: scene.puzzle.truth[i] as number,
+        band: band,
+        index: scene.puzzle.truth[i]!,
       });
     }
     expect(scene.result?.outcome).toBe("IDENTIFIED");
@@ -315,7 +315,7 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     for (let seed = 0; seed < 200; seed += 1) {
       const puzzle = drawPortraitPuzzle(TEST_CATALOGUE, seed);
       puzzle.truth.forEach((truthSlot, i) => {
-        offsets.add((((puzzle.initialSelection[i] as number) - truthSlot + 6) % 6) - 1);
+        offsets.add((((puzzle.initialSelection[i]!) - truthSlot + 6) % 6) - 1);
       });
     }
     expect([...offsets].sort()).toEqual([0, 1, 2, 3, 4]);
@@ -327,7 +327,7 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
       puzzle.truth.forEach((truthSlot, i) => {
         const band = TEST_CATALOGUE.bands[i];
         if (band === undefined) throw new Error("fixture");
-        const variantIndex = (puzzle.order[i] as readonly number[])[truthSlot] as number;
+        const variantIndex = (puzzle.order[i]!)[truthSlot]!;
         expect(isEligibleTruth(band.distances, variantIndex, band.variants.length)).toBe(true);
       });
     }

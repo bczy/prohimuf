@@ -373,6 +373,7 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | ~~`confirmGuardSeconds`~~ | ~~**1,0** (CTA inerte à l'entrée)~~ | ~~Sacha §4.1~~ — **supprimé par B1** (plus de CTA à garder) |
 | `initialStateAllWrong` | **`true`** — invariant de seed : à l'entrée en `ACTIVE`, les 4 bandes affichent une variante **fausse** (0/4 garanti). Remplace la garde anti-validation accidentelle | **A14** (remplace `confirmGuardSeconds`) |
 | `revealSeconds` | **2,6** à `PARTIAL`/`FAILED` (4×~0,45 s + 0,8 s de tenue — la reptation porte les corrections) · **1,4** à `IDENTIFIED` (flash de verrouillage + 4 tampons simultanés, pas de reptation) | **A15** (amende Sacha §4.1) |
+| **Reptation de révélation** (contenu de `revealSeconds`) | **OBLIGATOIRE à `PARTIAL`/`FAILED`** : les 2,6 s sont une séquence **JOUÉE** — 4 verdicts de bande à ~0,45 s **avec affichage de la variante JUSTE** de chaque bande fausse, puis 0,8 s de tenue. Ce n'est PAS un temps mort. Un écran qui laisse le joueur fixer un visage faux sans jamais voir la bonne réponse est un **FAIL de gate**, pas un manque de polish. À `IDENTIFIED` : pas de reptation (1,4 s, 4 tampons simultanés) | **A15** · **R-4 GARDE (Bertrand 2026-08-05)** · guidelines §5 règle 4 |
 | `resultHoldSeconds` | **2,2** (`QTE_RESULT_HOLD`) — inchangé, toutes issues | Sacha §4.1, ratifié |
 | `identifiedThreshold` | **4/4** — **évalué en continu, verrouillage automatique et immédiat** dès que l'état courant est 4/4 | **A12bis** (amende Sacha §4.2) |
 | `partialThreshold` | **3/4 — atteignable UNIQUEMENT au buzzer ou à l'abandon.** Il n'existe plus d'acte de soumission volontaire | **A12bis** (amende A9) |
@@ -380,7 +381,7 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | Ordre de résolution (anti-issue-fantôme) | Le test 4/4 se fait **à chaque changement d'état de bande**, avant tout tick de chrono ; l'expiration n'est évaluée **que si aucun verrouillage n'a eu lieu**. Un 4/4 posé dans la même frame que l'expiration ⇒ **`IDENTIFIED`** | **A12bis** |
 | Timeout / sortie anticipée | **Évalué à l'état courant** — aucun échec sec. Ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé) ⇒ issues possibles : `PARTIAL` ou `FAILED` | A2 · **A12bis** |
 | **Sortie anticipée** (ex-« abandon ») | **RATIFIÉE comme geste « j'ai fini, imprime »** — affordance **visible en permanence** (≥ 44×44 px), pas un `Escape` caché. Résout à l'état courant. **Jamais** un abandon dans la copie, **jamais** une validation dans la fonction | **A17 · Bertrand 2026-08-05** |
-| Confirmation de la sortie anticipée | **OUI, conservée, mais sans modale** : cible **armée au 1ᵉʳ appui, confirmée au 2ᵉ appui sur la MÊME cible** dans une fenêtre de **2,0 s** ; désarmement silencieux à l'expiration. **Le chrono ne se met pas en pause** pendant l'armement. `Échap` clavier suit le même protocole en deux temps | **A17** |
+| Confirmation de la sortie anticipée | **OUI, conservée, mais sans modale** : cible **armée au 1ᵉʳ appui, confirmée au 2ᵉ appui sur la MÊME cible** dans une fenêtre de **2,0 s** ; désarmement silencieux à l'expiration. **Le chrono ne se met pas en pause** pendant l'armement. ~~`Échap` clavier suit le même protocole en deux temps~~ → **le protocole en deux temps ne s'applique qu'au POINTEUR (tactile et souris). Au CLAVIER — y compris `Échap` et `Entrée`/`Espace` sur l'affordance focalisée — la sortie se fait en UN SEUL appui** | **A17**, amendé par **A17-bis** |
 | Critère anti-CTA (opposable) | Est interdit tout contrôle dont l'activation **peut produire `IDENTIFIED`** ou évaluer une réussite. La sortie anticipée ne le peut pas par construction ⇒ elle n'est **pas** un CTA. C'est le critère, pas la forme du geste | **A17** (précise §7 3-bis de la spec M) |
 | `IDENTIFIED` | **0 vie · 0 énergie · +1500 score · payoff +20 s** | A1 · A10 |
 | `PARTIAL` | **0 vie · 0 énergie · +400 score · payoff +10 s** | A1 · A10 |
@@ -390,7 +391,7 @@ Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de 
 | Cible | **Visible en permanence** · médaillon ≥ **28 %** de largeur en mobile paysage | A8 |
 | Geste primaire tactile | **swipe horizontal sur la bande visée** = variante ±1 sur CETTE bande. Pas de tap de sélection, pas de bande « active » au doigt. Chevrons ◀ ▶ conservés en affordance + cible d'accessibilité (≥ 44×44 px), jamais comme geste primaire | **A4-bis · Bertrand 2026-08-05** (renverse A4) |
 | Geste primaire desktop | ~~à trancher sur maquette Figma~~ → **OPTION B : drag horizontal à la souris sur la bande visée** = variante ±1 sur CETTE bande. Même modèle mental que le swipe tactile, un seul geste à documenter pour les deux classes d'appareil. Clic sur chevron conservé en affordance + cible d'accessibilité | **B3 · Bertrand 2026-08-05** |
-| Geste clavier | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA, `Entrée` bindée à rien) · ~~Échap = confirmation d'abandon~~ → **Échap = sortie anticipée, en deux appuis (A17)** | A2 · UX §2.1 · **B1 · A17** |
+| Geste clavier | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA, `Entrée` bindée à rien) · ~~Échap = confirmation d'abandon~~ → ~~**Échap = sortie anticipée, en deux appuis (A17)**~~ → **Échap = sortie anticipée, en UN appui (A17-bis)** — asymétrie assumée avec le pointeur | A2 · UX §2.1 · **B1 · A17 · A17-bis** |
 | Bandeau / ~~CTA~~ | **`TÊTE À CONNAÎTRE`** / ~~**`SORTIR LA TÊTE`**~~ — **le CTA n'existe plus dans l'IHM** (B1). La réplique KENZA « Sors-moi une tête, une seule » reste au dialogue | A6 · **B1** |
 | Déterminisme | Fonction pure hachée de `portraitSeed` · zéro `Math.random` / `Date.now` | ADR-0034 · Sacha §0 |
 
@@ -618,6 +619,22 @@ corrigeait à l'écran. Après un verrouillage automatique, ce contenu informati
 ligne KENZA, il ne dépend pas de l'issue. Budget total de la scène : 35 + 1,4 + 2,2 = **38,6 s** à
 `IDENTIFIED` (contre 39,8 s avant), inchangé ailleurs. Aucun impact sur A2/A11.
 
+**Précision du 2026-08-05 (stage 6, finding M6) — l'asymétrie 2,6 / 1,4 n'a de sens que si la
+reptation est JOUÉE.** Le panel a constaté que `revealSeconds` était consommé comme **délai**, sans
+reptation : à l'échec, 2,6 s + 2,2 s de tenue = **4,8 s passées à fixer un visage faux, sans jamais
+voir la bonne réponse**. Sous cette implémentation, A15 devient incohérent avec lui-même : les deux
+valeurs ne se justifiaient que par leur **contenu informatif** (2,6 s parce qu'il reste 1 à 4 bandes
+à corriger sous les yeux du joueur ; 1,4 s parce qu'il n'y a rien à dire après un 4/4). Un délai nu
+de 2,6 s n'est pas un beat payant, c'est la punition d'attendre. **Bertrand a tranché « GARDE » : on
+implémente** (R-4 ci-dessous). Les deux valeurs restent **inchangées** — c'est leur contenu qui est
+rendu obligatoire, pas leur durée qui bouge.
+
+**Ce que la reptation N'EST PAS, et qui doit rester clair pour le prochain reviewer :** elle est
+**post-résolution**, donc elle ne tombe pas sous l'interdit A16. A16 interdit le feedback par trait
+**pendant `ACTIVE`**, parce qu'il orienterait les gestes suivants. Ici il n'y a pas de geste suivant :
+la phase est finie, la scène ne se rejoue jamais (A3). Un dev ou un reviewer qui lit la reptation
+comme une violation d'A16 lit la bonne règle sur la mauvaise fenêtre de temps.
+
 ### A16 — A9 tient, mais sa formulation change (et c'est le vrai sujet)
 
 **A9 ne tient pas tel quel** : « zéro feedback, sous toute forme » est devenu factuellement faux, le
@@ -736,6 +753,87 @@ deux arbitrages qu'elles laissaient à ma charge. **Le dossier ne se rouvre pas 
 | R-1 | Sortie anticipée rhabillée en « j'ai fini, imprime » — « Ok très bien » | Story · canon §3              | **RATIFIÉ → A17**  |
 | R-2 | Règle A1c — « valide ça »                                              | **Projet** (dépasse la story) | **RATIFIÉ → §6.4** |
 | R-3 | Voie de production art : visages entiers puis découpe des bandes        | Art · ADR-0080                | **RATIFIÉ**        |
+| R-4 | Reptation de révélation (AC4 / finding M6) — « **GARDE** » (2026-08-05) | Story · canon §3 · A15        | **RATIFIÉ → on IMPLÉMENTE, pas de descope** |
+
+**Deuxième vague — 2026-08-05, après le triage du panel (stage 6, §6.2/§6.3 du journal de story).**
+Deux inscriptions, toutes deux **actées ici et dans le même diff que le code**, parce qu'une
+divergence non écrite se relit comme un bug — c'est exactement ce que quatre reviewers viennent de
+faire sur `Échap`.
+
+### A17-bis — `Échap` et le clavier : l'asymétrie est assumée, la table s'aligne sur le code
+
+**Le constat.** Mon canon §3 (A17) écrivait que « `Échap` clavier suit le même protocole en deux
+temps ». Le code livré par `dev-r3f-render` sort en **un seul appui** au clavier. Le panel l'a levé
+en M5 (divergence non actée).
+
+**L'arbitrage est rendu par `senior-architect` (§6.3 du journal de story) et je l'inscris : le code
+garde son comportement, c'est ma table qui bouge.** L'argument de l'`ux-designer` (§2.8.4) est bon,
+et il est meilleur que ma ligne d'origine :
+
+- le protocole en deux temps a été conçu **contre le mistap du pouce** (A17 : « le geste primaire est
+  un swipe/drag horizontal, au milieu des bandes, un swipe raté qui se résout en tap est le scénario
+  nominal »). Ce raisonnement est **entièrement spatial**. Il ne transpose pas au clavier ;
+- au clavier, **l'intention est déjà prouvée par le trajet** : il faut tabuler jusqu'à l'affordance,
+  ou frapper une touche dédiée (`Échap`) qui n'a aucun voisin fonctionnel dans la scène. Il n'y a pas
+  de « bord d'écran » où le doigt dérape ;
+- et empiler une précision **temporelle** (2,0 s) sur une précision **spatiale** (la même cible) est
+  **hostile aux lecteurs d'écran et aux troubles moteurs** : la fenêtre d'armement est invisible à
+  l'oreille, et elle transforme une commande en épreuve de cadence. C'est une régression
+  d'accessibilité payée pour un risque qui n'existe pas sur ce canal d'entrée.
+
+**Canon amendé (§3, deux lignes, ancienne formulation barrée et non effacée) :**
+
+| Canal d'entrée | Sortie anticipée |
+| --- | --- |
+| **Pointeur** (tactile, souris) | **DEUX appuis** — armement au 1ᵉʳ, sortie au 2ᵉ sur la même cible dans **2,0 s**, désarmement silencieux. Chrono non pausé. Inchangé (A17). |
+| **Clavier** (`Échap`, et `Entrée`/`Espace` sur l'affordance focalisée) | **UN SEUL appui.** Pas d'armement, pas de fenêtre de 2,0 s, pas de second état à annoncer. |
+
+**Ce que l'amendement NE couvre PAS — et je le nomme pour qu'on ne s'en réclame pas.** L'aggravant
+trouvé par le panel — `EarlyExitButton` est le **premier élément focusable du DOM**, donc `Tab` +
+`Entrée` termine la scène instantanément, avant même que le joueur l'ait jouée — **n'est couvert par
+aucun argument d'accessibilité et n'est pas amendé**. C'est un défaut d'ordre de focus, corrigé par
+la lane render comme tel (§6.3/§6.6 du journal de story). L'argument d'A17-bis dit « le trajet
+clavier prouve l'intention » : il est **faux tant que le trajet est nul**. L'amendement et la
+correction sont donc solidaires — l'un ne tient que si l'autre est fait.
+
+**Conséquence aval :** l'`ux-designer` doit livrer les états armé/désarmé **pour le pointeur
+seulement** (la ligne d'A17 « `Échap` en deux temps » de mon §11 de hand-off est caduque) ; la copie
+de sortie de `narrative-designer` reste à **deux états** (repos / armé), l'état armé n'étant
+simplement jamais atteint au clavier ; ADR-0082 enregistre l'asymétrie (`tech-writer` transcrit).
+
+### R-4 — Reptation de révélation : « GARDE », donc on implémente
+
+**Ce que Bertrand a tranché (2026-08-05).** Le panel a constaté que la reptation de révélation
+**n'était pas implémentée** : `revealSeconds` était consommé comme temps mort, et à l'échec le
+joueur fixait **4,8 s un visage faux sans jamais voir la bonne réponse**. `senior-architect` a posé
+l'alternative sans échappatoire (§6.1 M6) : implémenter, ou **descoper par écrit**. Réponse de
+Bertrand : **« GARDE ».**
+
+**Inscrit : la reptation est IMPLÉMENTÉE. Aucun descope d'AC4.** La lane `dev-r3f-render`
+l'implémente en parallèle de cette inscription. Motifs, pour que la décision soit relisible :
+
+1. **C'est le sujet de la scène.** Un jeu de reconnaissance qui ne montre jamais ce qu'il fallait
+   reconnaître n'enseigne rien. La boucle d'apprentissage est le seul contenu de la phase — la scène
+   ne se rejoue jamais (A3, 1/run), donc la révélation est la **seule** occasion de la fermer.
+2. **Guidelines §5, règle UX non-négociable n°4** — « chaque mort/échec : raison explicite
+   affichée ». Un tampon `PRESQUE LUI` sur un visage faux nomme l'issue, il n'affiche pas la
+   **raison**. La raison, ce sont les bandes fausses et leur variante juste.
+3. **A15 en dépend** (voir la précision ajoutée à A15) : les 2,6 s ne se justifient que par leur
+   contenu. Sans reptation, la bonne décision aurait été de couper la durée, pas de la garder — donc
+   « ne pas implémenter » n'était jamais un statu quo neutre, c'était une troisième valeur de tuning
+   non gatée.
+
+**Cohérence §3 ↔ AC4 vérifiée au passage, et il y a un écart de LETTRE à signaler.** L'AC4 de la
+story n'exige littéralement qu'« a plain-language outcome message names success or failure
+explicitly (no silent state change) » — un tampon suffit à sa lettre. **L'obligation de reptation ne
+vient donc pas d'AC4 mais de mon canon §3 + A15 + la règle 4 des guidelines.** Une lane qui ne lit
+que la story pouvait de bonne foi se croire conforme : c'est précisément ce qui s'est produit. Je
+ferme le trou en inscrivant la reptation **comme ligne du canon §3** (nouvelle ligne « Reptation de
+révélation »), qui fait foi sur toute spec de lane. `pm` peut resserrer AC4 s'il le souhaite — ce
+n'est plus bloquant, le canon suffit.
+
+**Deux valeurs canoniques restent inchangées :** `revealSeconds` **2,6 / 1,4** et
+`resultHoldSeconds` **2,2**. R-4 rend un contenu obligatoire, il ne re-tune rien.
 
 ### A17 — La sortie anticipée : ce que la ratification règle, et ce qu'elle me laissait
 
@@ -763,7 +861,11 @@ ligne « ne peut jamais produire `IDENTIFIED` » reste au canon §3 comme **asse
 (AC7-b), pas comme mécanisme. Un dev qui devrait écrire un `if` pour l'empêcher a un bug ailleurs.
 
 **Arbitrage 2 — la confirmation est-elle conservée ? OUI, mais elle change de forme : deux appuis
-sur la même cible, pas de modale.** L'asymétrie décide, et elle est brutale :
+sur la même cible, pas de modale.**
+> **Amendé le 2026-08-05 par A17-bis (§9, deuxième vague) : tout cet arbitrage 2 ne vaut QUE pour le
+> POINTEUR (tactile, souris). Au CLAVIER — `Échap` inclus — la sortie se fait en UN SEUL appui.**
+
+L'asymétrie décide, et elle est brutale :
 
 - coût d'un appui accidentel = **la scène entière**, définitivement (machine forward-only, **une
   occurrence par run**, elle ne se rejoue jamais — A3/§2.3). Le joueur perd le payoff, le score, et
@@ -843,8 +945,23 @@ inchangé.
 **A14**, **A15**, **A16** : **intacts**. `timerSeconds`, les seuils 4/4 · 3/4 · ≤ 2/4, les deux
 paliers absolus (10,0 / 5,0 s) et les trois barèmes d'issue **n'ont pas bougé d'une unité**.
 
+**Ni la deuxième vague (A17-bis, R-4).** A17-bis ne touche **qu'un canal d'entrée** : la fonction de
+la sortie anticipée est identique (résout à l'état courant, ne peut jamais produire `IDENTIFIED`,
+chrono non pausé), le critère anti-CTA est inchangé, et le pointeur garde ses deux appuis. R-4 ne
+change **aucune valeur** : `revealSeconds` 2,6 / 1,4 et `resultHoldSeconds` 2,2 sont ceux d'A15, et
+le budget de scène reste 38,6 s à `IDENTIFIED` / 39,8 s ailleurs (A11 intact).
+
 ### Statut du dossier après ce §9
 
 **Aucun désaccord de lane n'est plus ouvert.** Les deux réserves de Sacha (round 3) sont tranchées :
 la première par ratification Bertrand + A17, la seconde par A18 en sa faveur. La §3 reste la seule
 source de vérité de tuning ; le TECH PLAN travaille dessus.
+
+**Mise à jour 2026-08-05 (post-panel).** Les deux inscriptions de la deuxième vague (**A17-bis**,
+**R-4**) sont **actées** et le dossier reste clos : aucune valeur de tuning n'a bougé, aucun
+désaccord de lane n'est rouvert. Les deux items du panel qui portaient mon nom (M5 en tant
+qu'amendement, M6 en tant que décision) sont **levés côté design**. Restent des tâches de lane, pas
+de gate : l'ordre de focus d'`EarlyExitButton` (`dev-r3f-render`, défaut), l'implémentation de la
+reptation (`dev-r3f-render`, avec le hold de révélation remonté dans la scène pure — prescription
+M7), l'affordance armé/désarmé pointeur-seulement (`ux-designer`) et la transcription en ADR-0082
+(`tech-writer`).
