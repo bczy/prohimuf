@@ -267,7 +267,10 @@ export function photoAssetPaths(levelId: string): readonly string[] {
   if (level?.photoQte === undefined) return [];
   const photoQte = levelArt.photoQte as {
     readonly plateAsset?: { readonly asset: string };
-    readonly types: Record<string, { readonly asset: string } | undefined>;
+    // `asset` is OPTIONAL here: concept-artist may land a `photoQte.types` entry as
+    // prompt-only (art not yet generated) — a legitimate, durable state of this
+    // pipeline, not a defect. Filtered out below rather than required by the cast.
+    readonly types: Record<string, { readonly asset?: string } | undefined>;
   };
   const paths: string[] = [];
   if (photoQte.plateAsset?.asset !== undefined) paths.push(photoQte.plateAsset.asset);
