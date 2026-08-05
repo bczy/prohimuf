@@ -110,7 +110,7 @@ export const TOLERANCE = {
   strokeWidthRelPct: { pass: 10, fail: 15 },
 };
 
-// ── Prompt family (FLUX) — SCAFFOLD, WORDS pending concept-artist ───────────
+// ── Prompt family (FLUX) — words authored by concept-artist (Maud) ──────────
 // dev-tooling-assets owns the wiring/schema and the path the words travel
 // (this constant, `check-art-prompts.mjs`-style linting below); the WORDS
 // belong to concept-artist per the ratified brief (docs/art-direction/
@@ -121,21 +121,42 @@ export const TOLERANCE = {
 // call while `pending` is true, so this scaffold cannot accidentally burn the
 // generation budget on empty prose.
 export const PORTRAIT_PROMPT_FAMILY = {
-  pending: true,
+  pending: false,
   // Pinned so a future real run is reproducible from the moment the prompt is
   // filled; concept-artist/lead-art re-pin at the prompt gate if they want a
   // different roll.
   seed: 190226,
-  // TODO(concept-artist, brief §7.1): cadrage-locking clause — grid/registration
-  // vocabulary, "strict frontal view, orthographic projection, centered"
-  // (bible §3.6), explicit skull-width proportions — assembled BEFORE `prompt`.
-  opening: "",
-  // TODO(concept-artist, brief §7.1): the gabarit-01 hero face + how a plate's
-  // worth of variation is described positively (one subject clause at a time).
-  prompt: "",
-  // TODO(concept-artist): shared medium/texture tail (ink linework, xerox
-  // toner grain per house bible §1/§3.6) — no dithering/scan/photoreal tokens.
-  style: "",
+  // Cadrage lock (brief §1.1/§1.2bis, bible §3.6 drafting vocabulary). Front-
+  // loaded because FLUX over-weights early tokens: medium + view + centring +
+  // constant skull width land before any face word, and the margin
+  // registration marks are described as PART of the printed plate (a printer's
+  // sheet, not a technical overlay) so FLUX draws them instead of fighting
+  // them — `detectRegistration` above reads exactly those ticks.
+  opening:
+    "Flat 2D black ink drawing on a printer plate: one human head, strict frontal view, " +
+    "orthographic projection, centred, eye line level, crown to collarbone, constant skull " +
+    "width. In the margin: pupil-line and nostril-base ticks at left and right, " +
+    "centre-axis ticks top and bottom, crop crosses at the corners. ",
+  // gabarit-01 hero face — subject + silhouette ONLY (no style, no ground, no
+  // colour). Every feature is named as a flat, level volume so the three seam
+  // ordinates (0.32 forehead / 0.52 above the nose bridge / 0.72 philtrum)
+  // fall in flat, low-contrast zones (brief §1.2). Ears, neck and shoulders
+  // are stated here because they belong to the gabarit, never to a band.
+  // Variation (6 per band) is derived later by `kontext` img2img from THIS
+  // validated plate, one named descriptor at a time (brief §5.2 step 4) —
+  // never by re-rolling this prompt, which would change the skull.
+  prompt:
+    "Hard Parisian face, broad flat forehead under a straight low hairline, wide-set deep " +
+    "eyes under a heavy level brow, straight narrow nose ending blunt, long flat philtrum, " +
+    "thin level mouth, square jaw, small ears flat to the skull, bare neck. ",
+  // Shared house tail, verbatim from the bible §1/§3 register: one constant
+  // ink weight and one hatch angle (brief §1.3 — two weights or two angles
+  // read as two draughtsmen), flat frontal light (no shadow crossing a seam),
+  // white paper ground (bands are opaque, never keyed).
+  style:
+    "Photocopied 1990s punk fanzine illustration: rough black ink linework of one constant " +
+    "weight, coarse halftone dots at one 45-degree hatch angle, flat frontal light, " +
+    "uniform white paper (#FFFFFF), high-contrast xerox toner.",
 };
 
 /** Prompt-gate-shaped lint (mirrors check-art-prompts.mjs's report shape) — no
