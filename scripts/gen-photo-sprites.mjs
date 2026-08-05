@@ -224,17 +224,30 @@ function pngDimensions(buf) {
 
 // Pollinations' anonymous tier silently halves any request above ~1024px on a
 // side instead of erroring — that is how the plate shipped at 1024x576 instead
-// of the decided 2048x1152 without anyone noticing. Refuse to ship a mismatched
-// asset instead of writing it quietly; the caller lets this throw all the way
-// out so the whole run fails loudly (CI job red) rather than soft-skipping.
+// of the decided 2048x1152 without anyone noticing. `kontext` on the PAID
+// gen.pollinations.ai farm has its OWN silent mismatch: img2img edits come back
+// as a JPEG at the model's own fixed edit resolution (observed: 1024x1024,
+// ignoring the requested 2048x1152 entirely) instead of erroring — a second,
+// distinct instance of the same failure shape, this time also the WRONG FORMAT
+// (every downstream step — chroma-key, despeckle, the DOM plate/pose composite —
+// assumes a real PNG). Refuse to ship a mismatched OR non-PNG asset instead of
+// writing it quietly; the caller lets this throw all the way out so the whole
+// run fails loudly (CI job red) rather than soft-skipping.
 function assertDimensions(a, buf) {
   const dims = pngDimensions(buf);
-  if (!dims) return; // not a PNG we can introspect (e.g. non-image fallback) — let downstream fail
+  if (!dims) {
+    throw new Error(
+      `${a.key}: provider response is not a PNG (no IHDR chunk found in the first 24 bytes) — ` +
+        `refusing to write it as a .png (kontext img2img on the paid farm can return a JPEG at ` +
+        `its own fixed edit resolution instead of honouring width/height; investigate before retrying).`,
+    );
+  }
   if (dims.width !== a.width || dims.height !== a.height) {
     throw new Error(
       `${a.key}: provider returned ${dims.width}x${dims.height}px but ${a.width}x${a.height}px ` +
-        `was requested — refusing to write a silently downscaled asset (Pollinations halves ` +
-        `oversized requests on the anonymous tier; set POLLINATIONS_TOKEN or investigate before retrying).`,
+        `was requested — refusing to write a silently downscaled/resized asset (Pollinations halves ` +
+        `oversized requests on the anonymous tier and kontext img2img can ignore width/height on the ` +
+        `paid farm; set POLLINATIONS_TOKEN or investigate before retrying).`,
     );
   }
 }
