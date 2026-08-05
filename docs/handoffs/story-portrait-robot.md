@@ -819,3 +819,54 @@ Parallélisation de la reprise — chemins non chevauchants :
 Un seul nouveau tour de panel à la reprise, pas un par bloquant.
 
 Ce diff n'est pas loin. Il lui manque les quinze mètres de fil entre quatre pièces qui marchent.
+
+---
+
+## 12bis. LANE `dev-gameplay` — CORRECTIFS DU PANEL (stage 6) — Amelia — 2026-08-05 — DONE
+
+- **claim :** `src/game/**` uniquement (systems, portraits, types + leurs tests). Aucun fichier de
+  `src/render`, `src/hooks` ou `scripts/` touché — la lane render travaille **en parallèle sur le
+  même arbre**, ses fichiers sont restés hors de mes 5 commits.
+- **release :** 5 commits atomiques, **suite `src/game` : 53 fichiers / 1132 tests, 100 % verts**
+  (chiffre observé, pas déclaré) ; `tsc` propre sur `src/game`, `eslint src/game` propre.
+
+| Correctif | Ce qui a changé | Test de non-régression |
+| --- | --- | --- |
+| **B2** | `allDead` exige `tickedEnemies.length > 0` ; la **libération du hold** devient son propre événement (`holdReleased`) et fait asseoir la vague **1**, pas 2 | `portraitLevelModifier.test.ts` — le test :103 réécrit (`wave === 1`) + « la vague 1 est une vraie vague et le rollover vers 2 exige qu'elle soit jouée » |
+| **B2 (mineur)** | Les **trois horloges de niveau** (`timeRemaining`, `elapsedSeconds`, `courierTimer`) sont **gelées** pendant le hold — le payoff donne du temps, il ne dépense pas celui du niveau | 2 tests : gel pendant le hold, reprise au tick de libération |
+| **B4b** | Une bande sans variante tire `NO_TRUTH_SLOT = -1` ⇒ **jamais correcte**. Avant : `truth = 0` et `selection = 0` ⇒ correcte en permanence, un catalogue à 3 bandes vides s'auto-résolvait en `IDENTIFIED` | 3 tests : jamais créditée sur 200 graines, 3 bandes vides ⇒ au mieux `FAILED`, catalogue entièrement vide ⇒ `FAILED` à l'expiration |
+| **B1 (moitié pure)** | `scoreDelta` ajouté à `LevelModifier`, alimenté par `levelModifierFromPortrait`. **JSDoc explicite sur les deux temporalités** : ce champ règle la scène écoulée, `energyDelta`/`firstWaveDelaySeconds` arment le niveau suivant | 2 tests d'arrivée côté pur : le barème par verdict, et **`createInitialState` ne le dépense pas** (score du niveau suivant toujours à 0) |
+| **M7 / M8** | Le hold de révélation est un **accumulateur de `dt` sur la scène résolue** : une frame en pause ne passe pas de `dt`, la pause est honorée **par construction**. Le reste de la scène résolue reste gelé (l'identité D8.2 est scindée en deux tests) | 3 tests : décompte jusqu'à 0 exactement, pause = zéro avance sur 240 frames, valeur par issue lue sur la scène |
+| **M9** | `PortraitPlateManifest` aligné sur **la forme du producteur** (`{gabaritId, plateChecksum, portraitSize, seams, bands}`) ; `plateAssets` **dérive** la liste. Avant : `new Set(plate.assets)` = `new Set(undefined)` ⇒ **throw** dans le module qui promet de ne jamais jeter | La **fixture est le fichier généré lui-même** + « le manifeste généré se lit sans jeter », + un manifeste sans bandes ⇒ issue, jamais throw |
+
+**Ce que la vraie fixture a immédiatement révélé** (et que la fixture maison cachait) : le
+`plateChecksum` du catalogue livré (`PROVISIONAL-NO-PLATE-YET`) **ne correspondait pas** à celui de
+`portraitPlate.generated.json` ⇒ `plate-provenance` (error) dès le premier appel réel. Aligné sur la
+graine de la planche placeholder, **valeur autorisée, pas dérivée** : la dériver du manifeste rendrait
+le contrôle vide de sens.
+
+**Prescriptions impraticables : aucune.** Deux remarques, dites plutôt que déviées en silence :
+
+1. **Le wrap sur `VARIANTS_PER_BAND` n'est pas dans `src/game`** — `applySelection` bornait déjà sur
+   la longueur réelle de la bande. Le wrap fautif vit dans `src/hooks/usePortraitGestures.ts`
+   (lane render). Le côté pur a fait sa part : `CYCLE.delta` est désormais **un entier quelconque**
+   (et non `1 | -1`), donc un drag de N crans est **relatif** et n'a plus ni à lire un état non foldé
+   ni à wrapper lui-même — c'est ce qui supprime les deux bugs (`SET` absolu + wrap sur 6) à la source.
+2. **M8 disparaît sans constante à réutiliser.** La prescription disait « utiliser `QTE_RESULT_HOLD` » ;
+   avec M7 la phase render n'a **plus aucune horloge ni aucun nombre** à déclarer — elle lit
+   `scene.revealSeconds` et traite `0` comme « rends la main ». Emprunter la constante d'un autre
+   système aurait été un troisième endroit où le nombre existe. `REVEAL_SECONDS_IDENTIFIED` /
+   `_UNRESOLVED` (gate A15) restent les seules valeurs, dans `src/game`.
+
+**Coordination** — la valeur qui traverse maintenant a un lecteur à écrire de l'autre côté :
+- `dev-r3f-render` : appliquer `modifier.scoreDelta` **à la sortie de `PORTRAIT_ROBOT`** (§6.2), pas au
+  `createInitialState` suivant ; supprimer le `setTimeout` et `RESULT_HOLD_SECONDS = 2.2` au profit de
+  `scene.revealSeconds` ; appeler `validatePortrait(FACE_CATALOGUE, plate)` à l'entrée de phase (B4a).
+- `dev-tooling-assets` : la forme du manifeste est désormais lue telle qu'écrite ; **tout changement de
+  `plateChecksum` par une vraie passe de slicing doit être répercuté dans `faceCatalogue.data.ts`**,
+  sinon `plate-provenance` passe rouge — c'est voulu.
+- `tech-writer` : ADR-0080 D3 (signature + forme du manifeste), ADR-0079 D4 (`scoreDelta` et sa
+  temporalité, gel des horloges pendant le hold, hold de révélation dans la scène pure).
+
+- **next :** `dev-r3f-render` (B1 shell, B3, B4a, M5-aggravant, M10), puis un **seul** nouveau tour de
+  panel.
