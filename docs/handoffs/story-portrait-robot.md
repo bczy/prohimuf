@@ -630,3 +630,172 @@ commit (`484fef93`), avant tout hook.
     valeurs par défaut posées, les tests de bord tiennent à n'importe quelle valeur.
   - `senior-architect` (Winston) : les deux points muets ci-dessus + la signature élargie de
     `validatePortrait`.
+
+---
+
+## 6. STAGE 6 — Triage du panel + revue d'intégration (senior-architect, Winston)
+
+> Une seule passe, une seule lecture du diff (81 fichiers, `git diff origin/main...HEAD`).
+> Ce triage EST la revue d'intégration.
+
+### 6.0 Ce que la vérification a tué — et ce qu'elle laisse debout
+
+Aucun des sept invariants du §3.4 n'est tombé. Site d'appel unique du fold, déterminisme,
+`correctCount(initialSelection) === 0` **par arithmétique** (`(truthSlot + 1 + hash % (n-1)) % n`,
+donc vrai pour tout seed sans rejection sampling), `validatePortrait` totale, aucun champ de vie,
+aucun feedback par trait, aucun acte de validation, aucune constante de gate dans `App.tsx`. La
+régression A16 (`data-correct` par bande) est corrigée en `7c4a8947`.
+
+**Le cœur pur tient. Ce qui ne tient pas, c'est le câblage : la scène calcule ses sorties et les
+abandonne avant qu'elles n'atteignent le joueur.** Quatre valeurs quittent
+`resolvePortraitScene` — score, hold, beat, verdict visuel — et trois n'arrivent nulle part. Ce
+n'est pas une somme de bugs indépendants : c'est une couture inter-lanes qui n'a jamais été
+refermée, parce que chaque lane a livré son côté et déclaré l'autre côté « pas à moi ».
+
+### 6.1 Tableau de triage
+
+| # | Finding | Prescription | Lane |
+|---|---|---|---|
+| **B1** | `scoreDelta` calculé, jamais appliqué (AC5, gate §3) | **Arbitrage §6.2.** Ajouter `scoreDelta` à `LevelModifier` ; l'appliquer **dans `App.tsx` à `onDone`, avant le calcul de `pendingScore`**, en déplaçant le calcul de `pendingScore` de `LEVEL_COMPLETE` vers la sortie de `PORTRAIT_ROBOT`. Un test de séquencement obligatoire. | `dev-r3f-render` (shell) + `dev-gameplay` (champ + table), coordonné — **fichier partagé `App.tsx`, sérialiser** |
+| **B2** | Le hold fait démarrer le niveau suivant en vague 2 : `every()` sur `[]` vaut `true` | Le garde `allDead` doit exiger une vague **effectivement jouée**. Correction prescrite : `allDead = waveHoldRemaining <= 0 && tickedEnemies.length > 0 && tickedEnemies.every(...)`. Le test `portraitLevelModifier.test.ts:103` **scelle le bug** : il est à réécrire (`wave === 1`, ennemis présents), pas à conserver. | `dev-gameplay` |
+| **B3** | `narrativeBeat` sans consommateur (AC6, gate A1b) | Brancher la sélection de scène `PRE_LEVEL_NARRATIVE` sur `runModifier.narrativeBeat` au prochain `NARRATIVE_PRE`. Le shell choisit **une scène par clé**, il ne branche pas sur le sens du verdict. Test : `FAILED` ⇒ `portrait_robot_failed` joué au niveau suivant. | `dev-r3f-render` (+ clés côté `dev-gameplay` si absentes) |
+| **B4** | `validatePortrait` sans appelant ; le saut de phase D3 n'existe pas ; bande à 0 variante = **correcte en permanence** | Deux corrections, pas une : (a) appeler `validatePortrait(catalogue, plate)` **à l'entrée de phase** et sauter la phase sur `error` (ADR-0080 D3) ; (b) `resolvePortraitScene` doit traiter une bande sans variante comme **non résolue**, jamais comme juste — la dégradation par défaut doit être défavorable, pas favorable. | (a) `dev-r3f-render` ; (b) `dev-gameplay` |
+| **M5** | `Escape` résout en un appui, divergence non actée avec §3 | **Arbitrage §6.3** : l'argument UX §2.8.4 est bon mais non acté ⇒ **faire amender §3 par `lead-game-designer` dans le même diff**. En attendant l'amendement, corriger l'aggravant : `EarlyExitButton` ne doit pas être le premier élément focusable, et son activation clavier suit le protocole en deux temps. | `lead-game-designer` (amendement) + `dev-r3f-render` (ordre de focus) |
+| **M6** | Reptation de révélation absente (AC4) : 4,8 s sur un visage faux, sans correction visible | **Ne pas descoper en silence.** Deux issues acceptables : implémenter la reptation, ou descoper AC4 par décision écrite `pm` + `lead-game-designer`. Un joueur qui échoue sans jamais voir la bonne réponse perd la boucle d'apprentissage — c'est le sujet de la scène. | `pm` / `lead-game-designer` (décision) puis `dev-r3f-render` |
+| **M7** | Timer reveal/hold en `setTimeout` mural, ignore `paused` | Une seule horloge par phase. Le hold de révélation doit être un accumulateur `dt` **dans la scène pure** (comme le chrono), pas un `setTimeout` dans le composant. Corrige la pause **par construction** au lieu d'ajouter un garde. | `dev-gameplay` (champ de scène) + `dev-r3f-render` (retrait du `setTimeout`) |
+| **M8** | `RESULT_HOLD_SECONDS = 2.2` redéclaré dans `PortraitRobotPhase.tsx` | Supprimer, réutiliser `QTE_RESULT_HOLD` (ou exporter depuis `src/game`). **Violation directe d'ADR-0079 A5** : c'est exactement le nombre de gate dans `src/render` que j'interdis. Disparaît de fait avec M7. | `dev-r3f-render` |
+| **M9** | Manifeste de planche à deux formes : script écrit `{bands}`, `validatePortrait` lit `plate.assets` ⇒ `new Set(undefined)` ⇒ **throw** | La forme du **producteur** (`{bands}`) fait foi — c'est elle qui est versionnée et relisible. `validatePortrait` s'y aligne et **dérive** la liste d'assets. La fixture de test doit être **le fichier généré**, pas une fixture à la forme du consommateur (c'est ce qui a caché le bug). J'assume ici la signature élargie `validatePortrait(catalogue, plate?)` : elle reste, et **ADR-0080 D3 doit être rectifié**. | `dev-tooling-assets` (forme + fixture) + `dev-gameplay` (lecture) |
+| **M10** | `src` des bandes non préfixé par `BASE_URL` — casse en sous-chemin, donc la preview de branche | Préfixer côté render comme partout ailleurs, et corriger le commentaire du type qui **affirme déjà** que la lane render le fait. Impact déploiement réel : la preview de branche est le support de la revue art/UX. | `dev-r3f-render` |
+
+**Mineurs — tranchés en bloc.** À corriger dans le même passage, sans nouvelle boucle de revue :
+`SET` absolu calculé sur un état non folded (**à corriger** : ordonnancement, pas cosmétique) ;
+wrap sur `VARIANTS_PER_BAND` au lieu du total de la bande (**à corriger** : devient un vrai bug le
+jour où une bande n'a pas 6 variantes, c'est-à-dire le jour de la vraie planche) ; handler clavier
+sans garde sur les modificateurs (**à corriger** : `Ctrl+A` cycle une variante) ; `courierTimer` /
+`timeRemaining` non gelés pendant le wave-hold (**à corriger** : le payoff dépense l'horloge du
+niveau, la récompense se paie elle-même) ; `PORTRAIT_SEED` calculé au chargement de module
+(**à corriger** : deux runs dans le même onglet = même planche, ça contredit le tirage) ;
+bouton de sortie et chevrons non désactivés pendant la pause (**à corriger**) ; verdict
+`PARTIAL`/`FAILED` non annoncé aux lecteurs d'écran (**à corriger**, accessibilité) ;
+`aria-valuenow` réécrit ~2100 fois et exposant les secondes (**à corriger** : contredit D9, le
+chrono est sans chiffre) ; `BAND_IDS` dupliqué de `PORTRAIT_BAND_ORDER` et `data-outcome` mort
+(**à supprimer**) ; dépendance non déclarée à `POST_LEVEL_NARRATIVE` (**à déclarer** : la scène
+n'est atteignable que si le niveau a une entrée dans une table de copie — c'est un couplage
+invisible, il doit être écrit ou levé).
+
+### 6.2 Arbitrage 1 — le séquencement du score (finding B1)
+
+C'est ma décision, pas celle d'une lane, parce qu'elle porte sur l'ordre des phases de l'app-shell.
+
+`pendingScore` est calculé au `LEVEL_COMPLETE`, donc **avant** `NARRATIVE_POST → PORTRAIT_ROBOT`.
+Brancher naïvement `scoreDelta` dans `LevelModifier` et l'appliquer « au niveau suivant » produirait
+un score de fin de run qui ignore 1500 points gagnés dans la dernière scène jouée — un bug de
+high-score, la catégorie de bug la plus coûteuse en confiance joueur.
+
+**Décision : le score du portrait-robot n'est pas un modificateur de niveau suivant, c'est le
+règlement de la scène qui vient de se jouer.** Donc :
+
+1. `scoreDelta` est ajouté à `LevelModifier` (le type reste la seule sortie de la scène — je ne
+   veux pas de deuxième canal de retour).
+2. Il est **appliqué au score du run à la sortie de `PORTRAIT_ROBOT`**, pas au `createInitialState`
+   suivant. C'est le seul champ du modifier avec cette sémantique, et cela doit être écrit dans son
+   JSDoc, faute de quoi quelqu'un le déplacera « par symétrie » dans six mois.
+3. **Le calcul de `pendingScore` descend de `LEVEL_COMPLETE` à la sortie de `PORTRAIT_ROBOT`.**
+   C'est le vrai changement, et il est structurel : la qualification au tableau des scores doit se
+   décider sur le score final du run, et le portrait-robot fait désormais partie du run.
+4. Un test de séquencement est **obligatoire** au merge : « un `IDENTIFIED` qui fait franchir le
+   seuil du tableau déclenche `NAME_ENTRY` ». Sans lui, la régression revient au premier refactor.
+
+Note de cohérence à ne pas manquer : `LevelModifier` porte désormais **deux temporalités** — un
+champ qui règle le passé (`scoreDelta`) et deux qui préparent le futur (`energyDelta`,
+`firstWaveDelaySeconds`). C'est acceptable, ce n'est pas gratuit, et ça se documente.
+
+### 6.3 Arbitrage 2 — la divergence `Escape` (finding M5)
+
+L'argument d'UX §2.8.4 est juste : empiler une précision temporelle et une précision spatiale sur
+un joueur clavier ou lecteur d'écran est hostile, et le protocole en deux temps a été conçu pour le
+**pouce sur tactile**, pas pour la touche `Échap`. Je ne demande pas à la lane render de dégrader
+son accessibilité pour se conformer à la lettre d'un §3 écrit avant que la question ne se pose.
+
+**Mais une divergence non actée est une dette de vérité, pas un choix.** Aujourd'hui, la §3
+canonique dit une chose et le code en fait une autre, et rien n'enregistre pourquoi. Le prochain
+reviewer relira ce même écart comme un bug, exactement comme quatre reviewers viennent de le faire.
+
+**Décision : le code garde son comportement, et `lead-game-designer` amende §3 dans le même diff**
+pour distinguer explicitement le régime tactile (deux temps) du régime clavier (action délibérée =
+sa propre confirmation). Pas de merge avec l'amendement « à suivre ».
+
+**L'aggravant, lui, est un vrai défaut et n'est couvert par aucun argument** : `EarlyExitButton`
+est le premier élément focusable du DOM. Un joueur clavier qui tabule par réflexe et presse Entrée
+termine la scène sans l'avoir jouée. À corriger indépendamment de l'arbitrage ci-dessus.
+
+### 6.4 Revue d'intégration
+
+**Loi de frontière — respectée sur le fond, une brèche à refermer.**
+`src/game/` n'importe ni React ni Three (test de contrat sur l'arbre entier, y compris
+`Math.random`/`Date.now`) ; `src/render` ne contient aucune règle de résolution ; `src/hooks` est
+bien le seul pont, et le fold a un site d'appel unique. **La seule vraie brèche est M8** : une
+constante de gate (`2.2`) redéclarée dans `src/render`. Elle est petite, et c'est précisément le
+mode de fuite que l'ADR-0079 A5 nomme — un nombre qui traverse, puis deux, puis la table.
+M7 est la variante temporelle du même problème : une horloge de règle qui vit dans le composant.
+**Les deux se corrigent d'un coup en remontant le hold de révélation dans la scène pure.** C'est ma
+prescription préférée du lot, parce qu'elle supprime une classe de bug au lieu d'un bug.
+
+**Coutures inter-lanes — c'est là que la story a échoué.**
+Les trois lanes ont livré des surfaces propres et **personne n'a possédé les jointures**. B1, B3 et
+B4 ont la même forme : une valeur produite d'un côté, aucun lecteur de l'autre. M9 en est la version
+tooling (deux formes de manifeste, invisibles parce que le consommateur n'appelle personne et que le
+test fabrique sa propre fixture). C'est ma responsabilité de partition autant que la leur : j'ai
+découpé les lanes par répertoire sans nommer un propriétaire pour chaque **valeur qui traverse**.
+Correctif de méthode pour la suite : toute valeur franchissant une frontière de lane doit avoir un
+test qui l'observe **à l'arrivée**, écrit par la lane réceptrice.
+
+**Dépendances / déploiement.** Zéro dépendance ajoutée (le writer PNG du script est sans
+dépendance — bon choix). Un nouveau workflow CI et une cible de manifeste `portrait-robot`.
+**M10 est le seul risque de déploiement réel** : sans `BASE_URL`, les 24 bandes cassent en
+sous-chemin, donc la preview de branche est aveugle — et la preview de branche est justement le
+support des revues art et UX qui restent à faire.
+
+### 6.5 Findings DOC → `tech-writer` (Otis)
+
+- **ADR-0080 D3** — rectifier la signature : `validatePortrait(catalogue, plate?)` (élargissement
+  assumé, §3.4) et fixer la forme du manifeste sur celle du producteur (`{bands}`, finding M9).
+- **ADR-0079 D4** — documenter le nouveau champ `scoreDelta` et sa temporalité distincte (§6.2),
+  ainsi que le déplacement du calcul de `pendingScore`.
+- **Gate §3 / ADR-0081** — enregistrer l'amendement `Escape` une fois `lead-game-designer` PASS
+  (§6.3). `tech-writer` transcrit, il ne décide pas.
+- **JSDoc `PortraitBandAsset`** — le commentaire affirme que la lane render préfixe `BASE_URL`
+  alors qu'elle ne le fait pas (M10) : à réaligner **après** la correction, pas à la place.
+- **ADR-0080 D5** — la cible de manifeste annonce « 24 chemins + le médaillon » ; le médaillon
+  n'existe pas et la cible est composée des quatre bandes vraies. Corriger l'ADR (24, pas 25).
+- **Point resté muet, à acter** : le hold de vague est gelé pendant un QTE (retour anticipé des
+  branches de gel). Comportement correct — « le beat est hors du temps » — mais non écrit.
+  À ajouter à ADR-0079 D4.
+- Les trois ADR restent `Proposed` : ils passent `Accepted` **après** merge, pas avant.
+
+### 6.6 Verdict
+
+**NO-MERGE.**
+
+Bloquants, avec leur lane :
+
+| Bloquant | Lane propriétaire |
+|---|---|
+| **B1** — le score n'atteint jamais le joueur (+ séquencement `pendingScore`) | `dev-r3f-render` + `dev-gameplay`, sérialisés sur `App.tsx` |
+| **B2** — le payoff s'inverse en vague 2 ; le test qui scelle le bug est à réécrire | `dev-gameplay` |
+| **B3** — `narrativeBeat` sans consommateur (AC6, gate A1b) | `dev-r3f-render` |
+| **B4** — `validatePortrait` sans appelant + dégradation favorable au joueur | `dev-r3f-render` (appel) + `dev-gameplay` (dégradation) |
+| **M9** — le manifeste jette dans le module qui promet de ne jamais jeter | `dev-tooling-assets` + `dev-gameplay` |
+| **M5-aggravant** — sortie anticipée au premier `Tab`+`Entrée` | `dev-r3f-render` |
+| **M10** — bandes cassées en sous-chemin (preview de branche aveugle) | `dev-r3f-render` |
+
+M6 est bloquant **en tant que décision** : implémenté ou descopé par écrit, mais pas laissé
+implicite. M5 est bloquant **en tant qu'amendement** : le comportement reste, la table s'aligne.
+
+Parallélisation de la reprise — chemins non chevauchants :
+`dev-gameplay` (`src/game/systems/`, `src/game/portraits/`), `dev-tooling-assets` (`scripts/`,
+`portraitPlate.generated.json`), `dev-r3f-render` (`src/render/ui/portrait/`, `src/hooks/`).
+**`App.tsx` est le fichier partagé de B1 et B3 : une seule lane à la fois, render en dernier.**
+Un seul nouveau tour de panel à la reprise, pas un par bloquant.
+
+Ce diff n'est pas loin. Il lui manque les quinze mètres de fil entre quatre pièces qui marchent.
