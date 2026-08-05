@@ -228,47 +228,33 @@ un attribut oublié retombait silencieusement sur un défaut. Relevé en PROPOS�
 `simplify`, tranché par le panel, appliqué à rendu inchangé (tailles d'emblèmes mesurées
 identiques avant/après sur une capture réelle).
 
-## Troisième lane, arrivé hors session — le workflow du panel
+## Troisième lane, arrivé hors session — EXTRAIT vers sa propre PR
 
-Le commit `94b2db14` (`fix(ci): pin the panel's diff to the PR head, and refuse an empty
-subject`) modifie `.github/workflows/code-review-panel.yml`. **Il n'a pas été écrit par la
-session qui mène cette PR** : une autre session Claude a poussé sur cette branche pour
-corriger le BLOQUANT « `diff.patch` et `files.txt` vides », que la session courante avait
-explicitement refusé de traiter ici — au motif que toucher le workflow du panel depuis une
-PR que ce panel juge est une boucle à éviter, et que c'est un lane de plus.
+Le commit `94b2db14` (poussé sur cette branche par une AUTRE session Claude) modifiait
+`.github/workflows/code-review-panel.yml` — le gate de merge lui-même. Le panel l'a relevé
+trois fois, en escalade : MAJEUR, puis BLOQUANT, avec un argument imparable —
+« _self-disclosure by the PR does not close the gate_ ». Déclarer le trou ne le comble pas.
 
-Le correctif est juste sur le fond : le job `prepare` ne pinnait aucune ref, donc sur
-`workflow_dispatch`/`workflow_call` le checkout retombait sur la branche par défaut, HEAD
-valait `main`, et `git diff origin/main...HEAD` était légitimement vide. Deux garde-fous
-sont ajoutés pour qu'un harness cassé ne puisse plus publier un PASS creux.
+Trois griefs, tous justes : aucune signature de lane (`.github/workflows/**` appartient à
+`dev-tooling-assets`), aucun ADR (ce fichier en a exigé un trois fois — ADR-0063, 0067,
+0070), et le gate se modifiait en se jugeant.
 
-**Ce qui reste dû, et c'est plus qu'une signature.** Ce fichier a exigé **son propre ADR
-trois fois** — ADR-0063 (panel en CI), ADR-0067 (fallback de fournisseur), ADR-0070
-(transport d'auth). Dans ce dépôt, changer le comportement du gate de merge est une décision
-documentée par construction, et celle-ci ne l'est pas. L'ADR manque davantage que la
-signature : une signature atteste qu'un lane a relu, un ADR dit POURQUOI le gate se comporte
-désormais autrement, pour tous ceux qui en hériteront sans avoir vu cette PR.
+**Extrait vers [PR #168](https://github.com/bczy/prohimuf/pull/168)** (branche
+`claude/panel-harness-pin-pr-head`), avec **ADR-0083** et une demande explicite de signature
+`dev-tooling-assets`. Cette story revient donc à **deux lanes**, et le BLOQUANT tombe.
 
-Par ailleurs `.github/workflows/**` appartient à `dev-tooling-assets`, et **aucune
-signature de lane ne le couvre**. Les deux signatures de cette story portent sur
-`src/render/ui/**` et `scripts/`. L'ancienne dérogation de palier — retirée depuis — nommait
-d'ailleurs l'arrivée d'un troisième lane parmi ses conditions de nullité.
+Ce qui RESTE ici de ce commit : son correctif CSS `.slot.slotSettled`, en périmètre — il fait
+gagner la stabilisation par le sélecteur au lieu d'un ordre de déclaration dans le fichier.
 
-**Non résolu unilatéralement, et volontairement.** Retirer le commit d'une autre session
-rendrait le panel à nouveau aveugle sur un vrai défaut ; fabriquer la signature manquante
-produirait un artefact de gate sans gate derrière — le même refus que pour `lead-art`.
-Deux issues, décision Bertrand : faire signer `dev-tooling-assets`, ou sortir ce commit dans
-sa propre PR.
+Coût de l'extraction, borné et connu : jusqu'au merge de #168, les relances MANUELLES du panel
+(`workflow_dispatch`/`workflow_call`) produisent encore un diff vide. Le flux normal sur
+`pull_request` n'est pas affecté — c'est précisément ce qui avait rendu le défaut invisible.
 
 ## Débordements de périmètre, déclarés
 
-**TROIS** changements de ce diff sortent de « une animation d'entrée ». Le troisième — la
-modification du workflow du panel — a sa propre section plus haut parce qu'il appelle
-davantage qu'une déclaration : signature de lane manquante ET **ADR manquant**, ce fichier
-ayant exigé le sien trois fois (ADR-0063, 0067, 0070). Il est rappelé ici pour que cette
-liste, qui existe justement pour qu'on n'ait pas à chercher ailleurs, ne l'omette pas.
-
-Les deux autres, nommés plutôt que découverts en relecture :
+Deux changements de ce diff sortent de « une animation d'entrée », nommés plutôt que
+découverts en relecture. Un troisième l'a fait un temps — la modification du workflow du
+panel — jusqu'à son extraction vers la PR #168 (section ci-dessus) :
 
 1. **`errText()` appliqué à TOUS les `catch` de `screenshot-preview.mjs`**, pas seulement
    aux deux du correctif de settle — dont la boucle de capture par niveau et le handler

@@ -593,6 +593,21 @@ export function FlyerWall({
             flex: 0 0 var(--flyer-max-width);
             width: var(--flyer-max-width);
             scroll-snap-align: start;
+            /* No entrance cascade in the rack. The fall starts up to 230px above the
+               resting position (FLYER_FLOAT_IN_VARIANTS), and this is the ONE layout that
+               clips: the padding above is sized for the PULL, ~32px, so every sheet spends
+               its whole fall beheaded at the clip edge — measured at 233px of the tutorial
+               flyer cut off, its masthead and stamp with it. Growing the padding to 240px
+               is the other way out and the wrong one: it would spend most of a ~300px
+               content band on headroom for a decorative fall, on the screen that has the
+               least height to give. A 230px vertical drop is also meaningless here — the
+               rack is a constrained HORIZONTAL scroller, so the sheets fall in from
+               off-layout rather than onto the wall.
+               Same end state as the reduced-motion kill switches and .slotSettled, and
+               reached the same way: the animation is REMOVED, not replaced by a second
+               one. Specificity (0,2,0) beats the .slot rule's (0,1,0), so this wins
+               wherever the CSS-module rule lands in source order. */
+            animation: none;
           }
         }
       `}</style>

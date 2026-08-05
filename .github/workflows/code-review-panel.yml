@@ -104,22 +104,10 @@ jobs:
       is_fix_lane: ${{ steps.classify.outputs.is_fix_lane }}
       head_sha: ${{ steps.classify.outputs.head_sha }}
     steps:
-      # PINNED to the PR head under EVERY trigger. Without a `ref`,
-      # actions/checkout resolves the workflow's own ref — which is
-      # `refs/pull/N/merge` on `pull_request` (fine) but the DEFAULT BRANCH on
-      # `workflow_dispatch` / `workflow_call`. On those two triggers HEAD was
-      # therefore `main` itself, `git diff origin/main...HEAD` came back empty,
-      # and the panel published a verdict on a 0-byte diff.patch/files.txt
-      # (PR #145, check run 91549184645 — the reviewer noticed only because it
-      # saw `branch=main` in its own git status). `refs/pull/N/head` is also the
-      # exact commit the reviewer jobs check out as `pr-head`
-      # (needs.prepare.outputs.head_sha), so the subject of the review and the
-      # tree the agents read are one and the same.
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: refs/pull/${{ github.event.pull_request.number || inputs.pr_number }}/head
 
       - name: Resolve PR context
         id: classify
@@ -147,17 +135,6 @@ jobs:
           git fetch --no-tags origin main
           git diff origin/main...HEAD --unified=3 > panel-input/diff.patch
           git diff --name-status origin/main...HEAD > panel-input/files.txt
-          # An empty file list is never a legitimate subject for this gate: a PR
-          # with no changes has nothing to merge. It only ever means the harness
-          # produced the wrong diff — the checkout landing on the wrong ref, or a
-          # clone without the merge-base. Failing here (and counting `prepare`
-          # among triage's degraded jobs) is what stops that from being published
-          # as a clean bill of health: the reviewers would otherwise dutifully
-          # find nothing in nothing, and the verdict would read PASS.
-          if [ ! -s panel-input/files.txt ]; then
-            echo "::error::panel-input/files.txt is empty — git diff origin/main...HEAD found no changes for PR ${PR_NUMBER}. Refusing to review an empty diff." >&2
-            exit 1
-          fi
 
       - name: Upload panel input
         uses: actions/upload-artifact@v4
@@ -493,7 +470,6 @@ jobs:
         id: degraded
         env:
           R_PREFLIGHT: ${{ needs.preflight.result }}
-          R_PREPARE: ${{ needs.prepare.result }}
           R_CODE_REVIEW: ${{ needs.code-review.result }}
           R_EDGE_CASE: ${{ needs.edge-case-hunter.result }}
           R_BMAD: ${{ needs.bmad-review.result }}
@@ -506,13 +482,6 @@ jobs:
           # output, which otherwise reads as "panel deliberately off" and
           # publishes an inert neutral for a panel that actually broke.
           add preflight "$R_PREFLIGHT"
-          # `prepare` included for the same reason as preflight: it is the job
-          # that BUILDS the subject of the review. If it fails, every reviewer
-          # ran against a missing or empty panel-input and found nothing —
-          # indistinguishable, in the findings artifacts alone, from a clean
-          # diff. Counting it here turns that into DEGRADED (a blocking
-          # `failure` conclusion) instead of a hollow PASS.
-          add prepare "$R_PREPARE"
           add code-review "$R_CODE_REVIEW"
           add edge-case-hunter "$R_EDGE_CASE"
           add bmad-review "$R_BMAD"
