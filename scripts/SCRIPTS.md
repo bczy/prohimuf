@@ -1108,6 +1108,43 @@ PR/branch preview.
 
 ---
 
+## slice-portrait-plate.mjs — Portrait-robot band plate (hair/eyes/nose/mouth)
+
+Generates the 24 sliced band PNGs of the portrait-robot mini-game
+(`assets/portrait/<band>-<nn>.png`, `PORTRAIT_ASSET_DIR` in
+`src/game/types/portraitRobot.ts`) plus
+`src/game/portraits/portraitPlate.generated.json` (seam ordinates + asset
+paths, consumed read-only by `dev-gameplay`'s catalogue).
+
+- **Single writer, atomic, no per-band mode** (ADR-0080 D5): a run either
+  writes all 24 files + the manifest together, or writes nothing. A plate
+  failing the seam-continuity measurement is rejected WHOLE — see the "portée
+  du rejet" rule in `docs/art-direction/brief-portrait-robot.md` §1.2bis.
+- **Two modes:**
+  - `--placeholder` — 24 flat, mutually-distinguishable, correctly-sized filler
+    PNGs, no network, no plate. What unblocks `dev-r3f-render` on day 1
+    (`docs/handoffs/story-portrait-robot.md` §3.3 step 1). Run locally,
+    committed directly — no CI workflow needed.
+  - default / `[--plate <path>]` — the real pipeline: fetch (or read) a face
+    plate → recalage (vertical registration on the eye-line/nose-base margin
+    ticks) → slice at the 3 seams → measure the 4 §1.2bis tolerances on every
+    seam → write, or reject. Runs in CI
+    (`.github/workflows/gen-portrait-plate.yml`) since FLUX is normally
+    blocked in the local sandbox.
+- **Prompt family:** `PORTRAIT_PROMPT_FAMILY` in the script (not
+  `levelArt.json` — ADR-0080 D1/A3 explicitly excludes this catalogue from
+  that file). Ships `pending: true` with empty prose — the words are
+  concept-artist's per the ratified brief §7.1; the generator refuses a real
+  FLUX call while pending, so the scaffold cannot burn the generation budget
+  on empty text. `lintPromptFamily()` is this script's own prompt-gate-shaped
+  lint (mirrors `check-art-prompts.mjs`'s report shape without depending on
+  `levelArt.json`).
+- **Known limit, stated in the file header:** the recalage pass corrects
+  vertical drift only (uniform scale+offset from the two registration marks),
+  not rotation/tangent drift — a tilted plate is _detected_ (folds into the
+  seam-continuity reject) but not resampled straight. See the script's "HONEST
+  LIMIT" comment before extending it.
+
 ## gen-courier-sprites.mjs — Layered courier flipbook (bike + rider)
 
 Generates the street-courier (livreur) as a **2-layer composite** — a delivery

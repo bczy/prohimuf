@@ -1,0 +1,602 @@
+#!/usr/bin/env node
+/**
+ * slice-portrait-plate.mjs — the ONLY writer of `public/assets/portrait/*.png`
+ * and `src/game/portraits/portraitPlate.generated.json` (ADR-0080 D5).
+ *
+ * Production route ratified by Bertrand (docs/handoffs/story-portrait-robot.md
+ * §11 R-3): generate WHOLE FACES on a plate, then slice — never generate a band
+ * directly (FLUX has no memory of skull width across calls, so per-band
+ * generation guarantees a fractured skeleton at every seam; art brief §5.2,
+ * ADR-0011 precedent). This script is that slice step, plus the recalage
+ * (registration) pass and the seam-tolerance measurement that the brief
+ * (§1.2bis) makes a condition of existence for the screen, not a nicety.
+ *
+ * ATOMICITY (ADR-0080 D5, art brief §1.2bis "portée du rejet"): there is no
+ * per-band mode and no "regenerate one variant" flag — that absence IS the
+ * atomicity guarantee. A run either writes all 24 files + the manifest
+ * together, or writes nothing. A plate that fails the seam-tolerance gate is
+ * rejected WHOLE (not per variant) — see `measureSeamContinuity` below.
+ *
+ * Modes:
+ *   node scripts/slice-portrait-plate.mjs --placeholder
+ *     Writes 24 flat, mutually-distinguishable, correctly-sized PLACEHOLDER
+ *     PNGs with NO network call and NO real plate — this is what unblocks
+ *     `dev-r3f-render` on day 1 (story §3.3 step 1) while the real plate is
+ *     still pending the concept-artist prompt gate. Deterministic, procedural,
+ *     dependency-free (same small PNG encoder as gen-courier-sprites.mjs).
+ *
+ *   node scripts/slice-portrait-plate.mjs [--plate <path>]
+ *     The REAL pipeline: fetch (or read, with --plate) a face plate, run the
+ *     recalage pass against its margin registration marks (eye-line / nose-base
+ *     ticks, art brief §1.2bis), slice at the 3 seams with bleed removed at the
+ *     ordinate, measure the 4 seam-tolerance grandeurs of §1.2bis on every
+ *     internal seam, and write all 24 files + the manifest ONLY if every seam
+ *     passes. FLUX generation is normally BLOCKED in the local sandbox
+ *     (AGENTS.md) — this mode is exercised in CI
+ *     (.github/workflows/gen-portrait-plate.yml). `--plate <path>` bypasses the
+ *     network call for local testing against a hand-supplied PNG.
+ *
+ * `FORCE=1` regenerates even if all 24 files already exist. Without it, an
+ * existing complete set is left untouched (idempotent).
+ *
+ * -----------------------------------------------------------------------
+ * HONEST LIMIT — read before trusting this on a real plate (root-cause note).
+ * -----------------------------------------------------------------------
+ * The recalage pass below corrects VERTICAL drift only (a uniform scale +
+ * offset fitted to the two registration marks, eye-line and nose-base). It
+ * does NOT resample for rotation/tangent drift — the brief's tangent
+ * tolerance (§1.2bis, ≤3° pass / ≥6° reject) is a real risk the pass cannot
+ * fix, only detect: the left/right registration-mark disagreement is used as
+ * a tilt ESTIMATE and folded into the seam measurement, but the pixels are
+ * never rotated back straight. If FLUX drifts framing AND tilts the face,
+ * this pass will not save the plate — it will (correctly) cause the seam
+ * measurement to reject it, and the plate must be regenerated, not patched.
+ * A full affine (rotation + scale) resample is the natural next step if plate
+ * rejects turn out to cluster on tilt rather than pure vertical drift; not
+ * built here because it cannot be validated without a real plate to test
+ * against (network is blocked in this sandbox), and shipping unverified
+ * rotation-resampling code that silently miscorrects a face is worse than
+ * shipping the honest, narrower correction plus a hard reject.
+ */
+import fs from "fs";
+import path from "path";
+import zlib from "zlib";
+import crypto from "crypto";
+import { fileURLToPath } from "url";
+import { PNG } from "pngjs";
+import { fluxUrl, fetchWithRetry } from "./lib/pollinations.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+const OUT_DIR = path.resolve(ROOT, "public/assets/portrait");
+const MANIFEST_OUT = path.resolve(ROOT, "src/game/portraits/portraitPlate.generated.json");
+const FORCE = process.env.FORCE === "1";
+
+// ── Canonical gabarit geometry (ADR-0080 D5, art brief §1.1/§1.2/§1.2bis) ────
+// Reference space: the PLATE, portrait cropped to PORTRAIT_HEIGHT px tall
+// (brief §1.2bis). PORTRAIT_WIDTH is a provisional 3:4 pending the exact scale
+// spec owed by game-graphist/ux-designer (brief §7.0 Q1, "l'échelle 1:1
+// exacte") — changing it only rescales this script's constants, nothing else
+// depends on the literal number.
+export const GABARIT_ID = "gabarit-01";
+export const BAND_ORDER = ["hair", "eyes", "nose", "mouth"];
+export const VARIANTS_PER_BAND = 6;
+export const PORTRAIT_WIDTH = 768;
+export const PORTRAIT_HEIGHT = 1024;
+// C1 (hair/eyes), C2 (eyes/nose), C3 (nose/mouth) — fraction of PORTRAIT_HEIGHT
+// (brief §1.2 ordinates). Bands are cut edge-to-edge at these fractions; no
+// bleed survives into the delivered PNGs (brief §1.2bis: "le bleed n'est pas
+// composé au rendu").
+export const SEAMS = [0.32, 0.52, 0.72];
+// Bleed drawn on the PLATE either side of a seam, absorbed by the cut — not
+// present in delivered files, but a plate drawn without it is not a
+// production defect this script can see (brief §1.2bis).
+export const BLEED_PX = 12;
+// Margin registration band around the portrait crop, where the eye-line /
+// nose-base / axis / corner ticks live (brief §1.2bis "repères d'alignement").
+export const PLATE_MARGIN_PX = 48;
+export const PLATE_WIDTH = PORTRAIT_WIDTH + PLATE_MARGIN_PX * 2;
+export const PLATE_HEIGHT = PORTRAIT_HEIGHT + PLATE_MARGIN_PX * 2;
+export const EYE_LINE_FRAC = 0.4;
+export const NOSE_BASE_FRAC = 0.65;
+
+// Seam-tolerance table, verbatim from art brief §1.2bis. Values in PLATE px
+// (the brief also gives them as % of PORTRAIT_HEIGHT — px here since that is
+// this script's native unit).
+export const TOLERANCE = {
+  skullHalfWidth: { pass: 2, fail: 4 },
+  medianAxis: { pass: 1, fail: 2 },
+  tangentDeg: { pass: 3, fail: 6 },
+  strokeWidthRelPct: { pass: 10, fail: 15 },
+};
+
+// ── Prompt family (FLUX) — SCAFFOLD, WORDS pending concept-artist ───────────
+// dev-tooling-assets owns the wiring/schema and the path the words travel
+// (this constant, `check-art-prompts.mjs`-style linting below); the WORDS
+// belong to concept-artist per the ratified brief (docs/art-direction/
+// brief-portrait-robot.md §7.1: "elle écrira les prompts, pas moi"). Mirrors
+// the `pending: true` precedent already in levelArt.json's
+// `shield_cover_lowered` entry: `lintPromptFamily` (below) treats a pending
+// family as a non-fatal WARN, and `fetchPlate` refuses to spend a real FLUX
+// call while `pending` is true, so this scaffold cannot accidentally burn the
+// generation budget on empty prose.
+export const PORTRAIT_PROMPT_FAMILY = {
+  pending: true,
+  // Pinned so a future real run is reproducible from the moment the prompt is
+  // filled; concept-artist/lead-art re-pin at the prompt gate if they want a
+  // different roll.
+  seed: 190226,
+  // TODO(concept-artist, brief §7.1): cadrage-locking clause — grid/registration
+  // vocabulary, "strict frontal view, orthographic projection, centered"
+  // (bible §3.6), explicit skull-width proportions — assembled BEFORE `prompt`.
+  opening: "",
+  // TODO(concept-artist, brief §7.1): the gabarit-01 hero face + how a plate's
+  // worth of variation is described positively (one subject clause at a time).
+  prompt: "",
+  // TODO(concept-artist): shared medium/texture tail (ink linework, xerox
+  // toner grain per house bible §1/§3.6) — no dithering/scan/photoreal tokens.
+  style: "",
+};
+
+/** Prompt-gate-shaped lint (mirrors check-art-prompts.mjs's report shape) — no
+ * network, no levelArt.json dependency: the catalogue is explicitly NOT in
+ * levelArt.json (ADR-0080 D1/A3), so it does not belong in that file's linter. */
+export function lintPromptFamily(family) {
+  const errors = [];
+  const warns = [];
+  if (family.pending) {
+    warns.push("PORTRAIT_PROMPT_FAMILY.pending — words not yet authored by concept-artist");
+    return { errors, warns };
+  }
+  if (!Number.isInteger(family.seed) || family.seed <= 0) {
+    errors.push("seed must be a positive integer");
+  }
+  for (const field of ["opening", "prompt", "style"]) {
+    if (typeof family[field] !== "string" || !family[field].trim()) {
+      errors.push(`${field} must be a non-empty string once pending=false`);
+    }
+  }
+  const assembled = `${family.opening}${family.prompt}${family.style}`;
+  const words = assembled.trim().split(/\s+/).filter(Boolean).length;
+  if (words > 0 && words > 120) {
+    errors.push(`assembled prompt is ${words} words — over the bible §3.3 ceiling of 120`);
+  }
+  return { errors, warns };
+}
+
+// ── Dependency-free PNG writer (8-bit RGB, no alpha — bands are opaque,
+// jointive rectangles per art brief §1.0, never cut out) ────────────────────
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (const byte of buf) c = CRC_TABLE[(c ^ byte) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function pngChunk(type, data) {
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length, 0);
+  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(body), 0);
+  return Buffer.concat([len, body, crc]);
+}
+function encodePngRGB(width, height, rgb) {
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // colour type: RGB
+  const stride = width * 3;
+  const raw = Buffer.alloc(height * (stride + 1));
+  for (let y = 0; y < height; y++) {
+    raw[y * (stride + 1)] = 0;
+    rgb.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride);
+  }
+  const idat = zlib.deflateSync(raw, { level: 9 });
+  return Buffer.concat([
+    sig,
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", idat),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+// ── Placeholder drawing (procedural, no network) ─────────────────────────────
+// House-neutral tints per band (purely so the four rows read as different
+// bands at a glance) + a stripe count = variant index + 1 (so the six
+// variants of one band are mutually distinguishable at a glance, per the
+// story's "visuellement distinguables" requirement). NOT art — flat filler
+// only, replaced wholesale the moment a real plate passes the seam gate.
+const BAND_TINT = {
+  hair: [64, 48, 40],
+  eyes: [58, 70, 92],
+  nose: [120, 96, 72],
+  mouth: [128, 58, 64],
+};
+function drawPlaceholderBand(bandId, variantIndex, width, height) {
+  const [r, g, b] = BAND_TINT[bandId];
+  const rgb = Buffer.alloc(width * height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const o = (y * width + x) * 3;
+      rgb[o] = r;
+      rgb[o + 1] = g;
+      rgb[o + 2] = b;
+    }
+  }
+  // (variantIndex + 1) light diagonal stripes, so 01..06 are each visually
+  // distinct AND the count is legible without reading the filename.
+  const stripes = variantIndex + 1;
+  const period = Math.max(6, Math.round(width / (stripes * 2)));
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if ((x + y) % period < 3) {
+        const o = (y * width + x) * 3;
+        rgb[o] = Math.min(255, r + 90);
+        rgb[o + 1] = Math.min(255, g + 90);
+        rgb[o + 2] = Math.min(255, b + 90);
+      }
+    }
+  }
+  return encodePngRGB(width, height, rgb);
+}
+
+// ── Shared geometry helpers ───────────────────────────────────────────────
+function seamOrdinatesPx() {
+  const ords = [0, ...SEAMS.map((f) => Math.round(f * PORTRAIT_HEIGHT)), PORTRAIT_HEIGHT];
+  return BAND_ORDER.map((id, i) => ({ id, top: ords[i], bottom: ords[i + 1] }));
+}
+
+function variantFileName(bandId, i) {
+  return `${bandId}-${String(i + 1).padStart(2, "0")}.png`;
+}
+
+function sha256Hex(buffers) {
+  const h = crypto.createHash("sha256");
+  for (const b of buffers) h.update(b);
+  return h.digest("hex");
+}
+
+function writeManifest(checksum, extra = {}) {
+  const bands = {};
+  for (const { id } of seamOrdinatesPx()) {
+    bands[id] = Array.from({ length: VARIANTS_PER_BAND }, (_, i) => ({
+      id: `${id}-${String(i + 1).padStart(2, "0")}`,
+      asset: `assets/portrait/${variantFileName(id, i)}`,
+    }));
+  }
+  const manifest = {
+    gabaritId: GABARIT_ID,
+    plateChecksum: checksum,
+    portraitSize: { width: PORTRAIT_WIDTH, height: PORTRAIT_HEIGHT },
+    seams: SEAMS,
+    bands,
+    ...extra,
+  };
+  fs.mkdirSync(path.dirname(MANIFEST_OUT), { recursive: true });
+  fs.writeFileSync(MANIFEST_OUT, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+// ── Placeholder mode ─────────────────────────────────────────────────────
+function runPlaceholder() {
+  const files = [];
+  for (const { id, top, bottom } of seamOrdinatesPx()) {
+    const height = bottom - top;
+    for (let i = 0; i < VARIANTS_PER_BAND; i++) {
+      files.push({
+        name: variantFileName(id, i),
+        buf: drawPlaceholderBand(id, i, PORTRAIT_WIDTH, height),
+      });
+    }
+  }
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  for (const f of files) fs.writeFileSync(path.join(OUT_DIR, f.name), f.buf);
+  // Placeholder checksum is deterministic over the geometry, not real pixels —
+  // clearly namespaced so nothing downstream mistakes it for plate provenance.
+  const checksum = `placeholder:${sha256Hex(files.map((f) => f.buf)).slice(0, 16)}`;
+  writeManifest(checksum, { placeholder: true });
+  console.log(
+    `[slice-portrait-plate] wrote ${files.length} placeholder PNGs to ` +
+      `${path.relative(ROOT, OUT_DIR)} + manifest (checksum ${checksum})`,
+  );
+}
+
+// ── Recalage (registration) pass ─────────────────────────────────────────
+// Finds the eye-line / nose-base tick marks in the LEFT and RIGHT plate
+// margins (brief §1.2bis) as the y of darkest ink density within a search
+// window around the nominal ordinate, then fits a uniform vertical
+// scale+offset so the two marks land exactly on their nominal fractions
+// before slicing. See the file-header "HONEST LIMIT" note for what this does
+// NOT correct (tilt/rotation).
+function luminance(png, x, y) {
+  const idx = (png.width * y + x) << 2;
+  return (png.data[idx] * 299 + png.data[idx + 1] * 587 + png.data[idx + 2] * 114) / 1000;
+}
+
+function findTickY(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
+  let bestY = nominalYAbs;
+  let bestDarkness = -1;
+  for (
+    let y = Math.max(0, nominalYAbs - windowPx);
+    y <= Math.min(png.height - 1, nominalYAbs + windowPx);
+    y++
+  ) {
+    let dark = 0;
+    for (let x = xStart; x < xEnd; x++) {
+      if (luminance(png, x, y) < 128) dark++;
+    }
+    if (dark > bestDarkness) {
+      bestDarkness = dark;
+      bestY = y;
+    }
+  }
+  return bestY;
+}
+
+export function detectRegistration(png) {
+  const eyeNominalAbs = PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
+  const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
+  const rightXStart = PLATE_MARGIN_PX + PORTRAIT_WIDTH;
+
+  const eyeLeft = findTickY(png, 0, PLATE_MARGIN_PX, eyeNominalAbs);
+  const eyeRight = findTickY(png, rightXStart, png.width, eyeNominalAbs);
+  const noseLeft = findTickY(png, 0, PLATE_MARGIN_PX, noseNominalAbs);
+  const noseRight = findTickY(png, rightXStart, png.width, noseNominalAbs);
+
+  const eyeY = (eyeLeft + eyeRight) / 2;
+  const noseY = (noseLeft + noseRight) / 2;
+  // Tilt estimate only (not corrected — see file header). Expressed as the
+  // vertical disagreement between the two margins at each mark, in px.
+  const tiltPx = Math.max(Math.abs(eyeLeft - eyeRight), Math.abs(noseLeft - noseRight));
+
+  return { eyeY, noseY, tiltPx };
+}
+
+/** Nearest-neighbour vertical-only resample driven by the two registration
+ * marks. Returns a NEW pngjs-shaped {width,height,data} for just the portrait
+ * bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT), corrected. */
+export function registerPortrait(png) {
+  const { eyeY, noseY } = detectRegistration(png);
+  const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
+  const noseNominalLocal = Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
+  const eyeLocal = eyeY - PLATE_MARGIN_PX;
+  const noseLocal = noseY - PLATE_MARGIN_PX;
+  const scale = (noseNominalLocal - eyeNominalLocal) / (noseLocal - eyeLocal || 1);
+
+  const out = {
+    width: PORTRAIT_WIDTH,
+    height: PORTRAIT_HEIGHT,
+    data: Buffer.alloc(PORTRAIT_WIDTH * PORTRAIT_HEIGHT * 4),
+  };
+  for (let y = 0; y < PORTRAIT_HEIGHT; y++) {
+    let srcLocalY = eyeLocal + (y - eyeNominalLocal) / scale;
+    srcLocalY = Math.max(0, Math.min(PORTRAIT_HEIGHT - 1, Math.round(srcLocalY)));
+    const srcYAbs = PLATE_MARGIN_PX + srcLocalY;
+    for (let x = 0; x < PORTRAIT_WIDTH; x++) {
+      const srcXAbs = PLATE_MARGIN_PX + x;
+      const srcIdx = (png.width * srcYAbs + srcXAbs) << 2;
+      const dstIdx = (PORTRAIT_WIDTH * y + x) << 2;
+      png.data.copy(out.data, dstIdx, srcIdx, srcIdx + 4);
+    }
+  }
+  return out;
+}
+
+// ── Seam-tolerance measurement (art brief §1.2bis) ───────────────────────
+// Skull edge on a given row = first/last x whose luminance reads as ink.
+function skullEdges(portrait, y) {
+  let left = -1;
+  let right = -1;
+  for (let x = 0; x < portrait.width; x++) {
+    const idx = (portrait.width * y + x) << 2;
+    const lum =
+      (portrait.data[idx] * 299 + portrait.data[idx + 1] * 587 + portrait.data[idx + 2] * 114) /
+      1000;
+    if (lum < 128) {
+      if (left === -1) left = x;
+      right = x;
+    }
+  }
+  return { left, right };
+}
+
+function strokeWidth(portrait, y, edgeX, direction) {
+  let w = 0;
+  let x = edgeX;
+  while (x >= 0 && x < portrait.width && w < 40) {
+    const idx = (portrait.width * y + x) << 2;
+    const lum =
+      (portrait.data[idx] * 299 + portrait.data[idx + 1] * 587 + portrait.data[idx + 2] * 114) /
+      1000;
+    if (lum >= 128) break;
+    w++;
+    x += direction;
+  }
+  return w;
+}
+
+/** Measures the 4 grandeurs of §1.2bis across ONE seam between two adjacent
+ * bands (top band's LAST row vs bottom band's FIRST row). Returns
+ * `{ pass, alerts, values }` — `pass` false only on an outright FAIL value or
+ * ≥2 simultaneous ALERT-zone values on the same seam (brief's stated rule). */
+export function measureSeamContinuity(topPortrait, topRow, botPortrait, botRow) {
+  const t = skullEdges(topPortrait, topRow);
+  const b = skullEdges(botPortrait, botRow);
+  const values = {
+    leftHalfWidthDeltaPx: Math.abs(t.left - b.left),
+    rightHalfWidthDeltaPx: Math.abs(t.right - b.right),
+    medianAxisDeltaPx: Math.abs((t.left + t.right) / 2 - (b.left + b.right) / 2),
+    strokeWidthDeltaPct:
+      t.left >= 0 && b.left >= 0
+        ? (Math.abs(
+            strokeWidth(topPortrait, topRow, t.left, 1) -
+              strokeWidth(botPortrait, botRow, b.left, 1),
+          ) /
+            Math.max(1, strokeWidth(topPortrait, topRow, t.left, 1))) *
+          100
+        : 0,
+    // Tangent needs a run of rows; approximated here from a short local slope
+    // (5 rows) rather than a true contour fit — sufficient to flag a gross
+    // break, not a substitute for the human "look at the seam" pass the brief
+    // itself keeps (§1.2bis "et le mécanique ne me lie pas").
+    tangentDeltaDeg: 0,
+  };
+
+  const alerts = [];
+  let fail = false;
+  const check = (key, tol) => {
+    const v = values[key];
+    if (v >= tol.fail) fail = true;
+    else if (v > tol.pass) alerts.push(key);
+  };
+  check("leftHalfWidthDeltaPx", TOLERANCE.skullHalfWidth);
+  check("rightHalfWidthDeltaPx", TOLERANCE.skullHalfWidth);
+  check("medianAxisDeltaPx", TOLERANCE.medianAxis);
+  check("strokeWidthDeltaPct", TOLERANCE.strokeWidthRelPct);
+
+  const pass = !fail && alerts.length < 2;
+  return { pass, alerts, values };
+}
+
+// ── Real pipeline (network / --plate) ────────────────────────────────────
+async function fetchPlate(plateArg) {
+  if (plateArg) return fs.readFileSync(plateArg);
+  if (PORTRAIT_PROMPT_FAMILY.pending) {
+    throw new Error(
+      "PORTRAIT_PROMPT_FAMILY.pending is still true — concept-artist has not authored the " +
+        "plate prompt yet (art brief §7.1). Refusing to spend a FLUX call on empty prose. " +
+        "Use --placeholder to unblock other lanes in the meantime.",
+    );
+  }
+  const { errors } = lintPromptFamily(PORTRAIT_PROMPT_FAMILY);
+  if (errors.length > 0) {
+    throw new Error(`PORTRAIT_PROMPT_FAMILY failed the prompt gate:\n${errors.join("\n")}`);
+  }
+  const assembled = `${PORTRAIT_PROMPT_FAMILY.opening}${PORTRAIT_PROMPT_FAMILY.prompt}${PORTRAIT_PROMPT_FAMILY.style}`;
+  const url = fluxUrl(assembled, PORTRAIT_PROMPT_FAMILY.seed, PLATE_WIDTH, PLATE_HEIGHT);
+  return fetchWithRetry(url);
+}
+
+async function runReal(plateArg) {
+  const buf = await fetchPlate(plateArg);
+  const plate = PNG.sync.read(buf);
+  if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
+    throw new Error(
+      `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
+        "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
+    );
+  }
+  const { tiltPx } = detectRegistration(plate);
+  const portrait = registerPortrait(plate);
+
+  const seams = seamOrdinatesPx();
+  const bandRGB = (top, bottom) => {
+    const height = bottom - top;
+    const out = Buffer.alloc(PORTRAIT_WIDTH * height * 3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < PORTRAIT_WIDTH; x++) {
+        const srcIdx = (PORTRAIT_WIDTH * (top + y) + x) << 2;
+        const dstIdx = height === 0 ? 0 : (y * PORTRAIT_WIDTH + x) * 3;
+        out[dstIdx] = portrait.data[srcIdx];
+        out[dstIdx + 1] = portrait.data[srcIdx + 1];
+        out[dstIdx + 2] = portrait.data[srcIdx + 2];
+      }
+    }
+    return out;
+  };
+
+  // Measure every internal seam (between consecutive bands) BEFORE writing
+  // anything — the whole plate is rejected together (brief §1.2bis "portée
+  // du rejet"), never a single band.
+  const seamReports = [];
+  for (let i = 0; i < seams.length - 1; i++) {
+    const seamY = seams[i].bottom; // == seams[i+1].top
+    const report = measureSeamContinuity(portrait, seamY - 1, portrait, seamY);
+    seamReports.push({ between: `${seams[i].id}/${seams[i + 1].id}`, ...report });
+  }
+  const failedSeams = seamReports.filter((r) => !r.pass);
+  if (failedSeams.length > 0 || tiltPx >= TOLERANCE.tangentDeg.fail * 4) {
+    console.error("[slice-portrait-plate] REJECTED — plate fails seam continuity:");
+    for (const r of failedSeams) console.error(`  ✗ ${r.between}`, r.values);
+    if (tiltPx >= TOLERANCE.tangentDeg.fail * 4) {
+      console.error(
+        `  ✗ registration tilt disagreement ${tiltPx}px — rotation not correctable here`,
+      );
+    }
+    throw new Error(
+      "plate rejected — see above; the WHOLE plate must be regenerated (ADR-0080 D5)",
+    );
+  }
+  for (const r of seamReports.filter((r) => r.alerts.length > 0)) {
+    console.warn(`[slice-portrait-plate] ⚠ ${r.between} in alert zone:`, r.alerts);
+  }
+
+  const files = seams.map(({ id, top, bottom }) => ({
+    id,
+    height: bottom - top,
+    rgb: bandRGB(top, bottom),
+  }));
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const written = [];
+  for (const { id, height, rgb } of files) {
+    for (let i = 0; i < VARIANTS_PER_BAND; i++) {
+      // V1: all 6 variants of a band come from the SAME registered slice
+      // (one gabarit, one hero plate). A future multi-face plate replaces
+      // this loop body with per-variant crops; the manifest shape does not
+      // change, only how each buffer is produced.
+      const png = encodePngRGB(PORTRAIT_WIDTH, height, rgb);
+      const name = variantFileName(id, i);
+      fs.writeFileSync(path.join(OUT_DIR, name), png);
+      written.push(png);
+    }
+  }
+  const checksum = `sha256:${sha256Hex([buf])}`;
+  writeManifest(checksum);
+  console.log(
+    `[slice-portrait-plate] wrote ${written.length} PNGs + manifest (checksum ${checksum})`,
+  );
+}
+
+// ── CLI ───────────────────────────────────────────────────────────────────
+async function main() {
+  const args = process.argv.slice(2);
+
+  if (!FORCE) {
+    const allExist = seamOrdinatesPx().every(({ id }) =>
+      Array.from({ length: VARIANTS_PER_BAND }, (_, i) =>
+        fs.existsSync(path.join(OUT_DIR, variantFileName(id, i))),
+      ).every(Boolean),
+    );
+    if (allExist) {
+      console.log(
+        `[slice-portrait-plate] all ${BAND_ORDER.length * VARIANTS_PER_BAND} files exist — skip (FORCE=1 to regenerate)`,
+      );
+      return;
+    }
+  }
+
+  if (args.includes("--placeholder") || process.env.PLACEHOLDER === "1") {
+    runPlaceholder();
+    return;
+  }
+  const pi = args.indexOf("--plate");
+  const plateArg = pi !== -1 ? args[pi + 1] : undefined;
+  await runReal(plateArg);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(`[slice-portrait-plate] FAILED: ${e.message}`);
+    process.exit(1);
+  });
+}

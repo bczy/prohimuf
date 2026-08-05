@@ -1,0 +1,120 @@
+{
+  "gabaritId": "gabarit-01",
+  "plateChecksum": "placeholder:60ce334898907cb4",
+  "portraitSize": {
+    "width": 768,
+    "height": 1024
+  },
+  "seams": [
+    0.32,
+    0.52,
+    0.72
+  ],
+  "bands": {
+    "hair": [
+      {
+        "id": "hair-01",
+        "asset": "assets/portrait/hair-01.png"
+      },
+      {
+        "id": "hair-02",
+        "asset": "assets/portrait/hair-02.png"
+      },
+      {
+        "id": "hair-03",
+        "asset": "assets/portrait/hair-03.png"
+      },
+      {
+        "id": "hair-04",
+        "asset": "assets/portrait/hair-04.png"
+      },
+      {
+        "id": "hair-05",
+        "asset": "assets/portrait/hair-05.png"
+      },
+      {
+        "id": "hair-06",
+        "asset": "assets/portrait/hair-06.png"
+      }
+    ],
+    "eyes": [
+      {
+        "id": "eyes-01",
+        "asset": "assets/portrait/eyes-01.png"
+      },
+      {
+        "id": "eyes-02",
+        "asset": "assets/portrait/eyes-02.png"
+      },
+      {
+        "id": "eyes-03",
+        "asset": "assets/portrait/eyes-03.png"
+      },
+      {
+        "id": "eyes-04",
+        "asset": "assets/portrait/eyes-04.png"
+      },
+      {
+        "id": "eyes-05",
+        "asset": "assets/portrait/eyes-05.png"
+      },
+      {
+        "id": "eyes-06",
+        "asset": "assets/portrait/eyes-06.png"
+      }
+    ],
+    "nose": [
+      {
+        "id": "nose-01",
+        "asset": "assets/portrait/nose-01.png"
+      },
+      {
+        "id": "nose-02",
+        "asset": "assets/portrait/nose-02.png"
+      },
+      {
+        "id": "nose-03",
+        "asset": "assets/portrait/nose-03.png"
+      },
+      {
+        "id": "nose-04",
+        "asset": "assets/portrait/nose-04.png"
+      },
+      {
+        "id": "nose-05",
+        "asset": "assets/portrait/nose-05.png"
+      },
+      {
+        "id": "nose-06",
+        "asset": "assets/portrait/nose-06.png"
+      }
+    ],
+    "mouth": [
+      {
+        "id": "mouth-01",
+        "asset": "assets/portrait/mouth-01.png"
+      },
+      {
+        "id": "mouth-02",
+        "asset": "assets/portrait/mouth-02.png"
+      },
+      {
+        "id": "mouth-03",
+        "asset": "assets/portrait/mouth-03.png"
+      },
+      {
+        "id": "mouth-04",
+        "asset": "assets/portrait/mouth-04.png"
+      },
+      {
+        "id": "mouth-05",
+        "asset": "assets/portrait/mouth-05.png"
+      },
+      {
+        "id": "mouth-06",
+        "asset": "assets/portrait/mouth-06.png"
+      }
+    ]
+  },
+  "placeholder": true
+}
