@@ -36,3 +36,13 @@ run 10 (next, blocked): plateAsset.editChain — ONE VARIABLE PER EDIT. Stage 1
   it's missing. Also fixed since run 9: the plate is padded to a square before upload and
   cropped back after (kontext's fixed 1024x1024 edit response was being stretched
   anisotropically onto 16:9, warping every straight line — see gen-photo-sprites.mjs).
+run 11: plate_edit_a alone (2-stage chain). RESULT (bc379886): people gone, signage
+  blanked — BUT every glazed surface (shop windows, upper-floor windows) also went to a
+  flat white blank, and the validated scooter+bicycle vanished. "Clear the people out of
+  the street" over-generalised from "the people" to "the street" — one instruction, one
+  class of surfaces wiped, no force knob to contain it. plate-edit-a.png from this run is
+  KNOWN-REGRESSED, dropped from disk, never a reference for anything downstream.
+run 12 (next, blocked on plate_edit_a2 review): chain is now THREE stages (c95393e5).
+  plate_edit_a (pavement only, props kept by name) → plate_edit_a2 (sign bands only,
+  same discipline) → plate (terrace, on _a2's output). Dispatch plate_edit_a alone first,
+  review, THEN plate_edit_a2 alone, review, THEN plate — no skipping ahead.

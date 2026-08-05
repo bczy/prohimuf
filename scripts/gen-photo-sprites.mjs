@@ -46,9 +46,17 @@
  *     exists on this endpoint per APIDOCS.md — checked, not assumed — so the isolation
  *     comes from the chain, not from a dial).
  *     `editChain` (`plateAsset.editChain` in levelArt.json) replaces the single-edit route
- *     above when present: `plate_edit_a` edits the v2 reference (clear the pavement, blank
- *     the signage), then `plate` edits `plate_edit_a`'s OWN committed output (add the
- *     terrace) — each stage its own `prompt*Key`, each throwing if that key isn't written.
+ *     above when present: an ARRAY of stages, each editing the PREVIOUS stage's own
+ *     committed output, each its own `prompt*Key` (throwing if that key isn't written).
+ *     THREE stages as of `c95393e5`, not two — `plate_edit_a` (clear the pavement) was
+ *     found, on review, to have also blanked every glazed surface (shop windows, upper-
+ *     floor windows) and dropped the validated scooter/bicycle: one instruction ("clear
+ *     the people out of the street") over-generalised from "the people" to "the street",
+ *     wiping a whole CLASS of surfaces with no force/fidelity knob to hold it back. Split
+ *     into `plate_edit_a` (pavement only, named props kept explicitly) then `plate_edit_a2`
+ *     (sign bands only, same "keep by name" discipline), THEN `plate` (terrace, on `_a2`'s
+ *     output). `plate-edit-a.png` from any prior single-edit-A run is a KNOWN-REGRESSED
+ *     asset — never a reference for anything past this file's own `plate_edit_a2` stage.
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *

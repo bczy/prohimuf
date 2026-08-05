@@ -369,9 +369,15 @@
           "promptKey": "plateEditA"
         },
         {
+          "key": "plate_edit_a2",
+          "asset": "assets/photoqte/plate-edit-a2.png",
+          "reference": "assets/photoqte/plate-edit-a.png",
+          "promptKey": "plateEditA2"
+        },
+        {
           "key": "plate",
           "asset": "assets/photoqte/plate.png",
-          "reference": "assets/photoqte/plate-edit-a.png",
+          "reference": "assets/photoqte/plate-edit-a2.png",
           "promptKey": "plateEditB"
         }
       ]
