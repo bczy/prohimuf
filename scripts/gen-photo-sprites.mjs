@@ -16,35 +16,29 @@
  * (plate crop + pose crop), so generating it would ship an asset nobody draws.
  *
  * GENERATION METHOD (ruling §2 / gate §4):
- *   - `plate` — TWO-STAGE (Bertrand-approved route, 2026-08): a single kontext pass
- *     conditioned on the FRONTAL elevation crop of street-wide.png fights the text — the
- *     reference shows eye-level, the prompt asks for a plunging dormer POV, and the image
- *     conditioning wins, which is exactly how the v1-v6 runs shipped a street-level plate
- *     despite a dormer prompt. Splitting "the right angle" and "the right style" into two
- *     separate generations removes that fight:
- *       Stage 1 (`plate-angle.png`, intermediate, NOT shipped) — plain `flux` TEXT-ONLY on
- *       `block.plate` (already the dormer-POV string, no `image=` at all) on the PAID
- *       gen.pollinations.ai farm. No conditioning to contradict, so the model's hands are
- *       free on composition/angle.
- *       Stage 2 (`plate.png`, shipped) — `kontext` img2img via the multipart POST
- *       /v1/images/edits (`editImagePaid`, lib/pollinations.mjs), conditioned on Stage 1's
- *       OWN output bytes uploaded directly (not the frontal street-wide crop, and not a
- *       GET `image=<data-URI>` — a 2048x1152 PNG doesn't fit in a query string, 414s),
- *       same prompt text. Kontext's job here is
- *       narrower: refine linework/register toward the fanzine house style while preserving
- *       Stage 1's composition — a same-angle edit, not an angle-vs-reference fight. Style
- *       continuity with the shipped street comes from the prompt's own tokens (bay rhythm,
- *       tagged shutters, cast-iron mast — all named in `block.plate` verbatim), which a
- *       same-composition kontext pass does not have to defend against a competing reference.
- *     `plate-source-crop.png` (the frontal street-wide crop) is KEPT committed for gate
- *     history/provenance but is no longer read by `generate()` — see `sourceCrop` below,
- *     now unused by the plate path (only Stage 1's own render feeds Stage 2).
- *     Plain `flux` on the paid endpoint straight from Stage 1's prompt (skip Stage 2 entirely)
- *     is the pre-authorised fallback if Stage 2 kontext errors or over-locks the art back
- *     toward street-level. CAP: 2 batches FOR THE PLATE (Stage 2 kontext, then the flux
- *     fallback on Stage 1's own render — exactly what `generate()` below does, no further
- *     re-roll) — past that, options go to Bertrand, not more rolls (gate §4 C4; the cap is
- *     scoped to the plate's own generation method, not to the 8-asset set as a whole).
+ *   - `plate` — EDIT FROM THE VALIDATED REFERENCE (Bertrand-decided route, 2026-08,
+ *     superseding two prior diagnoses — see below): `plate-v2-reference.png` (the shipped
+ *     v2 night render — still EYE-LEVEL, Bertrand's known open defect, but its props and
+ *     register are explicitly signed off, "pas mal du tout") is committed and never
+ *     regenerated from scratch again; the edit is asked to CHANGE the camera to a plunging
+ *     dormer POV while keeping that art, not to draw a new street. `kontext` img2img via
+ *     the multipart POST
+ *     /v1/images/edits (`editImagePaid`, lib/pollinations.mjs — uploads the reference bytes
+ *     directly, no URL at all, so no query-string length ceiling to hit) edits THAT PNG
+ *     using `block.plateEdit`, a SHORT IMPERATIVE edit instruction (concept-artist's,
+ *     framing clause first) — not a from-scratch generation prompt. `loadPhotoQte()` throws
+ *     if `plateAsset.editReference` is wired but `block.plateEdit` isn't yet: half-wired is
+ *     a setup error, not something to roll on a guess.
+ *     HISTORY, because both earlier diagnoses were wrong and the record matters more than
+ *     tidying it away: (1) v1-v6 conditioned on the FRONTAL street-wide.png elevation crop
+ *     and shipped street-level despite a dormer-POV prompt — diagnosed as "conditioning
+ *     beats text", fixed by a flux-then-kontext two-stage split (still in `generate()` as
+ *     `twoStagePlate`, dormant, kept for a future full-regeneration need). (2) Stage 1 of
+ *     that split — flux, dormer prompt, ZERO conditioning — ALSO shipped street-level
+ *     (`.github/dispatch/gen-photo-sprites` run 8 log), disproving diagnosis (1): the
+ *     framing clause simply isn't honoured by a from-scratch roll, at any conditioning
+ *     level. Editing the already-validated v2 render sidesteps the question entirely — no
+ *     angle is being requested from a blank canvas, only a change of already-plunging art.
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *
@@ -107,14 +101,28 @@ function loadPhotoQte() {
   if (plateAsset?.asset === undefined) {
     throw new Error("photoQte.plateAsset: no asset/size/seed wired yet (structure fields missing)");
   }
+  // editReference wired but the edit instruction not yet written is a SETUP error, not a
+  // silent fall-through to the dormant from-scratch route — concept-artist is authoring
+  // `plateEdit` (short, imperative, framing clause first); do not roll on a guess meanwhile.
+  if (plateAsset.editReference !== undefined && typeof block.plateEdit !== "string") {
+    throw new Error(
+      "photoQte.plateAsset.editReference is wired but photoQte.plateEdit (the concept-artist's " +
+        "edit instruction) is not written yet — do not dispatch the plate until it lands.",
+    );
+  }
   assets.push({
     key: "plate",
-    prompt: block.plate,
+    prompt: plateAsset.editReference ? block.plateEdit : block.plate,
     width: plateAsset.size.width,
     height: plateAsset.size.height,
     seed: plateAsset.seed,
     outFile: path.resolve(ROOT, "public", plateAsset.asset),
-    twoStagePlate: true, // flux angle-only, THEN kontext img2img on that render (see header)
+    // editReference set → single kontext edit of the validated v2 render (current route).
+    // Otherwise twoStagePlate (dormant fallback for a full regeneration — see header).
+    editReference: plateAsset.editReference
+      ? path.resolve(ROOT, "public", plateAsset.editReference)
+      : undefined,
+    twoStagePlate: !plateAsset.editReference,
     opaque: true, // no chroma-key, no mobile variant (ruling §1.1 — one asset, both viewports)
     mobile: false,
   });
@@ -190,8 +198,28 @@ async function resizeToTarget(buf, width, height, label) {
   return canvas.toBuffer("image/png");
 }
 
-// ── Generation (flux, or two-stage flux+kontext for the plate via the PAID farm) ──
+// ── Generation (flux, or kontext-edit / two-stage flux+kontext for the plate) ──
 async function generate(a) {
+  if (a.editReference) {
+    // Single kontext edit of the ALREADY-VALIDATED reference (current plate route — see
+    // file header). No fallback to a from-scratch roll on failure: that route is exactly
+    // the one Bertrand moved off of, so an edit failure surfaces as a loud [fail] in main()
+    // instead of silently reverting to it.
+    console.log(
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_MODEL} edit (paid, multipart), ` +
+        `ref=${path.relative(ROOT, a.editReference)}`,
+    );
+    const refBuf = fs.readFileSync(a.editReference);
+    const buf = await editImagePaid({
+      prompt: a.prompt,
+      seed: a.seed,
+      width: a.width,
+      height: a.height,
+      model: PLATE_MODEL,
+      imageBuf: refBuf,
+    });
+    return await resizeToTarget(buf, a.width, a.height, `${a.key} (edit ${PLATE_MODEL})`);
+  }
   if (a.twoStagePlate) {
     // Stage 1 — plain flux, TEXT ONLY, no `image=`: the model's hands are free on
     // composition/angle, nothing to contradict (see file header for why this is split
