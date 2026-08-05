@@ -13,12 +13,12 @@ source de vérité de tuning pour la suite du pipeline.
 
 ## Deliverables sous revue
 
-| #   | Deliverable                                     | Auteur                     | Verdict                    |
-| --- | ----------------------------------------------- | -------------------------- | -------------------------- |
-| M   | `docs/game-design/spec-portrait-robot.md`        | `game-designer` (Sacha)    | **RETOUR LANE** (round 1/2) |
-| F   | `docs/game-design/spec-portrait-robot-fiction.md`| `narrative-designer` (Yasmine) | **PASS AVEC CONDITIONS** |
-| UX  | `docs/game-design/ux/portrait-robot-ux.md`       | `ux-designer` (Tony)       | **PASS AVEC CONDITIONS**   |
-| ART | `docs/art-direction/brief-portrait-robot.md`     | `lead-art` (Nico)          | *hors gate* — cohérence design↔art vérifiée, §5 |
+| #   | Deliverable                                       | Auteur                         | Verdict                                         |
+| --- | ------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
+| M   | `docs/game-design/spec-portrait-robot.md`         | `game-designer` (Sacha)        | **RETOUR LANE** (round 1/2)                     |
+| F   | `docs/game-design/spec-portrait-robot-fiction.md` | `narrative-designer` (Yasmine) | **PASS AVEC CONDITIONS**                        |
+| UX  | `docs/game-design/ux/portrait-robot-ux.md`        | `ux-designer` (Tony)           | **PASS AVEC CONDITIONS**                        |
+| ART | `docs/art-direction/brief-portrait-robot.md`      | `lead-art` (Nico)              | _hors gate_ — cohérence design↔art vérifiée, §5 |
 
 **Aucun FAIL.** Le RETOUR LANE sur M n'est pas un jugement de qualité : la spec est la plus solide
 des trois sur le fond mécanique. Elle est renvoyée parce qu'elle **contredit trois décisions
@@ -58,7 +58,7 @@ directly** ». `narrative-designer` (§5) : refus explicite du −1 vie, coût *
 1. **Aucune vie n'est retirée, ni entière ni fractionnaire.** La currency est l'énergie, point.
 2. `FAILED` ⇒ **−20 d'énergie**, appliquée au **capital de départ du niveau suivant** (A1c).
 3. `PARTIAL` ⇒ **0 énergie**, **+400 score**. `IDENTIFIED` ⇒ **0 énergie**, **+1500 score**
-   + le payoff **A10**.
+   - le payoff **A10**.
 4. L'invariant « la scène ne peut pas tuer » de Sacha est **conservé et renforcé** : il devient
    trivialement vrai, l'énergie n'ayant pas de mort à 0.
 
@@ -136,8 +136,9 @@ primaire** (ambiguïté diagonale sous chrono) et impose des **chevrons ◀ ▶ 
 restant additif et facultatif.
 
 ~~**Décision : le mapping de l'UX fait foi.** Primaire = **tap sur la bande** (elle devient active)
-+ **tap sur chevron** (variante ±1). Le **swipe horizontal est un raccourci optionnel** sur la
-bande déjà active, jamais requis, jamais testé en acceptance.~~
+
+- **tap sur chevron** (variante ±1). Le **swipe horizontal est un raccourci optionnel** sur la
+  bande déjà active, jamais requis, jamais testé en acceptance.~~
 
 > **A4-bis — ARBITRAGE BERTRAND, 2026-08-05 (postérieur au gate, il prime) :**
 > « Pour les contrôles mobiles : **un swipe gauche/droite sur chaque bande**, on oublie ta sélection
@@ -214,15 +215,16 @@ Corollaires appliqués au même titre :
 
 **Le tell comportemental jamais physique (fiction §6) est-il compatible avec un jeu de comparaison
 de visages ? Oui, et je l'inscris comme règle.** La distinction porte sur **qui décrit** :
+
 - les **textes** (souvenirs de KENZA) restent **comportementaux** — « il regardait pas les gens, il
   les comptait » ;
 - les **dessins** portent nécessairement des différences morphologiques, c'est le medium.
-**Règle ajoutée (opposable au gate art) :** aucun descripteur discriminant ne peut être lu comme un
-marqueur d'origine, de classe ou de « sale gueule ». Les descripteurs admis de Sacha (§3 D2 : raie,
-frange, paupière, arête, commissures…) sont conformes ; la liste est **fermée** et toute addition
-repasse par ce gate. Le garde-fou moral de Yasmine (§5 : à l'échec, c'est **le réseau qui se blesse
-lui-même**) est ratifié comme **obligatoire**, pas optionnel : c'est lui qui empêche la scène de
-devenir un jeu de flic.
+  **Règle ajoutée (opposable au gate art) :** aucun descripteur discriminant ne peut être lu comme un
+  marqueur d'origine, de classe ou de « sale gueule ». Les descripteurs admis de Sacha (§3 D2 : raie,
+  frange, paupière, arête, commissures…) sont conformes ; la liste est **fermée** et toute addition
+  repasse par ce gate. Le garde-fou moral de Yasmine (§5 : à l'échec, c'est **le réseau qui se blesse
+  lui-même**) est ratifié comme **obligatoire**, pas optionnel : c'est lui qui empêche la scène de
+  devenir un jeu de flic.
 
 ### A7 — Chrono → **35 s. ~~Habillage télécarte, 1 unité = 2,5 s (14 unités).~~ Échappatoire = `Prefs.difficulty`.**
 
@@ -234,14 +236,15 @@ devenir un jeu de flic.
   1 unité = 2,5 s ⇒ 14 unités au départ.** Elle est choisie pour faire tomber les paliers des deux
   lanes au même endroit :
 
-| Palier | t restant | Unités | Ce qui se passe |
-| --- | --- | --- | --- |
-| Mi-parcours | 17,5 s | 7 | `KENZA — « Ma carte descend. »` |
-| Urgence | 10,0 s | 4 | `KENZA — « Grouille, il me reste rien. »` + 1ᵉʳ resserrement musical |
-| Dernier | 5,0 s | 2 | `bip` + 2ᵉ resserrement + annonce `aria-live` |
+| Palier      | t restant | Unités | Ce qui se passe                                                      |
+| ----------- | --------- | ------ | -------------------------------------------------------------------- |
+| Mi-parcours | 17,5 s    | 7      | `KENZA — « Ma carte descend. »`                                      |
+| Urgence     | 10,0 s    | 4      | `KENZA — « Grouille, il me reste rien. »` + 1ᵉʳ resserrement musical |
+| Dernier     | 5,0 s     | 2      | `bip` + 2ᵉ resserrement + annonce `aria-live`                        |
 
-  Les deux paliers musicaux de Sacha (10 s / 5 s) et les trois paliers de copie de Yasmine
-  coïncident désormais. Les annonces lecteur d'écran de Tony (D5.5) se posent sur les mêmes.
+Les deux paliers musicaux de Sacha (10 s / 5 s) et les trois paliers de copie de Yasmine
+coïncident désormais. Les annonces lecteur d'écran de Tony (D5.5) se posent sur les mêmes.
+
 - **Échappatoire d'accessibilité : ratifiée**, et chiffrée ici parce que ni Sacha ni Tony ne l'a
   fait. `Prefs.difficulty` module **cette scène** : `easy ×1.6` (**56 s**) · `normal ×1.0`
   (**35 s**) · `hard ×0.86` (**30 s**, plancher de la fourchette historique). Motif : un chrono
@@ -330,7 +333,7 @@ sinon oui.**
 
 1. **Elle ne dilue pas la boucle** parce qu'elle est **hors** de la mission (A2) : le budget 3-5 min
    n'est pas entamé d'une seconde.
-2. **Elle a une conséquence** (A10). Une interlude sans conséquence *est* du remplissage, par
+2. **Elle a une conséquence** (A10). Une interlude sans conséquence _est_ du remplissage, par
    définition. C'est le seul critère qui distingue un set-piece d'une curiosité, et c'est celui que
    la presse d'époque appliquait à Ocean.
 3. **Elle apporte un verbe que muf n'a pas** (Sacha D1, argument que je fais mien) : le jeu a déjà
@@ -356,69 +359,69 @@ d'ici là.
 
 Toute valeur ci-dessous prime sur la même valeur dans n'importe quelle spec de lane.
 
-| Clé | Valeur canonique | Source / arbitrage |
-| --- | --- | --- |
-| `stripCount` | **4** — figé (`LA COUPE`, `LE REGARD`, `LE NEZ`, `LA BOUCHE`) | Bertrand · A6 |
-| `variantsPerStrip` | **6** — plafond dur 6 | A5 |
-| `faceTemplates` | **1** gabarit (24 assets de bande) | A5 · brief art §5.1 |
-| Composition des leurres (V1) | 1 bonne + 2 classe forte + 3 classe moyenne + **0 classe 4** | A5 |
-| `occurrences` | **1 par run**, sur déclencheur narratif | A3 · `pm` |
-| Placement | **Interstitiel post-niveau**, `AppPhase` dédié `PORTRAIT_ROBOT` | A2 |
-| Gel du monde | **Aucun** (pas de shell ADR-0030) | A2 |
-| `timerSeconds` | **35** · `easy` **56** · `hard` **30** (`Prefs.difficulty`) | A7 |
-| ~~Unité de chrono~~ | ~~**1 unité = 2,5 s** ⇒ 14 unités · paliers 7 / 4 / 2 unités~~ | ~~A7~~ — **supprimé par B2**, voir ci-dessous |
-| Affichage du chrono | **Jauge continue** qui se vide, sans nombre à l'écran (ni unités, ni secondes). Habillage télécarte conservé | **B2 · A13** |
-| Paliers de tension | **Mi-parcours : `max(timerSeconds / 2 ; PALIER_URGENCE + 7,0)` s restants** ⇒ 28,0 (`easy`) / 17,5 (`normal`) / **17,0** (`hard`) · **Urgence : 10,0 s restants** · **Dernier : 5,0 s restants** — les deux derniers en **secondes absolues, identiques dans les 3 difficultés**. Si le mi-parcours calculé ≥ `timerSeconds`, il n'est **pas** joué (pas de cue à t=0) | **A13** amendé par **A18** |
-| Chrono sous `RotateOverlay` | **Pause** | A7 |
-| ~~`confirmGuardSeconds`~~ | ~~**1,0** (CTA inerte à l'entrée)~~ | ~~Sacha §4.1~~ — **supprimé par B1** (plus de CTA à garder) |
-| `initialStateAllWrong` | **`true`** — invariant de seed : à l'entrée en `ACTIVE`, les 4 bandes affichent une variante **fausse** (0/4 garanti). Remplace la garde anti-validation accidentelle | **A14** (remplace `confirmGuardSeconds`) |
-| `revealSeconds` | **2,6** à `PARTIAL`/`FAILED` (4×~0,45 s + 0,8 s de tenue — la reptation porte les corrections) · **1,4** à `IDENTIFIED` (flash de verrouillage + 4 tampons simultanés, pas de reptation) | **A15** (amende Sacha §4.1) |
-| **Reptation de révélation** (contenu de `revealSeconds`) | **OBLIGATOIRE à `PARTIAL`/`FAILED`** : les 2,6 s sont une séquence **JOUÉE** — 4 verdicts de bande à ~0,45 s **avec affichage de la variante JUSTE** de chaque bande fausse, puis 0,8 s de tenue. Ce n'est PAS un temps mort. Un écran qui laisse le joueur fixer un visage faux sans jamais voir la bonne réponse est un **FAIL de gate**, pas un manque de polish. À `IDENTIFIED` : pas de reptation (1,4 s, 4 tampons simultanés) | **A15** · **R-4 GARDE (Bertrand 2026-08-05)** · guidelines §5 règle 4 |
-| `resultHoldSeconds` | **2,2** (`QTE_RESULT_HOLD`) — inchangé, toutes issues | Sacha §4.1, ratifié |
-| `identifiedThreshold` | **4/4** — **évalué en continu, verrouillage automatique et immédiat** dès que l'état courant est 4/4 | **A12bis** (amende Sacha §4.2) |
-| `partialThreshold` | **3/4 — atteignable UNIQUEMENT au buzzer ou à l'abandon.** Il n'existe plus d'acte de soumission volontaire | **A12bis** (amende A9) |
-| `failedThreshold` | **≤ 2/4** au buzzer ou à l'abandon | Sacha §4.2, ratifié |
-| Ordre de résolution (anti-issue-fantôme) | Le test 4/4 se fait **à chaque changement d'état de bande**, avant tout tick de chrono ; l'expiration n'est évaluée **que si aucun verrouillage n'a eu lieu**. Un 4/4 posé dans la même frame que l'expiration ⇒ **`IDENTIFIED`** | **A12bis** |
-| Timeout / sortie anticipée | **Évalué à l'état courant** — aucun échec sec. Ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé) ⇒ issues possibles : `PARTIAL` ou `FAILED` | A2 · **A12bis** |
-| **Sortie anticipée** (ex-« abandon ») | **RATIFIÉE comme geste « j'ai fini, imprime »** — affordance **visible en permanence** (≥ 44×44 px), pas un `Escape` caché. Résout à l'état courant. **Jamais** un abandon dans la copie, **jamais** une validation dans la fonction | **A17 · Bertrand 2026-08-05** |
-| Confirmation de la sortie anticipée | **OUI, conservée, mais sans modale** : cible **armée au 1ᵉʳ appui, confirmée au 2ᵉ appui sur la MÊME cible** dans une fenêtre de **2,0 s** ; désarmement silencieux à l'expiration. **Le chrono ne se met pas en pause** pendant l'armement. ~~`Échap` clavier suit le même protocole en deux temps~~ → **le protocole en deux temps ne s'applique qu'au POINTEUR (tactile et souris). Au CLAVIER — y compris `Échap` et `Entrée`/`Espace` sur l'affordance focalisée — la sortie se fait en UN SEUL appui** | **A17**, amendé par **A17-bis** |
-| Critère anti-CTA (opposable) | Est interdit tout contrôle dont l'activation **peut produire `IDENTIFIED`** ou évaluer une réussite. La sortie anticipée ne le peut pas par construction ⇒ elle n'est **pas** un CTA. C'est le critère, pas la forme du geste | **A17** (précise §7 3-bis de la spec M) |
-| `IDENTIFIED` | **0 vie · 0 énergie · +1500 score · payoff +20 s** | A1 · A10 |
-| `PARTIAL` | **0 vie · 0 énergie · +400 score · payoff +10 s** | A1 · A10 |
-| `FAILED` | **0 vie · −20 énergie initiale du niveau suivant · 0 score · beat obligatoire** | A1 · A1b |
-| Perte de vie | **INTERDITE** sur cette scène, toutes issues confondues | A1 · story AC5 |
-| Feedback pendant `ACTIVE` | ~~**Zéro**, sous toute forme~~ → **Aucun feedback par trait, sous aucune forme. UN seul signal, global, binaire et terminal : le verrouillage.** Il ne commente pas, il termine | **A16** (amende A9) |
-| Cible | **Visible en permanence** · médaillon ≥ **28 %** de largeur en mobile paysage | A8 |
-| Geste primaire tactile | **swipe horizontal sur la bande visée** = variante ±1 sur CETTE bande. Pas de tap de sélection, pas de bande « active » au doigt. Chevrons ◀ ▶ conservés en affordance + cible d'accessibilité (≥ 44×44 px), jamais comme geste primaire | **A4-bis · Bertrand 2026-08-05** (renverse A4) |
-| Geste primaire desktop | ~~à trancher sur maquette Figma~~ → **OPTION B : drag horizontal à la souris sur la bande visée** = variante ±1 sur CETTE bande. Même modèle mental que le swipe tactile, un seul geste à documenter pour les deux classes d'appareil. Clic sur chevron conservé en affordance + cible d'accessibilité | **B3 · Bertrand 2026-08-05** |
-| Geste clavier | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA, `Entrée` bindée à rien) · ~~Échap = confirmation d'abandon~~ → ~~**Échap = sortie anticipée, en deux appuis (A17)**~~ → **Échap = sortie anticipée, en UN appui (A17-bis)** — asymétrie assumée avec le pointeur | A2 · UX §2.1 · **B1 · A17 · A17-bis** |
-| Bandeau / ~~CTA~~ | **`TÊTE À CONNAÎTRE`** / ~~**`SORTIR LA TÊTE`**~~ — **le CTA n'existe plus dans l'IHM** (B1). La réplique KENZA « Sors-moi une tête, une seule » reste au dialogue | A6 · **B1** |
-| Déterminisme | Fonction pure hachée de `portraitSeed` · zéro `Math.random` / `Date.now` | ADR-0034 · Sacha §0 |
+| Clé                                                      | Valeur canonique                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Source / arbitrage                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `stripCount`                                             | **4** — figé (`LA COUPE`, `LE REGARD`, `LE NEZ`, `LA BOUCHE`)                                                                                                                                                                                                                                                                                                                                                                                                                                                | Bertrand · A6                                                         |
+| `variantsPerStrip`                                       | **6** — plafond dur 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | A5                                                                    |
+| `faceTemplates`                                          | **1** gabarit (24 assets de bande)                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | A5 · brief art §5.1                                                   |
+| Composition des leurres (V1)                             | 1 bonne + 2 classe forte + 3 classe moyenne + **0 classe 4**                                                                                                                                                                                                                                                                                                                                                                                                                                                 | A5                                                                    |
+| `occurrences`                                            | **1 par run**, sur déclencheur narratif                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | A3 · `pm`                                                             |
+| Placement                                                | **Interstitiel post-niveau**, `AppPhase` dédié `PORTRAIT_ROBOT`                                                                                                                                                                                                                                                                                                                                                                                                                                              | A2                                                                    |
+| Gel du monde                                             | **Aucun** (pas de shell ADR-0030)                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | A2                                                                    |
+| `timerSeconds`                                           | **35** · `easy` **56** · `hard` **30** (`Prefs.difficulty`)                                                                                                                                                                                                                                                                                                                                                                                                                                                  | A7                                                                    |
+| ~~Unité de chrono~~                                      | ~~**1 unité = 2,5 s** ⇒ 14 unités · paliers 7 / 4 / 2 unités~~                                                                                                                                                                                                                                                                                                                                                                                                                                               | ~~A7~~ — **supprimé par B2**, voir ci-dessous                         |
+| Affichage du chrono                                      | **Jauge continue** qui se vide, sans nombre à l'écran (ni unités, ni secondes). Habillage télécarte conservé                                                                                                                                                                                                                                                                                                                                                                                                 | **B2 · A13**                                                          |
+| Paliers de tension                                       | **Mi-parcours : `max(timerSeconds / 2 ; PALIER_URGENCE + 7,0)` s restants** ⇒ 28,0 (`easy`) / 17,5 (`normal`) / **17,0** (`hard`) · **Urgence : 10,0 s restants** · **Dernier : 5,0 s restants** — les deux derniers en **secondes absolues, identiques dans les 3 difficultés**. Si le mi-parcours calculé ≥ `timerSeconds`, il n'est **pas** joué (pas de cue à t=0)                                                                                                                                       | **A13** amendé par **A18**                                            |
+| Chrono sous `RotateOverlay`                              | **Pause**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | A7                                                                    |
+| ~~`confirmGuardSeconds`~~                                | ~~**1,0** (CTA inerte à l'entrée)~~                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | ~~Sacha §4.1~~ — **supprimé par B1** (plus de CTA à garder)           |
+| `initialStateAllWrong`                                   | **`true`** — invariant de seed : à l'entrée en `ACTIVE`, les 4 bandes affichent une variante **fausse** (0/4 garanti). Remplace la garde anti-validation accidentelle                                                                                                                                                                                                                                                                                                                                        | **A14** (remplace `confirmGuardSeconds`)                              |
+| `revealSeconds`                                          | **2,6** à `PARTIAL`/`FAILED` (4×~0,45 s + 0,8 s de tenue — la reptation porte les corrections) · **1,4** à `IDENTIFIED` (flash de verrouillage + 4 tampons simultanés, pas de reptation)                                                                                                                                                                                                                                                                                                                     | **A15** (amende Sacha §4.1)                                           |
+| **Reptation de révélation** (contenu de `revealSeconds`) | **OBLIGATOIRE à `PARTIAL`/`FAILED`** : les 2,6 s sont une séquence **JOUÉE** — 4 verdicts de bande à ~0,45 s **avec affichage de la variante JUSTE** de chaque bande fausse, puis 0,8 s de tenue. Ce n'est PAS un temps mort. Un écran qui laisse le joueur fixer un visage faux sans jamais voir la bonne réponse est un **FAIL de gate**, pas un manque de polish. À `IDENTIFIED` : pas de reptation (1,4 s, 4 tampons simultanés)                                                                         | **A15** · **R-4 GARDE (Bertrand 2026-08-05)** · guidelines §5 règle 4 |
+| `resultHoldSeconds`                                      | **2,2** (`QTE_RESULT_HOLD`) — inchangé, toutes issues                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Sacha §4.1, ratifié                                                   |
+| `identifiedThreshold`                                    | **4/4** — **évalué en continu, verrouillage automatique et immédiat** dès que l'état courant est 4/4                                                                                                                                                                                                                                                                                                                                                                                                         | **A12bis** (amende Sacha §4.2)                                        |
+| `partialThreshold`                                       | **3/4 — atteignable UNIQUEMENT au buzzer ou à l'abandon.** Il n'existe plus d'acte de soumission volontaire                                                                                                                                                                                                                                                                                                                                                                                                  | **A12bis** (amende A9)                                                |
+| `failedThreshold`                                        | **≤ 2/4** au buzzer ou à l'abandon                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Sacha §4.2, ratifié                                                   |
+| Ordre de résolution (anti-issue-fantôme)                 | Le test 4/4 se fait **à chaque changement d'état de bande**, avant tout tick de chrono ; l'expiration n'est évaluée **que si aucun verrouillage n'a eu lieu**. Un 4/4 posé dans la même frame que l'expiration ⇒ **`IDENTIFIED`**                                                                                                                                                                                                                                                                            | **A12bis**                                                            |
+| Timeout / sortie anticipée                               | **Évalué à l'état courant** — aucun échec sec. Ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé) ⇒ issues possibles : `PARTIAL` ou `FAILED`                                                                                                                                                                                                                                                                                                                                        | A2 · **A12bis**                                                       |
+| **Sortie anticipée** (ex-« abandon »)                    | **RATIFIÉE comme geste « j'ai fini, imprime »** — affordance **visible en permanence** (≥ 44×44 px), pas un `Escape` caché. Résout à l'état courant. **Jamais** un abandon dans la copie, **jamais** une validation dans la fonction                                                                                                                                                                                                                                                                         | **A17 · Bertrand 2026-08-05**                                         |
+| Confirmation de la sortie anticipée                      | **OUI, conservée, mais sans modale** : cible **armée au 1ᵉʳ appui, confirmée au 2ᵉ appui sur la MÊME cible** dans une fenêtre de **2,0 s** ; désarmement silencieux à l'expiration. **Le chrono ne se met pas en pause** pendant l'armement. ~~`Échap` clavier suit le même protocole en deux temps~~ → **le protocole en deux temps ne s'applique qu'au POINTEUR (tactile et souris). Au CLAVIER — y compris `Échap` et `Entrée`/`Espace` sur l'affordance focalisée — la sortie se fait en UN SEUL appui** | **A17**, amendé par **A17-bis**                                       |
+| Critère anti-CTA (opposable)                             | Est interdit tout contrôle dont l'activation **peut produire `IDENTIFIED`** ou évaluer une réussite. La sortie anticipée ne le peut pas par construction ⇒ elle n'est **pas** un CTA. C'est le critère, pas la forme du geste                                                                                                                                                                                                                                                                                | **A17** (précise §7 3-bis de la spec M)                               |
+| `IDENTIFIED`                                             | **0 vie · 0 énergie · +1500 score · payoff +20 s**                                                                                                                                                                                                                                                                                                                                                                                                                                                           | A1 · A10                                                              |
+| `PARTIAL`                                                | **0 vie · 0 énergie · +400 score · payoff +10 s**                                                                                                                                                                                                                                                                                                                                                                                                                                                            | A1 · A10                                                              |
+| `FAILED`                                                 | **0 vie · −20 énergie initiale du niveau suivant · 0 score · beat obligatoire**                                                                                                                                                                                                                                                                                                                                                                                                                              | A1 · A1b                                                              |
+| Perte de vie                                             | **INTERDITE** sur cette scène, toutes issues confondues                                                                                                                                                                                                                                                                                                                                                                                                                                                      | A1 · story AC5                                                        |
+| Feedback pendant `ACTIVE`                                | ~~**Zéro**, sous toute forme~~ → **Aucun feedback par trait, sous aucune forme. UN seul signal, global, binaire et terminal : le verrouillage.** Il ne commente pas, il termine                                                                                                                                                                                                                                                                                                                              | **A16** (amende A9)                                                   |
+| Cible                                                    | **Visible en permanence** · médaillon ≥ **28 %** de largeur en mobile paysage                                                                                                                                                                                                                                                                                                                                                                                                                                | A8                                                                    |
+| Geste primaire tactile                                   | **swipe horizontal sur la bande visée** = variante ±1 sur CETTE bande. Pas de tap de sélection, pas de bande « active » au doigt. Chevrons ◀ ▶ conservés en affordance + cible d'accessibilité (≥ 44×44 px), jamais comme geste primaire                                                                                                                                                                                                                                                                     | **A4-bis · Bertrand 2026-08-05** (renverse A4)                        |
+| Geste primaire desktop                                   | ~~à trancher sur maquette Figma~~ → **OPTION B : drag horizontal à la souris sur la bande visée** = variante ±1 sur CETTE bande. Même modèle mental que le swipe tactile, un seul geste à documenter pour les deux classes d'appareil. Clic sur chevron conservé en affordance + cible d'accessibilité                                                                                                                                                                                                       | **B3 · Bertrand 2026-08-05**                                          |
+| Geste clavier                                            | ↑↓ = bande · ←→ = variante · ~~Entrée = CTA~~ (plus de CTA, `Entrée` bindée à rien) · ~~Échap = confirmation d'abandon~~ → ~~**Échap = sortie anticipée, en deux appuis (A17)**~~ → **Échap = sortie anticipée, en UN appui (A17-bis)** — asymétrie assumée avec le pointeur                                                                                                                                                                                                                                 | A2 · UX §2.1 · **B1 · A17 · A17-bis**                                 |
+| Bandeau / ~~CTA~~                                        | **`TÊTE À CONNAÎTRE`** / ~~**`SORTIR LA TÊTE`**~~ — **le CTA n'existe plus dans l'IHM** (B1). La réplique KENZA « Sors-moi une tête, une seule » reste au dialogue                                                                                                                                                                                                                                                                                                                                           | A6 · **B1**                                                           |
+| Déterminisme                                             | Fonction pure hachée de `portraitSeed` · zéro `Math.random` / `Date.now`                                                                                                                                                                                                                                                                                                                                                                                                                                     | ADR-0034 · Sacha §0                                                   |
 
 ---
 
 ## 4. Ce qui est COUPÉ
 
-| Coupé | Auteur | Motif |
-| --- | --- | --- |
-| **−0,5 cœur** (et toute perte de vie) | M §4.3 | Contredit story AC5 · A1 |
-| **+25 énergie** à `IDENTIFIED` | M §4.3 | Inopérant (clamp à 100) après A1c |
-| **Gel du monde / shell ADR-0030** | M §2.1 | Placement interstitiel · A2 |
-| **Table de progression #1/#2/#3+** | M §3 D3 | Une seule occurrence par run · A3 (gardée en note post-V1) |
-| **8 variantes par bande** | M §3/§4.1 | Budget art · A5 |
-| **Mini-crop de comparaison locale** | UX D4.2 | Attaque le verbe de la scène + coût · A8 |
-| **Verrouillage indicatif de bande** | UX §0/D0 | État superflu, problème déjà supprimé par le layout · A8 |
-| Libellés `CHEVEUX/YEUX/…` en surface joueur | UX §1 | Vocabulaire canon · A6 |
-| Bandeau « PORTRAIT-ROBOT » / « dossier suspect » | UX §1/§6 | Registre interdit · A6 |
-| **Bandes qui défilent à figer** | option B, M §1 | Close définitivement · A4 |
-| Nom propre pour « le type de la porte » | F Q4 | Recommandation de Yasmine ratifiée — il reste anonyme |
-| Twist « ton propre portrait-robot » | F §2.1 | **Gelé**, pas coupé · A12 |
-| **CTA `SORTIR LA TÊTE`** (le bouton, la chaîne, sa zone d'écran, son focus, `Entrée`) | M §R5/§4.1, UX §1/§2.1/§5, F §4.9 | **Bertrand B1** — la validation est automatique · A12bis |
-| **`confirmGuardSeconds` 1,0 s** | M §4.1 | Gardait un CTA qui n'existe plus · **B1**. Remplacé par l'invariant `initialStateAllWrong` · A14 |
-| **Compte d'unités télécarte (14 unités, 1 unité = 2,5 s)** et **paliers 7/4/2 unités** | A7, M §4.1/§6/AC13, F §4.5, UX §1.1 | **Bertrand B2** — essais illimités dans un temps imparti, plus de décompte d'essais ni d'unités · A13 |
-| **Libellé `TÉLÉCARTE · {n} UNITÉS`** (et son repli `{n} UNITÉS`) | F §4.5/§4.9, UX §1.1 | Il n'y a plus d'unités à afficher. Jauge continue · A13. Copie de remplacement due par `narrative-designer` |
-| **Soumission volontaire d'un 3/4** | A9 | Sans CTA, on ne peut plus soumettre. `PARTIAL` n'existe plus qu'au buzzer · A12bis |
-| **Reptation de révélation à `IDENTIFIED`** (4×0,45 s) | M §4.1 | Zéro information à délivrer après un verrouillage 4/4 · A15 (2,6 s → 1,4 s). Conservée intégralement à `PARTIAL`/`FAILED` |
+| Coupé                                                                                  | Auteur                              | Motif                                                                                                                     |
+| -------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **−0,5 cœur** (et toute perte de vie)                                                  | M §4.3                              | Contredit story AC5 · A1                                                                                                  |
+| **+25 énergie** à `IDENTIFIED`                                                         | M §4.3                              | Inopérant (clamp à 100) après A1c                                                                                         |
+| **Gel du monde / shell ADR-0030**                                                      | M §2.1                              | Placement interstitiel · A2                                                                                               |
+| **Table de progression #1/#2/#3+**                                                     | M §3 D3                             | Une seule occurrence par run · A3 (gardée en note post-V1)                                                                |
+| **8 variantes par bande**                                                              | M §3/§4.1                           | Budget art · A5                                                                                                           |
+| **Mini-crop de comparaison locale**                                                    | UX D4.2                             | Attaque le verbe de la scène + coût · A8                                                                                  |
+| **Verrouillage indicatif de bande**                                                    | UX §0/D0                            | État superflu, problème déjà supprimé par le layout · A8                                                                  |
+| Libellés `CHEVEUX/YEUX/…` en surface joueur                                            | UX §1                               | Vocabulaire canon · A6                                                                                                    |
+| Bandeau « PORTRAIT-ROBOT » / « dossier suspect »                                       | UX §1/§6                            | Registre interdit · A6                                                                                                    |
+| **Bandes qui défilent à figer**                                                        | option B, M §1                      | Close définitivement · A4                                                                                                 |
+| Nom propre pour « le type de la porte »                                                | F Q4                                | Recommandation de Yasmine ratifiée — il reste anonyme                                                                     |
+| Twist « ton propre portrait-robot »                                                    | F §2.1                              | **Gelé**, pas coupé · A12                                                                                                 |
+| **CTA `SORTIR LA TÊTE`** (le bouton, la chaîne, sa zone d'écran, son focus, `Entrée`)  | M §R5/§4.1, UX §1/§2.1/§5, F §4.9   | **Bertrand B1** — la validation est automatique · A12bis                                                                  |
+| **`confirmGuardSeconds` 1,0 s**                                                        | M §4.1                              | Gardait un CTA qui n'existe plus · **B1**. Remplacé par l'invariant `initialStateAllWrong` · A14                          |
+| **Compte d'unités télécarte (14 unités, 1 unité = 2,5 s)** et **paliers 7/4/2 unités** | A7, M §4.1/§6/AC13, F §4.5, UX §1.1 | **Bertrand B2** — essais illimités dans un temps imparti, plus de décompte d'essais ni d'unités · A13                     |
+| **Libellé `TÉLÉCARTE · {n} UNITÉS`** (et son repli `{n} UNITÉS`)                       | F §4.5/§4.9, UX §1.1                | Il n'y a plus d'unités à afficher. Jauge continue · A13. Copie de remplacement due par `narrative-designer`               |
+| **Soumission volontaire d'un 3/4**                                                     | A9                                  | Sans CTA, on ne peut plus soumettre. `PARTIAL` n'existe plus qu'au buzzer · A12bis                                        |
+| **Reptation de révélation à `IDENTIFIED`** (4×0,45 s)                                  | M §4.1                              | Zéro information à délivrer après un verrouillage 4/4 · A15 (2,6 s → 1,4 s). Conservée intégralement à `PARTIAL`/`FAILED` |
 
 Restent hors spec V1, tels que Sacha les liste (§7) et que je ratifie sans changement : feedback par
 trait, bonus de score au temps restant, plus de 4 bandes, indices/aides, cible masquée, portraits
@@ -551,8 +554,8 @@ Maquette de référence à jour : Figma `muf — Design System`, page `Écrans �
 
 ### Les trois arbitrages, verbatim
 
-| #      | Verbatim                                                                                                                     | Ce qu'il renverse                    |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| #      | Verbatim                                                                                                                      | Ce qu'il renverse                    |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | **B1** | « bouton "sortir la tete" **inutile**, il faut **valider à l'écran dès que la bonne combinaison est sortie** »                | A6 (CTA), A9, Sacha R5/§4.1, UX §2.1 |
 | **B2** | « télécarte 14 unités -> **on vire**, autant d'essais que l'on veut mais **dans un temps imparti** »                          | A7 (conversion et paliers en unités) |
 | **B3** | Desktop : « **option B** » = drag horizontal sur la bande, même modèle mental que le swipe tactile ; mobile reste sur A4-bis. | A4-bis (point laissé ouvert)         |
@@ -604,7 +607,7 @@ report. Vérifiable par test pur sur `portraitSeed` : `correctCount(état initia
 ### A15 — Ce que devient la révélation après un verrouillage
 
 Question réelle : la reptation trait-par-trait (4 verdicts à ~0,45 s + 0,8 s de tenue = 2,6 s) avait
-un sens **informatif** après une soumission — elle disait *quels* traits étaient faux et les
+un sens **informatif** après une soumission — elle disait _quels_ traits étaient faux et les
 corrigeait à l'écran. Après un verrouillage automatique, ce contenu informatif dépend de l'issue :
 
 - à `PARTIAL`/`FAILED`, il est **intact** : il reste 1 à 4 bandes à corriger sous les yeux du
@@ -640,8 +643,8 @@ comme une violation d'A16 lit la bonne règle sur la mauvaise fenêtre de temps.
 **A9 ne tient pas tel quel** : « zéro feedback, sous toute forme » est devenu factuellement faux, le
 verrouillage **est** un feedback, et c'est le seul. Prétendre le contraire serait une table qui ment.
 
-**Nouvelle formulation canonique :** *aucun feedback par trait, sous aucune forme ; UN seul signal,
-global, binaire et terminal — le verrouillage. Il ne commente pas, il termine.*
+**Nouvelle formulation canonique :** _aucun feedback par trait, sous aucune forme ; UN seul signal,
+global, binaire et terminal — le verrouillage. Il ne commente pas, il termine._
 
 La distinction est nette et elle est opposable au dev comme à l'UX : un signal qui **met fin à la
 phase** n'informe pas la suite du jeu du joueur, il n'y a pas de suite. Un signal par trait, lui,
@@ -684,11 +687,11 @@ coûte »).
 
 **Les paliers refaits, en secondes :**
 
-| Palier       | Déclencheur                              | `normal` (35 s) | `easy` (56 s) | `hard` (30 s) | Ce qui se passe                                                        |
-| ------------ | ---------------------------------------- | --------------- | ------------- | ------------- | ---------------------------------------------------------------------- |
-| Mi-parcours  | **50 % de `timerSeconds` écoulés**       | 17,5 s restants | 28,0 s        | 15,0 s        | `KENZA — « Ma carte descend. »` (copie seule)                          |
-| Urgence      | **10,0 s restants** (valeur absolue)     | 10,0 s          | 10,0 s        | 10,0 s        | `KENZA — « Grouille, il me reste rien. »` + 1ᵉʳ resserrement musical   |
-| Dernier      | **5,0 s restants** (valeur absolue)      | 5,0 s           | 5,0 s         | 5,0 s         | `bip` + 2ᵉ resserrement + annonce `aria-live`                          |
+| Palier      | Déclencheur                          | `normal` (35 s) | `easy` (56 s) | `hard` (30 s) | Ce qui se passe                                                      |
+| ----------- | ------------------------------------ | --------------- | ------------- | ------------- | -------------------------------------------------------------------- |
+| Mi-parcours | **50 % de `timerSeconds` écoulés**   | 17,5 s restants | 28,0 s        | 15,0 s        | `KENZA — « Ma carte descend. »` (copie seule)                        |
+| Urgence     | **10,0 s restants** (valeur absolue) | 10,0 s          | 10,0 s        | 10,0 s        | `KENZA — « Grouille, il me reste rien. »` + 1ᵉʳ resserrement musical |
+| Dernier     | **5,0 s restants** (valeur absolue)  | 5,0 s           | 5,0 s         | 5,0 s         | `bip` + 2ᵉ resserrement + annonce `aria-live`                        |
 
 **Motif de la règle mixte — c'est un arbitrage, pas une commodité.** Le mi-parcours est un palier
 **de rythme** : il doit tomber au milieu de la scène, quelle que soit sa durée ⇒ proportionnel.
@@ -748,11 +751,11 @@ n'ont pas bougé d'une unité.
 Trois réponses de Bertrand. Elles **ferment** ; ce §9 journalise ce qu'elles ferment et rend les
 deux arbitrages qu'elles laissaient à ma charge. **Le dossier ne se rouvre pas dessus.**
 
-| #   | Réponse de Bertrand                                                    | Portée                        | État               |
-| --- | ---------------------------------------------------------------------- | ----------------------------- | ------------------ |
-| R-1 | Sortie anticipée rhabillée en « j'ai fini, imprime » — « Ok très bien » | Story · canon §3              | **RATIFIÉ → A17**  |
-| R-2 | Règle A1c — « valide ça »                                              | **Projet** (dépasse la story) | **RATIFIÉ → §6.4** |
-| R-3 | Voie de production art : visages entiers puis découpe des bandes        | Art · ADR-0080                | **RATIFIÉ**        |
+| #   | Réponse de Bertrand                                                     | Portée                        | État                                        |
+| --- | ----------------------------------------------------------------------- | ----------------------------- | ------------------------------------------- |
+| R-1 | Sortie anticipée rhabillée en « j'ai fini, imprime » — « Ok très bien » | Story · canon §3              | **RATIFIÉ → A17**                           |
+| R-2 | Règle A1c — « valide ça »                                               | **Projet** (dépasse la story) | **RATIFIÉ → §6.4**                          |
+| R-3 | Voie de production art : visages entiers puis découpe des bandes        | Art · ADR-0080                | **RATIFIÉ**                                 |
 | R-4 | Reptation de révélation (AC4 / finding M6) — « **GARDE** » (2026-08-05) | Story · canon §3 · A15        | **RATIFIÉ → on IMPLÉMENTE, pas de descope** |
 
 **Deuxième vague — 2026-08-05, après le triage du panel (stage 6, §6.2/§6.3 du journal de story).**
@@ -783,10 +786,10 @@ et il est meilleur que ma ligne d'origine :
 
 **Canon amendé (§3, deux lignes, ancienne formulation barrée et non effacée) :**
 
-| Canal d'entrée | Sortie anticipée |
-| --- | --- |
-| **Pointeur** (tactile, souris) | **DEUX appuis** — armement au 1ᵉʳ, sortie au 2ᵉ sur la même cible dans **2,0 s**, désarmement silencieux. Chrono non pausé. Inchangé (A17). |
-| **Clavier** (`Échap`, et `Entrée`/`Espace` sur l'affordance focalisée) | **UN SEUL appui.** Pas d'armement, pas de fenêtre de 2,0 s, pas de second état à annoncer. |
+| Canal d'entrée                                                         | Sortie anticipée                                                                                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pointeur** (tactile, souris)                                         | **DEUX appuis** — armement au 1ᵉʳ, sortie au 2ᵉ sur la même cible dans **2,0 s**, désarmement silencieux. Chrono non pausé. Inchangé (A17). |
+| **Clavier** (`Échap`, et `Entrée`/`Espace` sur l'affordance focalisée) | **UN SEUL appui.** Pas d'armement, pas de fenêtre de 2,0 s, pas de second état à annoncer.                                                  |
 
 **Ce que l'amendement NE couvre PAS — et je le nomme pour qu'on ne s'en réclame pas.** L'aggravant
 trouvé par le panel — `EarlyExitButton` est le **premier élément focusable du DOM**, donc `Tab` +
@@ -862,6 +865,7 @@ ligne « ne peut jamais produire `IDENTIFIED` » reste au canon §3 comme **asse
 
 **Arbitrage 2 — la confirmation est-elle conservée ? OUI, mais elle change de forme : deux appuis
 sur la même cible, pas de modale.**
+
 > **Amendé le 2026-08-05 par A17-bis (§9, deuxième vague) : tout cet arbitrage 2 ne vaut QUE pour le
 > POINTEUR (tactile, souris). Au CLAVIER — `Échap` inclus — la sortie se fait en UN SEUL appui.**
 
@@ -883,9 +887,9 @@ au-delà. **Le chrono ne se met pas en pause pendant l'armement** — sinon l'ar
 bouton « geler le temps pour réfléchir », et c'est un exploit gratuit.
 
 **L'objection que je dois traiter moi-même, parce qu'elle est réelle :** « deux appuis pour
-imprimer » ressemble au *double-tap pour imprimer* que la spec M interdit en §7 3-bis. **Ce n'est
-pas le même objet, et je fixe le critère qui les sépare** (canon §3) : *est interdit tout contrôle
-dont l'activation peut produire `IDENTIFIED` ou évaluer une réussite.* La sortie anticipée ne le
+imprimer » ressemble au _double-tap pour imprimer_ que la spec M interdit en §7 3-bis. **Ce n'est
+pas le même objet, et je fixe le critère qui les sépare** (canon §3) : _est interdit tout contrôle
+dont l'activation peut produire `IDENTIFIED` ou évaluer une réussite._ La sortie anticipée ne le
 peut pas — arbitrage 1 ci-dessus. **Le critère est la fonction, pas la forme du geste.** `pm` et
 `ux-designer` s'en servent comme test : si un jour un contrôle proposé peut produire une réussite,
 c'est un CTA, il tombe sous B1, quel que soit son libellé.

@@ -17,11 +17,11 @@ Trois faits sont redescendus du `design-gate-portrait-robot.md` (§3 valeurs can
 amendements post-gate) et d'ADR-0080/0081. Ils touchent la composition de l'écran, pas seulement
 la production. Ce qui a changé dans ce brief :
 
-| # | Ce qui a bougé | Où c'est traité ici |
-| --- | --- | --- |
-| 1 | **CTA `SORTIR LA TÊTE` supprimé** (Bertrand B1). Plus de bouton, plus de zone d'écran, plus de focus. La scène se valide seule à 4/4 (A12bis). Un **moment visuel neuf** apparaît : **le VERROUILLAGE**, seul signal de toute la scène (A16). | **§3bis (neuf)** — le verrouillage, proposition DA. Le CTA disparaît de §3 et §6. |
-| 2 | **Chrono en jauge continue**, sans nombre ni unité (B2 / A13). `TÉLÉCARTE · {n} UNITÉS` est mort. | **§4bis (neuf)** — comment se dessine une jauge qui se vide en DA fanzine. |
-| 3 | **Bandes JOINTIVES** (maquette Figma `muf — Design System`, page `Écrans · Portrait-robot`, corrigée en direct par Bertrand) : aucune couture, aucun écart, aucun trait de séparation. Une seule surface continue, au gabarit **exact** de la cible. | **§1.0 (neuf)** — la règle de raccord passe de bonne pratique à condition d'existence ; **§1.2bis** — bleed, repères, tolérance chiffrée. |
+| #   | Ce qui a bougé                                                                                                                                                                                                                                       | Où c'est traité ici                                                                                                                       |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **CTA `SORTIR LA TÊTE` supprimé** (Bertrand B1). Plus de bouton, plus de zone d'écran, plus de focus. La scène se valide seule à 4/4 (A12bis). Un **moment visuel neuf** apparaît : **le VERROUILLAGE**, seul signal de toute la scène (A16).        | **§3bis (neuf)** — le verrouillage, proposition DA. Le CTA disparaît de §3 et §6.                                                         |
+| 2   | **Chrono en jauge continue**, sans nombre ni unité (B2 / A13). `TÉLÉCARTE · {n} UNITÉS` est mort.                                                                                                                                                    | **§4bis (neuf)** — comment se dessine une jauge qui se vide en DA fanzine.                                                                |
+| 3   | **Bandes JOINTIVES** (maquette Figma `muf — Design System`, page `Écrans · Portrait-robot`, corrigée en direct par Bertrand) : aucune couture, aucun écart, aucun trait de séparation. Une seule surface continue, au gabarit **exact** de la cible. | **§1.0 (neuf)** — la règle de raccord passe de bonne pratique à condition d'existence ; **§1.2bis** — bleed, repères, tolérance chiffrée. |
 
 Deux corrections que le gate me fait redescendre, et que j'accepte sans réserve :
 
@@ -92,7 +92,7 @@ et voici pourquoi, en trois conséquences opposables :
    layout qui plie, pas le gabarit.)
 3. **La sélection ne peut plus être signalée par la géométrie.** Pas de bande qui s'écarte, pas de
    bande qui grossit, pas de cadre qui apparaît, pas de séparateur qui s'allume : toute affordance
-   qui *déplace* de la matière casse la surface continue. La sélection est **exclusivement** le
+   qui _déplace_ de la matière casse la surface continue. La sélection est **exclusivement** le
    liseré néon à falloff de §3, posé **sur** la bande sans rien décoller. C'est aussi ce qui rend
    ce liseré indispensable : il est le seul marqueur d'état qui ne coûte pas la jointure.
 
@@ -124,11 +124,11 @@ Trois coutures, à des **ordonnées fixes en pourcentage de la hauteur du portra
 tous les visages et toutes les variantes. Valeurs à figer par `concept-artist` + `game-graphist`
 sur un gabarit test, ordre de grandeur proposé ici comme point de départ :
 
-| Couture | Position | Ce qui doit coïncider exactement de part et d'autre |
-| --- | --- | --- |
-| C1 — cheveux / yeux | ~32 % de la hauteur, au niveau du front, **au-dessus des sourcils** | largeur du crâne, contour des tempes, amorce des oreilles |
-| C2 — yeux / nez | ~52 %, **au-dessus de l'arête du nez**, sous les pommettes | largeur des joues, ligne de pommette, amorce du nez (un trait, pas un bloc) |
-| C3 — nez / bouche | ~72 %, sous les narines, **au-dessus de la lèvre supérieure** | largeur du bas de visage, philtrum, début de la mâchoire |
+| Couture             | Position                                                            | Ce qui doit coïncider exactement de part et d'autre                         |
+| ------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| C1 — cheveux / yeux | ~32 % de la hauteur, au niveau du front, **au-dessus des sourcils** | largeur du crâne, contour des tempes, amorce des oreilles                   |
+| C2 — yeux / nez     | ~52 %, **au-dessus de l'arête du nez**, sous les pommettes          | largeur des joues, ligne de pommette, amorce du nez (un trait, pas un bloc) |
+| C3 — nez / bouche   | ~72 %, sous les narines, **au-dessus de la lèvre supérieure**       | largeur du bas de visage, philtrum, début de la mâchoire                    |
 
 Règle de choix des coutures : **une couture passe toujours dans une zone plate et peu contrastée du
 visage**, jamais à travers un trait fort. Couper au milieu d'un sourcil ou d'une narine, c'est
@@ -164,12 +164,12 @@ recouvrement sert uniquement à ce que le keying/cutout n'ait pas de bord franc 
 d'ADR-0080 D5 (recalage sur ligne des yeux / base du nez) a besoin de cibles mesurables. La planche
 porte donc, **hors du cadre du portrait** (donc jamais livrées dans un PNG de bande) :
 
-| Repère | Emplacement | Sert à |
-| --- | --- | --- |
-| Deux tirets de **ligne des yeux** | marges gauche et droite, à l'ordonnée de la ligne pupillaire | fixer l'échelle verticale et la rotation |
-| Deux tirets de **base du nez** | marges gauche et droite, sous les narines | deuxième point de la normalisation verticale |
-| Un tiret d'**axe médian**, haut et bas | marges supérieure et inférieure, sur l'axe | fixer le centrage horizontal et détecter toute inclinaison |
-| **Traits de coupe** aux 4 coins | marges | cadrer la bbox du portrait, et rien d'autre |
+| Repère                                 | Emplacement                                                  | Sert à                                                     |
+| -------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Deux tirets de **ligne des yeux**      | marges gauche et droite, à l'ordonnée de la ligne pupillaire | fixer l'échelle verticale et la rotation                   |
+| Deux tirets de **base du nez**         | marges gauche et droite, sous les narines                    | deuxième point de la normalisation verticale               |
+| Un tiret d'**axe médian**, haut et bas | marges supérieure et inférieure, sur l'axe                   | fixer le centrage horizontal et détecter toute inclinaison |
+| **Traits de coupe** aux 4 coins        | marges                                                       | cadrer la bbox du portrait, et rien d'autre                |
 
 Ces repères sont dessinés au **même trait que le reste** (c'est une planche d'imprimeur, pas une
 overlay technique) — c'est cohérent avec le vocabulaire de dessin technique de la bible §3.6, et
@@ -179,12 +179,12 @@ overlay technique) — c'est cohérent avec le vocabulaire de dessin technique d
 sur chacune des 3 coutures, entre la bande du dessus et la bande du dessous, pour **toutes** les
 variantes :
 
-| Grandeur mesurée à la couture | Tolérance (PASS) | Rejet de la variante |
-| --- | --- | --- |
+| Grandeur mesurée à la couture                                                       | Tolérance (PASS)                              | Rejet de la variante |
+| ----------------------------------------------------------------------------------- | --------------------------------------------- | -------------------- |
 | **Demi-largeur du crâne** de part et d'autre (gauche et droite mesurées séparément) | **≤ 2 px de planche** (≤ 0,2 % de la hauteur) | **≥ 4 px** (≥ 0,4 %) |
-| **Position de l'axe médian** | **≤ 1 px** | **≥ 2 px** |
-| **Écart de tangente du contour** (rupture d'angle du bord du crâne) | **≤ 3°** | **≥ 6°** |
-| **Épaisseur du trait de contour** entre deux bandes | **≤ 10 % d'écart relatif** | **> 15 %** |
+| **Position de l'axe médian**                                                        | **≤ 1 px**                                    | **≥ 2 px**           |
+| **Écart de tangente du contour** (rupture d'angle du bord du crâne)                 | **≤ 3°**                                      | **≥ 6°**             |
+| **Épaisseur du trait de contour** entre deux bandes                                 | **≤ 10 % d'écart relatif**                    | **> 15 %**           |
 
 **Pourquoi 2 px / 4 px, et pas un chiffre rond de confort.** À la taille de rendu réelle (bande de
 56 px de haut en mobile paysage, UX §2.3.1 ratifié au gate — soit un portrait d'environ 224 px de
@@ -319,7 +319,7 @@ binaire, terminal, jamais un feedback par trait** (A16) — et me laisse sa form
 **Le cahier des charges DA, que je m'impose avant de proposer quoi que ce soit :**
 
 1. **Global** : il porte sur la surface entière, jamais sur une bande. Un signal qui naît sur la
-   4ᵉ bande dirait au joueur *quelle* bande a fermé la combinaison — feedback par trait, interdit.
+   4ᵉ bande dirait au joueur _quelle_ bande a fermé la combinaison — feedback par trait, interdit.
 2. **Binaire et terminal** : un état, pas une montée. Pas de « ça chauffe », pas d'intensité qui
    croît avec le nombre de bonnes bandes. La scène ne commente pas, elle s'arrête.
 3. **Jamais la couleur seule** (accessibilité, et loi de la maison : notre identité est le noir et
@@ -509,11 +509,11 @@ C'est la différence entre un widget et un objet, et c'est toute la DA de la mai
 Les paliers du gate (50 % · 10 s · 5 s restants, A13) doivent se voir. Ils se voient **sans
 couleur, sans glow, sans nombre** :
 
-| Palier | Ce que fait la jauge |
-| --- | --- |
-| Mi-parcours (50 %) | **rien de visuel** — c'est un palier de copie (réplique KENZA), pas d'IHM. Ne rien ajouter est une décision, pas un oubli. |
-| Urgence (10 s restants) | l'encre restante **passe de l'aplat plein à une trame grossière** — la carte « s'éclaircit », elle rend l'âme. Changement de **texture**, pas de teinte. |
-| Dernier (5 s restants) | le **filet du contour de la carte s'épaissit d'un cran** (une seconde impression, plus grasse) + le bip + l'annonce `aria-live`. Un seul cran, tenu, sans clignotement. |
+| Palier                  | Ce que fait la jauge                                                                                                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mi-parcours (50 %)      | **rien de visuel** — c'est un palier de copie (réplique KENZA), pas d'IHM. Ne rien ajouter est une décision, pas un oubli.                                              |
+| Urgence (10 s restants) | l'encre restante **passe de l'aplat plein à une trame grossière** — la carte « s'éclaircit », elle rend l'âme. Changement de **texture**, pas de teinte.                |
+| Dernier (5 s restants)  | le **filet du contour de la carte s'épaissit d'un cran** (une seconde impression, plus grasse) + le bip + l'annonce `aria-live`. Un seul cran, tenu, sans clignotement. |
 
 Les trois sont perceptibles en niveaux de gris, en `prefers-reduced-motion`, et sans son.
 
@@ -538,12 +538,12 @@ l'interdit « temps restant » d'A6 tient.
 `4 bandes × N variantes × M visages`. Le piège : si les visages sont indépendants, le coût est
 multiplicatif et l'ensemble explose. Quelques ordres de grandeur :
 
-| Hypothèse | Assets bandes | Combinaisons offertes |
-| --- | --- | --- |
-| M=1 visage, N=4 | 16 | 256 |
-| M=3, N=4 | 48 | 768 |
-| M=3, N=6 | 72 | 3 888 |
-| M=5, N=6 | 120 | 6 480 |
+| Hypothèse       | Assets bandes | Combinaisons offertes |
+| --------------- | ------------- | --------------------- |
+| M=1 visage, N=4 | 16            | 256                   |
+| M=3, N=4        | 48            | 768                   |
+| M=3, N=6        | 72            | 3 888                 |
+| M=5, N=6        | 120           | 6 480                 |
 
 **Constat :** le nombre de combinaisons est absurdement supérieur au besoin de gameplay.
 Le joueur voit **une** cible et fait au plus quelques dizaines d'essais. On n'a donc **aucun besoin

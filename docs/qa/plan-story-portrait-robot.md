@@ -31,20 +31,20 @@ Protocole : le plateau d'une graine est d'abord cartographié (chaque bande bala
 DOM) ; puis rechargement de la **même** graine, 3 bandes posées justes, la 4ᵉ tirée quand le chrono
 lu sur le DOM passe sous un seuil.
 
-| Graine | Bridage CPU | fps mesurés | 4ᵉ bande tirée à | Issue |
-| --- | --- | --- | --- | --- |
-| 1998 | ×1 | 60,2 | 0,185 s restantes | **IDENTIFIED** (4/4) |
-| 123456 | ×1 | 60,2 | 0,018 s restantes | **IDENTIFIED** (4/4) |
-| 42 | ×6 | — | 0,147 s restantes | **IDENTIFIED** (4/4) |
-| 1998 | ×20 | 19,6 | 0,311 s restantes | **IDENTIFIED** (4/4) |
-| 7 | ×20 | 19,6 | 0,007 s restantes | `PARTIAL` (3/4) — **voir la borne ci-dessous** |
+| Graine | Bridage CPU | fps mesurés | 4ᵉ bande tirée à  | Issue                                          |
+| ------ | ----------- | ----------- | ----------------- | ---------------------------------------------- |
+| 1998   | ×1          | 60,2        | 0,185 s restantes | **IDENTIFIED** (4/4)                           |
+| 123456 | ×1          | 60,2        | 0,018 s restantes | **IDENTIFIED** (4/4)                           |
+| 42     | ×6          | —           | 0,147 s restantes | **IDENTIFIED** (4/4)                           |
+| 1998   | ×20         | 19,6        | 0,311 s restantes | **IDENTIFIED** (4/4)                           |
+| 7      | ×20         | 19,6        | 0,007 s restantes | `PARTIAL` (3/4) — **voir la borne ci-dessous** |
 
 Le bridage est réel et mesuré : `Emulation.setCPUThrottlingRate: 20` fait tomber la boucle à
 **19,6 fps** et le chrono continue de suivre l'horloge murale (5,18 s consommées pour 5,07 s de mur
 sur 5 s d'observation — la dérive vient du clamp `MAX_DELTA = 0,1` de `usePortraitRobot`, conforme à
 `useGameLoop`).
 
-**Borne nommée, non-finding :** la garantie D8.3 est *par frame*, pas *par milliseconde de mur*. Une
+**Borne nommée, non-finding :** la garantie D8.3 est _par frame_, pas _par milliseconde de mur_. Une
 intention dont le `keydown` est traité **après** la frame d'expiration arrive sur une scène déjà
 `RESOLVED` et ne compte pas — c'est ce que montre la ligne à 0,007 s à 20 fps. La zone morte vaut
 donc une frame : ~16 ms à 60 Hz, ~50 ms à 20 fps. C'est correct (le joueur a physiquement appuyé
@@ -56,9 +56,9 @@ par un joueur sur un téléphone lent.
 `?preview=portrait&portraitSeed=<n>`, lecture DOM des 4 `src` de bande contre les 4 `src` de la
 cible, sur 6 graines de QA dont une négative :
 
-| graine | 1998 | 1 | 7 | 42 | 123456 | −5 |
-| --- | --- | --- | --- | --- | --- | --- |
-| bandes justes à l'entrée | 0/4 | 0/4 | 0/4 | 0/4 | 0/4 | 0/4 |
+| graine                   | 1998 | 1   | 7   | 42  | 123456 | −5  |
+| ------------------------ | ---- | --- | --- | --- | ------ | --- |
+| bandes justes à l'entrée | 0/4  | 0/4 | 0/4 | 0/4 | 0/4    | 0/4 |
 
 4 bandes, 4 bandes cibles, chrono à 35,0 s dans les six cas. Conforme à A14 / ADR-0080 D4.4, et
 c'est bien de l'arithmétique : aucune boucle de rejet ni coup de pouce shell dans
@@ -90,7 +90,6 @@ c'est bien de l'arithmétique : aucune boucle de rejet ni coup de pouce shell da
 > `PortraitRobotScreen.test.ts` : **15/15 verts** sur le nouveau HEAD. Le finding reste écrit
 > — il est la démonstration que le garde-fou A16 fonctionne et que le diff n'avait pas été
 > relu — mais il **ne bloque plus**. Le FAIL du gate tient sur B2, B3 et B4.
-
 
 Le commit `485d6bbe` (« fix(render): géométrie de l'écran portrait-robot ») contient, sur chaque
 bande :
@@ -243,18 +242,18 @@ BOUCHE`. Chevrons mobiles à mesurer contre les 44×44 px (ils me paraissent sou
 
 Je les instruis, je ne les entérine pas.
 
-| # | Écart déclaré | Lane | Mon verdict |
-| --- | --- | --- | --- |
-| G1 | Signature de `validatePortrait` élargie + `plate-missing` | gameplay | **Honnête mais sous-évalué** — le vrai problème est B4 : la fonction ne tourne pas en prod. L'élargissement de signature est le moindre mal et se justifie. |
-| G2 | Pas de médaillon cible propre (24 chemins, pas 25) | gameplay | **ACCEPTÉ.** Composer la cible des 4 bandes vraies est conforme à A8 et au gabarit 1:1 ; le médaillon aurait été un asset neuf non commandé. Vérifié à l'écran : la cible est bien une pile de 4. |
-| G3 | Le hold de vague gèle pendant un QTE | gameplay | **ACCEPTÉ comme comportement, à ratifier.** Cohérent avec « le beat est hors du temps ». **NON VÉRIFIÉ par moi** : le chemin portrait → niveau suivant → QTE n'est pas atteignable dans le sandbox sans un run complet. → tuning `game-designer`, ratification `senior-architect`. |
-| G4 | Matrice de distance et 24 `trait` provisoires | gameplay | **ACCEPTÉ, et c'est le plafond de ce gate.** Une matrice uniforme rend `decoy-profile` et `seed-sweep` **verts et faux** : toute variante est éligible, donc la composition 2 forts / 3 moyens / 0 fin n'est aujourd'hui contrainte par rien de réel. La difficulté de la scène est **non vérifiable** tant que `game-graphist` n'a pas livré les 60 valeurs. Les tests actuels sont un garde-fou de forme, pas de fond — l'ADR le dit déjà, je le confirme à la mesure. |
-| G5 | Beats transcrits avant le PASS round 2 de Karim | gameplay | **TOLÉRÉ** (transcription verbatim vérifiée par sondage), mais sans objet tant que B2 tient : les beats ne sont jamais joués. |
-| G6 | `aria-valuetext` à 3 paliers pour 4 états | render | **ACCEPTÉ à titre transitoire, mais mesuré :** un utilisateur de lecteur d'écran ne perçoit que **2** transitions de jauge au lieu de 3. Décision `ux-designer`, avec le chiffre sous les yeux. |
-| G7 | Plancher typo 14 px absent de `tokens.ts` | render | **ACCEPTÉ** (repli sur `--font-size-base` 16 px = au-dessus du plancher, pas en dessous). → `lead-art` pour le pas manquant. |
-| G8 | Reptation de révélation non implémentée | render | **REFUSÉ comme écart mineur** — c'est AC4, voir M3. Non livré, à trancher, pas à noter. |
-| G9 | Armement de la sortie dans le composant | render | **ACCEPTÉ.** A17 exige « hors modèle de jeu » ; l'état vit dans la couche render, le chrono ne se met pas en pause pendant l'armement (relu au code), l'esprit est tenu. La lettre « dans le hook » est un détail d'implémentation. → `senior-architect` clôt. |
-| G10 | Gate de préchargement déplacé | render | **NON VÉRIFIÉ** — le préchargement de la cible `"portrait-robot"` pendant `NARRATIVE_POST` n'est pas observable via `?preview=portrait` (le harnais court-circuite la chaîne de phases). → à couvrir par l'e2e E5, ou par une relecture `senior-architect`. |
+| #   | Écart déclaré                                             | Lane     | Mon verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | --------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| G1  | Signature de `validatePortrait` élargie + `plate-missing` | gameplay | **Honnête mais sous-évalué** — le vrai problème est B4 : la fonction ne tourne pas en prod. L'élargissement de signature est le moindre mal et se justifie.                                                                                                                                                                                                                                                                                                              |
+| G2  | Pas de médaillon cible propre (24 chemins, pas 25)        | gameplay | **ACCEPTÉ.** Composer la cible des 4 bandes vraies est conforme à A8 et au gabarit 1:1 ; le médaillon aurait été un asset neuf non commandé. Vérifié à l'écran : la cible est bien une pile de 4.                                                                                                                                                                                                                                                                        |
+| G3  | Le hold de vague gèle pendant un QTE                      | gameplay | **ACCEPTÉ comme comportement, à ratifier.** Cohérent avec « le beat est hors du temps ». **NON VÉRIFIÉ par moi** : le chemin portrait → niveau suivant → QTE n'est pas atteignable dans le sandbox sans un run complet. → tuning `game-designer`, ratification `senior-architect`.                                                                                                                                                                                       |
+| G4  | Matrice de distance et 24 `trait` provisoires             | gameplay | **ACCEPTÉ, et c'est le plafond de ce gate.** Une matrice uniforme rend `decoy-profile` et `seed-sweep` **verts et faux** : toute variante est éligible, donc la composition 2 forts / 3 moyens / 0 fin n'est aujourd'hui contrainte par rien de réel. La difficulté de la scène est **non vérifiable** tant que `game-graphist` n'a pas livré les 60 valeurs. Les tests actuels sont un garde-fou de forme, pas de fond — l'ADR le dit déjà, je le confirme à la mesure. |
+| G5  | Beats transcrits avant le PASS round 2 de Karim           | gameplay | **TOLÉRÉ** (transcription verbatim vérifiée par sondage), mais sans objet tant que B2 tient : les beats ne sont jamais joués.                                                                                                                                                                                                                                                                                                                                            |
+| G6  | `aria-valuetext` à 3 paliers pour 4 états                 | render   | **ACCEPTÉ à titre transitoire, mais mesuré :** un utilisateur de lecteur d'écran ne perçoit que **2** transitions de jauge au lieu de 3. Décision `ux-designer`, avec le chiffre sous les yeux.                                                                                                                                                                                                                                                                          |
+| G7  | Plancher typo 14 px absent de `tokens.ts`                 | render   | **ACCEPTÉ** (repli sur `--font-size-base` 16 px = au-dessus du plancher, pas en dessous). → `lead-art` pour le pas manquant.                                                                                                                                                                                                                                                                                                                                             |
+| G8  | Reptation de révélation non implémentée                   | render   | **REFUSÉ comme écart mineur** — c'est AC4, voir M3. Non livré, à trancher, pas à noter.                                                                                                                                                                                                                                                                                                                                                                                  |
+| G9  | Armement de la sortie dans le composant                   | render   | **ACCEPTÉ.** A17 exige « hors modèle de jeu » ; l'état vit dans la couche render, le chrono ne se met pas en pause pendant l'armement (relu au code), l'esprit est tenu. La lettre « dans le hook » est un détail d'implémentation. → `senior-architect` clôt.                                                                                                                                                                                                           |
+| G10 | Gate de préchargement déplacé                             | render   | **NON VÉRIFIÉ** — le préchargement de la cible `"portrait-robot"` pendant `NARRATIVE_POST` n'est pas observable via `?preview=portrait` (le harnais court-circuite la chaîne de phases). → à couvrir par l'e2e E5, ou par une relecture `senior-architect`.                                                                                                                                                                                                              |
 
 ---
 
@@ -262,26 +261,26 @@ Je les instruis, je ne les entérine pas.
 
 Spec `spec-portrait-robot.md` (AC1→AC16) :
 
-| AC | Objet | Statut |
-| --- | --- | --- |
-| AC1 | Placement interstitiel, `AppPhase` dédié, une fois par run | **VÉRIFIÉ** (code : `portraitPlayedRef` sur l'identité de run ; phase après `NARRATIVE_POST`). Chaîne complète non rejouée en sandbox. |
-| AC2 | Règle d'interaction sur les 2 classes (swipe mobile, drag desktop, clavier) | **PARTIEL** — clavier et chevrons vérifiés dans l'app buildée sur les deux profils ; **swipe tactile réel et drag souris non vérifiés par moi** (pas de device tactile ; `ux-designer` en est propriétaire, §3.3). |
-| AC2-bis | Verrouillage automatique à 4/4 | **VÉRIFIÉ** — V1, 4 cas sur 5 issues `IDENTIFIED` sans aucun acte de validation. |
-| AC3 | Aucun feedback par trait pendant | **ÉCHOUÉ SUR HEAD** (B1). Vert après retrait de la ligne. |
-| AC4 | Révélation, deux durées + reptation | **NON LIVRÉ** (M3). Les deux `revealSeconds` sont bien lus de la scène (code) ; la reptation n'existe pas. |
-| AC5 | Barème 1500 / 400 / 0 + énergie | **VÉRIFIÉ** (table unique dans `portraitRobotSystem`, BITE sous mutation). |
-| AC6 | Aucune perte de vie, sur toutes les issues | **VÉRIFIÉ PAR CONSTRUCTION** — `LevelModifier` n'a que 3 champs (`energyDelta`, `firstWaveDelaySeconds`, `narrativeBeat`) ; test énumérant les clés présent. |
-| AC7 | Timeout évalué, ordre `IDENTIFIED`-gagne | **VÉRIFIÉ** — V1 + les 3 tests d'ordonnancement qui BITENT sous inversion du fold. |
-| AC7-b | La sortie anticipée ne peut jamais produire `IDENTIFIED` | **VÉRIFIÉ** (code : `ABANDON` → `resolvePortraitScene` sur le plateau courant ; vide par construction). |
-| AC8 | Déterminisme `?portraitSeed=` | **VÉRIFIÉ** — même graine ⇒ mêmes bandes justes entre le run de cartographie et le run de course (5 paires). |
-| AC9 | `correctCount(initial) === 0` | **VÉRIFIÉ dans l'app buildée**, 6 graines (V2). |
-| AC10 | Équité de la ressemblance (playtest mobile) | **NON VÉRIFIABLE** — assets placeholder (aplats colorés). `game-designer` + `lead-art`, après la vraie planche. |
-| AC11 | Budget de chrono du balayage | **VÉRIFIÉ à la mesure indirecte** : 20 pressions clavier + lectures DOM ont consommé ~1,9 s sur 35 s pendant la cartographie. |
-| AC12 | Le payoff existe **et se sent** | **ÉCHOUÉ** volet narratif (B2) ; volet mécanique livré, ressenti = `game-designer`. |
-| AC13 | Chrono continu, jauge sans chiffre, paliers | **PARTIEL** — aucun chiffre à l'écran (capture), 3 paliers annoncés une fois chacun (V3) ; **mais** le chiffre existe en `aria-valuenow` (M1). |
-| AC14 | Vocabulaire de surface | **VÉRIFIÉ** — aucun `VALIDER`/`TERMINER`/`ENVOYER` dans `copy.ts` ni dans les libellés relevés au DOM (relevé complet des `aria-label` de boutons en annexe des captures). `PAGE 23` est bien le repli autorisé fiction §4.12. |
-| AC15 | Aucune contre-mesure anti-balayage | **VÉRIFIÉ** — ni cooldown, ni compteur, ni pénalité dans le pur ni dans le hook. |
-| AC16 | Sortie anticipée = sortie, deux appuis | **ÉCHOUÉ sur le clavier** (B3) ; pointer : protocole 2 appuis / 2 s présent et chrono non gelé (code relu, non rejoué au pointeur). |
+| AC      | Objet                                                                       | Statut                                                                                                                                                                                                                         |
+| ------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| AC1     | Placement interstitiel, `AppPhase` dédié, une fois par run                  | **VÉRIFIÉ** (code : `portraitPlayedRef` sur l'identité de run ; phase après `NARRATIVE_POST`). Chaîne complète non rejouée en sandbox.                                                                                         |
+| AC2     | Règle d'interaction sur les 2 classes (swipe mobile, drag desktop, clavier) | **PARTIEL** — clavier et chevrons vérifiés dans l'app buildée sur les deux profils ; **swipe tactile réel et drag souris non vérifiés par moi** (pas de device tactile ; `ux-designer` en est propriétaire, §3.3).             |
+| AC2-bis | Verrouillage automatique à 4/4                                              | **VÉRIFIÉ** — V1, 4 cas sur 5 issues `IDENTIFIED` sans aucun acte de validation.                                                                                                                                               |
+| AC3     | Aucun feedback par trait pendant                                            | **ÉCHOUÉ SUR HEAD** (B1). Vert après retrait de la ligne.                                                                                                                                                                      |
+| AC4     | Révélation, deux durées + reptation                                         | **NON LIVRÉ** (M3). Les deux `revealSeconds` sont bien lus de la scène (code) ; la reptation n'existe pas.                                                                                                                     |
+| AC5     | Barème 1500 / 400 / 0 + énergie                                             | **VÉRIFIÉ** (table unique dans `portraitRobotSystem`, BITE sous mutation).                                                                                                                                                     |
+| AC6     | Aucune perte de vie, sur toutes les issues                                  | **VÉRIFIÉ PAR CONSTRUCTION** — `LevelModifier` n'a que 3 champs (`energyDelta`, `firstWaveDelaySeconds`, `narrativeBeat`) ; test énumérant les clés présent.                                                                   |
+| AC7     | Timeout évalué, ordre `IDENTIFIED`-gagne                                    | **VÉRIFIÉ** — V1 + les 3 tests d'ordonnancement qui BITENT sous inversion du fold.                                                                                                                                             |
+| AC7-b   | La sortie anticipée ne peut jamais produire `IDENTIFIED`                    | **VÉRIFIÉ** (code : `ABANDON` → `resolvePortraitScene` sur le plateau courant ; vide par construction).                                                                                                                        |
+| AC8     | Déterminisme `?portraitSeed=`                                               | **VÉRIFIÉ** — même graine ⇒ mêmes bandes justes entre le run de cartographie et le run de course (5 paires).                                                                                                                   |
+| AC9     | `correctCount(initial) === 0`                                               | **VÉRIFIÉ dans l'app buildée**, 6 graines (V2).                                                                                                                                                                                |
+| AC10    | Équité de la ressemblance (playtest mobile)                                 | **NON VÉRIFIABLE** — assets placeholder (aplats colorés). `game-designer` + `lead-art`, après la vraie planche.                                                                                                                |
+| AC11    | Budget de chrono du balayage                                                | **VÉRIFIÉ à la mesure indirecte** : 20 pressions clavier + lectures DOM ont consommé ~1,9 s sur 35 s pendant la cartographie.                                                                                                  |
+| AC12    | Le payoff existe **et se sent**                                             | **ÉCHOUÉ** volet narratif (B2) ; volet mécanique livré, ressenti = `game-designer`.                                                                                                                                            |
+| AC13    | Chrono continu, jauge sans chiffre, paliers                                 | **PARTIEL** — aucun chiffre à l'écran (capture), 3 paliers annoncés une fois chacun (V3) ; **mais** le chiffre existe en `aria-valuenow` (M1).                                                                                 |
+| AC14    | Vocabulaire de surface                                                      | **VÉRIFIÉ** — aucun `VALIDER`/`TERMINER`/`ENVOYER` dans `copy.ts` ni dans les libellés relevés au DOM (relevé complet des `aria-label` de boutons en annexe des captures). `PAGE 23` est bien le repli autorisé fiction §4.12. |
+| AC15    | Aucune contre-mesure anti-balayage                                          | **VÉRIFIÉ** — ni cooldown, ni compteur, ni pénalité dans le pur ni dans le hook.                                                                                                                                               |
+| AC16    | Sortie anticipée = sortie, deux appuis                                      | **ÉCHOUÉ sur le clavier** (B3) ; pointer : protocole 2 appuis / 2 s présent et chrono non gelé (code relu, non rejoué au pointeur).                                                                                            |
 
 Story (`_bmad-output/…`) : AC2 **PARTIEL** · AC3 **VÉRIFIÉ** (sélection instantanée, réversible,
 sans chrono par trait) · AC4 **PARTIEL** (message d'issue en clair présent, reptation absente) ·
@@ -299,7 +298,7 @@ dithered/photo constatée dans le pipeline) · AC8 **VÉRIFIÉ** · AC1/AC9 = ga
 2. **La courbe de difficulté** — matrice de distance provisoire et uniforme (G4).
 3. **Le geste tactile réel et le drag souris** (AC2) — propriété `ux-designer`, device réel.
 4. **La chaîne complète niveau → `NARRATIVE_POST` → portrait → niveau suivant**, donc : le gate de
-   préchargement (G10), l'application du −20 sur le capital initial du niveau suivant *en jeu*, le
+   préchargement (G10), l'application du −20 sur le capital initial du niveau suivant _en jeu_, le
    `waveHoldRemaining` ressenti, le gel du hold pendant un QTE (G3). Vérifiés **au code et en
    test unitaire**, jamais **joués**. → **CI-DEFERRED** : ça demande un run complet scripté, c'est
    l'objet de l'e2e E5 ci-dessous. Escaladé à `producer`.

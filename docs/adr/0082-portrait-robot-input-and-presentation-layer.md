@@ -6,14 +6,14 @@
   renamed** on 2026-08-05 from `0081-portrait-robot-input-and-atari-st-render.md` — the
   scaffold's "Atari ST render" framing is void: Bertrand arbitrated on 2026-08-05 that the DA
   stays **house BD-comics** (story AC7), and the ST source is historical grounding for the
-  *mise-en-scène* only, never a production constraint. **Renumbered to 0082 on 2026-08-05 due to
+  _mise-en-scène_ only, never a production constraint. **Renumbered to 0082 on 2026-08-05 due to
   collision with ADR-0081 (MCP level-editor server) merged to origin/main via PR #159.**
 - **Author:** decision content by `senior-architect` (Winston), stage 3 TECH PLAN.
 - **Relates to:** ADR-0079 (the DOM phase this layer draws), ADR-0080 (the catalogue it
   displays), ADR-0046 (CSS Modules + `tokens.ts`→CSS-var bridge — the law this screen obeys),
   ADR-0003 (mobile touch controls), ADR-0015 (device-forked copy), ADR-0023 (print/paper
   surfaces — the `NarrativeScreen` family this screen joins), `tapGestureSystem.ts` (the
-  precedent for a *pure* gesture rule with an impure binding).
+  precedent for a _pure_ gesture rule with an impure binding).
 - **Inputs (canonical):** `docs/game-design/design-gate-portrait-robot.md` §3, **A4-bis**
   (Bertrand, 2026-08-05, which reverses A4's touch mapping) and **§8 amendements post-gate**
   (B1 no CTA / B2 continuous chrono / B3 desktop drag, and the derived A12bis-A16);
@@ -26,13 +26,13 @@ The input question is unsettled **on one axis and one only**. A4-bis fixes the m
 gesture — a horizontal swipe **directly on the targeted band**, no selection tap, no "active
 band" under the finger. **B3 has since closed the desktop axis: horizontal mouse drag on the
 band**, same mental model. Three sub-questions still ride with `ux-designer`'s round 2: swipe
-angle threshold, trigger distance (and its drag equivalent, the *cran* distance), and minimum
+angle threshold, trigger distance (and its drag equivalent, the _cran_ distance), and minimum
 band height. The discrete-vs-inertial question is closed by B3's "same mental model" — a drag
 that cycles by crans is discrete on both device classes.
 
 An architecture that hard-codes a gesture would still be obsolete before round 2 comes back.
-But the **rule** underneath is completely settled and completely stable: *band `i` moves to
-variant `j`*. That asymmetry — an unstable gesture over a stable rule — is the entire subject
+But the **rule** underneath is completely settled and completely stable: _band `i` moves to
+variant `j`_. That asymmetry — an unstable gesture over a stable rule — is the entire subject
 of this ADR.
 
 **B1 changes the shape of the input layer, not only its tuning.** With the CTA gone, no
@@ -63,7 +63,7 @@ export type PortraitIntent =
 `SORTIR LA TÊTE` button and its `Enter` key — and that emitter no longer exists. The two
 options were weighed:
 
-- *Keep it as an intent emitted by the reducer itself.* Rejected, and this is the load-bearing
+- _Keep it as an intent emitted by the reducer itself._ Rejected, and this is the load-bearing
   call. `PortraitIntent` is defined as **the vocabulary of what a player asks for** — that
   definition is the whole reason `src/game` can ignore fingers, keys and pointers. An intent
   no hook can construct breaks that definition twice over: it makes the union no longer a
@@ -71,13 +71,13 @@ options were weighed:
   can legally dispatch, which is precisely how a deleted CTA gets re-implemented by accident
   six weeks from now. A reducer that dispatches to itself is also a state machine with two
   entry points and one of them untestable from the outside.
-- *Delete it, and give the resolution a named home.* Retained. Bertrand's objection is right —
+- _Delete it, and give the resolution a named home._ Retained. Bertrand's objection is right —
   a resolution that is no longer an intent must live somewhere named, not dissolve into an
   `if`. It lives in **`resolvePortraitScene`** (ADR-0079 D2), which already existed as the
   single resolution function for timeout and abandon, and which is now also the lock-in path.
   The trigger is named too: the lock-in test is a **post-condition of every entry**, specified
-  in ADR-0079 D8. So the resolution did not lose a name, it changed from a *request* name to a
-  *rule* name — which is the honest description of what B1 did to the design.
+  in ADR-0079 D8. So the resolution did not lose a name, it changed from a _request_ name to a
+  _rule_ name — which is the honest description of what B1 did to the design.
 
 The mapping table (D2) is consequently **total again**: every row is a real geste with a real
 emitter. That totality is the invariant worth protecting — a row with no left-hand side is
@@ -113,41 +113,41 @@ place the scene can end**: every entry is followed by the 4/4 post-condition (AD
 `applyPortraitIntent` can return a `RESOLVED` scene. It remains total and pure; the resolution
 is a return value, not an event.
 
-### D2 — The gesture *classification* is pure; the gesture *binding* is a hook
+### D2 — The gesture _classification_ is pure; the gesture _binding_ is a hook
 
 The `tapGestureSystem.ts` precedent, extended:
 
 - **`src/game/systems/swipeGestureSystem.ts` (pure).** `classifySwipe(dx, dy, dtMs)` →
   `"left" | "right" | "none"`, with the thresholds as named exported constants:
   `SWIPE_MIN_DISTANCE`, `SWIPE_MAX_ANGLE_DEG` (the diagonal-ambiguity guard Tony documented and
-  A4-bis asks to *quantify* rather than reject), `SWIPE_MAX_MS`. Normalised coordinates, no
+  A4-bis asks to _quantify_ rather than reject), `SWIPE_MAX_MS`. Normalised coordinates, no
   DOM, unit-tested at the boundaries — including the diagonal cases, which is precisely the
   risk A4-bis leaves open.
 - **`src/hooks/usePortraitGestures.ts` (bridge).** Owns pointer/touch/key listeners, feeds raw
   deltas through `classifySwipe`, and emits `PortraitIntent`s. It holds the **mapping table**
   and nothing else:
 
-  | Input | Intent | Status |
-  | --- | --- | --- |
-  | horizontal swipe on band `i` | `CYCLE(i, ±1)` | **primary, mobile** (A4-bis) |
-  | tap on chevron ◀ ▶ of band `i` | `CYCLE(i, ∓1)` | affordance + accessibility target ≥44×44 (A4-bis) |
-  | `↑` / `↓` | `FOCUS(prev/next band)` | keyboard socle, acquired |
-  | `←` / `→` | `CYCLE(focused, ∓1)` | keyboard socle, acquired |
-  | `1`…`6` | `SET(focused, n-1)` | keyboard direct addressing |
-  | `Escape` / Android back | `ABANDON` (via confirmation) | acquired |
-  | ~~`Enter`~~ | ~~`SUBMIT`~~ | **removed — B1, no CTA to activate** |
-  | **horizontal mouse drag on band `i`** | `SET(i, index + crans)` | **primary, desktop (B3)** — see D2bis |
+  | Input                                 | Intent                       | Status                                            |
+  | ------------------------------------- | ---------------------------- | ------------------------------------------------- |
+  | horizontal swipe on band `i`          | `CYCLE(i, ±1)`               | **primary, mobile** (A4-bis)                      |
+  | tap on chevron ◀ ▶ of band `i`        | `CYCLE(i, ∓1)`               | affordance + accessibility target ≥44×44 (A4-bis) |
+  | `↑` / `↓`                             | `FOCUS(prev/next band)`      | keyboard socle, acquired                          |
+  | `←` / `→`                             | `CYCLE(focused, ∓1)`         | keyboard socle, acquired                          |
+  | `1`…`6`                               | `SET(focused, n-1)`          | keyboard direct addressing                        |
+  | `Escape` / Android back               | `ABANDON` (via confirmation) | acquired                                          |
+  | ~~`Enter`~~                           | ~~`SUBMIT`~~                 | **removed — B1, no CTA to activate**              |
+  | **horizontal mouse drag on band `i`** | `SET(i, index + crans)`      | **primary, desktop (B3)** — see D2bis             |
 
   **V1 is discrete on both device classes: one swipe = one cran, one drag = one cran per
   `DRAG_CRAN_DISTANCE` of travel.** Predictable under a chrono, and B3's "same mental model as
   the touch swipe" settles the discrete-vs-inertial question that A4-bis left open: an inertial
-  desktop drag would *not* be the same mental model as a discrete touch swipe, so choosing
+  desktop drag would _not_ be the same mental model as a discrete touch swipe, so choosing
   inertia would break the arbitration, not refine it.
 
 ### D2bis — What B3's drag actually costs, stated honestly
 
 A swipe and a drag are **not the same kind of gesture**, and this ADR must not pretend they
-are. A swipe is *terminal*: it is judged once, when the finger leaves. A drag is *continuous*:
+are. A swipe is _terminal_: it is judged once, when the finger leaves. A drag is _continuous_:
 it has a pointer-down, an unbounded stream of moves each of which may cross zero, one or
 several crans, and a pointer-up. `classifySwipe(dx, dy, dtMs) → "left" | "right" | "none"`
 cannot express that, because it answers a question about a finished gesture.
@@ -156,9 +156,10 @@ So the pure layer gains **one function, not a row**:
 
 ```ts
 // src/game/systems/swipeGestureSystem.ts
-export const DRAG_CRAN_DISTANCE: number;           // normalised px per cran (ux round 2)
+export const DRAG_CRAN_DISTANCE: number; // normalised px per cran (ux round 2)
 export function accumulateDrag(
-  carriedPx: number, deltaPx: number,
+  carriedPx: number,
+  deltaPx: number,
 ): { readonly crans: number; readonly carriedPx: number };
 ```
 
@@ -178,12 +179,12 @@ chevron's tap. That is **~30-40 lines in `usePortraitGestures`, not one table ro
 **What did hold, and it is the part that mattered:** the drag needed **no new intent member,
 no change to `applyPortraitIntent`, no new test in `src/game/systems/portraitRobotSystem.ts`,
 and no ADR re-opening on the rule.** `SET` — written speculatively for exactly this shape of
-future — absorbed it. The boundary held; the estimate of the *hook's* cost did not. Both facts
+future — absorbed it. The boundary held; the estimate of the _hook's_ cost did not. Both facts
 are recorded in C1 rather than one of them being quietly dropped.
 
 This is the answer to "keep the input layer gesture-agnostic": the game layer sees intents, the
-hook owns the mapping, and the only pure code that knows what a swipe *is* is a three-constant
-classifier with no opinion on what a swipe *means*.
+hook owns the mapping, and the only pure code that knows what a swipe _is_ is a three-constant
+classifier with no opinion on what a swipe _means_.
 
 ### D3 — The open UX numbers are constants, not architecture
 
@@ -197,7 +198,7 @@ hand the TECH PLAN over before that round closes, and why this ADR does not wait
 ### D4 — Presentation: house BD-comics, DOM, CSS Modules + tokens
 
 - **DA: house BD-comics ink-on-paper** (AC7). No dithering, no digitised photo, no ST palette,
-  no period pastiche. What is borrowed from the ST source is *mise-en-scène* only — large
+  no period pastiche. What is borrowed from the ST source is _mise-en-scène_ only — large
   target portrait, breathing full-screen composition, tense countdown. **Any drift back toward
   a dithered/photo look is a regression against a settled arbitration, not an interpretation**
   (story Risk 4).
@@ -223,7 +224,7 @@ hand the TECH PLAN over before that round closes, and why this ADR does not wait
 - **No CRT.** `CrtPass` lives inside `GameScene`; a DOM screen cannot inherit it. See ADR-0079
   D1/C4 — `lead-art`'s §4 needs rewriting on that basis.
 - **Copy is canon (gate A6, amended by §8):** `TÊTE À CONNAÎTRE`, `LA COUPE / LE REGARD / LE
-  NEZ / LA BOUCHE`, « la page 23 ». **`SORTIR LA TÊTE` is dead** (B1 — it was a button label,
+NEZ / LA BOUCHE`, « la page 23 ». **`SORTIR LA TÊTE` is dead** (B1 — it was a button label,
   and KENZA's spoken line « Sors-moi une tête, une seule » is dialogue, not IHM).
   **`TÉLÉCARTE · {n} UNITÉS` is dead** (B2/A13 — there are no units); the gauge label is a new
   short deliverable owed by `narrative-designer`, and until it lands the render lane ships the
@@ -237,12 +238,12 @@ hand the TECH PLAN over before that round closes, and why this ADR does not wait
   is no unit conversion anywhere — `ceil(remaining / 2.5)` is deleted, not moved. The component
   reads two things and derives nothing: a `0..1` gauge ratio and the scene's current
   **`palier`** (ADR-0079 D9), a monotone descending enum computed in the pure layer. Copy,
-  audio and the `aria-live` announcement all key off the *change* of that one value, so a
+  audio and the `aria-live` announcement all key off the _change_ of that one value, so a
   continuous chrono cannot make three consumers announce on three slightly different frames —
   nor announce every frame, which is exactly what `remaining <= 10` in a component would do.
 - **`RotateOverlay` ⇒ pause** (gate A7). Implemented as ADR-0079 D6 states: the hook stops
   calling `tickPortraitScene`. The rule contains no pause branch, so "paused" cannot drift out
-  of sync with what the player can see — the overlay's presence *is* the pause.
+  of sync with what the player can see — the overlay's presence _is_ the pause.
 - **Accessibility floor:** chevrons ≥44×44 px as real focusable buttons; band position announced
   as `{n} sur {total}`; the three chrono paliers announced through one `aria-live="polite"`
   region; the confirmation dialog focus-trapped. `aria-pressed` is **not** used — the indicative
@@ -251,7 +252,7 @@ hand the TECH PLAN over before that round closes, and why this ADR does not wait
   the reveal degrades to an instant state change with the same hold, never to a skipped
   verdict.
 - **Two reveal durations, from the scene, never from the component** (gate A15): `2.6 s` at
-  `PARTIAL`/`FAILED` (per-band crawl, the corrections *are* the information) and `1.4 s` at
+  `PARTIAL`/`FAILED` (per-band crawl, the corrections _are_ the information) and `1.4 s` at
   `IDENTIFIED` (lock-in flash + 4 simultaneous stamps, nothing left to inform). Both constants
   live in `portraitRobotSystem.ts` beside the rest of gate §3; the screen reads
   `scene.revealSeconds`. A `switch` on the outcome inside the `.tsx` would put two gate numbers
@@ -275,20 +276,20 @@ dominated strategy, so a counter-measure would be complexity against a non-explo
 ## Consequences
 
 **C1 — The desktop mapping was NOT a one-row change. The boundary claim held; the cost
-estimate did not.** This ADR predicted, on 2026-08-05: *"when the desktop Figma lands, it is a
-line of table in `usePortraitGestures` and zero change in `src/game`"*. B3 landed the same day.
+estimate did not.** This ADR predicted, on 2026-08-05: _"when the desktop Figma lands, it is a
+line of table in `usePortraitGestures` and zero change in `src/game`"_. B3 landed the same day.
 Scored honestly:
 
-| Claim | Verdict |
-| --- | --- |
-| Zero change in `src/game`'s **intent vocabulary** | **HELD.** `SET` absorbed the drag; no member added, no member changed. |
-| Zero change to `applyPortraitIntent` / its tests | **HELD.** The reducer never learned what a pointer is. |
-| No ADR re-opened on the **rule** | **HELD.** This revision touches input plumbing and D1's vocabulary (because of B1, not B3). |
-| "A line of table" in the hook | **FALSE.** ~30-40 lines: a pointer state machine, per-band carried remainder, pointer capture, click-vs-drag disambiguation. |
-| "possibly a pointer-drag call into the *existing* `classifySwipe`" | **FALSE.** `classifySwipe` judges a *finished* gesture; a drag is continuous. One new pure function, `accumulateDrag` (D2bis). |
+| Claim                                                              | Verdict                                                                                                                        |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Zero change in `src/game`'s **intent vocabulary**                  | **HELD.** `SET` absorbed the drag; no member added, no member changed.                                                         |
+| Zero change to `applyPortraitIntent` / its tests                   | **HELD.** The reducer never learned what a pointer is.                                                                         |
+| No ADR re-opened on the **rule**                                   | **HELD.** This revision touches input plumbing and D1's vocabulary (because of B1, not B3).                                    |
+| "A line of table" in the hook                                      | **FALSE.** ~30-40 lines: a pointer state machine, per-band carried remainder, pointer capture, click-vs-drag disambiguation.   |
+| "possibly a pointer-drag call into the _existing_ `classifySwipe`" | **FALSE.** `classifySwipe` judges a _finished_ gesture; a drag is continuous. One new pure function, `accumulateDrag` (D2bis). |
 
 **The error was a category error, and it is worth naming so it is not repeated.** I treated
-"swipe" and "drag" as the same gesture on two devices because the *design* said "same mental
+"swipe" and "drag" as the same gesture on two devices because the _design_ said "same mental
 model". They are the same **mental** model and two different **physical** models: one is judged
 once at release, the other is a stream with an intermediate state that must be rendered while
 it happens. Design equivalence does not imply implementation equivalence, and an architect who
@@ -297,8 +298,8 @@ takes a UX sentence as an engineering estimate will under-quote every time.
 **What the abstraction actually bought** is still the whole point, and it is not small: the
 change was confined to **one hook and one pure classifier module**, and the diff never crossed
 the game/render seam. Under alternative A1 (bind gestures to the reducer), the same
-arbitration would have added a `DRAG` intent with an intermediate `dragging` state *inside
-`src/game`*, rewritten the reducer's tests, and produced a state machine whose shape tracked a
+arbitration would have added a `DRAG` intent with an intermediate `dragging` state _inside
+`src/game`_, rewritten the reducer's tests, and produced a state machine whose shape tracked a
 Figma. The ADR's decision was right; its estimate was optimistic. Both are now on the record.
 
 **C2 — A second gesture module now exists beside `tapGestureSystem`.** Two small pure gesture
@@ -308,7 +309,7 @@ is a trivial follow-up; pre-merging them now would couple the shooting tolerance
 that has not closed.
 
 **C3 — The screen carries real accessibility surface for the first time outside the menus.** It
-is the first *timed, interactive* DOM screen in the build; the `aria-live` chrono pattern it
+is the first _timed, interactive_ DOM screen in the build; the `aria-live` chrono pattern it
 establishes is likely to be reused, and should be reviewed as a pattern, not as one screen.
 
 **C4 — `ux-designer` round 2 is not on the critical path**, by construction (D3). If it slips,
@@ -351,22 +352,22 @@ just deleted.
 would put a transient UI state (a pointer mid-travel) inside `src/game`, make the reducer's
 tests encode pointer semantics, and mean that a change to `DRAG_CRAN_DISTANCE` — a UX tuning
 number — edits the game layer. The intermediate state of a drag belongs to the hook that owns
-the pointer; only its *outcome in crans* crosses the seam, as `SET`.
+the pointer; only its _outcome in crans_ crosses the seam, as `SET`.
 
 ## Révisions
 
 **2026-08-05 — révision 1 (post-gate §8, arbitrages Bertrand B1/B2/B3).** Body edited in place
 (Status still `Proposed`).
 
-| Change | Driver |
-| --- | --- |
-| **`SUBMIT` removed** from `PortraitIntent`; resolution renamed into a rule (`resolvePortraitScene`, triggered by the entry post-condition ADR-0079 D8) rather than an intent. New alternative A6 records the option not taken | B1 · gate A12bis |
-| **Desktop mapping closed**: horizontal mouse drag → `SET(i, index + crans)`. New **D2bis** with the pure `accumulateDrag` + `DRAG_CRAN_DISTANCE`; new alternative A7 | B3 |
-| **C1 rewritten as a scored prediction** — boundary claim HELD, "one row" claim FALSE, with the category error named | B3, applied to this ADR's own forecast |
-| `Enter` row struck from the mapping table; `1…6` → `SET` row added | B1 |
-| D3: discrete/inertial leaves the open-questions list (closed by B3); `DRAG_CRAN_DISTANCE` joins it | B3 |
-| D4/D5: `TÉLÉCARTE · {n} UNITÉS` and the unit conversion deleted (continuous gauge, no digit); no CTA zone; two `revealSeconds` read from the scene; per-trait feedback prohibition restated at render level | B2 · gate A13/A15/A16 |
-| D6: added the explicit non-build list for the deleted CTA chain and the refused anti-brute-force counter-measures | B1 · gate A16 |
+| Change                                                                                                                                                                                                                        | Driver                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **`SUBMIT` removed** from `PortraitIntent`; resolution renamed into a rule (`resolvePortraitScene`, triggered by the entry post-condition ADR-0079 D8) rather than an intent. New alternative A6 records the option not taken | B1 · gate A12bis                       |
+| **Desktop mapping closed**: horizontal mouse drag → `SET(i, index + crans)`. New **D2bis** with the pure `accumulateDrag` + `DRAG_CRAN_DISTANCE`; new alternative A7                                                          | B3                                     |
+| **C1 rewritten as a scored prediction** — boundary claim HELD, "one row" claim FALSE, with the category error named                                                                                                           | B3, applied to this ADR's own forecast |
+| `Enter` row struck from the mapping table; `1…6` → `SET` row added                                                                                                                                                            | B1                                     |
+| D3: discrete/inertial leaves the open-questions list (closed by B3); `DRAG_CRAN_DISTANCE` joins it                                                                                                                            | B3                                     |
+| D4/D5: `TÉLÉCARTE · {n} UNITÉS` and the unit conversion deleted (continuous gauge, no digit); no CTA zone; two `revealSeconds` read from the scene; per-trait feedback prohibition restated at render level                   | B2 · gate A13/A15/A16                  |
+| D6: added the explicit non-build list for the deleted CTA chain and the refused anti-brute-force counter-measures                                                                                                             | B1 · gate A16                          |
 
 **Not changed:** D1's core (intents not gestures), D2's pure/impure split, D4's DA and
 ADR-0046 compliance, D5's `RotateOverlay` pause and accessibility floor, alternatives A1-A5.

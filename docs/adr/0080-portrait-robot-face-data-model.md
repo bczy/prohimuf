@@ -29,7 +29,7 @@ Three facts make this a decision rather than a JSON file:
    precedent ADR-0011): FLUX has no memory of skull width between generations, so 24
    independent generations produce 24 different skulls and the seam rule (§1) fails by
    construction. The production route is **generate whole faces on a plate, then slice**. That
-   makes "a band" a *derived* artefact, and derived artefacts need a provenance rule or they
+   makes "a band" a _derived_ artefact, and derived artefacts need a provenance rule or they
    drift.
 2. **The difficulty lever is the distance between variants, not their number** — the thesis
    shared by the recon, `game-designer` D2 and `lead-art` §2, and ratified in A5. A data model
@@ -39,7 +39,7 @@ Three facts make this a decision rather than a JSON file:
    it has no level to be keyed by.
 4. **Since B1, the draw is load-bearing for safety, not only for difficulty.** With no
    validation button, the scene resolves the moment the board reads 4/4 — so a seed that
-   *starts* at 4/4 would resolve a scene the player never touched, and one that starts at 3/4
+   _starts_ at 4/4 would resolve a scene the player never touched, and one that starts at 3/4
    would hand `IDENTIFIED` to a single blind swipe. Gate A14 answers with a new canonical
    invariant, **`initialStateAllWrong = true`**: at entry into `ACTIVE`, all four bands show a
    wrong variant, `correctCount === 0` guaranteed. That is a constraint on **the draw**, i.e.
@@ -59,7 +59,7 @@ src/game/portraits/
 ```
 
 This is ADR-0074's shape, applied verbatim and for the same reasons: a data module a tool can
-read (and one day write) mechanically, a validator callable on a *candidate* catalogue that is
+read (and one day write) mechanically, a validator callable on a _candidate_ catalogue that is
 not the shipped one, and no transitive path from the data to browser I/O.
 
 **It is not a block in `levelArt.json`** (answering `lead-art` §7.3 Q2): that file is a
@@ -77,28 +77,28 @@ export type PortraitBandId = "hair" | "eyes" | "nose" | "mouth";
 export type VariantDistance = "strong" | "medium" | "fine";
 
 export interface PortraitVariant {
-  readonly id: string;      // stable, e.g. "eyes-03"
-  readonly asset: string;   // BASE-relative path, e.g. "assets/portrait/eyes-03.png"
-  readonly trait: string;   // the NAMED TRAIT (gate A5): one short sentence, no pixel coords
+  readonly id: string; // stable, e.g. "eyes-03"
+  readonly asset: string; // BASE-relative path, e.g. "assets/portrait/eyes-03.png"
+  readonly trait: string; // the NAMED TRAIT (gate A5): one short sentence, no pixel coords
 }
 
 export interface PortraitBand {
   readonly id: PortraitBandId;
-  readonly label: string;                 // canonical player-facing label (gate A6)
+  readonly label: string; // canonical player-facing label (gate A6)
   readonly variants: readonly PortraitVariant[]; // exactly 6
   /** Symmetric pairwise perceptual distance, upper triangle, 15 entries. Key: "i:j", i < j. */
   readonly distances: Readonly<Record<string, VariantDistance>>;
 }
 
 export interface FaceCatalogue {
-  readonly gabaritId: string;    // one template in V1 (gate A5)
+  readonly gabaritId: string; // one template in V1 (gate A5)
   readonly plateChecksum: string; // provenance, see D5
   readonly bands: readonly PortraitBand[]; // exactly 4, in draw order
 }
 ```
 
 **Why the distance matrix is the decision.** With N = 6 = the whole pool, every variant of a
-band is always on screen; the only free parameter is *which one is true*. The gate's
+band is always on screen; the only free parameter is _which one is true_. The gate's
 composition rule ("2 strong + 3 medium + 0 fine") is therefore a statement about the **row of
 the truth** in a pairwise distance matrix — it cannot be expressed per variant, because a
 variant's class only exists relative to another. 15 authored values per band, 60 in total,
@@ -118,18 +118,18 @@ reporting vocabulary serves both, and **imports no catalogue** so it can validat
 
 Invariants, error unless noted:
 
-| code | Checks |
-| --- | --- |
-| `band-count` | exactly 4 bands, ids exactly the four canonical ones, no duplicate |
-| `variant-count` | exactly 6 variants per band (hard ceiling, gate A5) |
-| `variant-id-unique` | ids unique within the catalogue |
-| `distance-complete` | all 15 pairs present per band, no unknown key, no self-pair |
-| `decoy-profile` | **at least one** variant whose row is exactly 2 `strong` + 3 `medium` + 0 `fine`; the draw picks only among those (D4) |
-| `no-fine-pair` | *warning* — a `fine` pair anywhere is legal data but unusable in V1 (gate A5 forbids class-4 decoys) |
-| `trait-named` | every variant carries a non-empty `trait` (gate A5's rule of the named trait, made mechanical) |
-| `asset-path` | every asset path matches the gabarit's naming convention and appears in the plate manifest |
-| `plate-provenance` | `plateChecksum` matches the generated JSON (D5) |
-| `seed-sweep` | for every seed of a fixed deterministic sweep, the drawn puzzle satisfies **both** canonical draw invariants: the truth's row is 2 `strong` + 3 `medium` + 0 `fine`, **and `correctCount(initialSelection) === 0`** (gate A14) |
+| code                | Checks                                                                                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `band-count`        | exactly 4 bands, ids exactly the four canonical ones, no duplicate                                                                                                                                                             |
+| `variant-count`     | exactly 6 variants per band (hard ceiling, gate A5)                                                                                                                                                                            |
+| `variant-id-unique` | ids unique within the catalogue                                                                                                                                                                                                |
+| `distance-complete` | all 15 pairs present per band, no unknown key, no self-pair                                                                                                                                                                    |
+| `decoy-profile`     | **at least one** variant whose row is exactly 2 `strong` + 3 `medium` + 0 `fine`; the draw picks only among those (D4)                                                                                                         |
+| `no-fine-pair`      | _warning_ — a `fine` pair anywhere is legal data but unusable in V1 (gate A5 forbids class-4 decoys)                                                                                                                           |
+| `trait-named`       | every variant carries a non-empty `trait` (gate A5's rule of the named trait, made mechanical)                                                                                                                                 |
+| `asset-path`        | every asset path matches the gabarit's naming convention and appears in the plate manifest                                                                                                                                     |
+| `plate-provenance`  | `plateChecksum` matches the generated JSON (D5)                                                                                                                                                                                |
+| `seed-sweep`        | for every seed of a fixed deterministic sweep, the drawn puzzle satisfies **both** canonical draw invariants: the truth's row is 2 `strong` + 3 `medium` + 0 `fine`, **and `correctCount(initialSelection) === 0`** (gate A14) |
 
 `decoy-profile` is the one that matters for difficulty: it turns the gate's composition from an
 intention into a CI-checkable property. A catalogue whose truth candidates are all too easy or
@@ -145,7 +145,7 @@ same rank as the decoy composition, for any seed. Mechanics and honest limits:
   `2**31 - 1`, `2**31`, `2**53 - 1`, and the `?portraitSeed=` values pinned by QA. Deterministic,
   ordered, ~1 ms, no randomness in a validator.
 - **A sweep is not a proof, and this ADR will not pretend otherwise.** "For every seed" is
-  established by the *arithmetic* of D4.4 (the initial slot cannot equal the truth slot) and
+  established by the _arithmetic_ of D4.4 (the initial slot cannot equal the truth slot) and
   D4.2 (the truth is drawn only from eligible variants). The sweep's job is different and just
   as necessary: it is the **regression guard** that fires the day someone rewrites the hash,
   "simplifies" the modular offset, or adds a seventh variant — the three edits that would break
@@ -170,15 +170,15 @@ Per band, in fixed band order:
 
 1. Compute `h = hash(seed, bandId)` with a small integer hash written in
    `portraitRobotSystem.ts` (xorshift/FNV-style, no library, no floats-as-entropy).
-2. **Truth** = the `h`-th element of the band's *eligible* variants — those satisfying the
+2. **Truth** = the `h`-th element of the band's _eligible_ variants — those satisfying the
    `decoy-profile` row (D3). Restricting the draw to eligible variants is what makes the gate's
-   composition true *for every seed*, not on average.
+   composition true _for every seed_, not on average.
 3. **Presentation order** = a Fisher–Yates shuffle of the 6, seeded from `hash(seed, bandId, 1)`.
    The truth's position is therefore not the same slot every run, and the shuffle is replayable.
 4. **Initial selection** = an index drawn from the **five non-truth slots**, by construction:
 
    ```ts
-   const truthSlot = order.indexOf(truthId);              // 0..5
+   const truthSlot = order.indexOf(truthId); // 0..5
    const initialSlot = (truthSlot + 1 + (hash(seed, bandId, 2) % 5)) % 6;
    // initialSlot !== truthSlot for every seed — arithmetic, not luck
    ```
@@ -190,7 +190,7 @@ Per band, in fixed band order:
 "draw an initial state, redraw if it matches the truth". It is also the wrong one here: a
 retry loop on a seeded hash has no bounded-termination proof a reader can check at a glance,
 it makes the number of hash consumptions depend on the seed (so an innocent change to the hash
-shifts every puzzle), and it turns an invariant into a *procedure that usually succeeds*. The
+shifts every puzzle), and it turns an invariant into a _procedure that usually succeeds_. The
 modular offset above makes the bad state **unrepresentable** — the same posture as
 `LevelModifier` having no life field (ADR-0079 D10). Cheaper, and provable in one line.
 
@@ -201,7 +201,7 @@ problem (ADR-0074's gotcha, restated).
 ### D5 — Assets: 24 sliced PNGs, atomic per gabarit, provenance-checked
 
 **24 separate PNGs, not an atlas** (answering `lead-art` §7.3 Q1). The atlas argument — "the
-seam is guaranteed by construction" — is real but is *already* satisfied by slicing from a
+seam is guaranteed by construction" — is real but is _already_ satisfied by slicing from a
 single plate; what an atlas would additionally cost is a new loader, a new lint, exclusion from
 `useAssetPreloader`'s per-path progress, and a second asset convention beside the ~200
 per-file assets the pipeline already handles (chroma-key, `check-sprite-style.mjs`, the
@@ -213,7 +213,7 @@ manifest builders). One new file format for one screen is not a trade worth maki
   the validated plate, normalises it on the eye-line / nose-base registration marks, slices at
   the seam ordinates with bleed, and writes **all 24 files plus `portraitPlate.generated.json`
   in one run**. It has no per-band mode and no "regenerate one variant" flag — the absence of
-  that flag *is* the atomicity guarantee.
+  that flag _is_ the atomicity guarantee.
 - It emits a `plateChecksum` into the generated JSON; `validatePortrait` compares it with the
   catalogue's. A hand-patched single band therefore fails a unit test, loudly, with a message
   naming the rule. This is the courier's derived-width discipline (`levelArt.json` §4.2)
@@ -258,7 +258,7 @@ surface gets `validatePortrait` for free, exactly as story ③ got `validateLeve
 
 **C2 — 60 authored distance values are a real, new authoring burden**, and they are the price
 of making the difficulty rule executable. They come from a plate `game-graphist` already owes
-(§7.2 pre-prod pass), so the burden is *transcription*, not judgement — but if that plate slips,
+(§7.2 pre-prod pass), so the burden is _transcription_, not judgement — but if that plate slips,
 this is the item that blocks `dev-gameplay`, and a provisional matrix must be committed with the
 placeholder assets so the lane is never idle.
 
@@ -267,7 +267,7 @@ registration/normalisation pass before slicing. It is budgeted here as a first-c
 not as a footnote of the art lane.
 
 **C4 — The 24 PNGs are a one-shot download at a phase boundary.** Sized in the house BD style
-they are small; but they are downloaded *between* two levels, i.e. on a transition the player
+they are small; but they are downloaded _between_ two levels, i.e. on a transition the player
 experiences as a pause. The `NARRATIVE_POST` pre-warm hides it behind text the player is reading.
 If the batch ever grows (a second gabarit), that hiding place is finite — flagged for the
 fast-follow.
@@ -309,7 +309,7 @@ an unbounded retry loop where one line of modular arithmetic is provably correct
 invariant expressed as a procedure rather than a property.
 
 **A8 — Enforce it in the scene shell instead (`createPortraitScene` nudges any correct band).**
-Tempting because it is one `if` in one place, and wrong twice: it puts a *data* invariant in
+Tempting because it is one `if` in one place, and wrong twice: it puts a _data_ invariant in
 the scene layer, where no validator and no CI can see it; and a "nudge" applied after the draw
 would silently break the presentation-order replayability the whole determinism claim rests on
 (same seed, different board, depending on whether the nudge fired). The invariant belongs to
@@ -325,18 +325,18 @@ the selection liseré.
 **2026-08-05 — révision 1 (post-gate §8, arbitrage Bertrand B1 → gate A14).** Body edited in
 place (Status still `Proposed`).
 
-| Change | Driver |
-| --- | --- |
-| **New D4.4** — the draw now also fixes the **initial selection**, excluded from the truth slot by modular arithmetic. `PortraitPuzzle` gains `initialSelection`. `correctCount(initial) === 0` holds for every seed *by construction*, not by retry | gate A14 · B1 (a self-resolving scene is only possible once the CTA is gone) |
-| **New `seed-sweep` validator invariant** (error) — checks the decoy profile **and** the all-wrong start over a fixed deterministic seed set, at the same rank as `decoy-profile`, as instructed | Bertrand, explicit |
-| Stated plainly that the sweep is a **regression guard, not a proof** — the proof is D4.4's arithmetic | honesty about what a finite sweep establishes |
-| Context gains fact 4: since B1 the draw is load-bearing for **safety**, not only difficulty | B1 |
-| New alternatives **A7** (rejection sampling) and **A8** (fix it in the scene shell), both rejected; D7 extended | — |
+| Change                                                                                                                                                                                                                                              | Driver                                                                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **New D4.4** — the draw now also fixes the **initial selection**, excluded from the truth slot by modular arithmetic. `PortraitPuzzle` gains `initialSelection`. `correctCount(initial) === 0` holds for every seed _by construction_, not by retry | gate A14 · B1 (a self-resolving scene is only possible once the CTA is gone) |
+| **New `seed-sweep` validator invariant** (error) — checks the decoy profile **and** the all-wrong start over a fixed deterministic seed set, at the same rank as `decoy-profile`, as instructed                                                     | Bertrand, explicit                                                           |
+| Stated plainly that the sweep is a **regression guard, not a proof** — the proof is D4.4's arithmetic                                                                                                                                               | honesty about what a finite sweep establishes                                |
+| Context gains fact 4: since B1 the draw is load-bearing for **safety**, not only difficulty                                                                                                                                                         | B1                                                                           |
+| New alternatives **A7** (rejection sampling) and **A8** (fix it in the scene shell), both rejected; D7 extended                                                                                                                                     | —                                                                            |
 
 **Not changed:** D1 (catalogue location and shape), D2 (the distance matrix), D5 (24 sliced
 PNGs, atomic script, `plateChecksum`, preload during `NARRATIVE_POST`), D6's three answers to
 the art brief, alternatives A1-A6. `confirmGuardSeconds` never appeared in this ADR, so
-nothing is deleted here — A14 *adds* an obligation to the data model.
+nothing is deleted here — A14 _adds_ an obligation to the data model.
 
 ---
 

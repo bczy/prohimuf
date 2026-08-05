@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import type { LevelModifier } from "@game/types/levelModifier";
-import { createInitialState, tickGameState, DEFAULT_LEVEL_PARAMS } from "@game/systems/stateMachine";
+import {
+  createInitialState,
+  tickGameState,
+  DEFAULT_LEVEL_PARAMS,
+} from "@game/systems/stateMachine";
 import { ENERGY_INITIAL } from "@game/systems/energySystem";
 import { levelModifierFromPortrait } from "@game/systems/portraitRobotSystem";
 import { FACADE_01 } from "@game/maps/facade01";
@@ -52,9 +56,9 @@ describe("energyDelta lands on the NEXT level's capital, through the existing cl
   it("IDENTIFIED and PARTIAL move no energy — there is no reward (gate A1c)", () => {
     for (const outcome of ["IDENTIFIED", "PARTIAL"] as const) {
       const modifier = levelModifierFromPortrait({ outcome, correctCount: 4, scoreDelta: 0 });
-      expect(
-        createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, modifier }).energy,
-      ).toBe(ENERGY_INITIAL);
+      expect(createInitialState(FACADE_01, { ...DEFAULT_LEVEL_PARAMS, modifier }).energy).toBe(
+        ENERGY_INITIAL,
+      );
     }
   });
 
@@ -156,7 +160,10 @@ describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
     const seated = state.enemies.length;
     expect(seated).toBe(createInitialState(FACADE_01).enemies.length);
 
-    state = tick({ ...state, enemies: state.enemies.map((e) => ({ ...e, state: "DEAD" as const })) });
+    state = tick({
+      ...state,
+      enemies: state.enemies.map((e) => ({ ...e, state: "DEAD" as const })),
+    });
     expect(state.wave).toBe(2);
     expect(state.enemies.length).toBeGreaterThan(0);
     expect(state.enemies.every((e) => e.state !== "DEAD")).toBe(true);

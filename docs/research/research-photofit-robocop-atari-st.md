@@ -18,8 +18,8 @@
   « Eyes, ears, chin, nose and hairstyle must be matched to the picture on the **left** » ;
   Your Sinclair (via MobyGames) : « on the left is a picture of Emil, and you have to cycle
   through all the possible eyes, noses, hairpieces, chins, ears and mouths ».
-- **Les bandes = traits du visage empilés.** Le manuel Amiga officiel liste *hairline, eyes, nose,
-  mouth, chin, ears* → **6 zones** ; la presse n'en cite que 5. **PROBABLE : 6 zones en 16-bit,
+- **Les bandes = traits du visage empilés.** Le manuel Amiga officiel liste _hairline, eyes, nose,
+  mouth, chin, ears_ → **6 zones** ; la presse n'en cite que 5. **PROBABLE : 6 zones en 16-bit,
   5 sur certaines versions 8-bit.** Le découpage est **anatomique, pas une grille régulière** —
   Crash note que « some overlap ».
 - **HUD :** timer visible qui décompte (« tense music as the seconds tick down »), score et vies
@@ -102,14 +102,14 @@ seul le rendu diffère** (§6). **INCERTAIN**, faute de manuels ST/CPC consulté
 
 ## 7. Valeurs exploitables pour du tuning
 
-| Paramètre           | Valeur                                        | Confiance         |
-| ------------------- | --------------------------------------------- | ----------------- |
-| Durée du timer      | **30-40 s**                                   | CONFIRMÉ (plage)  |
-| Nombre de zones     | **5 à 6** (hair, eyes, nose, mouth, chin, ears) | PROBABLE        |
-| Variantes par zone  | non trouvé                                    | INCERTAIN         |
-| Sanction d'échec    | **−1 vie**                                    | CONFIRMÉ          |
-| Contrôle            | haut/bas = zone, gauche/droite = variante     | CONFIRMÉ          |
-| Feedback par trait  | aucun                                         | PROBABLE          |
+| Paramètre          | Valeur                                          | Confiance        |
+| ------------------ | ----------------------------------------------- | ---------------- |
+| Durée du timer     | **30-40 s**                                     | CONFIRMÉ (plage) |
+| Nombre de zones    | **5 à 6** (hair, eyes, nose, mouth, chin, ears) | PROBABLE         |
+| Variantes par zone | non trouvé                                      | INCERTAIN        |
+| Sanction d'échec   | **−1 vie**                                      | CONFIRMÉ         |
+| Contrôle           | haut/bas = zone, gauche/droite = variante       | CONFIRMÉ         |
+| Feedback par trait | aucun                                           | PROBABLE         |
 
 Pour viser la sensation d'époque : **~35 s, pas de feedback par trait, échec qui coûte réellement**.
 La difficulté vient explicitement de la **proximité visuelle des variantes** (« made all the more

@@ -57,15 +57,7 @@ describe("the three obligatory recalls (gate A1b/A10)", () => {
   });
 
   it("names no figure and scolds nobody (fiction §5.3 interdits)", () => {
-    const forbidden = [
-      /\d/,
-      /échou/i,
-      /score/i,
-      /énergie/i,
-      /secondes?/i,
-      /valide/i,
-      /confirme/i,
-    ];
+    const forbidden = [/\d/, /échou/i, /score/i, /énergie/i, /secondes?/i, /valide/i, /confirme/i];
     for (const scene of Object.values(PORTRAIT_ROBOT_NARRATIVE)) {
       for (const line of scene.lines) {
         for (const pattern of forbidden) {

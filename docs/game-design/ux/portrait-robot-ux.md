@@ -107,7 +107,7 @@ sortie anticipée, affordance permanente non cachée) ; copie exacte réservée 
    retirés. Repli acté : médaillon cible ≥ **28 % de largeur** en mobile paysage, rapproché des
    bandes (§1.2, §4).
 3. **Vocabulaire canon appliqué (A6).** `CHEVEUX/YEUX/NEZ/BOUCHE` → `LA COUPE/LE REGARD/LE
-   NEZ/LA BOUCHE` en surface joueur (repli sans article `COUPE/REGARD/NEZ/BOUCHE` si l'espace
+NEZ/LA BOUCHE` en surface joueur (repli sans article `COUPE/REGARD/NEZ/BOUCHE` si l'espace
    manque). Bandeau `PORTRAIT-ROBOT` → `TÊTE À CONNAÎTRE`. CTA `VALIDER LE PORTRAIT` →
    `SORTIR LA TÊTE`. « dossier suspect » → « la page 23 ». Chrono → `TÉLÉCARTE · {n} UNITÉS`
    (1 unité = 2,5 s, 14 unités au départ).
@@ -116,7 +116,7 @@ sortie anticipée, affordance permanente non cachée) ; copie exacte réservée 
    l'état courant si abandonnée » (aucune issue n'est un échec sec, y compris l'abandon).
 5. **Placement confirmé, plus une question ouverte (A2).** `AppPhase` `PORTRAIT_ROBOT` est un
    **interstitiel post-niveau** (`LEVEL_COMPLETE → NARRATIVE_POST → PORTRAIT_ROBOT → niveau
-   suivant`), pas un sous-état de `PLAYING`, pas de gel du monde/shell ADR-0030. §7 mis à jour,
+suivant`), pas un sous-état de `PLAYING`, pas de gel du monde/shell ADR-0030. §7 mis à jour,
    §8.1/§8.3 (questions ouvertes) closes par le gate.
 6. **Valeurs de chrono/difficulté chiffrées (A7)** : `Prefs.difficulty` module cette scène —
    `easy` 56 s / `normal` 35 s / `hard` 30 s ; pause du chrono sous `RotateOverlay` tranchée
@@ -144,14 +144,14 @@ la typo, le grain (`lead-art`) ; le texte du dossier suspect révélé (`narrati
 
 ## 0. Cahier des charges — ce qu'on garde de RoboCop ST, ce qu'on change
 
-| Élément original (CONFIRMÉ/PROBABLE, recon §1-4) | Décision muf |
-| --- | --- |
-| Portrait cible à gauche, portrait en construction à droite | **Gardé** en desktop landscape (assez de largeur). **Changé** en mobile landscape (§1.2) — la largeur ne tient pas 2 portraits + 4 bandes lisibles, voir §0.1. |
-| Haut/bas = zone, gauche/droite = variante (joystick 4 directions) | **Traduit**, pas copié, par appareil — §2. Un joystick n'a pas d'équivalent 1-pour-1 en souris/tactile ; copier bêtement le mapping serait paresseux (consigne explicite du brief). |
-| Aucun feedback par trait, jugement à l'œil en fin de phase | **Gardé, tranché par le gate (A9).** Round 1 proposait un état "verrouillé" indicatif comme réponse au point de confusion documenté par la recon ; le gate l'a **coupé** (A8) — le médaillon élargi (§4) traite la confusion par la proximité, pas par un pense-bête d'état. Zéro feedback pendant la phase, tout à la révélation (2,6 s, §6). |
-| Portrait numérisé, mise en scène "gros portrait qui respire" | Mise en scène **gardée**, rendu **remplacé** par la DA BD/comics maison (arbitrage Bertrand) — hors scope de cette spec (`lead-art`). |
-| Ordre de résolution libre | **Gardé.** Aucune raison ergonomique de forcer un ordre ; ADR-0034-style contrainte artificielle à éviter. |
-| Timer 30-40 s, échec = perte de vie | **Changé (A1, gate).** Le chrono reste dans la fourchette 30-40 s (`easy` sort à 56 s pour l'accessibilité, A7) mais **aucune perte de vie n'est possible** — la sanction est en énergie, appliquée au niveau suivant (A1c). |
+| Élément original (CONFIRMÉ/PROBABLE, recon §1-4)                  | Décision muf                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portrait cible à gauche, portrait en construction à droite        | **Gardé** en desktop landscape (assez de largeur). **Changé** en mobile landscape (§1.2) — la largeur ne tient pas 2 portraits + 4 bandes lisibles, voir §0.1.                                                                                                                                                                                 |
+| Haut/bas = zone, gauche/droite = variante (joystick 4 directions) | **Traduit**, pas copié, par appareil — §2. Un joystick n'a pas d'équivalent 1-pour-1 en souris/tactile ; copier bêtement le mapping serait paresseux (consigne explicite du brief).                                                                                                                                                            |
+| Aucun feedback par trait, jugement à l'œil en fin de phase        | **Gardé, tranché par le gate (A9).** Round 1 proposait un état "verrouillé" indicatif comme réponse au point de confusion documenté par la recon ; le gate l'a **coupé** (A8) — le médaillon élargi (§4) traite la confusion par la proximité, pas par un pense-bête d'état. Zéro feedback pendant la phase, tout à la révélation (2,6 s, §6). |
+| Portrait numérisé, mise en scène "gros portrait qui respire"      | Mise en scène **gardée**, rendu **remplacé** par la DA BD/comics maison (arbitrage Bertrand) — hors scope de cette spec (`lead-art`).                                                                                                                                                                                                          |
+| Ordre de résolution libre                                         | **Gardé.** Aucune raison ergonomique de forcer un ordre ; ADR-0034-style contrainte artificielle à éviter.                                                                                                                                                                                                                                     |
+| Timer 30-40 s, échec = perte de vie                               | **Changé (A1, gate).** Le chrono reste dans la fourchette 30-40 s (`easy` sort à 56 s pour l'accessibilité, A7) mais **aucune perte de vie n'est possible** — la sanction est en énergie, appliquée au niveau suivant (A1c).                                                                                                                   |
 
 ### 0.1 Pourquoi le layout "cible à gauche / construction à droite" ne survit pas tel quel au mobile paysage
 
@@ -540,13 +540,13 @@ de validation (le `SORTIR LA TÊTE` supprimé en round 3) aurait été : centré
 d'écran, dans l'axe de lecture principal, rempli (fond plein), grande cible, libellé verbal d'action
 ("SORTIR", "VALIDER"). Cette affordance doit être son opposé point par point :
 
-| Dimension | CTA (supprimé, round 3) | Sortie anticipée (§2.8) |
-| --- | --- | --- |
-| Position | Bande dédiée, bas d'écran, pleine largeur | Coin HUD (haut), hors de l'axe cible↔bandes |
-| Poids visuel | Fond plein, contour marqué | Icône seule (glyphe), pas de fond plein, pas de glow (cohérent avec le médaillon, §9.1) |
-| Taille | Cible large, texte verbal | Icône compacte + libellé court optionnel (gabarit §2.8.4) |
-| Hiérarchie | Action principale attendue de tous | Action secondaire, disponible mais jamais mise en avant — un joueur qui ne la voit jamais et atteint 4/4 n'a rien perdu |
-| Focus par défaut | (aurait été le focus naturel en fin de tâche) | **Jamais focus par défaut**, ni au clavier ni au lecteur d'écran (§2.8.5) |
+| Dimension        | CTA (supprimé, round 3)                       | Sortie anticipée (§2.8)                                                                                                 |
+| ---------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Position         | Bande dédiée, bas d'écran, pleine largeur     | Coin HUD (haut), hors de l'axe cible↔bandes                                                                             |
+| Poids visuel     | Fond plein, contour marqué                    | Icône seule (glyphe), pas de fond plein, pas de glow (cohérent avec le médaillon, §9.1)                                 |
+| Taille           | Cible large, texte verbal                     | Icône compacte + libellé court optionnel (gabarit §2.8.4)                                                               |
+| Hiérarchie       | Action principale attendue de tous            | Action secondaire, disponible mais jamais mise en avant — un joueur qui ne la voit jamais et atteint 4/4 n'a rien perdu |
+| Focus par défaut | (aurait été le focus naturel en fin de tâche) | **Jamais focus par défaut**, ni au clavier ni au lecteur d'écran (§2.8.5)                                               |
 
 Le motif ergonomique : si cette cible ressemble ne serait-ce qu'un peu à un bouton d'appel à
 l'action, un joueur va croire qu'il DOIT l'actionner pour valider chaque bande réglée — et la
@@ -623,13 +623,13 @@ Les deux ne doivent jamais se lire pareil : l'un est **une question posée au jo
 l'autre est **la fin de la scène** (verrouillé, §2.5). Ils sont différenciés par portée, durée et
 poids, pas par une teinte :
 
-| | État **armé** (§2.8.3) | État **verrouillé** (§2.5) |
-| --- | --- | --- |
-| Portée | Anneau/liseré **local, autour du bouton seul** | Cadre plein autour de **toute** la surface de bandes |
-| Durée | **Transitoire, 2,0 s**, réversible par timeout | **Terminal**, ne retombe jamais |
-| Ce qu'il signifie | « Un second appui va sortir » — réversible | « La scène est finie » — irréversible |
-| Reduced-motion | Anneau apparaît en un cut, pas de compte à rebours animé requis pour comprendre l'état (§D5.1) ; le retrait au désarmement est également un cut | Cadre + tampons apparaissent en un cut (inchangé, §2.5) |
-| Son | Clic d'armement bref, distinct du clic de cran (§2.3.4) et du sting de verrouillage | Sting de verrouillage, plus long (§2.5) |
+|                   | État **armé** (§2.8.3)                                                                                                                          | État **verrouillé** (§2.5)                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Portée            | Anneau/liseré **local, autour du bouton seul**                                                                                                  | Cadre plein autour de **toute** la surface de bandes    |
+| Durée             | **Transitoire, 2,0 s**, réversible par timeout                                                                                                  | **Terminal**, ne retombe jamais                         |
+| Ce qu'il signifie | « Un second appui va sortir » — réversible                                                                                                      | « La scène est finie » — irréversible                   |
+| Reduced-motion    | Anneau apparaît en un cut, pas de compte à rebours animé requis pour comprendre l'état (§D5.1) ; le retrait au désarmement est également un cut | Cadre + tampons apparaissent en un cut (inchangé, §2.5) |
+| Son               | Clic d'armement bref, distinct du clic de cran (§2.3.4) et du sting de verrouillage                                                             | Sting de verrouillage, plus long (§2.5)                 |
 
 Le désarmement (retour de l'anneau à l'état de repos, en un cut sous reduced-motion ou par un retrait
 bref sinon) est **visuellement visible**, seuls le son et l'haptique d'armement ne se répètent pas à
@@ -834,15 +834,15 @@ d'assertion que le texte annoncé ne contient jamais de chiffre de secondes/unit
 
 ## 6. États de l'écran
 
-| État | Ce que voit le joueur | Ce qu'il entend |
-| --- | --- | --- |
-| **ENTRÉE** | Transition depuis `NARRATIVE_POST` ; médaillon cible (page 23) apparaît en premier (1 beat), PUIS les 4 bandes se déploient (Paper Mario rule, §"UI Fanzine" des guidelines) ; l'invariant de seed (`initialStateAllWrong`, A14) garantit un 0/4 à l'entrée — **plus de délai de grâce à attendre**, les bandes sont immédiatement actionnables ; jauge télécarte pleine et visible dès l'affichage complet | Sting audio court signalant l'entrée en mini-jeu, distinct de la musique de niveau |
-| **SÉLECTION EN COURS (`ACTIVE`)** | 4 bandes jointives, chacune swipable/dragable indépendamment (§2.3, §2.6) ; **aucun feedback par trait, sous aucune forme** (A16) — seul le compteur `{n} sur {total}` évolue ; jauge télécarte se vide en continu, sans nombre affiché (§9) ; **pas de CTA** | Musique tendue en boucle (guidelines §6 — tempo = seul indicateur de tension) ; clic sonore bref à chaque cran de swipe/drag/chevron (§2.3.4, §2.6) |
-| **VERROUILLAGE** (instantané, dès 4/4) | **Le seul feedback de la scène** (§2.5) : gel immédiat de l'input, cadre plein autour de la surface entière de bandes (pas par bande), jauge figée, 4 tampons simultanés. Ne peut survenir qu'en cours d'`ACTIVE`, jamais après expiration (A12bis) | Sting de verrouillage distinct du clic de cran ; vibration longue si disponible, motif différent d'un cran simple |
-| **PALIERS CHRONO** (50 % écoulé / 10,0 s / 5,0 s restantes, A13) — n'a lieu que si aucun verrouillage n'est encore survenu | Style de jauge change aux paliers urgence/dernier (contraste/forme, pas couleur seule — D5.2) ; PAS de shake d'écran ni de flash strobant (reduced-motion + confort général) | Répliques KENZA réutilisées comme annonce `aria-live` (D5.5) ; le tempo musical s'accélère aux paliers ; pas de bip strident répété |
-| **RÉVÉLATION DU VERDICT** (`revealSeconds` — 2,6 s à `PARTIAL`/`FAILED`, 1,4 s à `IDENTIFIED`, A15) | Écran se fige ; à `PARTIAL`/`FAILED` : 4 verdicts de haut en bas (~0,45 s chacun) avec correction visible de chaque bande fausse, 0,8 s de tenue (reptation intacte, information réelle à délivrer) ; à `IDENTIFIED` : le verrouillage (état ci-dessus) a déjà tout dit, flash + 4 tampons simultanés sans reptation ; médaillon et reconstruction se rapprochent visuellement pour la comparaison finale | Sting de verdict, puis sting global WON/PARTIAL/LOST (vocabulaire `spec-boss-qte-*`) |
-| **TENUE DU RÉSULTAT** (2,2 s, `resultHoldSeconds`) | Tampon `IDENTIFIED`/`PARTIAL`/`FAILED` affiché avec raison explicite (guidelines §5 règle 4 — ex. "3 sur 4" pour `PARTIAL`) ; textes = `narrative-designer` | — |
-| **SORTIE** | Transition vers `LEVEL_COMPLETE`/niveau suivant ; le payoff narratif (page 23 qui refuse, ou habitué refusé) se joue en pré-niveau suivant, pas ici (A10) ; les répliques d'entrée/sortie sont skippables en un geste, la phase interactive ne l'est pas (A2) | — |
+| État                                                                                                                       | Ce que voit le joueur                                                                                                                                                                                                                                                                                                                                                                                       | Ce qu'il entend                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ENTRÉE**                                                                                                                 | Transition depuis `NARRATIVE_POST` ; médaillon cible (page 23) apparaît en premier (1 beat), PUIS les 4 bandes se déploient (Paper Mario rule, §"UI Fanzine" des guidelines) ; l'invariant de seed (`initialStateAllWrong`, A14) garantit un 0/4 à l'entrée — **plus de délai de grâce à attendre**, les bandes sont immédiatement actionnables ; jauge télécarte pleine et visible dès l'affichage complet | Sting audio court signalant l'entrée en mini-jeu, distinct de la musique de niveau                                                                  |
+| **SÉLECTION EN COURS (`ACTIVE`)**                                                                                          | 4 bandes jointives, chacune swipable/dragable indépendamment (§2.3, §2.6) ; **aucun feedback par trait, sous aucune forme** (A16) — seul le compteur `{n} sur {total}` évolue ; jauge télécarte se vide en continu, sans nombre affiché (§9) ; **pas de CTA**                                                                                                                                               | Musique tendue en boucle (guidelines §6 — tempo = seul indicateur de tension) ; clic sonore bref à chaque cran de swipe/drag/chevron (§2.3.4, §2.6) |
+| **VERROUILLAGE** (instantané, dès 4/4)                                                                                     | **Le seul feedback de la scène** (§2.5) : gel immédiat de l'input, cadre plein autour de la surface entière de bandes (pas par bande), jauge figée, 4 tampons simultanés. Ne peut survenir qu'en cours d'`ACTIVE`, jamais après expiration (A12bis)                                                                                                                                                         | Sting de verrouillage distinct du clic de cran ; vibration longue si disponible, motif différent d'un cran simple                                   |
+| **PALIERS CHRONO** (50 % écoulé / 10,0 s / 5,0 s restantes, A13) — n'a lieu que si aucun verrouillage n'est encore survenu | Style de jauge change aux paliers urgence/dernier (contraste/forme, pas couleur seule — D5.2) ; PAS de shake d'écran ni de flash strobant (reduced-motion + confort général)                                                                                                                                                                                                                                | Répliques KENZA réutilisées comme annonce `aria-live` (D5.5) ; le tempo musical s'accélère aux paliers ; pas de bip strident répété                 |
+| **RÉVÉLATION DU VERDICT** (`revealSeconds` — 2,6 s à `PARTIAL`/`FAILED`, 1,4 s à `IDENTIFIED`, A15)                        | Écran se fige ; à `PARTIAL`/`FAILED` : 4 verdicts de haut en bas (~0,45 s chacun) avec correction visible de chaque bande fausse, 0,8 s de tenue (reptation intacte, information réelle à délivrer) ; à `IDENTIFIED` : le verrouillage (état ci-dessus) a déjà tout dit, flash + 4 tampons simultanés sans reptation ; médaillon et reconstruction se rapprochent visuellement pour la comparaison finale   | Sting de verdict, puis sting global WON/PARTIAL/LOST (vocabulaire `spec-boss-qte-*`)                                                                |
+| **TENUE DU RÉSULTAT** (2,2 s, `resultHoldSeconds`)                                                                         | Tampon `IDENTIFIED`/`PARTIAL`/`FAILED` affiché avec raison explicite (guidelines §5 règle 4 — ex. "3 sur 4" pour `PARTIAL`) ; textes = `narrative-designer`                                                                                                                                                                                                                                                 | —                                                                                                                                                   |
+| **SORTIE**                                                                                                                 | Transition vers `LEVEL_COMPLETE`/niveau suivant ; le payoff narratif (page 23 qui refuse, ou habitué refusé) se joue en pré-niveau suivant, pas ici (A10) ; les répliques d'entrée/sortie sont skippables en un geste, la phase interactive ne l'est pas (A2)                                                                                                                                               | —                                                                                                                                                   |
 
 ---
 
@@ -850,7 +850,7 @@ d'assertion que le texte annoncé ne contient jamais de chiffre de secondes/unit
 
 - **`AppPhase` dédié `"PORTRAIT_ROBOT"`, interstitiel post-niveau (A2, confirmé par le gate,
   n'est plus une question ouverte)** : chaîne `LEVEL_COMPLETE → NARRATIVE_POST → PORTRAIT_ROBOT →
-  (niveau suivant)`. Pas un sous-état de `PLAYING`, pas de gel du monde ni de réemploi du shell
+(niveau suivant)`. Pas un sous-état de `PLAYING`, pas de gel du monde ni de réemploi du shell
   ADR-0030 — la scène n'a pas de monde à figer, elle vit entre deux niveaux. Nommage/placement
   exact dans `App.tsx` = `senior-architect`.
 - **Échap / bouton de coin — fusionné avec la sortie anticipée (round 4, §2.8).** Il n'existe plus
@@ -896,13 +896,13 @@ pas une proposition à arbitrer. Le style (couleurs, typo, texture, glow) reste 
 
 **Hiérarchie de zones (2 colonnes, plus de ligne de CTA) :**
 
-| Zone | x | y | largeur | hauteur | Contenu |
-| --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 844 | 32 | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, jauge télécarte continue (sans nombre) centrée |
-| Sortie anticipée (§2.8) | 780 | 0 | 64 | 32 | Icône seule (24×24px visuel, glyphe distinct de `✕`, §2.8.2), pas de fond plein/glow ; libellé texte optionnel si ≤ 8 caractères tiennent sans repousser la jauge (§2.8.1) ; hit area **64×32px (2048px², ≥ l'aire d'une cible 44×44px)** — compromis largeur/hauteur imposé par le HUD 32px, aire équivalente documentée pour `lead-game-designer` |
-| Médaillon | 0 | 32 | **236 (28 %)** | 358 | Portrait cible page 23, fixe, contour distinct (pas de glow — §5, gate), même hauteur que le bloc de bandes en face (parité de taille des deux visages) ; tap/long-press = overlay plein écran temporaire |
-| Bloc de bandes (surface unique, jointive) | 236 | 32 | 608 (72 %) | 358 | 4 bandes empilées, **aucune séparation entre elles** |
-| Bande (×4) | 236 | 32 + i×68 | 608 | **68** | Libellé (`LA COUPE`/…) à gauche, image de variante centrée, compteur `{n}/{total}` à droite, chevrons ◁▷ semi-transparents **dessinés dans** la bande, jamais comme trait de séparation (44×44px cible, zone de swipe/drag = toute la bande) |
+| Zone                                      | x   | y         | largeur        | hauteur | Contenu                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------- | --- | --------- | -------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HUD                                       | 0   | 0         | 844            | 32      | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, jauge télécarte continue (sans nombre) centrée                                                                                                                                                                                                       |
+| Sortie anticipée (§2.8)                   | 780 | 0         | 64             | 32      | Icône seule (24×24px visuel, glyphe distinct de `✕`, §2.8.2), pas de fond plein/glow ; libellé texte optionnel si ≤ 8 caractères tiennent sans repousser la jauge (§2.8.1) ; hit area **64×32px (2048px², ≥ l'aire d'une cible 44×44px)** — compromis largeur/hauteur imposé par le HUD 32px, aire équivalente documentée pour `lead-game-designer` |
+| Médaillon                                 | 0   | 32        | **236 (28 %)** | 358     | Portrait cible page 23, fixe, contour distinct (pas de glow — §5, gate), même hauteur que le bloc de bandes en face (parité de taille des deux visages) ; tap/long-press = overlay plein écran temporaire                                                                                                                                           |
+| Bloc de bandes (surface unique, jointive) | 236 | 32        | 608 (72 %)     | 358     | 4 bandes empilées, **aucune séparation entre elles**                                                                                                                                                                                                                                                                                                |
+| Bande (×4)                                | 236 | 32 + i×68 | 608            | **68**  | Libellé (`LA COUPE`/…) à gauche, image de variante centrée, compteur `{n}/{total}` à droite, chevrons ◁▷ semi-transparents **dessinés dans** la bande, jamais comme trait de séparation (44×44px cible, zone de swipe/drag = toute la bande)                                                                                                        |
 
 **Il n'y a plus de CTA ni de ligne dédiée en bas d'écran.** La hauteur libérée (44px de CTA +
 24px de gaps inter-bandes du round 2, soit 68px) est allée pour partie aux bandes elles-mêmes
@@ -921,15 +921,15 @@ confirmation d'abandon (overlay léger par-dessus, pas plein écran).
 
 ### 9.2 Desktop — cible 1440×900
 
-| Zone | x | y | largeur | hauteur | Contenu |
-| --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 1440 | 56 | Bandeau `TÊTE À CONNAÎTRE` à gauche, jauge télécarte continue au centre |
-| Sortie anticipée (§2.8) | 1320 | 6 | 80 | 44 | Icône (glyphe distinct de `✕`, §2.8.2) + libellé ≤ 20 caractères (§2.8.1), `Échap` en légende à proximité ; cible 44×44px pleine (marge HUD 56px suffisante, pas de compromis d'aire nécessaire côté desktop) |
-| Portrait cible (page 23) | 40 | 76 | **576 (40 %)** | 480 | Grand format, fixe |
-| Portrait reconstruction | 824 | 76 | **576 (40 %)** | 480 | Même taille que la cible ; se construit en direct au fil des drags/clics de chevron |
-| Gap central | 616 | 76 | 208 | 480 | Zone tampon (peut porter un élément narratif léger, `lead-art`/`narrative-designer`) |
-| Bloc de bandes (surface unique, jointive) | 40 | 556 | 1360 | 264 | 4 bandes empilées, **aucune séparation entre elles**, jusqu'au bas de l'écran — plus de ligne de CTA à réserver en dessous |
-| Bande (×4) | 40 | 556 + i×60 | 1360 | **60** | Libellé, chevrons cliquables ◁▷ **dans** la bande (44×44px cible), curseur `grab`/`grabbing` au survol/drag (§2.6), zone de variante, compteur ; bande courante (celle contrôlée au clavier ou par le dernier drag) visuellement distincte (bordure, pas couleur seule) |
+| Zone                                      | x    | y          | largeur        | hauteur | Contenu                                                                                                                                                                                                                                                                 |
+| ----------------------------------------- | ---- | ---------- | -------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HUD                                       | 0    | 0          | 1440           | 56      | Bandeau `TÊTE À CONNAÎTRE` à gauche, jauge télécarte continue au centre                                                                                                                                                                                                 |
+| Sortie anticipée (§2.8)                   | 1320 | 6          | 80             | 44      | Icône (glyphe distinct de `✕`, §2.8.2) + libellé ≤ 20 caractères (§2.8.1), `Échap` en légende à proximité ; cible 44×44px pleine (marge HUD 56px suffisante, pas de compromis d'aire nécessaire côté desktop)                                                           |
+| Portrait cible (page 23)                  | 40   | 76         | **576 (40 %)** | 480     | Grand format, fixe                                                                                                                                                                                                                                                      |
+| Portrait reconstruction                   | 824  | 76         | **576 (40 %)** | 480     | Même taille que la cible ; se construit en direct au fil des drags/clics de chevron                                                                                                                                                                                     |
+| Gap central                               | 616  | 76         | 208            | 480     | Zone tampon (peut porter un élément narratif léger, `lead-art`/`narrative-designer`)                                                                                                                                                                                    |
+| Bloc de bandes (surface unique, jointive) | 40   | 556        | 1360           | 264     | 4 bandes empilées, **aucune séparation entre elles**, jusqu'au bas de l'écran — plus de ligne de CTA à réserver en dessous                                                                                                                                              |
+| Bande (×4)                                | 40   | 556 + i×60 | 1360           | **60**  | Libellé, chevrons cliquables ◁▷ **dans** la bande (44×44px cible), curseur `grab`/`grabbing` au survol/drag (§2.6), zone de variante, compteur ; bande courante (celle contrôlée au clavier ou par le dernier drag) visuellement distincte (bordure, pas couleur seule) |
 
 **Il n'y a plus de CTA ni de ligne dédiée sous les bandes** : le bloc de bandes occupe l'espace
 jusqu'au bord bas de la zone de contenu.
