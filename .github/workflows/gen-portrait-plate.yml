@@ -50,9 +50,18 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install pngjs (recalage + slicing)
+        run: |
+          # Pinned to the package.json version; --no-save so the lockfile-less
+          # runner install never rewrites package.json. Same shape as
+          # gen-courier-sprites.yml's @napi-rs/canvas step — a targeted
+          # install of the one non-builtin import, before the paid FLUX call.
+          npm install --no-save --legacy-peer-deps --ignore-scripts pngjs@7.0.0
+
       - name: Generate + slice + measure the portrait plate (FLUX)
         # FORCE=1 so a re-dispatch overwrites a previously-rejected/committed
         # set. No --plate flag: the real pipeline always fetches from FLUX in CI.
+        id: generate
         run: FORCE=1 node scripts/slice-portrait-plate.mjs
 
       - name: Commit sliced bands + generated manifest
@@ -82,8 +91,15 @@ jobs:
             fi
           fi
 
-      - name: Upload generated assets (push failed)
-        if: failure()
+      - name: Upload generated assets (generation succeeded, commit/push failed)
+        # Scoped to steps.generate.outcome == 'success': `failure()` alone also
+        # fires when the generate step itself dies (e.g. a missing dependency,
+        # as it did on the 79d30ea3 run) — at that point the working tree only
+        # holds whatever was checked out (the committed placeholders), and an
+        # artifact named "unpushed" containing those is a trap: it reads as a
+        # freshly generated plate that just failed to push. Only upload when a
+        # generation genuinely happened and it was the commit/push that failed.
+        if: failure() && steps.generate.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: portrait-plate-unpushed
