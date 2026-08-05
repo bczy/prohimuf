@@ -74,38 +74,58 @@ const FORCE = process.env.FORCE === "1";
 
 // ── Canonical gabarit geometry (ADR-0080 D5, art brief §1.1/§1.2/§1.2bis) ────
 // Reference space: the PLATE, portrait cropped to PORTRAIT_HEIGHT px tall
-// (brief §1.2bis). PORTRAIT_WIDTH is a provisional 3:4 pending the exact scale
-// spec owed by game-graphist/ux-designer (brief §7.0 Q1, "l'échelle 1:1
-// exacte") — changing it only rescales this script's constants, nothing else
-// depends on the literal number.
+// (brief §1.2bis, resized by §9 GATE DIMENSIONS — lead-art, 2026-08-05).
+// 580x775 replaces the original 768x1024: Pollinations' `flux` model caps
+// render surface at ~590K px (RE-PANEL run 5d5b5f51 — the ORIGINAL 768x1024
+// portrait content, margins not included, already exceeds that cap on its
+// own, so no non-scaled request at the old resolution exists). VOIE B
+// (brief §9.1): reframe the brief to what the service renders natively,
+// rather than accept a silent, permanent format failure (VOIE A) or
+// upscale before measuring (fabricates sub-pixel precision). The margin
+// does NOT scale with this change — see PLATE_MARGIN_PX below, that's the
+// actual decision.
 export const GABARIT_ID = "gabarit-01";
 export const BAND_ORDER = ["hair", "eyes", "nose", "mouth"];
 export const VARIANTS_PER_BAND = 6;
-export const PORTRAIT_WIDTH = 768;
-export const PORTRAIT_HEIGHT = 1024;
+export const PORTRAIT_WIDTH = 580;
+export const PORTRAIT_HEIGHT = 775;
 // C1 (hair/eyes), C2 (eyes/nose), C3 (nose/mouth) — fraction of PORTRAIT_HEIGHT
 // (brief §1.2 ordinates). Bands are cut edge-to-edge at these fractions; no
 // bleed survives into the delivered PNGs (brief §1.2bis: "le bleed n'est pas
-// composé au rendu").
+// composé au rendu"). 775 = 25 × 31 was chosen (over e.g. 780) specifically
+// so these three fractions land on whole pixels with no rounding needed —
+// verified: 0.32×775=248, 0.52×775=403, 0.72×775=558, all exact (brief §9.2).
 export const SEAMS = [0.32, 0.52, 0.72];
 // Bleed drawn on the PLATE either side of a seam, absorbed by the cut — not
 // present in delivered files, but a plate drawn without it is not a
-// production defect this script can see (brief §1.2bis).
+// production defect this script can see (brief §1.2bis). Absolute, unchanged
+// by §9 (anti-aliasing bleed doesn't shrink with the plate).
 export const BLEED_PX = 12;
 // Margin registration band around the portrait crop, where the eye-line /
 // nose-base / axis / corner ticks live (brief §1.2bis "repères d'alignement").
+// Absolute, unchanged by §9 GATE DIMENSIONS — this is lead-art's actual
+// decision, not an oversight: "la marge ne se met pas à l'échelle, le
+// portrait si". A printed tick's own anti-aliasing is 1-2px regardless of
+// plate size, and this script's own confidence gates (MIN_TICK_RUN_PX,
+// MIN_TICK_PEAK_RATIO below) require it detectable in absolute px — scaling
+// the margin down would shrink the noise window below FLUX's own placement
+// tolerance. The portrait absorbs the pixels the margin cannot give up.
 export const PLATE_MARGIN_PX = 48;
 export const PLATE_WIDTH = PORTRAIT_WIDTH + PLATE_MARGIN_PX * 2;
 export const PLATE_HEIGHT = PORTRAIT_HEIGHT + PLATE_MARGIN_PX * 2;
 export const EYE_LINE_FRAC = 0.4;
 export const NOSE_BASE_FRAC = 0.65;
 
-// Seam-tolerance table, verbatim from art brief §1.2bis. Values in PLATE px
-// (the brief also gives them as % of PORTRAIT_HEIGHT — px here since that is
-// this script's native unit).
+// Seam-tolerance table, brief §9.3 (lead-art, 2026-08-05) — supersedes the
+// original §1.2bis table. The invariant lead-art holds constant is the
+// RENDERED (on-screen) pixel, not the plate pixel: a 775px-tall plate is
+// LESS reduced to the ~224px on-screen band than the original 1024px plate
+// was, so an equal plate-pixel defect reads ~33% larger on screen — these
+// thresholds are consequently tighter in plate px than before, by design,
+// not by mistake.
 export const TOLERANCE = {
-  skullHalfWidth: { pass: 2, fail: 4 },
-  medianAxis: { pass: 1, fail: 2 },
+  skullHalfWidth: { pass: 1.5, fail: 3 },
+  medianAxis: { pass: 0.75, fail: 1.5 },
   tangentDeg: { pass: 3, fail: 6 },
   strokeWidthRelPct: { pass: 10, fail: 15 },
 };
@@ -594,8 +614,13 @@ export function registerPortrait(png, registration = detectRegistration(png)) {
   return out;
 }
 
-// ── Seam-tolerance measurement (art brief §1.2bis) ───────────────────────
+// ── Seam-tolerance measurement (art brief §1.2bis, tolerances per §9.3) ──
 // Skull edge on a given row = first/last x whose luminance reads as ink.
+// This integer edge is a SEARCH anchor for the sub-pixel centroid below, not
+// itself a measurement — §9.3's PASS thresholds (medianAxis ≤0.75px,
+// skullHalfWidth ≤1.5px) sit below one whole pixel, so reporting this
+// integer value as the grandeur would silently under/over-report by up to a
+// full pixel, more than the entire PASS budget.
 function skullEdges(portrait, y) {
   let left = -1;
   let right = -1;
@@ -627,17 +652,122 @@ function strokeWidth(portrait, y, edgeX, direction) {
   return w;
 }
 
-/** Measures the 4 grandeurs of §1.2bis across ONE seam between two adjacent
- * bands (top band's LAST row vs bottom band's FIRST row). Returns
+// Ink density at a pixel, used as the "alpha" weight for the sub-pixel
+// centroid brief §9.3 mandates ("le centroïde pondéré par l'alpha du trait
+// de contour, pas au premier pixel non transparent"): these plates are
+// opaque ink-on-white-paper, not RGBA transparency, so darkness (1 - relative
+// luminance) stands in for coverage/alpha — a pixel straddling the ink/paper
+// boundary reads partial darkness from anti-aliasing, exactly the sub-pixel
+// signal an integer threshold throws away.
+function inkDensity(portrait, x, y) {
+  const idx = (portrait.width * y + x) << 2;
+  const lum =
+    (portrait.data[idx] * 299 + portrait.data[idx + 1] * 587 + portrait.data[idx + 2] * 114) / 1000;
+  return Math.max(0, Math.min(1, (255 - lum) / 255));
+}
+
+// Window either side of the integer edge over which the centroid is taken —
+// wide enough to cover the full 5-6px contour stroke (brief §9.2) plus its
+// anti-aliasing skirt on both sides.
+const SUBPIXEL_CENTROID_WINDOW_PX = 8;
+
+/** Sub-pixel x-position of the contour stroke's ink-density centroid around
+ * an integer edge. Returns `null` (never a guess) when there is no ink in
+ * the window — either the integer edge itself was `-1` (no ink found on the
+ * row at all) or a pathological all-zero-density window — so a caller can
+ * fail loudly instead of reporting a verdict this instrument cannot
+ * support (brief §9.3). */
+function subpixelEdgeCentroid(portrait, y, integerEdgeX) {
+  if (integerEdgeX < 0) return null;
+  let sumWeighted = 0;
+  let sumWeight = 0;
+  for (let dx = -SUBPIXEL_CENTROID_WINDOW_PX; dx <= SUBPIXEL_CENTROID_WINDOW_PX; dx++) {
+    const x = integerEdgeX + dx;
+    if (x < 0 || x >= portrait.width) continue;
+    const w = inkDensity(portrait, x, y);
+    if (w <= 0) continue;
+    sumWeighted += x * w;
+    sumWeight += w;
+  }
+  return sumWeight > 0 ? sumWeighted / sumWeight : null;
+}
+
+// Tangent fit span, brief §9.3: "arc de 5% de H de part et d'autre de la
+// couture" — proportional, not a fixed row count, because a fixed-row fit
+// becomes noise on a smaller plate while an angle itself has no scale.
+const TANGENT_FIT_FRAC = 0.05;
+
+/** Least-squares tangent angle (degrees off vertical) of the LEFT contour
+ * edge's sub-pixel centroid, fit over up to `TANGENT_FIT_FRAC * H` rows
+ * starting at `row` and moving by `direction` (-1 = upward/away from a seam
+ * below, +1 = downward/away from a seam above). Returns `null` — never a
+ * guessed angle — when fewer than 2 usable (ink-bearing) rows are found in
+ * the fit window, per brief §9.3's "il faut le dire, pas arrondir". */
+function fitTangentAngleDeg(portrait, row, direction) {
+  const span = Math.round(TANGENT_FIT_FRAC * PORTRAIT_HEIGHT);
+  const points = [];
+  for (let i = 0; i < span; i++) {
+    const y = row + direction * i;
+    if (y < 0 || y >= portrait.height) break;
+    const edges = skullEdges(portrait, y);
+    const cx = subpixelEdgeCentroid(portrait, y, edges.left);
+    if (cx !== null) points.push([y, cx]);
+  }
+  if (points.length < 2) return null;
+
+  const n = points.length;
+  const meanY = points.reduce((s, [y]) => s + y, 0) / n;
+  const meanX = points.reduce((s, [, x]) => s + x, 0) / n;
+  let num = 0;
+  let den = 0;
+  for (const [y, x] of points) {
+    num += (y - meanY) * (x - meanX);
+    den += (y - meanY) * (y - meanY);
+  }
+  if (den === 0) return null; // all rows identical y — degenerate, not a real fit
+  const slopeDxDy = num / den;
+  return (Math.atan(slopeDxDy) * 180) / Math.PI;
+}
+
+/** Measures the 4 grandeurs of §1.2bis/§9.3 across ONE seam between two
+ * adjacent bands (top band's LAST row vs bottom band's FIRST row). Returns
  * `{ pass, alerts, values }` — `pass` false only on an outright FAIL value or
- * ≥2 simultaneous ALERT-zone values on the same seam (brief's stated rule). */
+ * ≥2 simultaneous ALERT-zone values on the same seam (brief's stated rule).
+ * Throws (never reports a degraded verdict) when the sub-pixel centroid or
+ * the tangent fit cannot be produced — per brief §9.3, a script that cannot
+ * measure at the required resolution must say so, not round to what it can
+ * measure. */
 export function measureSeamContinuity(topPortrait, topRow, botPortrait, botRow) {
   const t = skullEdges(topPortrait, topRow);
   const b = skullEdges(botPortrait, botRow);
+
+  const tLeft = subpixelEdgeCentroid(topPortrait, topRow, t.left);
+  const tRight = subpixelEdgeCentroid(topPortrait, topRow, t.right);
+  const bLeft = subpixelEdgeCentroid(botPortrait, botRow, b.left);
+  const bRight = subpixelEdgeCentroid(botPortrait, botRow, b.right);
+  if (tLeft === null || tRight === null || bLeft === null || bRight === null) {
+    throw new Error(
+      "measureSeamContinuity: no ink found near the integer skull edge on one side of the " +
+        "seam — cannot compute the alpha-weighted sub-pixel centroid brief §9.3 mandates " +
+        "(skullHalfWidth/medianAxis PASS thresholds sit below 1 whole pixel; refusing to " +
+        "report a verdict this instrument cannot support rather than rounding).",
+    );
+  }
+
+  const topTangentDeg = fitTangentAngleDeg(topPortrait, topRow, -1);
+  const botTangentDeg = fitTangentAngleDeg(botPortrait, botRow, 1);
+  if (topTangentDeg === null || botTangentDeg === null) {
+    throw new Error(
+      `measureSeamContinuity: fewer than 2 usable edge points in the ${Math.round(TANGENT_FIT_FRAC * 100)}% ` +
+        "of H tangent-fit window on one side of the seam (brief §9.3) — refusing to report a " +
+        "tangent verdict this instrument cannot support rather than defaulting to 0.",
+    );
+  }
+
   const values = {
-    leftHalfWidthDeltaPx: Math.abs(t.left - b.left),
-    rightHalfWidthDeltaPx: Math.abs(t.right - b.right),
-    medianAxisDeltaPx: Math.abs((t.left + t.right) / 2 - (b.left + b.right) / 2),
+    leftHalfWidthDeltaPx: Math.abs(tLeft - bLeft),
+    rightHalfWidthDeltaPx: Math.abs(tRight - bRight),
+    medianAxisDeltaPx: Math.abs((tLeft + tRight) / 2 - (bLeft + bRight) / 2),
     strokeWidthDeltaPct:
       t.left >= 0 && b.left >= 0
         ? (Math.abs(
@@ -647,11 +777,7 @@ export function measureSeamContinuity(topPortrait, topRow, botPortrait, botRow) 
             Math.max(1, strokeWidth(topPortrait, topRow, t.left, 1))) *
           100
         : 0,
-    // Tangent needs a run of rows; approximated here from a short local slope
-    // (5 rows) rather than a true contour fit — sufficient to flag a gross
-    // break, not a substitute for the human "look at the seam" pass the brief
-    // itself keeps (§1.2bis "et le mécanique ne me lie pas").
-    tangentDeltaDeg: 0,
+    tangentDeltaDeg: Math.abs(topTangentDeg - botTangentDeg),
   };
 
   const alerts = [];
@@ -665,6 +791,7 @@ export function measureSeamContinuity(topPortrait, topRow, botPortrait, botRow) 
   check("rightHalfWidthDeltaPx", TOLERANCE.skullHalfWidth);
   check("medianAxisDeltaPx", TOLERANCE.medianAxis);
   check("strokeWidthDeltaPct", TOLERANCE.strokeWidthRelPct);
+  check("tangentDeltaDeg", TOLERANCE.tangentDeg);
 
   const pass = !fail && alerts.length < 2;
   return { pass, alerts, values };
@@ -784,6 +911,15 @@ export async function ensurePngBuffer(buf) {
 // ratio) is a different bug with a different fix and keeps its own message.
 const ASPECT_RATIO_TOLERANCE = 0.01; // 1% — run 5d5b5f51 measured 0.03% drift
 
+// Documented ceiling (gen-level-art.mjs's normalizeSize, RE-PANEL run
+// 5d5b5f51): every plate requested above ~590K px has come back reduced,
+// aspect preserved. §9 GATE DIMENSIONS (lead-art, 2026-08-05) sized THIS
+// script's PLATE_WIDTH/PLATE_HEIGHT specifically to sit under this ceiling
+// (676x871 = 588,796px) so it should render natively — if an aspect-preserved
+// scale-down ever fires again at these dimensions, the old explanation no
+// longer automatically applies and the message below says so.
+const POLLINATIONS_FLUX_AREA_CAP_PX = 590000;
+
 export function isAspectPreservedScaleDown(actualW, actualH, expectedW, expectedH) {
   const actualRatio = actualW / actualH;
   const expectedRatio = expectedW / expectedH;
@@ -796,17 +932,25 @@ export async function runReal(plateArg) {
   const plate = PNG.sync.read(buf);
   if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
     if (isAspectPreservedScaleDown(plate.width, plate.height, PLATE_WIDTH, PLATE_HEIGHT)) {
+      const requestedAreaPx = PLATE_WIDTH * PLATE_HEIGHT;
+      const actualAreaPx = plate.width * plate.height;
+      const overCap = requestedAreaPx > POLLINATIONS_FLUX_AREA_CAP_PX;
       throw new Error(
         `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
-          "the aspect ratio is preserved (not a framing drift): this is Pollinations' flux " +
-          "model returning a uniformly smaller render, consistent with the same max-pixel-area " +
-          "cap gen-level-art.mjs's normalizeSize already documented (~590K px; this request's " +
-          `${PLATE_WIDTH * PLATE_HEIGHT}px area exceeds it, the response's ` +
-          `${plate.width * plate.height}px does not). Refusing to proceed: upscaling before ` +
-          "measuring would fabricate sub-pixel precision on tolerances lead-art pixel-calibrated " +
-          "on a 1024px-tall reference (art brief §1.2bis), and rescaling those tolerances to a " +
-          "smaller reference is lead-art's call, not this script's — ESCALATE to lead-art rather " +
-          "than retrying (a re-dispatch will hit the same cap).",
+          "the aspect ratio is preserved (not a framing drift): the whole plate was rendered " +
+          "at a uniform smaller scale. " +
+          (overCap
+            ? "Consistent with Pollinations' flux max-pixel-area cap (~590K px, documented in " +
+              `gen-level-art.mjs's normalizeSize and RE-PANEL run 5d5b5f51): this request's ` +
+              `${requestedAreaPx}px area exceeds it, the response's ${actualAreaPx}px does not.`
+            : `UNEXPECTED: this request's ${requestedAreaPx}px area is already under the ` +
+              "documented ~590K px cap (§9 GATE DIMENSIONS sized it there specifically to " +
+              "render natively) — this is NOT the previously-diagnosed cap; investigate as a " +
+              "new failure mode before assuming the old explanation still applies.") +
+          " Refusing to proceed: upscaling before measuring would fabricate sub-pixel " +
+          "precision on tolerances lead-art pixel-calibrated on this exact plate height (art " +
+          "brief §9.3), and rescaling those tolerances to a different reference is lead-art's " +
+          `call, not this script's — ESCALATE to lead-art${overCap ? " rather than retrying (a re-dispatch will hit the same cap)" : ""}.`,
       );
     }
     throw new Error(

@@ -9,12 +9,15 @@ import {
   ensurePngBuffer,
   isAspectPreservedScaleDown,
   runReal,
+  measureSeamContinuity,
   PLATE_WIDTH,
   PLATE_HEIGHT,
   PLATE_MARGIN_PX,
+  PORTRAIT_WIDTH,
   PORTRAIT_HEIGHT,
   EYE_LINE_FRAC,
   NOSE_BASE_FRAC,
+  TOLERANCE,
 } from "../slice-portrait-plate.mjs";
 
 // Confidence-gated registration (art brief §8 C-B): `detectRegistration` must
@@ -154,7 +157,10 @@ describe("detectRegistration — confidence-gated tick detection (brief §8 C-B)
     // png.height. Before the fix this produced `rows = []` and a TypeError
     // from `best.run` inside findTick — a JS stack trace instead of the
     // named-mark diagnostic every other rejection path produces.
-    const shortHeight = 100; // eyeNominalAbs() (458) - 24 > shortHeight - 1
+    const shortHeight = 100;
+    // Precondition for this test to exercise the intended path at all: the
+    // search window must actually fall outside the shortened plate.
+    expect(eyeNominalAbs() - 24).toBeGreaterThan(shortHeight - 1);
     const png = new PNG({ width: PLATE_WIDTH, height: shortHeight });
     png.data.fill(255);
     for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
@@ -286,8 +292,24 @@ describe("ensurePngBuffer — content guard before the PNG decoder (RE-PANEL run
 });
 
 describe("isAspectPreservedScaleDown", () => {
-  it("matches the exact measured case from run 5d5b5f51 (674x874 vs 864x1120)", () => {
-    expect(isAspectPreservedScaleDown(674, 874, PLATE_WIDTH, PLATE_HEIGHT)).toBe(true);
+  // Fixed literals, deliberately NOT the live PLATE_WIDTH/PLATE_HEIGHT: this
+  // locks in the historical incident (§9 GATE DIMENSIONS resized the plate
+  // specifically BECAUSE of this measurement) so the regression test stays
+  // meaningful regardless of what the constants are today.
+  it("matches the exact historical measurement from run 5d5b5f51 (674x874 vs the then-requested 864x1120)", () => {
+    expect(isAspectPreservedScaleDown(674, 874, 864, 1120)).toBe(true);
+  });
+
+  it("flags a scale-down at TODAY's dimensions by the same ~0.78 linear factor", () => {
+    const scale = 0.78;
+    expect(
+      isAspectPreservedScaleDown(
+        Math.round(PLATE_WIDTH * scale),
+        Math.round(PLATE_HEIGHT * scale),
+        PLATE_WIDTH,
+        PLATE_HEIGHT,
+      ),
+    ).toBe(true);
   });
 
   it("rejects a genuinely different aspect ratio", () => {
@@ -315,12 +337,21 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
   }
 
   it("names an aspect-preserved scale-down as Pollinations' cap, not a framing drift", async () => {
-    const file = writeTempPlate(674, 874); // run 5d5b5f51's exact measured size
+    // Today's PLATE_WIDTH/PLATE_HEIGHT (676x871 = 588,796px) were sized by §9
+    // GATE DIMENSIONS specifically to sit under the ~590K px cap — so a
+    // scale-down AT THESE dimensions is now the "UNEXPECTED, investigate as a
+    // new failure mode" branch, not the "consistent with the documented cap"
+    // one. Both branches share the same aspect-ratio-preserved / ESCALATE
+    // framing, which is what's asserted generically; the UNEXPECTED wording
+    // is asserted specifically to lock in today's regime.
+    const scale = 0.78;
+    const file = writeTempPlate(Math.round(PLATE_WIDTH * scale), Math.round(PLATE_HEIGHT * scale));
     try {
       await expect(runReal(file)).rejects.toThrow(
         /aspect ratio is preserved \(not a framing drift\)/,
       );
       await expect(runReal(file)).rejects.toThrow(/ESCALATE to lead-art/);
+      await expect(runReal(file)).rejects.toThrow(/UNEXPECTED.*under the.*documented ~590K/);
       await expect(runReal(file)).rejects.not.toThrow(
         /framing drifted beyond what registration can fix/,
       );
@@ -339,5 +370,155 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
     } finally {
       fs.rmSync(file, { force: true });
     }
+  });
+});
+
+// brief §9.3 (lead-art, 2026-08-05): sub-pixel alpha-weighted centroid is
+// MANDATORY (PASS thresholds sit below 1 whole pixel) and the tangent must be
+// a real fit, not the previous `tangentDeltaDeg: 0` stub. Fixtures below are
+// GENUINE @napi-rs/canvas-drawn anti-aliased strokes — not hand-typed pixel
+// arrays tuned to what the centroid/fit under test wants to see, per the
+// pattern that masked the earlier defects in this story.
+async function makeContourImage({
+  width,
+  height,
+  leftX,
+  rightX,
+  strokeWidthPx = 5,
+  tiltPerRow = 0,
+}) {
+  const { createCanvas } = await import("@napi-rs/canvas");
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = strokeWidthPx;
+  for (const x0 of [leftX, rightX]) {
+    ctx.beginPath();
+    ctx.moveTo(x0, 0);
+    ctx.lineTo(x0 + tiltPerRow * height, height);
+    ctx.stroke();
+  }
+  const imgData = ctx.getImageData(0, 0, width, height);
+  return { width, height, data: Buffer.from(imgData.data) };
+}
+
+// A single isolated dot at exactly one row, nothing else in the image — used
+// to starve the tangent-fit window (brief §9.3's 5%-of-H arc) of usable
+// points while still leaving ink at the measured row itself, so the
+// sub-pixel-centroid check upstream still succeeds.
+async function makeSingleRowDot({ width, height, y, xs, dotWidthPx = 6 }) {
+  const { createCanvas } = await import("@napi-rs/canvas");
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#000000";
+  for (const x of xs) ctx.fillRect(x - dotWidthPx / 2, y, dotWidthPx, 1);
+  const imgData = ctx.getImageData(0, 0, width, height);
+  return { width, height, data: Buffer.from(imgData.data) };
+}
+
+describe("measureSeamContinuity — sub-pixel centroid + tangent fit (art brief §9.3)", () => {
+  const IMG_HEIGHT = 60;
+  const SEAM_ROW = 30;
+  const LEFT_X = 100;
+  const RIGHT_X = PORTRAIT_WIDTH - 100;
+
+  it("passes with near-zero deltas when top and bottom bands are drawn identically", async () => {
+    const img = await makeContourImage({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      leftX: LEFT_X,
+      rightX: RIGHT_X,
+    });
+    const report = measureSeamContinuity(img, SEAM_ROW - 1, img, SEAM_ROW);
+    expect(report.pass).toBe(true);
+    expect(report.values.leftHalfWidthDeltaPx).toBeLessThan(TOLERANCE.skullHalfWidth.pass);
+    expect(report.values.rightHalfWidthDeltaPx).toBeLessThan(TOLERANCE.skullHalfWidth.pass);
+    expect(report.values.medianAxisDeltaPx).toBeLessThan(TOLERANCE.medianAxis.pass);
+    expect(report.values.tangentDeltaDeg).toBeLessThan(TOLERANCE.tangentDeg.pass);
+  });
+
+  it("fails when the top and bottom skull edges are shifted by more than the FAIL threshold", async () => {
+    const shiftPx = TOLERANCE.skullHalfWidth.fail + 2;
+    const topImg = await makeContourImage({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      leftX: LEFT_X,
+      rightX: RIGHT_X,
+    });
+    const botImg = await makeContourImage({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      leftX: LEFT_X + shiftPx,
+      rightX: RIGHT_X + shiftPx,
+    });
+    const report = measureSeamContinuity(topImg, SEAM_ROW - 1, botImg, SEAM_ROW);
+    expect(report.pass).toBe(false);
+    expect(report.values.leftHalfWidthDeltaPx).toBeGreaterThanOrEqual(
+      TOLERANCE.skullHalfWidth.fail,
+    );
+  });
+
+  it("detects a real tangent (tilted contour) as a non-zero delta, not the old always-0 stub", async () => {
+    // Top band's contour drawn dead vertical, bottom band's tilted by a slope
+    // large enough to read clearly above the 3° PASS threshold over the
+    // fit span.
+    const topImg = await makeContourImage({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      leftX: LEFT_X,
+      rightX: RIGHT_X,
+      tiltPerRow: 0,
+    });
+    const botImg = await makeContourImage({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      leftX: LEFT_X,
+      rightX: RIGHT_X,
+      tiltPerRow: 0.3, // ~16.7 degrees off vertical
+    });
+    const report = measureSeamContinuity(topImg, SEAM_ROW - 1, botImg, SEAM_ROW);
+    expect(report.values.tangentDeltaDeg).toBeGreaterThan(TOLERANCE.tangentDeg.fail);
+    expect(report.pass).toBe(false);
+  });
+
+  it("throws rather than reporting a verdict when there is no ink near the integer edge", () => {
+    const blank = {
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      data: Buffer.alloc(PORTRAIT_WIDTH * IMG_HEIGHT * 4, 255),
+    };
+    expect(() => measureSeamContinuity(blank, SEAM_ROW - 1, blank, SEAM_ROW)).toThrow(
+      /alpha-weighted sub-pixel centroid/,
+    );
+  });
+
+  it("throws rather than defaulting to a 0° tangent when the fit window has fewer than 2 usable points", async () => {
+    // Ink exists at exactly the measured row (so the centroid check passes)
+    // but nowhere else in the 5%-of-H fit window either side — the fit
+    // itself cannot be produced.
+    const img = await makeSingleRowDot({
+      width: PORTRAIT_WIDTH,
+      height: IMG_HEIGHT,
+      y: SEAM_ROW,
+      xs: [LEFT_X, RIGHT_X],
+    });
+    expect(() => measureSeamContinuity(img, SEAM_ROW, img, SEAM_ROW)).toThrow(/tangent-fit window/);
+  });
+});
+
+describe("seam ordinates land on whole pixels with no float rounding (brief §9.2)", () => {
+  it("computes C1/C2/C3 as exact integers at H=775 (775 = 25 × 31, chosen for this)", () => {
+    expect(0.32 * PORTRAIT_HEIGHT).toBe(248);
+    expect(0.52 * PORTRAIT_HEIGHT).toBe(403);
+    expect(0.72 * PORTRAIT_HEIGHT).toBe(558);
+    // Plate-absolute ordinates (+ margin), matching lead-art's brief §9.2
+    // values verbatim: C1 y=296, C2 y=451, C3 y=606.
+    expect(PLATE_MARGIN_PX + 248).toBe(296);
+    expect(PLATE_MARGIN_PX + 403).toBe(451);
+    expect(PLATE_MARGIN_PX + 558).toBe(606);
   });
 });
