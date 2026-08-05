@@ -75,11 +75,14 @@
   flex-basis: 28%;
 }
 
-.targetImage {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border: var(--keyline-width) solid var(--ink-black);
+/* The reference face: the same joined stack as the reconstruction, same row height,
+   so the two faces are comparable trait for trait (UX §0.1). */
+.targetStack {
+  display: grid;
+  grid-auto-rows: var(--band-height);
+  gap: 0;
+  width: 100%;
+  outline: var(--keyline-width) solid var(--ink-black);
 }
 
 .supertitle {

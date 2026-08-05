@@ -43,8 +43,13 @@ export interface PortraitRobotScreenProps {
   readonly scene: PortraitScene;
   /** Four bands in draw order, resolved from the catalogue by `usePortraitRobot`. */
   readonly bands: readonly PortraitBandView[];
-  /** The reference portrait — « la page 23 ». */
-  readonly targetSrc: string;
+  /**
+   * The reference portrait — « la page 23 ». Four band images too, drawn at the
+   * SAME gabarit and just as joined as the reconstruction: the two faces have to be
+   * comparable trait for trait, which they are not if one of them is composed
+   * differently from the other (UX §0.1 / §1.2, art brief §1.0).
+   */
+  readonly targetBands: readonly string[];
   /** Device class (ADR-0003), decided once at boot by the shell. */
   readonly isMobile: boolean;
   /** Every player request leaves here as an intent; the screen never mutates a scene. */
@@ -88,7 +93,7 @@ export interface PortraitRobotScreenProps {
 export function PortraitRobotScreen({
   scene,
   bands,
-  targetSrc,
+  targetBands,
   isMobile,
   onIntent,
   bandStackRef,
@@ -122,7 +127,11 @@ export function PortraitRobotScreen({
 
       <div className={styles.stage}>
         <figure className={styles.target}>
-          <img className={styles.targetImage} src={targetSrc} alt={TARGET_ALT} />
+          <div className={styles.targetStack} role="img" aria-label={TARGET_ALT}>
+            {targetBands.map((src) => (
+              <img key={src} className={styles.bandImage} src={src} alt="" draggable={false} />
+            ))}
+          </div>
           <figcaption className={styles.supertitle}>{SUPERTITLE}</figcaption>
         </figure>
 

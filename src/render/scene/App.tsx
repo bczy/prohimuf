@@ -11,6 +11,8 @@ import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
+import { PortraitRobotPhase } from "@render/ui/portrait/PortraitRobotPhase";
+import { SCREEN_TITLE } from "@render/ui/portrait/copy";
 import {
   installBossCaptureSeam,
   isBossSeamShippedLevel,
@@ -41,6 +43,8 @@ import {
   savePlayerName,
 } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
+import type { LevelModifier } from "@game/types/levelModifier";
+import { PORTRAIT_TIMER_SECONDS } from "@game/systems/portraitRobotSystem";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import {
   PRE_LEVEL_NARRATIVE,
@@ -64,6 +68,7 @@ type AppPhase =
   | "NARRATIVE_PRE"
   | "PLAYING"
   | "NARRATIVE_POST"
+  | "PORTRAIT_ROBOT"
   | "NAME_ENTRY"
   | "END"
   | "TUTORIAL";
@@ -135,6 +140,19 @@ const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 installBossCaptureSeam();
 installDeliveryCaptureSeam();
 
+// Portrait-robot seed (ADR-0079 D3): supplied BY THE SHELL and frozen for the session, so a
+// board is replayable with `?portraitSeed=<n>` — the determinism proof `qa-lead` runs in the
+// built app. The pure layer holds no `Math.random`; drawing the seed is the shell's job, and
+// this is the one place it happens.
+const PORTRAIT_SEED_PARAM =
+  typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("portraitSeed")
+    : null;
+const PORTRAIT_SEED =
+  PORTRAIT_SEED_PARAM !== null && Number.isFinite(Number(PORTRAIT_SEED_PARAM))
+    ? Number(PORTRAIT_SEED_PARAM)
+    : Math.floor(Math.random() * 0x7fffffff);
+
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
 const IS_MOBILE = detectMobile();
@@ -202,7 +220,11 @@ function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   };
 }
 
-function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
+function buildLevelParams(
+  level: LevelConfig,
+  prefs: Prefs,
+  modifier: LevelModifier | null,
+): LevelParams {
   const diffCfg = DIFFICULTY_CONFIG[prefs.difficulty];
   return {
     lives: prefs.lives,
@@ -220,6 +242,10 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.
     loot: level.loot ?? null,
+    // The interstitial scene's only residue (ADR-0079 D4). Absent ⇒ byte-identical
+    // to a run without any interstitial scene; the shell CARRIES this value and
+    // never interprets it — no `switch` on the outcome exists on this side.
+    modifier,
   };
 }
 
@@ -272,6 +298,13 @@ export function App(): JSX.Element {
   // Held when a run qualifies for the board; the single deferred saveScore reads it on
   // NAME_ENTRY resolution (ADR-0054 §2). `null` = nothing pending (non-high-score path).
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
+  // The portrait-robot verdict travelling to the NEXT level (ADR-0079 D4). Produced by
+  // `levelModifierFromPortrait` in the pure layer, carried here as an opaque value, spent
+  // exactly once at the next `createInitialState`. Nothing on this side reads a field of it.
+  const [pendingModifier, setPendingModifier] = useState<LevelModifier | null>(null);
+  const [runModifier, setRunModifier] = useState<LevelModifier | null>(null);
+  // One portrait-robot per run (gate A3). Armed on the run identity, like the persistence block.
+  const portraitPlayedRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
   const isPortrait = useOrientation();
@@ -454,6 +487,10 @@ export function App(): JSX.Element {
       return;
     }
     setSelectedLevel(level);
+    // Spent exactly ONCE: the pending verdict becomes this run's modifier and the pending
+    // slot empties, so a restart or a second level never re-applies a scene played earlier.
+    setRunModifier(pendingModifier);
+    setPendingModifier(null);
     setHudData(buildHudInitial(level, prefs));
     setGameKey((k) => k + 1);
     if (PRE_LEVEL_NARRATIVE[levelId] !== undefined) {
@@ -511,7 +548,14 @@ export function App(): JSX.Element {
       ? "menu"
       : appPhase === "TUTORIAL"
         ? TUTORIAL_FORK.manifestTarget
-        : selectedLevel.id;
+        : // The 24 sliced band PNGs (ADR-0080). Gated on the phase itself rather than
+          // warmed behind NARRATIVE_POST: one preloader, one target at a time, and the
+          // scene must never open on half its bands — an untextured band would read as
+          // a variant, i.e. as information, on a screen whose whole subject is what a
+          // band looks like.
+          appPhase === "PORTRAIT_ROBOT"
+          ? "portrait-robot"
+          : selectedLevel.id;
   // Targets warmed this session — a target skips its manifest once settled so
   // revisiting it (or advancing TITLE→MENU→level→END) never re-shows the loader.
   const loadedTargets = useRef<Set<string>>(new Set());
@@ -551,7 +595,9 @@ export function App(): JSX.Element {
         ? "MENU"
         : target === TUTORIAL_FORK.manifestTarget
           ? "Tutoriel"
-          : selectedLevel.name;
+          : target === "portrait-robot"
+            ? SCREEN_TITLE
+            : selectedLevel.name;
     return renderAppShell(
       <LoadingScreen label={label} progress={total ? loaded / total : 1} />,
       rotateBlocked,
@@ -593,6 +639,13 @@ export function App(): JSX.Element {
         <NarrativeScreen
           scene={scene}
           onDone={() => {
+            // Interstitial insertion point (gate A2): LEVEL_COMPLETE → NARRATIVE_POST →
+            // PORTRAIT_ROBOT → the rest. Once per run, and never on a `?preview=` boot.
+            if (PREVIEW_SCREEN === null && portraitPlayedRef.current !== gameKey) {
+              portraitPlayedRef.current = gameKey;
+              setAppPhase("PORTRAIT_ROBOT");
+              return;
+            }
             setAppPhase(pendingScore !== null ? "NAME_ENTRY" : "END");
           }}
         />,
@@ -618,6 +671,24 @@ export function App(): JSX.Element {
         }}
         onSkip={handleBackToMenu}
         doneLabel="TERMINER"
+      />,
+      rotateBlocked,
+    );
+  }
+
+  if (appPhase === "PORTRAIT_ROBOT") {
+    // A DOM screen: no Canvas, no Three, no CRT (ADR-0079 D1). The chrono pauses behind
+    // the rotate overlay by simply not being folded (gate A7).
+    return renderAppShell(
+      <PortraitRobotPhase
+        seed={PORTRAIT_SEED}
+        timerSeconds={PORTRAIT_TIMER_SECONDS[prefs.difficulty]}
+        isMobile={IS_MOBILE}
+        paused={rotateBlocked}
+        onDone={(modifier) => {
+          setPendingModifier(modifier);
+          setAppPhase(pendingScore !== null ? "NAME_ENTRY" : "END");
+        }}
       />,
       rotateBlocked,
     );
@@ -655,7 +726,7 @@ export function App(): JSX.Element {
     );
   }
 
-  const levelParams = buildLevelParams(selectedLevel, prefs);
+  const levelParams = buildLevelParams(selectedLevel, prefs, runModifier);
 
   return renderAppShell(
     <div

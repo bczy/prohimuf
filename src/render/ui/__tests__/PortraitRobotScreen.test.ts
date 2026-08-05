@@ -47,7 +47,12 @@ const noop = (): void => {
 const BASE: PortraitRobotScreenProps = {
   scene: ACTIVE_SCENE,
   bands: BANDS,
-  targetSrc: "assets/portrait/target.png",
+  targetBands: [
+    "assets/portrait/hair-02.png",
+    "assets/portrait/eyes-01.png",
+    "assets/portrait/nose-04.png",
+    "assets/portrait/mouth-02.png",
+  ],
   isMobile: false,
   onIntent: noop,
 };
