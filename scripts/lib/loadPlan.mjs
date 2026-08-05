@@ -85,7 +85,11 @@ export async function loadPlan(levelId) {
   if (issues.length > 0) {
     throw new Error(
       `loadPlan: ${path.relative(ROOT, file)} is not a valid LevelPlan — refusing to ` +
-        `run before anything is spent:\n  - ${issues.join("\n  - ")}`,
+        // `validateLevelPlan` rend des `LevelIssue` (objets) depuis la story ③, plus des
+        // chaînes : joindre le tableau brut imprimerait "[object Object]" à l'endroit
+        // précis où ce garde-fou existe pour dire CE QUI cloche avant qu'un appel payant
+        // ne soit dépensé.
+        `run before anything is spent:\n  - ${issues.map((i) => i.message).join("\n  - ")}`,
     );
   }
   return mod.plan;

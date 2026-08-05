@@ -3,6 +3,7 @@ import {
   mobileVisibleProps,
   planToLevelArt,
   planToLevelConfig,
+  validateCatalogue,
   validateLevelPlan,
   WORLD_HEIGHT_UNITS,
   type GeneratedPropSpec,
@@ -54,6 +55,14 @@ const prop = (kind: `${string}:${string}`, row?: "near" | "far"): GeneratedPropS
   ...(row === undefined ? {} : { row }),
 });
 
+/**
+ * `validateLevelPlan` speaks structured `LevelIssue`s (MCP §4.1). The guards' human
+ * sentences are unchanged, so the historical assertions still read them — through this
+ * projection instead of the old bare `string[]`.
+ */
+const messagesOf = (plan: LevelPlan): readonly string[] =>
+  validateLevelPlan(plan).map((issue) => issue.message);
+
 describe("validateLevelPlan", () => {
   it("accepts a minimal plan", () => {
     expect(validateLevelPlan(base)).toEqual([]);
@@ -61,12 +70,12 @@ describe("validateLevelPlan", () => {
 
   it("rejects an archetype whose weight is not zero", () => {
     const plan: LevelPlan = { ...base, archetypes: [{ ...vigile, weight: 3 }] };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("weight"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("weight"));
   });
 
   it("rejects an archetype id namespaced on another level", () => {
     const plan: LevelPlan = { ...base, archetypes: [{ ...vigile, kind: "autre:vigile" }] };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("namespace"));
   });
 
   // Run-8: `"<id>:"` (empty name — the copy-paste-template typo) passes a bare
@@ -74,9 +83,9 @@ describe("validateLevelPlan", () => {
   // at runtime; the CI-time rule must be byte-for-byte the runtime contract.
   it("rejects an empty name after the namespace prefix (archetype AND prop)", () => {
     const badArch: LevelPlan = { ...base, archetypes: [{ ...vigile, kind: "fixture:" }] };
-    expect(validateLevelPlan(badArch)).toContainEqual(expect.stringContaining("non-empty name"));
+    expect(messagesOf(badArch)).toContainEqual(expect.stringContaining("non-empty name"));
     const badProp: LevelPlan = { ...base, props: [{ ...prop("fixture:x"), kind: "fixture:" }] };
-    expect(validateLevelPlan(badProp)).toContainEqual(expect.stringContaining("non-empty name"));
+    expect(messagesOf(badProp)).toContainEqual(expect.stringContaining("non-empty name"));
   });
 
   it("rejects a prop with an incomplete sizing triplet", () => {
@@ -84,7 +93,7 @@ describe("validateLevelPlan", () => {
       ...base,
       props: [{ kind: "fixture:kiosque", asset: "a.png", aspect: 0.6, x: 0.2 }],
     } as unknown as LevelPlan;
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("heightFrac"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("heightFrac"));
   });
 
   it("rejects a prop asset that could escape public/ (absolute path or .. segment)", () => {
@@ -95,12 +104,17 @@ describe("validateLevelPlan", () => {
       ...base,
       props: [{ ...prop("fixture:x"), asset: "/etc/evil.png" }],
     };
-    expect(validateLevelPlan(abs)).toContainEqual(expect.stringContaining("relative path"));
+    // Caught by the structural precondition (`planShapeIssues`, panel r14) BEFORE
+    // this rule's own prop-namespace check ever runs — same class of violation
+    // (a path fragment escaping public/), reported once, earlier.
+    expect(messagesOf(abs)).toContainEqual(expect.stringContaining("must stay inside public/"));
     const traversal: LevelPlan = {
       ...base,
       props: [{ ...prop("fixture:x"), asset: "assets/nearfg/../../outside.png" }],
     };
-    expect(validateLevelPlan(traversal)).toContainEqual(expect.stringContaining('".." segment'));
+    expect(messagesOf(traversal)).toContainEqual(
+      expect.stringContaining("must stay inside public/"),
+    );
     // The documented shape stays valid.
     expect(validateLevelPlan({ ...base, props: [prop("fixture:x")] })).toEqual([]);
   });
@@ -119,7 +133,7 @@ describe("validateLevelPlan", () => {
         },
       ],
     };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("namespace"));
   });
 
   it("rejects a windowWeights key namespaced on another level", () => {
@@ -129,7 +143,7 @@ describe("validateLevelPlan", () => {
       archetypes: [vigile],
       gameplay: { ...base.gameplay, windowWeights: { "autre:vigile": 50 } },
     };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("namespace"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("namespace"));
   });
 
   it("keeps the unprefixed core kinds allowed in windowWeights", () => {
@@ -147,7 +161,7 @@ describe("validateLevelPlan", () => {
       archetypes: [vigile],
       gameplay: { ...base.gameplay, windowWeights: { "fixture:vigille": 20 } },
     };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("fixture:vigille"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("fixture:vigille"));
   });
 
   it("accepts a windowWeights key backed by a declared archetype", () => {
@@ -184,7 +198,7 @@ describe("validateLevelPlan — panel run-9 hardenings", () => {
     ];
     for (const [patch, field] of cases) {
       const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, ...patch }] };
-      expect(validateLevelPlan(bad)).toContainEqual(expect.stringContaining(field));
+      expect(messagesOf(bad)).toContainEqual(expect.stringContaining(field));
     }
   });
 
@@ -201,7 +215,7 @@ describe("validateLevelPlan — panel run-9 hardenings", () => {
         archetypes: [vigile],
         gameplay: { ...base.gameplay, windowWeights: { "fixture:vigile": weight } },
       };
-      expect(validateLevelPlan(bad)).toContainEqual(
+      expect(messagesOf(bad)).toContainEqual(
         expect.stringContaining("weight must be a finite number in [0, 1000]"),
       );
     }
@@ -219,7 +233,7 @@ describe("validateLevelPlan — panel run-9 hardenings", () => {
         windowWeights: { normal: 0, riot: 0, biker: 0, "fixture:vigile": 20 },
       },
     };
-    expect(validateLevelPlan(softlock)).toContainEqual(
+    expect(messagesOf(softlock)).toContainEqual(
       expect.stringContaining("enemiesToWin can never be reached"),
     );
   });
@@ -347,12 +361,12 @@ describe("validateLevelPlan — panel run-2 hardenings", () => {
         { ...vigile, kind: "fixture:b" },
       ],
     } as LevelPlan;
-    expect(validateLevelPlan(two)).toContainEqual(expect.stringContaining("cap is 1"));
+    expect(messagesOf(two)).toContainEqual(expect.stringContaining("cap is 1"));
   });
 
   it("rejects variants above the cap (16) — preload fan-out guard, run-11", () => {
     const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, variants: 100000 }] };
-    expect(validateLevelPlan(bad)).toContainEqual(
+    expect(messagesOf(bad)).toContainEqual(
       expect.stringContaining("variants must be an integer in [1, 16]"),
     );
   });
@@ -362,7 +376,7 @@ describe("validateLevelPlan — panel run-2 hardenings", () => {
       ...base,
       archetypes: [{ ...vigile, variants: 0, hp: 0 }],
     } as LevelPlan;
-    const errors = validateLevelPlan(bad);
+    const errors = messagesOf(bad);
     expect(errors).toContainEqual(expect.stringContaining("variants"));
     expect(errors).toContainEqual(expect.stringContaining("hp"));
   });
@@ -372,16 +386,14 @@ describe("validateLevelPlan — panel run-2 hardenings", () => {
       ...base,
       props: [{ ...prop("fixture:kiosque"), x: Number.NaN }],
     } as LevelPlan;
-    expect(validateLevelPlan(bad)).toContainEqual(
-      expect.stringContaining("x missing or non-finite"),
-    );
+    expect(messagesOf(bad)).toContainEqual(expect.stringContaining("x missing or non-finite"));
   });
 });
 
 describe("validateLevelPlan — panel run-3 hardenings", () => {
   it("rejects a timer the default delivery can never fire within", () => {
     const short = { ...base, gameplay: { ...base.gameplay, timeSeconds: 15 } };
-    expect(validateLevelPlan(short)).toContainEqual(expect.stringContaining("delivery trigger"));
+    expect(messagesOf(short)).toContainEqual(expect.stringContaining("delivery trigger"));
   });
 
   // Panel run-4/run-5: firing is not completing. After the 20s trigger the vehicle
@@ -392,11 +404,11 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
   // rejected (`<=`), 34 is the first legal value.
   it("rejects a timer where the delivery fires but can never COMPLETE (bonus unearnable)", () => {
     const fires = { ...base, gameplay: { ...base.gameplay, timeSeconds: 25 } };
-    expect(validateLevelPlan(fires)).toContainEqual(
+    expect(messagesOf(fires)).toContainEqual(
       expect.stringContaining("delivery bonus can never be earned"),
     );
     const boundary = { ...base, gameplay: { ...base.gameplay, timeSeconds: 33 } };
-    expect(validateLevelPlan(boundary)).toContainEqual(
+    expect(messagesOf(boundary)).toContainEqual(
       expect.stringContaining("delivery bonus can never be earned"),
     );
     const enough = { ...base, gameplay: { ...base.gameplay, timeSeconds: 34 } };
@@ -409,7 +421,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
   it("scales the travel allowance with backdrop.aspect (wide street needs more runway)", () => {
     const wide = { ...base, backdrop: { ...base.backdrop, aspect: 10 } };
     const tooShort = { ...wide, gameplay: { ...wide.gameplay, timeSeconds: 34 } };
-    expect(validateLevelPlan(tooShort)).toContainEqual(
+    expect(messagesOf(tooShort)).toContainEqual(
       expect.stringContaining("delivery bonus can never be earned"),
     );
     const enough = { ...wide, gameplay: { ...wide.gameplay, timeSeconds: 37 } };
@@ -422,7 +434,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
   it("rejects a NaN/non-positive archetype aspect (sprite scale + WIDEST_ASPECT seed)", () => {
     for (const aspect of [Number.NaN, 0, -1]) {
       const bad = { ...base, archetypes: [{ ...vigile, aspect }] };
-      expect(validateLevelPlan(bad)).toContainEqual(
+      expect(messagesOf(bad)).toContainEqual(
         expect.stringContaining("aspect must be a finite number > 0"),
       );
     }
@@ -434,7 +446,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
   it("rejects a zero/negative prop aspect (plane width is aspect-scaled, unclamped)", () => {
     for (const aspect of [0, -0.6]) {
       const bad: LevelPlan = { ...base, props: [{ ...prop("fixture:kiosque"), aspect }] };
-      expect(validateLevelPlan(bad)).toContainEqual(
+      expect(messagesOf(bad)).toContainEqual(
         expect.stringContaining("aspect must be a finite number > 0"),
       );
     }
@@ -442,9 +454,9 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
 
   it("rejects a NaN/non-positive backdrop.aspect (it seeds the layout AND the runway math)", () => {
     const nan = { ...base, backdrop: { ...base.backdrop, aspect: Number.NaN } };
-    expect(validateLevelPlan(nan)).toContainEqual(expect.stringContaining("backdrop.aspect"));
+    expect(messagesOf(nan)).toContainEqual(expect.stringContaining("backdrop.aspect"));
     const zero = { ...base, backdrop: { ...base.backdrop, aspect: 0 } };
-    expect(validateLevelPlan(zero)).toContainEqual(expect.stringContaining("backdrop.aspect"));
+    expect(messagesOf(zero)).toContainEqual(expect.stringContaining("backdrop.aspect"));
   });
 
   it("rejects zero/non-finite timeSeconds and bad enemiesToWin/speed", () => {
@@ -452,7 +464,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
       ...base,
       gameplay: { enemiesToWin: 0, timeSeconds: 0, enemySpeedMultiplier: 0, windowWeights: {} },
     };
-    const errors = validateLevelPlan(bad);
+    const errors = messagesOf(bad);
     expect(errors).toContainEqual(expect.stringContaining("timeSeconds"));
     expect(errors).toContainEqual(expect.stringContaining("enemiesToWin"));
     expect(errors).toContainEqual(expect.stringContaining("enemySpeedMultiplier"));
@@ -463,7 +475,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
       ...base,
       props: [prop("fixture:kiosque"), { ...prop("fixture:kiosque"), aspect: 0.9, x: 0.8 }],
     };
-    expect(validateLevelPlan(twice)).toContainEqual(expect.stringContaining("disagree"));
+    expect(messagesOf(twice)).toContainEqual(expect.stringContaining("disagree"));
   });
 
   it("accepts two AGREEING placements of one kind at different anchors", () => {
@@ -495,9 +507,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
         ...base,
         calibration: { windowBand: { top: 0.5, bottom: 0.5 } },
       };
-      expect(validateLevelPlan(plan)).toContainEqual(
-        expect.stringContaining("calibration.windowBand"),
-      );
+      expect(messagesOf(plan)).toContainEqual(expect.stringContaining("calibration.windowBand"));
     });
 
     it("rejects a band bound outside [0, 1]", () => {
@@ -507,9 +517,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
         { top: Number.NaN, bottom: 0.5 },
       ]) {
         const plan: LevelPlan = { ...base, calibration: { windowBand: band } };
-        expect(validateLevelPlan(plan)).toContainEqual(
-          expect.stringContaining("calibration.windowBand"),
-        );
+        expect(messagesOf(plan)).toContainEqual(expect.stringContaining("calibration.windowBand"));
       }
     });
 
@@ -519,7 +527,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
           ...base,
           calibration: { windowBand: { top: 0.12, bottom: 0.5 }, expectedCols },
         };
-        expect(validateLevelPlan(plan)).toContainEqual(
+        expect(messagesOf(plan)).toContainEqual(
           expect.stringContaining("calibration.expectedCols"),
         );
       }
@@ -539,7 +547,7 @@ describe("validateLevelPlan — les cibles d'écriture du plan (panel #156 run 8
     ["sous-dossier", "sub/street"],
   ])("rejette un backdrop.file %s", (_label, file) => {
     const plan = { ...base, backdrop: { ...base.backdrop, file } };
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("backdrop.file"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("backdrop.file"));
   });
 
   it("accepte un backdrop.file en simple stem", () => {
@@ -552,7 +560,7 @@ describe("validateLevelPlan — les cibles d'écriture du plan (panel #156 run 8
     // "enemy_sprite" est la clé shippée : la réutiliser ferait SKIPPER la génération
     // et le level porterait à jamais le sprite d'un autre — en vert.
     const plan = { ...base, archetypes: [{ ...vigile, spriteBase: "enemy_sprite" }] } as LevelPlan;
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("enemy_fixture_"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("enemy_fixture_"));
   });
 
   it("accepte un spriteBase namespacé sur le level", () => {
@@ -587,9 +595,7 @@ describe("validateLevelPlan — un id de level à TIRETS (panel #156 run 9)", ()
       ...hyphenated,
       archetypes: [{ ...hyphenated.archetypes[0], spriteBase: "enemy_sprite" }],
     } as LevelPlan;
-    expect(validateLevelPlan(plan)).toContainEqual(
-      expect.stringContaining("enemy_porte_de_vanves_"),
-    );
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("enemy_porte_de_vanves_"));
   });
 });
 
@@ -599,9 +605,7 @@ describe("validateLevelPlan — le namespace des props (panel #156 run 12)", () 
       ...base,
       props: [{ ...prop("fixture:vol"), asset: "assets/nearfg/belliard/lampadaire.png" }],
     } as LevelPlan;
-    expect(validateLevelPlan(plan)).toContainEqual(
-      expect.stringContaining("assets/nearfg/fixture/"),
-    );
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("assets/nearfg/fixture/"));
   });
 
   it("rejette une profondeur supplémentaire que le commit du workflow ne verrait pas", () => {
@@ -609,7 +613,7 @@ describe("validateLevelPlan — le namespace des props (panel #156 run 12)", () 
       ...base,
       props: [{ ...prop("fixture:vol"), asset: "assets/nearfg/fixture/decor/kiosque.png" }],
     } as LevelPlan;
-    expect(validateLevelPlan(plan)).toContainEqual(expect.stringContaining("extra depth"));
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("extra depth"));
   });
 
   it("accepte la forme documentée", () => {
@@ -618,5 +622,423 @@ describe("validateLevelPlan — le namespace des props (panel #156 run 12)", () 
       props: [{ ...prop("fixture:kiosque"), asset: "assets/nearfg/fixture/kiosque.png" }],
     } as LevelPlan;
     expect(validateLevelPlan(plan)).toEqual([]);
+  });
+});
+
+/**
+ * The MCP `validate` contract (spec-mcp-level-editor §4.1): `validateLevelPlan` speaks the
+ * SAME structured `LevelIssue` as `validateLevel` (ADR-0074 §3), so the server composes the
+ * two without an ad-hoc wrapper. Every guard carries a stable `plan/…` code — the machine
+ * key an agent branches on — while the human `message` is unchanged from the string era.
+ *
+ * No `plan/mobile-halving` code exists on purpose: the halving keeps a row's index-0 prop,
+ * so the "emptied row" it would report is unconstructible (see the note in `levelPlan.ts`).
+ */
+describe("validateLevelPlan — LevelIssue contract (MCP §4.1)", () => {
+  const codesOf = (plan: LevelPlan): readonly string[] =>
+    validateLevelPlan(plan).map((i) => i.code);
+
+  it("reports every issue as a well-formed error-severity LevelIssue", () => {
+    const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, weight: 3 }] };
+    const issues = validateLevelPlan(bad);
+    expect(issues.length).toBeGreaterThan(0);
+    for (const issue of issues) {
+      expect(issue.severity).toBe("error");
+      expect(issue.code).toMatch(/^plan\//);
+      expect(issue.field.length).toBeGreaterThan(0);
+      expect(issue.message.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the human message byte-for-byte identical to the string era", () => {
+    const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, weight: 3 }] };
+    expect(validateLevelPlan(bad)).toContainEqual({
+      code: "plan/weight-nonzero",
+      severity: "error",
+      field: "archetypes[0].weight",
+      message: "archetype fixture:vigile: weight must be 0 (activation via windowWeights)",
+    });
+  });
+
+  it("codes the archetype guards", () => {
+    const two: LevelPlan = {
+      ...base,
+      archetypes: [
+        { ...vigile, kind: "fixture:a" },
+        { ...vigile, kind: "fixture:b" },
+      ],
+    };
+    expect(codesOf(two)).toContain("plan/archetype-cap");
+
+    const foreign: LevelPlan = { ...base, archetypes: [{ ...vigile, kind: "autre:vigile" }] };
+    expect(codesOf(foreign)).toContain("plan/namespace");
+
+    for (const patch of [
+      { variants: 0 },
+      { hp: 0 },
+      { bulletDamage: Number.NaN },
+      { hiddenDuration: 0 },
+      { visibleDuration: Number.NaN },
+      { scoreDelta: Number.NaN },
+      { livesDelta: Number.POSITIVE_INFINITY },
+      { timeDelta: Number.NaN },
+      { aspect: 0 },
+    ]) {
+      const bad: LevelPlan = { ...base, archetypes: [{ ...vigile, ...patch }] };
+      expect(codesOf(bad)).toContain("plan/archetype-bounds");
+    }
+  });
+
+  it("codes the prop guards", () => {
+    const foreign: LevelPlan = {
+      ...base,
+      props: [{ ...prop("fixture:x"), kind: "autre:kiosque" }],
+    };
+    expect(codesOf(foreign)).toContain("plan/namespace");
+
+    const incomplete = {
+      ...base,
+      props: [{ kind: "fixture:kiosque", asset: "a.png", aspect: 0.6, x: 0.2 }],
+    } as unknown as LevelPlan;
+    expect(codesOf(incomplete)).toContain("plan/sizing");
+    expect(validateLevelPlan(incomplete)).toContainEqual(
+      expect.objectContaining({ field: "props[0].heightFrac" }),
+    );
+
+    const flat: LevelPlan = { ...base, props: [{ ...prop("fixture:kiosque"), aspect: 0 }] };
+    expect(codesOf(flat)).toContain("plan/sizing");
+
+    const disagree: LevelPlan = {
+      ...base,
+      props: [prop("fixture:kiosque"), { ...prop("fixture:kiosque"), aspect: 0.9, x: 0.8 }],
+    };
+    expect(codesOf(disagree)).toContain("plan/prop-consistency");
+  });
+
+  it("codes the backdrop and gameplay bounds", () => {
+    const nanAspect: LevelPlan = { ...base, backdrop: { ...base.backdrop, aspect: Number.NaN } };
+    expect(validateLevelPlan(nanAspect)).toContainEqual(
+      expect.objectContaining({ code: "plan/sizing", field: "backdrop.aspect" }),
+    );
+
+    const bad: LevelPlan = {
+      ...base,
+      gameplay: { enemiesToWin: 0, timeSeconds: 0, enemySpeedMultiplier: 0, windowWeights: {} },
+    };
+    const fields = validateLevelPlan(bad)
+      .filter((i) => i.code === "plan/gameplay-bounds")
+      .map((i) => i.field);
+    expect(fields).toEqual([
+      "gameplay.timeSeconds",
+      "gameplay.enemiesToWin",
+      "gameplay.enemySpeedMultiplier",
+    ]);
+
+    // The unearnable-delivery guard is a bound on the SAME field, hence the same code.
+    const short: LevelPlan = { ...base, gameplay: { ...base.gameplay, timeSeconds: 25 } };
+    expect(validateLevelPlan(short)).toContainEqual(
+      expect.objectContaining({ code: "plan/gameplay-bounds", field: "gameplay.timeSeconds" }),
+    );
+  });
+
+  it("codes the windowWeights guards", () => {
+    const withVigile = { ...base, archetypes: [vigile] };
+    const huge: LevelPlan = {
+      ...withVigile,
+      gameplay: { ...base.gameplay, windowWeights: { "fixture:vigile": 200000 } },
+    };
+    expect(validateLevelPlan(huge)).toContainEqual(
+      expect.objectContaining({
+        code: "plan/window-weights",
+        field: "gameplay.windowWeights.fixture:vigile",
+      }),
+    );
+
+    const foreign: LevelPlan = {
+      ...withVigile,
+      gameplay: { ...base.gameplay, windowWeights: { "autre:vigile": 50 } },
+    };
+    expect(codesOf(foreign)).toContain("plan/namespace");
+
+    const typo: LevelPlan = {
+      ...withVigile,
+      gameplay: { ...base.gameplay, windowWeights: { "fixture:vigille": 20 } },
+    };
+    expect(codesOf(typo)).toContain("plan/window-weights");
+
+    const softlock: LevelPlan = {
+      ...base,
+      archetypes: [{ ...vigile, countsAsTarget: false }],
+      gameplay: {
+        ...base.gameplay,
+        windowWeights: { normal: 0, riot: 0, biker: 0, "fixture:vigile": 20 },
+      },
+    };
+    expect(validateLevelPlan(softlock)).toContainEqual(
+      expect.objectContaining({
+        code: "plan/window-weights",
+        field: "gameplay.windowWeights",
+      }),
+    );
+  });
+});
+
+/**
+ * Structural precondition (panel stage 6, M2a). `validateLevelPlan` is the entry door of
+ * the MCP `validate`/`scaffold` tools, whose `planShape` zod schema is LOOSE BY DECISION
+ * (ADR-0081 D3: the shape of a `LevelPlan` is `src/game`'s business, not the transport's).
+ * So an agent can hand this function literally anything, and the contract is absolute:
+ * **it returns issues, it never throws.** Before the fix, `{ id: "safe" }` blew up with
+ * `TypeError: entries is not iterable` and broke the `{issues}` / `{ok,path,issues}`
+ * contract of both tools.
+ */
+describe("validateLevelPlan — structural precondition (plan/malformed)", () => {
+  /** The one thing the whole section exists to prove. */
+  const junk: readonly unknown[] = [
+    undefined,
+    null,
+    42,
+    "a plan",
+    [],
+    {},
+    { id: "safe" },
+    { ...base, archetypes: undefined },
+    { ...base, gameplay: null },
+    { ...base, gameplay: { ...base.gameplay, windowWeights: undefined } },
+    { ...base, archetypes: [null] },
+    { ...base, props: [{ asset: "a.png" }] },
+    // fiction is an object but its strings are missing/blank: nothing downstream
+    // checks them, so this used to pass as "sound" and render "undefined" on the
+    // menu card once aggregated (CI panel MAJEUR).
+    { ...base, fiction: {} },
+    { ...base, fiction: { ...base.fiction, name: "" } },
+    { ...base, fiction: { ...base.fiction, district: undefined } },
+    { ...base, fiction: { ...base.fiction, year: 1998 } },
+    // Same class, the two other required strings a consumer dereferences: without
+    // them the asset scan builds "undefined.png" and path.join throws.
+    { ...base, backdrop: { ...base.backdrop, file: undefined } },
+    { ...base, backdrop: { ...base.backdrop, file: "  " } },
+    { ...base, props: [{ ...base.props[0], asset: undefined }] },
+    { ...base, props: [{ ...base.props[0], asset: "" }] },
+    // Path fragments that escape public/: without the traversal guard, inspect's
+    // asset scan becomes an arbitrary-path file-existence oracle (panel r4 security).
+    { ...base, backdrop: { ...base.backdrop, file: "../../../../etc/passwd" } },
+    { ...base, props: [{ ...base.props[0], asset: "../../../etc/hostname" }] },
+    { ...base, props: [{ ...base.props[0], asset: "assets\\win\\path.png" }] },
+    // Absolu, sans aucun ".." — la forme que la garde ratait (panel r7).
+    { ...base, backdrop: { ...base.backdrop, file: "/etc/passwd" } },
+    { ...base, props: [{ ...base.props[0], asset: "/etc/hostname" }] },
+    // `id` feeds the identical assets/levels/<id>/... path shape — same traversal
+    // discipline as backdrop.file/props[].asset, closed after being the only
+    // remaining gap between validate and scaffold's SAFE_ID (panel r14).
+    { ...base, id: "../escape" },
+    { ...base, id: "/absolute" },
+    { ...base, id: "win\\path" },
+    // Mauvais TYPE sur une clé connue : passait jusqu'au round 10, se scaffoldait,
+    // et faisait rougir tsc sur un module déclaré propre.
+    { ...base, archetypes: [{ ...vigile, shoots: "yes" }] },
+    { ...base, archetypes: [{ ...vigile, countsAsTarget: 1 }] },
+    { ...base, archetypes: [{ ...vigile, tint: 42 }] },
+    { ...base, archetypes: [{ ...vigile, artRetired: "oui" }] },
+    { ...base, backdrop: { ...base.backdrop, mode: "troncon-sequence" } },
+    { ...base, props: [{ ...base.props[0], row: "middle" }] },
+    // `calibration` : le quatrième objet imbriqué, et le seul OPTIONNEL — donc le seul
+    // que la boucle fiction/backdrop/gameplay ne gardait pas quand SP2 l'a introduit.
+    // La règle de calibration déstructure `calibration.windowBand` : sans garde, chacune
+    // de ces cinq formes faisait throw un TypeError brut au lieu de rendre une issue.
+    { ...base, calibration: null },
+    { ...base, calibration: 42 },
+    { ...base, calibration: "haut/bas" },
+    { ...base, calibration: {} },
+    { ...base, calibration: { windowBand: null } },
+    { ...base, calibration: { expectedCols: 3 } },
+    // Clés en trop dans les deux littéraux imbriqués de SP2 : même classe que le round 8
+    // (verdict sain → module scaffoldé → `tsc` rouge sur la propriété excédentaire), sur
+    // les deux objets que la table KNOWN_KEYS ne couvrait pas.
+    {
+      ...base,
+      calibration: { windowBand: { top: 0.1, bottom: 0.5 }, note: "à régler plus tard" },
+    },
+    { ...base, calibration: { windowBand: { top: 0.1, bottom: 0.5, left: 0.2 } } },
+  ];
+
+  it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {
+    for (const input of junk) {
+      const plan = input as LevelPlan;
+      expect(() => validateLevelPlan(plan)).not.toThrow();
+      const issues = validateLevelPlan(plan);
+      expect(issues.length).toBeGreaterThan(0);
+      for (const issue of issues) {
+        expect(issue.code).toBe("plan/malformed");
+        expect(issue.severity).toBe("error");
+        expect(issue.field.length).toBeGreaterThan(0);
+        expect(issue.message.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("names every load-bearing field a bare { id } plan is missing", () => {
+    const issues = validateLevelPlan({ id: "safe" } as unknown as LevelPlan);
+    expect(issues.map((i) => i.field)).toEqual([
+      "archetypes",
+      "props",
+      "fiction",
+      "backdrop",
+      "gameplay",
+    ]);
+  });
+
+  it("reports a non-object plan as a single issue on the plan itself", () => {
+    for (const notAnObject of [undefined, null, 42, "a plan", []]) {
+      const issues = validateLevelPlan(notAnObject as unknown as LevelPlan);
+      expect(issues).toEqual([
+        {
+          code: "plan/malformed",
+          severity: "error",
+          field: "plan",
+          message: "plan: expected an object describing a level plan",
+        },
+      ]);
+    }
+  });
+
+  it("states the expected SHAPE, field by field", () => {
+    const cases: readonly (readonly [Partial<Record<string, unknown>>, string, string])[] = [
+      [{ id: 7 }, "id", "non-empty string"],
+      [{ id: "" }, "id", "non-empty string"],
+      [{ archetypes: {} }, "archetypes", "an array"],
+      [{ props: "none" }, "props", "an array"],
+      [{ fiction: [] }, "fiction", "an object"],
+      [{ backdrop: null }, "backdrop", "an object"],
+      [{ gameplay: 3 }, "gameplay", "an object"],
+    ];
+    for (const [patch, field, expected] of cases) {
+      const issues = validateLevelPlan({ ...base, ...patch });
+      expect(issues).toContainEqual(
+        expect.objectContaining({
+          code: "plan/malformed",
+          field,
+          message: expect.stringContaining(expected) as unknown as string,
+        }),
+      );
+    }
+  });
+
+  // `Object.entries(windowWeights)` is the exact line that threw on `{ id: "safe" }`.
+  it("guards gameplay.windowWeights, the field whose absence produced the original throw", () => {
+    for (const windowWeights of [undefined, null, 12, [] as unknown]) {
+      const plan = {
+        ...base,
+        gameplay: { ...base.gameplay, windowWeights },
+      } as unknown as LevelPlan;
+      expect(validateLevelPlan(plan)).toContainEqual(
+        expect.objectContaining({ code: "plan/malformed", field: "gameplay.windowWeights" }),
+      );
+    }
+  });
+
+  // Per-ELEMENT shape: the guards call `a.kind.startsWith(ns)` on every entry, so a null
+  // entry or a kind-less object throws just as surely as a missing array.
+  it("guards the shape of each archetype and prop entry (kind is read as a string)", () => {
+    const badArch = { ...base, archetypes: [{ ...vigile }, null] } as unknown as LevelPlan;
+    expect(validateLevelPlan(badArch)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "archetypes[1]" }),
+    );
+
+    const noKind = { ...base, archetypes: [{ ...vigile, kind: 3 }] } as unknown as LevelPlan;
+    expect(validateLevelPlan(noKind)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "archetypes[0]" }),
+    );
+
+    const badProp = {
+      ...base,
+      props: [prop("fixture:a"), { asset: "a.png" }],
+    } as unknown as LevelPlan;
+    expect(validateLevelPlan(badProp)).toContainEqual(
+      expect.objectContaining({ code: "plan/malformed", field: "props[1]" }),
+    );
+  });
+
+  // The precondition SHORT-CIRCUITS: the downstream guards are the very code that throws
+  // on a malformed plan, so they must not run at all — not "run and be tolerated".
+  it("returns early: no downstream guard issue is mixed into a malformed verdict", () => {
+    const malformedAndUnsound = {
+      ...base,
+      archetypes: [{ ...vigile, weight: 3, kind: "autre:vigile" }],
+      gameplay: { ...base.gameplay, timeSeconds: 1, windowWeights: undefined },
+    } as unknown as LevelPlan;
+    const codes = new Set(validateLevelPlan(malformedAndUnsound).map((i) => i.code));
+    expect([...codes]).toEqual(["plan/malformed"]);
+  });
+
+  it("leaves sound and merely-unsound plans exactly as they were (non-regression)", () => {
+    expect(validateLevelPlan(base)).toStrictEqual([]);
+    expect(validateLevelPlan({ ...base, archetypes: [vigile] })).toStrictEqual([]);
+    // A well-FORMED plan that breaks a rule still gets that rule's own code, not malformed.
+    const unsound: LevelPlan = { ...base, archetypes: [{ ...vigile, weight: 3 }] };
+    expect(validateLevelPlan(unsound).map((i) => i.code)).toEqual(["plan/weight-nonzero"]);
+  });
+});
+
+/**
+ * n4 (panel stage 6). `spriteBase` is the PREFIX the MCP `inspect` tool matches sprite
+ * files on: an empty one makes `startsWith("")` claim every png of `public/assets/` as
+ * this archetype's. That is a rule about the plan, so it belongs here and not in the
+ * scanner. Code: `plan/archetype-bounds`, the existing "this archetype field's value is
+ * outside what the runtime accepts" key (it already carries nine fields) — a tenth code
+ * would widen the machine-key contract without giving an agent a new branch to take.
+ */
+describe("validateLevelPlan — spriteBase guard (n4)", () => {
+  it("rejects an empty or non-string spriteBase, naming the field", () => {
+    for (const spriteBase of ["", "   ", undefined, 7]) {
+      const bad = { ...base, archetypes: [{ ...vigile, spriteBase }] } as unknown as LevelPlan;
+      expect(validateLevelPlan(bad)).toContainEqual({
+        code: "plan/archetype-bounds",
+        severity: "error",
+        field: "archetypes[0].spriteBase",
+        message:
+          "archetype fixture:vigile: spriteBase must be a non-empty string (it is the sprite filename prefix)",
+      });
+    }
+  });
+
+  it("accepts the fixture's own spriteBase", () => {
+    expect(validateLevelPlan({ ...base, archetypes: [vigile] })).toStrictEqual([]);
+  });
+});
+
+/**
+ * `validateCatalogue` is the SINGLE source of the id-uniqueness rule (ADR-0081 D6,
+ * sign-off condition C2): the same invariant that used to live as a bare `throw` in
+ * `generated/index.ts`'s module body, now expressed as `LevelIssue`s so the MCP
+ * `validate`/`scaffold` tools can REPORT a collision instead of dying on it. The
+ * bootstrap wrapper (`registerGeneratedLevels`) is the only surface that still throws.
+ */
+describe("validateCatalogue (id uniqueness, MCP §4.1)", () => {
+  const other: LevelPlan = { ...base, id: "other" };
+
+  it("accepts a catalogue of distinct ids", () => {
+    expect(validateCatalogue([base, other])).toEqual([]);
+    expect(validateCatalogue([])).toEqual([]);
+  });
+
+  it("reports a duplicate id as one plan/duplicate-id issue naming the id", () => {
+    const issues = validateCatalogue([base, other, base]);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toEqual({
+      code: "plan/duplicate-id",
+      severity: "error",
+      field: "plans[2].id",
+      // The split-brain sentence of ADR-0075 §6, kept verbatim: LEVEL_ART is
+      // last-wins while ALL_LEVELS.find is first-wins.
+      message: 'generated level "fixture" is declared twice — ids must be unique',
+    });
+  });
+
+  it("reports one issue per extra copy, not one per colliding pair", () => {
+    expect(validateCatalogue([base, base, base]).map((i) => i.field)).toEqual([
+      "plans[1].id",
+      "plans[2].id",
+    ]);
   });
 });

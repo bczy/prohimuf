@@ -136,6 +136,7 @@ the old one `Superseded by ADR-XXXX`.
 | [0078](./0078-sp2-paid-generation-ci-surface.md) | La surface CI de génération SP2 : dispatch privilégié, exécution dynamique de plan, et comptabilité du cap payé | Proposed |
 | [0079](./0079-portrait-robot-interstitial-scene-shell.md) | Portrait-robot as an interstitial DOM phase: where the scene lives, and how its verdict reaches the next level | Proposed |
 | [0080](./0080-portrait-robot-face-data-model.md) | Portrait-robot face data model: one atomic gabarit, sliced PNGs, a distance matrix, and `validatePortrait` | Proposed |
-| [0081](./0081-portrait-robot-input-and-presentation-layer.md) | Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules | Proposed |
+| [0081](./0081-mcp-level-editor-server.md) | Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur | Proposed |
+| [0082](./0082-portrait-robot-input-and-presentation-layer.md) | Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules | Proposed |
 
 <!-- ADR-INDEX:END -->

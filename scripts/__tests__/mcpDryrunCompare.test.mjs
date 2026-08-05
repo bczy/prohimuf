@@ -1,0 +1,175 @@
+import { describe, expect, it } from "vitest";
+
+import { compareDryrunReport } from "../mcp-level-editor/core.mjs";
+
+/**
+ * Fast, browser-free coverage of the §6 acceptance criterion's comparison
+ * logic — runs on every default `yarn vitest run scripts` pass. The actual
+ * headless-Chromium `dryrun("fixture")` run is a separate, heavier acceptance
+ * script (`scripts/mcp-level-editor/dryrun-fixture.mjs`, documented there and
+ * run by qa-lead at VERIFY — same precedent as scripts/e2e-*.mjs, which also
+ * do not run under vitest).
+ */
+
+const committed = {
+  url: "http://localhost:5174/prohimuf/?preview=level&level=fixture",
+  pageErrors: [],
+  tempsFirstRead: 57,
+  tempsSecondRead: 54,
+  timerTicking: true,
+  hudSnippet: "SCORE 0000 NIVEAU Fixture VAGUE 1 TEMPS 48s VIES ♥ ♥ ÉNERGIE ⚡100 ARME A ∞",
+};
+
+/** A fresh, structurally-equivalent report — different port, different volatile values. */
+const freshMatching = {
+  url: "http://localhost:5173/prohimuf/?preview=level&level=fixture",
+  pageErrors: [],
+  tempsFirstRead: 60,
+  tempsSecondRead: 57,
+  timerTicking: true,
+  hudSnippet: "SCORE 0000 NIVEAU Fixture VAGUE 1 TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100 ARME A ∞",
+};
+
+describe("compareDryrunReport", () => {
+  it("accepts a fresh report differing only on the volatile fields (port, timer, hud digits)", () => {
+    expect(compareDryrunReport(freshMatching, committed)).toEqual({ ok: true, mismatches: [] });
+  });
+
+  it("accepts the committed report against itself", () => {
+    expect(compareDryrunReport(committed, committed)).toEqual({ ok: true, mismatches: [] });
+  });
+
+  it("rejects a non-empty pageErrors (deterministic field, exact match required)", () => {
+    const actual = { ...freshMatching, pageErrors: ["TypeError: boom"] };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("pageErrors:"))).toBe(true);
+  });
+
+  it("rejects timerTicking: false (deterministic behavioural claim, exact match required)", () => {
+    const actual = {
+      ...freshMatching,
+      timerTicking: false,
+      tempsFirstRead: 50,
+      tempsSecondRead: 50,
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("timerTicking:"))).toBe(true);
+  });
+
+  it("rejects a report whose own timerTicking disagrees with its own temps readings", () => {
+    const actual = {
+      ...freshMatching,
+      timerTicking: true,
+      tempsFirstRead: 40,
+      tempsSecondRead: 50,
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.includes("disagrees with the actual report's own"))).toBe(true);
+  });
+
+  it("accepts any localhost port in url — only the preview-seam query is pinned", () => {
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:41999/prohimuf/?preview=level&level=fixture",
+    };
+    expect(compareDryrunReport(actual, committed).ok).toBe(true);
+  });
+
+  it("rejects a url pointing at the wrong level id", () => {
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:5173/prohimuf/?preview=level&level=other",
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("url:"))).toBe(true);
+  });
+
+  it("rejects a hudSnippet missing one of the expected labels", () => {
+    const actual = { ...freshMatching, hudSnippet: "SCORE 0000 NIVEAU Fixture VAGUE 1 VIES ♥ ♥" };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
+  });
+
+  it("rejects a hudSnippet for the wrong level name", () => {
+    const actual = {
+      ...freshMatching,
+      hudSnippet: freshMatching.hudSnippet.replace("Fixture", "Belliard"),
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.includes('expected the level name "Fixture"'))).toBe(true);
+  });
+
+  it("reads the level name from the evidence, so a second level reuses this comparator (m5, review #159)", () => {
+    const rename = (r, name) => ({ ...r, hudSnippet: r.hudSnippet.replace("Fixture", name) });
+    const sp2Expected = rename(committed, "Belliard");
+    expect(compareDryrunReport(rename(freshMatching, "Belliard"), sp2Expected).ok).toBe(true);
+    // …and it stays strict on that other level: the fixture's own name now fails.
+    expect(compareDryrunReport(freshMatching, sp2Expected).ok).toBe(false);
+  });
+
+  it("rejects timerTicking: false on a report missing tempsFirstRead/tempsSecondRead, instead of silently agreeing (n2)", () => {
+    const actual = {
+      ...freshMatching,
+      timerTicking: false,
+      tempsFirstRead: undefined,
+      tempsSecondRead: undefined,
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, { ...committed, timerTicking: false });
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("tempsFirstRead/tempsSecondRead:"))).toBe(true);
+  });
+
+  it("rejects a hudSnippet whose labels are present but out of order (n3)", () => {
+    const actual = {
+      ...freshMatching,
+      hudSnippet: "NIVEAU Fixture SCORE 0000 VAGUE 1 TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100 ARME A ∞",
+    };
+    const { ok, mismatches } = compareDryrunReport(actual, committed);
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
+  });
+
+  it("still sees the real labels when the level NAME contains a label word (CI panel MAJEUR)", () => {
+    // "Armentières" contains "ARME": an unmasked indexOf would pin the ARME label
+    // to its position inside the name, right after NIVEAU, so a scrambled HUD for
+    // that level would slip through the ordering check.
+    const named = (r, hud) => ({ ...r, hudSnippet: hud });
+    const sane =
+      "SCORE 0000 NIVEAU Armentières VAGUE 1 TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100 ARME A ∞";
+    const scrambled =
+      "SCORE 0000 NIVEAU Armentières VAGUE 1 ARME A ∞ TEMPS 57s VIES ♥ ♥ ♥ ÉNERGIE ⚡100";
+    expect(compareDryrunReport(named(freshMatching, sane), named(committed, sane)).ok).toBe(true);
+    const { ok, mismatches } = compareDryrunReport(
+      named(freshMatching, scrambled),
+      named(committed, sane),
+    );
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("hudSnippet labels:"))).toBe(true);
+  });
+
+  it("derives the url pattern from { base, levelId } instead of hardcoding /prohimuf/ and level=fixture (m5)", () => {
+    const actual = {
+      ...freshMatching,
+      url: "http://localhost:5173/other-base/?preview=level&level=second-level",
+    };
+    const expected = { ...committed, url: actual.url };
+    expect(
+      compareDryrunReport(actual, expected, { base: "/other-base/", levelId: "second-level" }).ok,
+    ).toBe(true);
+  });
+
+  it("still rejects the default fixture url shape when a non-default base/levelId is expected (m5)", () => {
+    const { ok, mismatches } = compareDryrunReport(freshMatching, committed, {
+      base: "/other-base/",
+      levelId: "second-level",
+    });
+    expect(ok).toBe(false);
+    expect(mismatches.some((m) => m.startsWith("url:"))).toBe(true);
+  });
+});
