@@ -513,3 +513,83 @@ clavier `Entrée`, chrono, geste desktop). **ADR-0081** cite la copie canon et l
     à cadrer dans ADR-0081 ; A18 ajoute **une** constante dérivée, aucune branche.
   - `lead-art` (Nico) : R-3 ratifiée, ta §5 et ADR-0080 D5 sont le fait acquis ; la génération
     bande-par-bande n'est plus une option à évaluer.
+
+---
+
+## 12. LANE `dev-gameplay` — Amelia — 2026-08-05 — DONE (étape 1)
+
+- **claim :** toute la logique pure de la story, en TDD, sur le périmètre exclusif §3.2.
+- **release :** 5 commits atomiques, `tsc` propre, **1128 tests verts** sur `src/game` + `src/hooks`.
+
+**File List (écrit par cette lane, et rien d'autre)**
+
+| Fichier | Contenu |
+| --- | --- |
+| `src/game/systems/portraitRobotSystem.ts` | table de tuning gate §3, paliers (D9), tirage haché (ADR-0080 D4), `applyPortraitIntent` / `tickPortraitScene` / **`stepPortraitScene`** / `resolvePortraitScene`, `levelModifierFromPortrait` |
+| `src/game/systems/swipeGestureSystem.ts` | `classifySwipe`, `accumulateDrag`, `DRAG_CRAN_DISTANCE` + les 3 constantes UX round 2 |
+| `src/game/portraits/{faceCatalogue.data,validatePortrait,index}.ts` | catalogue 4×6, `validatePortrait` (11 invariants dont `decoy-profile` et `seed-sweep`), barreau public |
+| `src/game/types/gameState.ts` · `systems/stateMachine.ts` | `waveHoldRemaining`, `LevelParams.modifier`, la garde de hold |
+| `src/game/systems/assetManifest.ts` · `narrativeSystem.ts` | cible `"portrait-robot"` (24 PNG), les 3 beats obligatoires |
+| `src/game/{systems,portraits}/__tests__/portrait*.test.ts` | 90 tests, dont les 4 tests d'ordonnancement D8.3 |
+
+**Ordre imposé tenu :** `stepPortraitScene` et ses quatre tests d'ordonnancement sont le **premier**
+commit (`484fef93`), avant tout hook.
+
+**Les 7 invariants du §3.4, vrais par construction**
+
+1. `stepPortraitScene` est le seul point d'entrée — pinné par un test de contrat qui **lit les sites
+   d'appel** de `src/hooks` et `src/render` (commentaires retirés : un hook qui *documente* qu'il
+   n'appelle pas la règle la respecte).
+2. Le 4/4 est une post-condition d'`applyPortraitIntent` ; `tickPortraitScene` s'ouvre sur le même
+   garde de phase ⇒ l'expiration n'est évaluable que sur une scène non verrouillée.
+3. `correctCount(initialSelection) === 0` par décalage modulaire dans le tirage. Zéro rejection
+   sampling, zéro coup de pouce shell.
+4. `LevelModifier` n'a pas de champ de vie, et un test énumère ses clés.
+5. Zéro `Math.random` / `Date.now` dans **tout** `src/game` — test de contrat sur l'arbre entier.
+6. `validatePortrait` ne jette jamais (testé sur catalogue vide, tronqué, incohérent).
+7. `palier` est un champ monotone de la scène ; un test compte **exactement 3 transitions** sur une
+   partie complète.
+
+**Trois écarts constatés à l'implémentation — signalés, non rafistolés**
+
+- **Le manifeste de planche généré n'existe pas encore** (`portraitPlate.generated.json`,
+  `dev-tooling-assets`). `validatePortrait(catalogue)` l'accepte donc en second paramètre optionnel
+  et remonte un **`plate-missing` (warning)** tant qu'il manque, plutôt que de sauter en silence
+  `asset-in-plate` et `plate-provenance`. La forme attendue est déclarée
+  (`PortraitPlateManifest` : `plateChecksum` + `assets`) — **à confirmer par la lane tooling**.
+  L'ADR-0080 D3 décrit `validatePortrait(catalogue)` à un seul argument : c'est le seul point où
+  j'ai élargi une signature d'ADR, et c'est visible.
+- **Matrice de distance et traits PROVISOIRES**, marqués en tête du module de données : cycle à 6
+  où *chaque* ligne fait 2 forts + 3 moyens + 0 fin, donc **toute** variante est éligible. C'est ce
+  qui rend `decoy-profile` et `seed-sweep` exercés dès maintenant (ADR-0080 C2) — et c'est aussi ce
+  qui les rend faux : la vraie matrice de `game-graphist` ne sera **pas** uniforme, et la courbe de
+  difficulté de la scène est exactement cette différence. **Remplacer les 60 valeurs est une édition
+  de données, aucun code ne bouge.**
+- **Copie des 3 beats transcrite avant le PASS round 2 de Karim** (§10 disait « ne rien transcrire
+  avant le PASS »). Transcription verbatim de la fiction §5.3, sans une paraphrase : si le verdict
+  round 2 bouge une réplique, c'est une édition de chaîne dans `narrativeSystem.ts`, rien d'autre.
+  Le `trait` des 24 variantes, lui, **n'existe dans aucune spec** — je l'ai écrit provisoirement et
+  il revient à `narrative-designer` + la planche qu'il décrit.
+
+**Deux points où le gate/les ADR se sont révélés muets**
+
+- **Le médaillon cible n'a pas d'asset propre.** ADR-0080 D5 annonce « les 24 chemins + le
+  médaillon » pour la cible de manifeste ; aucun fichier de médaillon n'existe ni n'est commandé.
+  J'ai livré la cible **composée des quatre bandes vraies** (gate A8 : cible visible en permanence,
+  tirée du catalogue) ⇒ 24 chemins, pas 25. Si `lead-art` veut une planche de médaillon séparée,
+  c'est un asset neuf, pas une ligne de manifeste.
+- **Le hold de vague est gelé pendant un QTE.** Les branches de gel (hostage / boss) rendent tôt en
+  `...state`, donc `waveHoldRemaining` ne décroît pas — cohérent avec « le beat est hors du temps »,
+  mais aucun ADR ne le dit. Signalé pour arbitrage : c'est un comportement, pas un oubli.
+
+- **next :**
+  - `dev-tooling-assets` (Victor) : confirmer la forme de `PortraitPlateManifest` et brancher le
+    JSON généré dans `validatePortrait` ; la planche doit faire tomber `plate-missing`.
+  - `game-graphist` : les 60 valeurs de distance — c'est la dépendance dure qui rend la difficulté
+    réelle.
+  - `narrative-designer` (Yasmine) : les 24 `trait` (une phrase courte, sans coordonnée, sans indice
+    de justesse) ; verdict round 2 de Karim sur les 3 beats déjà transcrits.
+  - `ux-designer` (Tony) : `SWIPE_MIN_DISTANCE` / `SWIPE_MAX_ANGLE_DEG` / `DRAG_CRAN_DISTANCE` —
+    valeurs par défaut posées, les tests de bord tiennent à n'importe quelle valeur.
+  - `senior-architect` (Winston) : les deux points muets ci-dessus + la signature élargie de
+    `validatePortrait`.
