@@ -126,7 +126,8 @@ régler le ressenti d'une animation d'écran relève d'`ux-designer`, pas d'un l
 bloquant** : l'entrée rejouait à chaque aller-retour de rubrique et masquait ~2,5 s durant
 les noms de niveaux et les cadenas déjà lus. Corrigé — la cascade joue au plus **une fois
 par session** (`sessionStorage`, clé distincte du drapeau à vie du nudge), validé par deux
-mutations. Les quatre autres points sont validés en l'état (focus au montage avec
+mutations. Les AUTRES points sont validés en l'état — sans les compter, ce décompte ayant déjà
+vieilli une fois quand la décision §7 (rack short-landscape) est arrivée : focus au montage avec
 `preventScroll`, mouvement réduit en coupure franche, portée du clip d'overflow).
 
 Décisions consignées dans

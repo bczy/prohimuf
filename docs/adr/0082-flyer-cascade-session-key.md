@@ -64,6 +64,15 @@ résister tant que les portées diffèrent (session vs vie, décoratif vs régla
 Un joueur peut effacer ou pré-remplir la clé depuis la console pour supprimer l'animation :
 sans conséquence, elle ne garde aucun contenu et ne débloque rien.
 
+**« Une fois par session » veut dire une fois par ONGLET**, et c'est accepté plutôt que subi :
+`sessionStorage` est cloisonné par onglet, donc ouvrir le jeu dans un second onglet rejoue la
+cascade. Le comportement est le bon — un nouvel onglet est une nouvelle arrivée sur l'écran,
+et c'est le moment de première impression que §1 protège, pas un quota. `localStorage`
+partagerait la clé entre onglets mais survivrait aussi à la fermeture du navigateur, ce qui
+donnerait l'inverse du défaut : un joueur qui ne reverrait plus jamais l'entrée. Entre les
+deux portées disponibles, celle-ci se trompe du bon côté. Relevé par le panel, noté ici pour
+qu'un lecteur ultérieur ne le redécouvre pas comme une surprise.
+
 **Périmètre.** Aucune frontière de module n'est franchie : la clé vit dans
 `src/render/ui/menu/FlyerWall.tsx`, côté render, et n'est pas un champ de `Prefs`
 (elle enregistre qu'une _visite_ a eu lieu, pas un réglage — même raisonnement qu'ADR-0054 §1

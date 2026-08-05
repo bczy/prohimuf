@@ -224,7 +224,7 @@ function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
 
 /**
  * The crew's emblem, if that level has one. Renders NOTHING for a level absent from
- * `MOTIF_BY_LEVEL_ID` — decoration must never turn a new level into a broken slot, so
+ * `FLYER_EMBLEMS` — decoration must never turn a new level into a broken slot, so
  * this is an early return rather than a fallback motif.
  *
  * The tilt is derived from the level id, not `Math.random`: the flyer wall's whole
