@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 import type { LevelConfig } from "@game/levels/levels";
 import { loadScores } from "@game/systems/highScoreSystem";
 import {
@@ -121,6 +121,84 @@ interface LevelFlyerProps {
   registerRef: (el: HTMLDivElement | null) => void;
 }
 
+/**
+ * How far the flyer sits off the wall, in px, at rest and when pulled (focused/hovered).
+ *
+ * Exported because they are not a local styling detail: the short-landscape rack clips
+ * (`overflow-y: hidden`) and a transform pushes content past the BORDER edge, so the rack's
+ * top padding has to be sized against `pulled` or the lifted sheet gets cropped. That
+ * relation used to live only in a comment and broke silently when the pull grew from -4 to
+ * -22; `FlyerWall.test.ts` now pins it.
+ */
+export const FLYER_LIFT_PX = { rest: -8, pulled: -22 } as const;
+
+/**
+ * Headroom the rack must keep ON TOP of the pull, for the `scale(1.02)` growth of the
+ * pulled sheet — ~1% of the flyer height, measured at ~3px on a 390px-tall rack.
+ *
+ * 10 rather than the bare 3–4 the arithmetic needs: a first pass at 4 was measured back at
+ * exactly 1px of real clearance, which is not a margin, it is a coincidence. A taller
+ * flyer, a fractional device pixel ratio or one more line of copy would eat it. 10 puts the
+ * measured clearance at 7px.
+ */
+export const FLYER_PULL_SCALE_HEADROOM_PX = 10;
+
+/**
+ * Slack kept under a stacked flyer ON TOP of the pulled shadow's reach, in px. Distinct
+ * from the rack's scale headroom above: this one is about two SHEETS not touching, the
+ * other about one sheet not crossing a clipping edge.
+ */
+export const FLYER_STACK_SHADOW_PAD_PX = 4;
+
+/**
+ * The pulled cast shadow, as numbers rather than a frozen string, so nothing can read a
+ * stale reach: `PULLED_SHADOW_CSS` below is BUILT from these, and `FLYER_STACK_GAP_PX`
+ * is DERIVED from them. Offsets/blur in px; the rgba is the alpha of ink-black (§2bis
+ * allows this occlusion shadow only as a darkener — no glow, no re-declared hex).
+ */
+export const FLYER_PULLED_SHADOW = { dx: 6, dy: 26, blur: 7, alpha: 0.6 } as const;
+
+const PULLED_SHADOW_CSS = `drop-shadow(${String(FLYER_PULLED_SHADOW.dx)}px ${String(
+  FLYER_PULLED_SHADOW.dy,
+)}px ${String(FLYER_PULLED_SHADOW.blur)}px rgba(20, 18, 16, ${String(FLYER_PULLED_SHADOW.alpha)}))`;
+
+/**
+ * Vertical gap under each flyer in the PORTRAIT COLUMN, in px — the layout where `.wall`
+ * has no `gap`, so this margin is the only thing between two stacked sheets.
+ *
+ * Derived, not hand-tuned, for exactly the reason round 1 of the review panel caught on the
+ * sibling rack: a literal that was "obviously enough" stopped being enough the moment the
+ * pull grew, and nothing said so. The binding constraint is the pulled sheet's cast shadow
+ * reaching down into the gap (`dy + blur`) rather than the distance the sheet itself
+ * travels up (`|pulled| - |rest|`) — the shadow outruns the lift, so the shadow sets this
+ * number — plus `FLYER_STACK_SHADOW_PAD_PX` of slack. No figures quoted here on purpose:
+ * the previous copy of this line still said 18px for a travel that became 14 when `rest`
+ * moved from -4 to -8, which is the drift this whole PR was about.
+ */
+export const FLYER_STACK_GAP_PX =
+  FLYER_PULLED_SHADOW.dy + FLYER_PULLED_SHADOW.blur + FLYER_STACK_SHADOW_PAD_PX;
+
+/**
+ * How far the pulled sheet's cast shadow reaches BELOW where that sheet sits at rest, in
+ * px. The shadow's own reach (offset + blur) minus the distance the sheet travels upward
+ * when pulled — the sheet moving up takes its shadow with it. This is what a clipping
+ * container below the flyer has to clear; `FlyerWall`'s `RACK_PAD_BOTTOM_PX` is tested
+ * against it so a deeper shadow can't silently get cropped by the rack's `overflow: hidden`.
+ */
+export const PULLED_SHADOW_DROP_PX =
+  FLYER_PULLED_SHADOW.dy +
+  FLYER_PULLED_SHADOW.blur -
+  (Math.abs(FLYER_LIFT_PX.pulled) - Math.abs(FLYER_LIFT_PX.rest));
+
+/**
+ * Vertical gap under each flyer in the DESKTOP WRAP-GRID, in px. That grid brings its own
+ * `gap: var(--space-xxl)` (24px), so the margin only has to top it up — and it is kept at
+ * the pre-existing 22px on purpose: 24 + 22 = 46px is what shipped on `main`, comfortably
+ * over FLYER_STACK_GAP_PX, so the deeper pull costs desktop players no layout change at
+ * all. `FlyerWall.test.ts` pins the 24 + 22 ≥ 37 arithmetic.
+ */
+export const FLYER_GRID_MARGIN_PX = 22;
+
 // Dog-ear (§2bis.2 pt4) is TWO elements: an unclipped wrapper carrying the fold's drop-shadow
 // and a clipped triangle child — `filter` + `clip-path` on one element never paints the shadow
 // (filter runs before clip). Wrapper picks the corner position, fold picks the triangle. CSS-
@@ -177,20 +255,29 @@ export function LevelFlyer({
 
   // Object-level transform/pull/opacity live on the (unclipped) `.flyer`; background, the
   // hand-cut clip, the crease angle and the locked greyscale live on the clipped `.paper`.
-  const flyerDynamic: React.CSSProperties = {
+  // Annotated, not cast: the intersection keeps every standard property type-checked
+  // (a `transfrom` typo still fails) while allowing the `--flyer-*` custom properties.
+  const flyerDynamic: CSSProperties & Record<`--${string}`, string> = {
     cursor: unlocked ? "pointer" : "default",
-    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? -4 : 0)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
-    transition: `transform ${String(MOTION.flyerPull)}ms ease-out`,
+    transform: `translateX(${String(translateX)}px) translateY(${String(pulled ? FLYER_LIFT_PX.pulled : FLYER_LIFT_PX.rest)}px) rotate(${String(rotation)}deg) scale(${String(pulled ? 1.02 : 1)})`,
+    transition: `transform ${String(MOTION.flyerPull)}ms ease-out, filter ${String(MOTION.flyerPull)}ms ease-out`,
+    // Pulled = lifted further off the wall, so the cast shadow drops lower and softens.
+    // Rest value lives in the CSS module's `.flyer` fallback.
+    ...(pulled ? { "--flyer-shadow": PULLED_SHADOW_CSS } : {}),
+    // Portrait-column stacking gap, derived from the pulled shadow above so the two can
+    // never drift apart. The desktop wrap-grid overrides it in the CSS module (it has its
+    // own gap); the rack is a row, so a bottom margin does not separate anything there.
+    "--flyer-stack-gap": `${String(FLYER_STACK_GAP_PX)}px`,
     animation: shaking ? `mufLockedShake ${String(MOTION.lockedShakeMs)}ms ease-in-out` : undefined,
     opacity: unlocked ? 1 : 0.85,
   };
-  const paperDynamic = {
+  const paperDynamic: CSSProperties & Record<`--${string}`, string> = {
     background: stock,
     "--flyer-clip": edge.clipPath,
     "--flyer-crease-angle": `${String(creaseAngle)}deg`,
     // Folded into the CSS drop-shadow filter; only set when locked (grayscale over the paper).
     ...(unlocked ? {} : { "--flyer-lock-filter": "grayscale(1)" }),
-  } as React.CSSProperties;
+  };
 
   return (
     <MarkerCircle active={focused} ink={INK.black}>

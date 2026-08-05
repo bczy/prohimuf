@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, createElement } from "react";
 
 // Opt into React's act() environment so the client-render mount tests (auto-focus,
@@ -8,13 +10,23 @@ import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DEFAULT_PREFS } from "@game/systems/prefsSystem";
 import type { Prefs } from "@game/systems/prefsSystem";
-import { SHORT_LANDSCAPE_MEDIA } from "@render/ui/print";
+import { SHORT_LANDSCAPE_MEDIA, SPACE } from "@render/ui/print";
 import {
   FlyerWall,
   buildPressionChoices,
   hasSeenTutorialNudge,
   markTutorialNudgeSeen,
+  RACK_PAD_TOP_PX,
+  RACK_PAD_BOTTOM_PX,
 } from "../FlyerWall";
+import {
+  FLYER_LIFT_PX,
+  FLYER_PULL_SCALE_HEADROOM_PX,
+  FLYER_PULLED_SHADOW,
+  FLYER_STACK_GAP_PX,
+  FLYER_GRID_MARGIN_PX,
+  PULLED_SHADOW_DROP_PX,
+} from "../LevelFlyer";
 
 const SEEN_KEY = "muf_seen_tutorial_nudge";
 
@@ -75,6 +87,97 @@ describe("FlyerWall PRESSION header — short-landscape gating (Option A)", () =
   it("hides the header under the SHORT_LANDSCAPE_MEDIA query", () => {
     expect(html).toContain(SHORT_LANDSCAPE_MEDIA);
     expect(html).toMatch(/\.muf-pression-header\s*\{\s*display:\s*none/);
+  });
+});
+
+/**
+ * The short-landscape rack is the only flyer layout that CLIPS (`overflow-y: hidden`), and
+ * a transform pushes content past the border edge, so the rack's top padding is the whole
+ * headroom budget for the pulled flyer. That relation lived only in a comment and broke
+ * silently when the pull grew from -4px to -22px: the auto-focused tutorial flyer — pulled
+ * at FIRST PAINT, not on hover (see the auto-focus test below) — got its top edge cropped
+ * on a phone in landscape. These pin the arithmetic so the next pull change fails here.
+ */
+describe("FlyerWall short-landscape rack — pulled-flyer headroom", () => {
+  it("keeps the rack's top padding above the pull plus its scale growth", () => {
+    expect(RACK_PAD_TOP_PX).toBeGreaterThanOrEqual(
+      Math.abs(FLYER_LIFT_PX.pulled) + FLYER_PULL_SCALE_HEADROOM_PX,
+    );
+  });
+
+  it("emits that padding into the rack media block, not just into a constant", () => {
+    const html = markup(DEFAULT_PREFS);
+    const rack = html.slice(html.indexOf(SHORT_LANDSCAPE_MEDIA));
+    expect(rack).toContain(`padding-top: ${String(RACK_PAD_TOP_PX)}px`);
+    expect(rack).toContain(`padding-bottom: ${String(RACK_PAD_BOTTOM_PX)}px`);
+  });
+
+  it("lifts the flyer further when pulled than at rest, both off the wall", () => {
+    expect(FLYER_LIFT_PX.pulled).toBeLessThan(FLYER_LIFT_PX.rest);
+    expect(FLYER_LIFT_PX.rest).toBeLessThan(0);
+  });
+});
+
+/**
+ * The stacking gap between two flyers, per layout. Same failure shape as the rack above and
+ * caught by the same panel: a literal that is "obviously enough" until the pull or the
+ * shadow grows. The portrait column is the tight one (`.wall` has no `gap`, so the flyer's
+ * own margin is the ONLY separation); the desktop wrap-grid brings 24px of its own.
+ */
+describe("LevelFlyer stacking gap — clears the pulled shadow in every layout", () => {
+  it("derives the portrait gap from the pulled shadow it has to clear", () => {
+    expect(FLYER_STACK_GAP_PX).toBeGreaterThanOrEqual(
+      FLYER_PULLED_SHADOW.dy + FLYER_PULLED_SHADOW.blur,
+    );
+  });
+
+  it("emits that gap as the --flyer-stack-gap the CSS reads, on every flyer", () => {
+    const html = markup(DEFAULT_PREFS);
+    const emitted = (html.match(/--flyer-stack-gap:/g) ?? []).length;
+    expect(emitted).toBe((html.match(/role="button"/g) ?? []).length);
+    expect(html).toContain(`--flyer-stack-gap:${String(FLYER_STACK_GAP_PX)}px`);
+  });
+
+  it("keeps the desktop wrap-grid's own gap + margin above the same requirement", () => {
+    expect(SPACE.xxl + FLYER_GRID_MARGIN_PX).toBeGreaterThanOrEqual(FLYER_STACK_GAP_PX);
+  });
+
+  /**
+   * The desktop margin is authored in CSS, not emitted from TS — a media query can't be
+   * driven by the inline custom property the portrait gap uses (inline always wins). So the
+   * constant above would only be checking itself unless something reads the stylesheet.
+   * This asserts on the actual CSS text: constant and literal cannot drift apart in silence.
+   */
+  it("ties FLYER_GRID_MARGIN_PX to the literal actually written in the CSS module", () => {
+    // Resolved from the repo root, not from `import.meta.url`: under the happy-dom
+    // environment that URL is an http one and `readFileSync` rejects it.
+    const css = readFileSync(
+      resolve(process.cwd(), "src/render/ui/menu/LevelFlyer.module.css"),
+      "utf8",
+    );
+    const grid = /@media \(min-width: 640px\) and \(min-height: 481px\) \{[^}]*\{([^}]*)\}/.exec(
+      css,
+    );
+    expect(grid, "desktop wrap-grid media block not found in LevelFlyer.module.css").not.toBeNull();
+    expect(grid?.[1]).toContain(`margin-bottom: ${String(FLYER_GRID_MARGIN_PX)}px`);
+  });
+});
+
+/**
+ * The rack clips on BOTH edges. The top was pinned in round 1; this pins the bottom against
+ * what actually reaches it: the pulled shadow's downward drop AND the scale growth, since
+ * `transform-origin: center` grows the box downward as much as upward.
+ *
+ * Like its sibling above, this assertion is quiet while the constant stays derived — it
+ * exists to fire the day someone replaces the derivation with a literal that only clears
+ * today's numbers. Probed with exactly that mutation, not with a change to an input the
+ * constant is computed from (which it would follow, proving nothing).
+ */
+describe("FlyerWall short-landscape rack — pulled shadow does not get cropped below", () => {
+  it("keeps the rack's bottom padding above the shadow drop plus the scale growth", () => {
+    expect(RACK_PAD_BOTTOM_PX).toBeGreaterThanOrEqual(
+      PULLED_SHADOW_DROP_PX + FLYER_PULL_SCALE_HEADROOM_PX,
+    );
   });
 });
 
