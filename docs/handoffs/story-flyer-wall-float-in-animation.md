@@ -242,7 +242,14 @@ Le correctif est juste sur le fond : le job `prepare` ne pinnait aucune ref, don
 valait `main`, et `git diff origin/main...HEAD` était légitimement vide. Deux garde-fous
 sont ajoutés pour qu'un harness cassé ne puisse plus publier un PASS creux.
 
-**Ce qui reste dû** : `.github/workflows/**` appartient à `dev-tooling-assets`, et **aucune
+**Ce qui reste dû, et c'est plus qu'une signature.** Ce fichier a exigé **son propre ADR
+trois fois** — ADR-0063 (panel en CI), ADR-0067 (fallback de fournisseur), ADR-0070
+(transport d'auth). Dans ce dépôt, changer le comportement du gate de merge est une décision
+documentée par construction, et celle-ci ne l'est pas. L'ADR manque davantage que la
+signature : une signature atteste qu'un lane a relu, un ADR dit POURQUOI le gate se comporte
+désormais autrement, pour tous ceux qui en hériteront sans avoir vu cette PR.
+
+Par ailleurs `.github/workflows/**` appartient à `dev-tooling-assets`, et **aucune
 signature de lane ne le couvre**. Les deux signatures de cette story portent sur
 `src/render/ui/**` et `scripts/`. L'ancienne dérogation de palier — retirée depuis — nommait
 d'ailleurs l'arrivée d'un troisième lane parmi ses conditions de nullité.
@@ -255,8 +262,13 @@ sa propre PR.
 
 ## Débordements de périmètre, déclarés
 
-Deux changements de ce diff sortent de « une animation d'entrée », et méritent d'être
-nommés plutôt que découverts en relecture :
+**TROIS** changements de ce diff sortent de « une animation d'entrée ». Le troisième — la
+modification du workflow du panel — a sa propre section plus haut parce qu'il appelle
+davantage qu'une déclaration : signature de lane manquante ET **ADR manquant**, ce fichier
+ayant exigé le sien trois fois (ADR-0063, 0067, 0070). Il est rappelé ici pour que cette
+liste, qui existe justement pour qu'on n'ait pas à chercher ailleurs, ne l'omette pas.
+
+Les deux autres, nommés plutôt que découverts en relecture :
 
 1. **`errText()` appliqué à TOUS les `catch` de `screenshot-preview.mjs`**, pas seulement
    aux deux du correctif de settle — dont la boucle de capture par niveau et le handler
