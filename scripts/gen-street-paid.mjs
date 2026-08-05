@@ -13,6 +13,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { genPaidUrl, fetchImage } from "./lib/pollinations.mjs";
 
 const OUT = path.resolve(process.cwd(), "street-experiments");
 const PROMPT =
@@ -32,24 +33,22 @@ const SEEDS = (process.env.SEEDS || "7111,7112,7113").split(",");
 const W = Number(process.env.W || 5120); // 5:1 wide street
 const H = Number(process.env.H || 1024);
 
-const url = (model, seed) =>
-  `https://gen.pollinations.ai/image/${encodeURIComponent(PROMPT)}` +
-  `?model=${encodeURIComponent(model)}&width=${W}&height=${H}&seed=${seed}&nologo=true&quality=high&private=true`;
+const url = (model, seed) => genPaidUrl({ prompt: PROMPT, seed, width: W, height: H, model });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function token() {
-  const t = (process.env.POLLINATIONS_TOKEN || "").trim();
-  if (!t) throw new Error("POLLINATIONS_TOKEN is not set");
-  return t;
+function checkToken() {
+  if (!(process.env.POLLINATIONS_TOKEN || "").trim()) {
+    throw new Error("POLLINATIONS_TOKEN is not set");
+  }
 }
 
-async function fetchImg(u, bearer, tries = 3) {
+// Bearer auth is attached automatically by lib/pollinations.mjs's authHeaders() for any
+// *.pollinations.ai host — no local header-building here anymore.
+async function fetchImg(u, tries = 3) {
   for (let i = 0; i < tries; i++) {
     try {
-      const r = await fetch(u, { headers: { Authorization: `Bearer ${bearer}` } });
-      if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 160)}`);
-      const buf = Buffer.from(await r.arrayBuffer());
+      const buf = await fetchImage(u);
       if (buf.length < 2000)
         throw new Error(`too small (${buf.length}B): ${buf.toString().slice(0, 160)}`);
       return buf;
@@ -61,13 +60,13 @@ async function fetchImg(u, bearer, tries = 3) {
 }
 
 async function main() {
-  const bearer = token();
+  checkToken();
   fs.mkdirSync(OUT, { recursive: true });
   console.log(`Generating street ${W}x${H} → ${OUT}\n`);
   for (const m of MODELS) {
     for (const seed of SEEDS) {
       try {
-        const buf = await fetchImg(url(m, seed), bearer, 3);
+        const buf = await fetchImg(url(m, seed), 3);
         fs.writeFileSync(path.join(OUT, `street-${m}-${seed}.png`), buf);
         console.log(`  [ok]   ${m} seed ${seed} (${(buf.length / 1024) | 0} KB)`);
       } catch (e) {

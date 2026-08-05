@@ -130,6 +130,25 @@ export function kontextUrl(prompt, seed, width, height, imageUrl) {
   return modelUrl({ prompt, seed, width, height, model: "kontext", imageUrl });
 }
 
+// Paid render farm (gen.pollinations.ai, NOT image.pollinations.ai): the anonymous
+// image.pollinations.ai tier silently halves any request above ~1024px on a side and
+// refuses `kontext` outright ("kontext model is only available on enter.pollinations.ai" —
+// see gen-street-paid.mjs's original discovery). gen.pollinations.ai is the SAME host
+// family authHeaders() above already Bearer-authenticates, honours exact width/height, and
+// (per the live APIDOCS.md `image` param table) accepts a reference `image=` URL for
+// kontext/gptimage/seedream/klein/nanobanana — so img2img conditioning and full resolution
+// are NOT a trade-off on this endpoint, unlike the free one. CI-only: requires
+// POLLINATIONS_TOKEN (no anonymous tier here, same as gen3dUrl above).
+export function genPaidUrl({ prompt, seed, width, height, model, imageUrl }) {
+  let u =
+    `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}` +
+    `?model=${encodeURIComponent(model)}&width=${width}&height=${height}&nologo=true` +
+    `&quality=high&private=true`;
+  if (seed !== undefined) u += `&seed=${seed}`;
+  if (imageUrl) u += `&image=${encodeURIComponent(imageUrl)}`;
+  return u;
+}
+
 // THE single "hero ⇒ image=" decision point (ADR-0043 §2): every caller that
 // may or may not have a reference image routes through here instead of
 // choosing between fluxUrl/kontextUrl itself, so a generator and

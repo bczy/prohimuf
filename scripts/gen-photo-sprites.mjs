@@ -18,13 +18,23 @@
  * GENERATION METHOD (ruling §2 / gate §4):
  *   - `plate` — KONTEXT img2img, conditioned on a COMMITTED crop of the shipped
  *     assets/levels/belliard/street-wide.png around x_norm 0.30-0.45 (continuity is a gate
- *     criterion, not a style note). Pinned seed, enhance=false, nologo, private. `flux` on
- *     the same prompt string is the pre-authorised fallback if kontext returns mushy/over-
- *     locked art. CAP: 2 batches FOR THE PLATE (kontext, then the flux fallback — exactly
- *     what `generate()` below does, no further re-roll) — past that, options go to Bertrand,
- *     not more rolls (gate §4 C4; the cap is scoped to the plate's own generation method,
- *     not to the 8-asset set as a whole). The crop itself is produced ONCE by `--make-crop`
- *     and committed (reproducible, never regenerated per-run).
+ *     criterion, not a style note), via the PAID gen.pollinations.ai render farm (same
+ *     Bearer POLLINATIONS_TOKEN, `genPaidUrl` from lib/pollinations.mjs — the exact method
+ *     gen-street-paid.mjs uses to produce the shipped street-wide.png, not duplicated here).
+ *     The anonymous image.pollinations.ai tier refuses `kontext` outright ("kontext model is
+ *     only available on enter.pollinations.ai") AND silently halves any request above
+ *     ~1024px — gen.pollinations.ai does neither: it accepts `kontext` for a real Bearer
+ *     account and honours width/height exactly, so img2img conditioning and the decided
+ *     2048x1152 resolution are NOT a trade-off here (confirmed against the live
+ *     pollinations/APIDOCS.md `image` param table: kontext/gptimage/seedream/klein/nanobanana
+ *     all accept a reference `image=` URL on this endpoint). Pinned seed, private, high
+ *     quality. Plain `flux` on the paid endpoint (still exact-res, still no anonymous
+ *     downscale, but WITHOUT the street-seam conditioning) is the pre-authorised fallback if
+ *     kontext errors or returns mushy/over-locked art. CAP: 2 batches FOR THE PLATE (kontext,
+ *     then the flux fallback — exactly what `generate()` below does, no further re-roll) —
+ *     past that, options go to Bertrand, not more rolls (gate §4 C4; the cap is scoped to the
+ *     plate's own generation method, not to the 8-asset set as a whole). The crop itself is
+ *     produced ONCE by `--make-crop` and committed (reproducible, never regenerated per-run).
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *
@@ -47,7 +57,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { fluxUrl, kontextUrl, fetchWithRetry } from "./lib/pollinations.mjs";
+import { fluxUrl, genPaidUrl, fetchWithRetry } from "./lib/pollinations.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
 
@@ -147,27 +157,52 @@ async function makeCrop() {
   );
 }
 
-// ── Generation (flux, or kontext for the plate) ──────────────────────────────
+// The plate's model on the PAID gen.pollinations.ai farm. `kontext` is the gate-mandated
+// choice (img2img street-continuity conditioning, ruling §2). Overridable for a one-off A/B
+// against another paid image-editing model that also accepts `image=` (e.g. `nanobanana-2`,
+// `seedream-pro`) WITHOUT touching this file — a Bertrand-sanctioned re-roll, not a default.
+const PLATE_MODEL = process.env.PLATE_MODEL || "kontext";
+
+// ── Generation (flux, or kontext img2img for the plate via the PAID farm) ────
 async function generate(a) {
   if (a.sourceCrop) {
     const imageUrl = rawUrl(a.sourceCrop);
-    console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — KONTEXT img2img, ref=${imageUrl}`);
+    console.log(
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_MODEL} img2img (paid), ref=${imageUrl}`,
+    );
     try {
-      return await fetchWithRetry(kontextUrl(a.prompt, a.seed, a.width, a.height, imageUrl));
+      return await fetchWithRetry(
+        genPaidUrl({
+          prompt: a.prompt,
+          seed: a.seed,
+          width: a.width,
+          height: a.height,
+          model: PLATE_MODEL,
+          imageUrl,
+        }),
+      );
     } catch (e) {
-      // Gate §4 C4 — pre-authorised fallback: flux on the SAME prompt/seed string.
-      // Loud on purpose (::warning:: GH Actions annotation, not just a console.log
-      // line): the fallback drops the street-continuity conditioning that IS the
-      // plate's ELIMINATORY gate criterion, so a silent fallback previously shipped
-      // a decor with no seam and nobody noticed until review.
+      // Gate §4 C4 — pre-authorised fallback: plain `flux` on the SAME paid endpoint (still
+      // exact-res, still no anonymous-tier downscale). Loud on purpose (::warning:: GH Actions
+      // annotation, not just a console.log line): the fallback drops the street-continuity
+      // conditioning that IS the plate's ELIMINATORY gate criterion, so a silent fallback
+      // previously shipped a decor with no seam and nobody noticed until review.
       const msg =
-        `${a.key}: kontext img2img FAILED (${e.message}) — falling back to flux ` +
-        `text-to-image. This is the pre-authorised fallback (gate §4 C4) but the ` +
-        `shipped asset then has NO street-continuity conditioning` +
+        `${a.key}: ${PLATE_MODEL} img2img (paid) FAILED (${e.message}) — falling back to ` +
+        `flux text-to-image on the same paid endpoint. This is the pre-authorised fallback ` +
+        `(gate §4 C4) but the shipped asset then has NO street-continuity conditioning` +
         (a.key === "plate" ? " (an ELIMINATORY criterion for the plate)" : "") +
         ` — verify the result against the gate before merge.`;
       console.warn(`::warning::${msg}`);
-      return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
+      return fetchWithRetry(
+        genPaidUrl({
+          prompt: a.prompt,
+          seed: a.seed,
+          width: a.width,
+          height: a.height,
+          model: "flux",
+        }),
+      );
     }
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
