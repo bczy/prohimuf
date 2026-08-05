@@ -852,6 +852,14 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, calibration: {} },
     { ...base, calibration: { windowBand: null } },
     { ...base, calibration: { expectedCols: 3 } },
+    // Clés en trop dans les deux littéraux imbriqués de SP2 : même classe que le round 8
+    // (verdict sain → module scaffoldé → `tsc` rouge sur la propriété excédentaire), sur
+    // les deux objets que la table KNOWN_KEYS ne couvrait pas.
+    {
+      ...base,
+      calibration: { windowBand: { top: 0.1, bottom: 0.5 }, note: "à régler plus tard" },
+    },
+    { ...base, calibration: { windowBand: { top: 0.1, bottom: 0.5, left: 0.2 } } },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

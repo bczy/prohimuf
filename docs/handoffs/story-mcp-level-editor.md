@@ -1300,3 +1300,34 @@ peuvent produire un défaut à la fusion, qu'aucun des deux panels n'avait de ra
 Le panel joué APRÈS le merge de `main` est le seul qui pouvait l'attraper — et il l'a
 attrapé. C'est un argument pour rejouer le gate après un merge de base non trivial, pas
 pour boucler indéfiniment avant.
+
+### Round 18 — `c727c267` : **FAIL** (1 BLOQUANT, 2 MAJEUR, 2 MINEUR)
+
+- **[BLOQUANT] la bannière PR s'arrêtait au round 15** — CADUC à la lecture : le round a lu
+  `panel-input/pr.json` capturé au démarrage du run, avant que la mise à jour du corps de la
+  PR (rounds 16 et 17, note SP2/#156) n'atterrisse quelques minutes plus tard. Course entre
+  le push et l'édition du body, pas un retard de trace. **Enseignement opérationnel** : éditer
+  le corps de la PR AVANT de pousser, sinon le round en cours juge la version périmée — c'est
+  ce que j'avais fait au round 16, et pas ici.
+- **[MAJEUR] `loadPlan.mjs` imprimait `[object Object]`** — juste, et c'est la deuxième
+  régression de merge de la série : `validateLevelPlan` rend des `LevelIssue` depuis cette
+  story, `scripts/lib/loadPlan.mjs` (SP2) joignait toujours le tableau brut. Le garde-fou qui
+  existe pour dire CE QUI cloche avant qu'un appel payant ne soit dépensé n'affichait plus
+  rien d'utile. `.map((i) => i.message)` ; le test existant ne mordait pas (son regex matchait
+  le préfixe intact), il exige désormais le message de l'issue ET l'absence de
+  `[object Object]`.
+- **[MAJEUR] `KNOWN_KEYS` ne couvrait ni `calibration` ni `calibration.windowBand`** — juste,
+  même classe que le round 8 : `scaffold` écrit un littéral typé, une clé en trop fait rougir
+  `tsc` sur un module déclaré propre. Les deux objets imbriqués de SP2 étaient les seuls hors
+  table. Ajoutés, 2 formes au tableau `junk`, mutation vérifiée sur les deux correctifs.
+- **[MINEUR] la bannière plaide l'arrêt du review** — deuxième signalement (déjà au round 16).
+  Reproche recevable sur la forme ; le reviewer précise à chaque fois juger le diff
+  indépendamment, ce qui est le comportement voulu. Le récit reste au shard, la bannière est
+  raccourcie à un état factuel.
+- **[MINEUR] devDependencies** — septième passage, sans action, l'ADR D2 fait foi.
+
+**Bilan des trois derniers rounds : les quatre MAJEUR post-merge sont TOUS des régressions de
+fusion** (`plan.calibration` non gardé, `KNOWN_KEYS` incomplet, `loadPlan` désaligné) — aucune
+ne vivait dans l'une des deux branches prise seule. C'est la valeur démontrée du panel rejoué
+après un merge de base non trivial, et la contrepartie de la non-convergence documentée plus
+haut : découvrir, oui ; servir de critère d'arrêt, non.

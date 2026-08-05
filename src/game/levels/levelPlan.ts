@@ -266,6 +266,10 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       "artRetired",
     ],
     prop: ["kind", "asset", "aspect", "heightFrac", "footPadFrac", "x", "row"],
+    // Les deux littéraux imbriqués que SP2 ajoute au module scaffoldé : `tsc` leur
+    // applique le même contrôle de propriété en trop qu'aux six autres.
+    calibration: ["windowBand", "expectedCols"],
+    windowBand: ["top", "bottom"],
   } as const;
   const reportExtraKeys = (value: unknown, allowed: readonly string[], at: string): void => {
     if (!isRecord(value)) return;
@@ -294,6 +298,12 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
     (p.props as readonly unknown[]).forEach((prop, i) => {
       reportExtraKeys(prop, KNOWN_KEYS.prop, `props[${String(i)}]`);
     });
+  }
+  // `reportExtraKeys` ignore un non-objet, donc pas besoin de re-garder la forme ici :
+  // `calibration` absent ou mal formé est déjà traité plus haut.
+  reportExtraKeys(p.calibration, KNOWN_KEYS.calibration, "calibration");
+  if (isRecord(p.calibration)) {
+    reportExtraKeys(p.calibration.windowBand, KNOWN_KEYS.windowBand, "calibration.windowBand");
   }
   // Les TYPES des champs qu'aucune borne ne regarde. Le round 3 affirmait « fermer la
   // classe » (verdict sain → module scaffoldé → `tsc` rouge) ; c'était surestimé : il
