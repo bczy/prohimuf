@@ -11,3 +11,4 @@ run 7: fix resize-to-target (kontext JPEG 1024x1024 -> stretch PNG 2048x1152), r
 run 8: plate seule — deux temps: flux angle plongeant (texte seul, sans conditionnement)
   PUIS kontext img2img sur ce rendu (data uri, pas de crop frontal en reference) — le
   conditionnement sur l'elevation frontale ecrasait le texte dormer, cf. gen-photo-sprites.mjs
+run 8b: touch to satisfy paths filter (empty commit above changed no path)
