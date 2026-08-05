@@ -32,7 +32,10 @@ const soundPlan = (id = "mcptest") => ({
       timeDelta: 0,
       countsAsTarget: true,
       weight: 0,
-      spriteBase: `enemy_${id}_vigile`,
+      // spriteBase is a flat filename stem: no hyphen allowed, so a hyphenated
+      // id (like "already-in" below) must be normalized the same way
+      // validateLevelPlan does (panel #156 run 9).
+      spriteBase: `enemy_${id.replace(/-/g, "_")}_vigile`,
       variants: 1,
       tint: "#ffffff",
       aspect: 1,

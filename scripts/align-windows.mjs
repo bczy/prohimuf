@@ -68,7 +68,11 @@ import {
   sleep,
 } from "./e2e-lib.mjs";
 import { misaligned, ALIGN_TOL } from "./lib/alignment.mjs";
+import { bootNavigation } from "./lib/bootNavigation.mjs";
 import { coverStrips, coverDefects } from "./lib/coverage.mjs";
+import { loadPlan } from "./lib/loadPlan.mjs";
+import { levelCfgFromPlan } from "./lib/planCalibration.mjs";
+import { resolveBackdropFile } from "./lib/planPaths.mjs";
 
 const ROOT = process.cwd();
 const PREVIEW_URL = process.env.PREVIEW_URL ?? "http://127.0.0.1:4173/prohimuf/";
@@ -78,6 +82,12 @@ const ZONES_JSON = path.resolve(ROOT, "src/game/levels/windowZones.generated.jso
 // "troncon-sequence") resolves that level's OWN tronçon PNG instead — level ids
 // never contain "/", so the two never collide.
 const facadeFile = (id) => {
+  // A GENERATED level (T4) has no facade.png of its own — its single-wide
+  // backdrop (phase (a)) IS the file the detection loop reads. main() injects
+  // this override into LEVEL_CFG[id] alongside the plan-derived cfg, the same
+  // way align-troncon.mjs injects a whole cfg entry per namespaced id below.
+  const override = LEVEL_CFG[id]?.facadeFilePath;
+  if (override) return override;
   const slash = id.indexOf("/");
   if (slash < 0) return path.resolve(ROOT, "public/assets/levels", id, "facade.png");
   const level = id.slice(0, slash);
@@ -984,11 +994,18 @@ function makeWarmDensity(det) {
 
 // ---- Browser plumbing ---------------------------------------------------------
 
-async function enterLevel(page, levelName) {
-  await page.goto(PREVIEW_URL, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
-  await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });
-  await page.getByText(levelName, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
-  await dismissNarrative(page);
+async function enterLevel(page, level) {
+  // Path choice lives in bootNavigation (pure, unit-tested): a shipped level
+  // goes title → menu wall → flyer click; a generated level is NOT on the menu
+  // wall (ADR-0075 §6) and boots ONLY through the ?preview=level&level=<id>
+  // seam, landing directly in PLAYING (no menu, no narrative card).
+  const nav = bootNavigation(level, PREVIEW_URL);
+  await page.goto(nav.url, { waitUntil: "networkidle", timeout: NAV_TIMEOUT });
+  if (nav.path === "menu") {
+    await enterMenuFromTitle(page, { timeout: RENDER_TIMEOUT });
+    await page.getByText(level.name, { exact: true }).first().click({ timeout: RENDER_TIMEOUT });
+    await dismissNarrative(page);
+  }
   await page.locator("canvas").first().waitFor({ timeout: RENDER_TIMEOUT });
   await page.waitForFunction(
     () =>
@@ -1023,7 +1040,7 @@ async function checkLevel(page, level, band) {
   const warmDensity = makeWarmDensity(det);
   const committed = readAllZones()[level.id];
   if (!Array.isArray(committed)) throw new Error(`windowZones.generated.json has no ${level.id}[]`);
-  await enterLevel(page, level.name);
+  await enterLevel(page, level);
   await applyAndRead(page, committed);
   await sleep(300);
   const slots = await readSlots(page);
@@ -1055,7 +1072,7 @@ async function fixLevel(page, level, band) {
       `row centres ${det.rowCenters.map((c) => c.toFixed(3)).join(", ")}`,
   );
 
-  await enterLevel(page, level.name);
+  await enterLevel(page, level);
 
   // Calibrate the h→(size,y,size-x) map from a first probe render.
   const probeH = det.cfg.probeH;
@@ -1155,19 +1172,41 @@ async function main() {
   const mode = args.includes("--check") ? "check" : "fix";
   const requested = args.filter((a) => !a.startsWith("--"));
 
-  const { manifest, levels } = loadLevelManifest(ROOT);
+  const { manifest, levels: shippedLevels } = loadLevelManifest(ROOT);
   const bandOf = (id) => {
     const l = manifest.levels.find((x) => x.id === id);
     const g = l.windowGrid ?? manifest.windowGrid;
     return [g.top, g.bottom];
   };
-  const targetIds = requested.length > 0 ? requested : levels.map((l) => l.id);
+  const targetIds = requested.length > 0 ? requested : shippedLevels.map((l) => l.id);
+
+  // T4 (spec-level-harness-sp2 §2.3): an id absent from the shipped manifest
+  // is a GENERATED level — resolve its LevelPlan and inject a calibration-
+  // derived cfg into LEVEL_CFG, never a hand-written entry. This NEVER writes
+  // back to levelArt.json (spec §3's "single source" contract for a generated
+  // level) and never regenerates the backdrop image — a plan with no
+  // `calibration` throws here with a clear message (levelCfgFromPlan). Unlike
+  // align-troncon.mjs's namespaced ids (sub-facades of a level the menu DOES
+  // list), a generated level is absent from the menu wall entirely, so its
+  // entry is flagged `generated: true` and enterLevel boots it through the
+  // ?preview=level seam instead of a menu click (see lib/bootNavigation.mjs).
+  const levels = [...shippedLevels];
+  for (const id of targetIds) {
+    if (shippedLevels.find((l) => l.id === id)) continue; // shipped path, unchanged
+    if (LEVEL_CFG[id]) continue; // already injected earlier in this same run
+    const plan = await loadPlan(id);
+    LEVEL_CFG[id] = {
+      ...levelCfgFromPlan(plan),
+      facadeFilePath: resolveBackdropFile(plan),
+    };
+    levels.push({ id: plan.id, name: plan.fiction.name, generated: true });
+  }
   for (const id of targetIds) {
     if (!LEVEL_CFG[id]) throw new Error(`no detection config for level "${id}"`);
     if (!levels.find((l) => l.id === id)) throw new Error(`levelArt.json has no level "${id}"`);
   }
 
-  const { levelIds } = loadLevelManifest(ROOT);
+  const levelIds = levels.map((l) => l.id);
   const browser = await chromium.launch({ args: SWIFTSHADER_ARGS });
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
   const page = await context.newPage();
@@ -1179,7 +1218,11 @@ async function main() {
   try {
     for (const id of targetIds) {
       const level = levels.find((l) => l.id === id);
-      const band = bandOf(id);
+      // A generated level's cfg.band is already set from its plan's
+      // calibration — bandOf() would throw on a manifest lookup miss, so it
+      // is only ever called for a shipped id (detectOpenings ignores `band`
+      // whenever cfg.band !== null anyway).
+      const band = shippedLevels.find((l) => l.id === id) ? bandOf(id) : null;
       const d =
         mode === "check" ? await checkLevel(page, level, band) : await fixLevel(page, level, band);
       totalDefects += d;
