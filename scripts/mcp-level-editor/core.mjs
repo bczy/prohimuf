@@ -1,0 +1,803 @@
+// The pure core of the MCP level-editor tools (ADR-0081 D3): every rule that
+// decides whether a plan is sound lives in `src/game/levels/**` already
+// (`validateLevelPlan`, `validateLevel`, `validateCatalogue`). This module only
+// COMPOSES those functions, resolves a level id to its plan, scans conventional
+// asset paths and writes the `scaffold` template — it never adds a game
+// invariant of its own. `server.mjs` is the only other consumer; a script or a
+// test may import this module directly (the "two surfaces, one core" proof,
+// spec-mcp-level-editor §6).
+//
+// TS loading: this file (and everything it imports transitively under
+// `src/game/**`) is loaded through the project's existing Vite alias
+// config (`@game/*` → `src/game/*`, see `vitest.config.ts` / `vite.config.ts`).
+// Under `vitest` that happens automatically; run standalone (the real MCP
+// server process), invoke this file through `vite-node` — see
+// `package.json`'s `mcp:level-editor` script and `.mcp.json`. Plain `node`
+// cannot parse `import type` / resolve `@game/*` and is not a supported entry
+// point for this module.
+
+import { existsSync, mkdirSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+
+import {
+  planToLevelArt,
+  planToLevelConfig,
+  validateCatalogue,
+  validateLevelPlan,
+} from "@game/levels/levelPlan";
+import { validateLevel } from "@game/levels/validateLevel";
+import { GENERATED_PLANS } from "@game/levels/generated";
+import { registerGeneratedArchetypes } from "@game/types/enemyTypes";
+import { SWIFTSHADER_ARGS, seedDeterminism, sleep } from "../e2e-lib.mjs";
+
+const CORE_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/** Repo root, derived from this file's own location — `scripts/mcp-level-editor/`. */
+export function repoRoot() {
+  return path.resolve(CORE_DIR, "..", "..");
+}
+
+function generatedDir(rootDir) {
+  return path.join(rootDir, "src", "game", "levels", "generated");
+}
+
+/**
+ * Resolve a `validate`/`inspect`/`scaffold` input to a plan. `{ plan }` is used
+ * as given (a candidate, possibly not yet in the catalogue); `{ levelId }` is
+ * looked up in the known plans. Returns either `{ plan }` or `{ issue }` — never
+ * throws, so a bad id is a reportable `LevelIssue`, not a crash.
+ */
+function resolveInputPlan(input, plans) {
+  // Both given is a legal SHAPE on the wire (the zod schema makes each optional and
+  // independent), and silently letting `plan` win would validate a cached/edited plan
+  // while the caller believes it scoped the call by id. Say so instead of choosing.
+  if (input?.plan !== undefined && input.levelId !== undefined) {
+    return {
+      issue: {
+        code: "plan/ambiguous-input",
+        severity: "error",
+        field: "",
+        message:
+          "validate accepts { plan } OR { levelId }, not both — they can disagree, and " +
+          "picking one silently would hide that. Drop whichever is not the subject.",
+      },
+    };
+  }
+  if (input?.plan !== undefined) return { plan: input.plan };
+  if (input?.levelId !== undefined) {
+    const plan = plans.find((p) => p.id === input.levelId);
+    if (plan === undefined) {
+      return {
+        issue: {
+          code: "plan/unknown-level-id",
+          severity: "error",
+          field: "levelId",
+          message:
+            `no generated level with id "${input.levelId}" (known ids: ` +
+            `${plans.map((p) => p.id).join(", ") || "none"})`,
+        },
+      };
+    }
+    return { plan };
+  }
+  return {
+    issue: {
+      code: "plan/missing-input",
+      severity: "error",
+      field: "",
+      message: "validate requires either { plan } or { levelId }",
+    },
+  };
+}
+
+/**
+ * `validate({ plan } | { levelId }) → { issues: LevelIssue[] }` (spec-mcp-level-editor
+ * §3). The catalogue join is an **upsert**, not a concatenation (panel §6.2 M1):
+ * `scaffold` writes `<id>.ts`, so a plan replaces any existing entry sharing its
+ * id, it never sits beside it. That upsert is identity for the `{ levelId }` path
+ * (the plan IS already `plans[i]`; replacing it with itself is a no-op) — so the
+ * SAME join serves both resolution paths, with no separate branch. `plan/duplicate-id`
+ * is therefore purely a catalogue-integrity invariant (two DIFFERENT aggregated
+ * plans sharing an id); overwrite protection for an existing `<id>.ts` on disk is a
+ * disk invariant owned entirely by `scaffold` (`scaffold/exists` + `overwrite`).
+ * Upsert angle case (panel §6.7 R2): the filter drops EVERY catalogue entry sharing
+ * the candidate's id, so a catalogue already corrupted on that precise id is
+ * silently repaired within this join — accepted, since the human aggregation holds
+ * one line per id and the bootstrap fail-fast + the CI test on the real
+ * GENERATED_PLANS still catch a genuine duplicate.
+ *
+ * Composes `validateLevelPlan` + `validateCatalogue` FIRST — structural/plan-level
+ * checks that never touch the global archetype registry and never throw on a
+ * malformed plan (they return `LevelIssue[]`, including `plan/malformed`). Only when
+ * that first pass is clean does `validate` register the plan's archetypes
+ * (`registerGeneratedArchetypes`, the SAME idempotent, all-`weight: 0` call
+ * `generated/index.ts` makes at import — otherwise `validateLevel`'s
+ * `unknown-enemy-kind` check would reject every `windowWeights` slot of a plan that
+ * has not been scaffolded yet) and run `validateLevel(planToLevelConfig(plan))`,
+ * which assumes a structurally sound plan and would throw on a malformed one. This
+ * ordering is also what keeps a rejected plan's archetypes OUT of the process-wide
+ * registry (panel §6.2 m3) — but say the guarantee EXACTLY (panel r13): it holds for a
+ * plan/catalogue-level rejection, which short-circuits above. A plan those two accept
+ * and `validateLevel` then rejects HAS already registered its archetypes; likewise a
+ * plan validated but never scaffolded leaves its last probed variant in the map. Both
+ * self-heal (a later validate/scaffold of the real plan re-registers, and the
+ * namespace rule keeps a foreign level from referencing the kind), and neither is
+ * reachable today — `planToLevelConfig` sets no author-controlled field `validateLevel`
+ * rejects. Written down rather than implied, so the day it changes it is not a surprise.
+ *
+ * Known angle case (documented, not coded around): a plan aggregated into
+ * `index.ts` from a file that is not named `<id>.ts` escapes `scaffold`'s own
+ * `scaffold/exists` check. Not exploitable — `scaffold` never edits `index.ts`, so
+ * nothing gets aggregated without a human gesture, and `validateCatalogue` in CI
+ * still catches the resulting id collision.
+ */
+export function validate(input, { plans = GENERATED_PLANS } = {}) {
+  const resolved = resolveInputPlan(input, plans);
+  if (resolved.issue !== undefined) return { issues: [resolved.issue] };
+  const { plan } = resolved;
+
+  // `plan/malformed` short-circuits BEFORE the upsert join: the join dereferences
+  // `plan.id`, so a malformed plan (null, non-object, bad id) must be reported by
+  // `validateLevelPlan` first — `core.validate` inherits its never-throws contract.
+  const planIssues = [...validateLevelPlan(plan)];
+  // The id's FILESYSTEM safety is checked here too, from the very same function
+  // `scaffold` uses (panel r13 MAJEUR). It is a disk rule, not a game rule, so it
+  // stays in this module rather than moving into `src/game` — but `validate` and
+  // `scaffold` must not disagree: an agent that pre-flights a candidate through
+  // `validate`, the workflow the spec advertises, was getting a clean verdict for an
+  // id like "../escape" that `scaffold` then refused.
+  const idIssue = scaffoldIdIssue(plan?.id);
+  if (idIssue !== null) planIssues.push(idIssue);
+  if (planIssues.some((i) => i.code === "plan/malformed")) return { issues: planIssues };
+
+  const catalogue = [...plans.filter((p) => p.id !== plan.id), plan];
+  const issues = [...planIssues, ...validateCatalogue(catalogue)];
+  if (issues.length > 0) return { issues };
+
+  registerGeneratedArchetypes(plan.archetypes);
+  return { issues: validateLevel(planToLevelConfig(plan)) };
+}
+
+/**
+ * Base-relative asset paths this plan needs, split into `present`/`missing` by
+ * scanning the conventional locations on disk (spec-mcp-level-editor §3): the
+ * single-wide backdrop under `public/assets/levels/<id>/`, every enemy sprite
+ * whose filename starts with the archetype's `spriteBase`, and each prop's own
+ * `asset` path. No game-layer coupling beyond reading the plan's own fields —
+ * this is the "conventions" scan, not a rule.
+ */
+function scanAssets(plan, rootDir) {
+  const publicDir = path.join(rootDir, "public");
+  const present = [];
+  const missing = [];
+
+  // Belt-and-suspenders over `validateLevelPlan`'s traversal guard on the same two
+  // fields: THIS is the code that touches the disk, so it confines the resolved path
+  // itself rather than trusting that every caller validated first. An escaping path
+  // is reported missing — `inspect` never answers for a file outside public/.
+  const publicRoot = path.resolve(publicDir);
+  const existsInsidePublic = (relPath) => {
+    const resolved = path.resolve(publicDir, relPath);
+    if (!resolved.startsWith(publicRoot + path.sep)) return false;
+    return existsSync(resolved);
+  };
+
+  const backdropRelPath = `assets/levels/${plan.id}/${plan.backdrop.file}.png`;
+  (existsInsidePublic(backdropRelPath) ? present : missing).push(backdropRelPath);
+
+  const assetsDir = path.join(publicDir, "assets");
+  const topLevelFiles = existsSync(assetsDir) ? readdirSync(assetsDir) : [];
+  for (const a of plan.archetypes) {
+    // Delimiter-aware, not a bare prefix: the convention is `<spriteBase>_<n>.png`
+    // (or the bare `<spriteBase>.png`), and a raw startsWith would let a LONGER
+    // spriteBase of another level — "enemy_porte_flic_vigile" vs "enemy_porte_flic" —
+    // be reported as this level's asset (panel r5).
+    const matches = topLevelFiles.filter(
+      (f) =>
+        f === `${a.spriteBase}.png` || (f.startsWith(`${a.spriteBase}_`) && f.endsWith(".png")),
+    );
+    if (matches.length > 0) {
+      present.push(...matches.map((f) => `assets/${f}`));
+    } else {
+      missing.push(`assets/${a.spriteBase}.png`);
+    }
+  }
+
+  for (const p of plan.props) {
+    (existsInsidePublic(p.asset) ? present : missing).push(p.asset);
+  }
+
+  return { present, missing };
+}
+
+/**
+ * `inspect({ levelId }) → { plan, config, art, assets }` (spec-mcp-level-editor §3):
+ * the plan plus its two pure projections plus the asset scan above. Throws on an
+ * unknown id — `inspect` (unlike `validate`) has nothing useful to compose from a
+ * bad id, so a thrown error is the server's to turn into an MCP error result.
+ */
+export function inspect({ levelId } = {}, { plans = GENERATED_PLANS, rootDir = repoRoot() } = {}) {
+  const plan = resolvePlanOrThrow(levelId, plans, "inspect");
+  return {
+    plan,
+    config: planToLevelConfig(plan),
+    art: planToLevelArt(plan),
+    assets: scanAssets(plan, rootDir),
+  };
+}
+
+// Filesystem-safe namespace: letters, digits, "-", "_", starting with an
+// alphanumeric — the same shape as the shipped/fixture ids and the literal
+// `<id>.ts` filename `scaffold` derives from it. Rejects a separator or ".."
+// outright (D4's "chemin dérivé de l'id, jamais fourni par l'appelant"). No
+// `i` flag: every shipped/fixture id is lowercase BY CONSTRUCTION, so an
+// uppercase id is rejected outright rather than silently accepted and later
+// mismatched against a lowercase filename convention elsewhere in the pipeline
+// (panel §6.4 n5).
+const SAFE_ID = /^[a-z0-9][a-z0-9_-]*$/;
+
+// Modules under `generated/` that are NOT level data and that scaffold must never
+// write, regardless of `overwrite` (panel r8 security). Until now the promise
+// "scaffold never touches index.ts" held only by the accident that `overwrite`
+// defaults to false: `scaffold({ plan: { id: "index" }, overwrite: true })` would
+// have replaced the whole GENERATED_PLANS barrel with a single-plan data file.
+//
+// Deliberately NOT listed: "fixture". The panel grouped it with "index", but the two
+// differ in kind — `fixture.ts` IS a level module, exactly what this tool owns, and
+// re-scaffolding a level with `overwrite: true` is the documented iteration loop the
+// M1 fix exists to make work. Blocking it would undo that fix to guard nothing.
+const RESERVED_MODULE_NAMES = new Set(["index"]);
+
+function scaffoldIdIssue(id) {
+  if (typeof id !== "string" || id.length === 0) {
+    return {
+      code: "scaffold/invalid-id",
+      severity: "error",
+      field: "plan.id",
+      message: "plan.id must be a non-empty string",
+    };
+  }
+  if (id.includes("/") || id.includes("\\") || id.includes("..")) {
+    return {
+      code: "scaffold/invalid-id",
+      severity: "error",
+      field: "plan.id",
+      message: `plan.id "${id}" must not contain "/", "\\" or ".."`,
+    };
+  }
+  if (!SAFE_ID.test(id)) {
+    return {
+      code: "scaffold/invalid-id",
+      severity: "error",
+      field: "plan.id",
+      message: `plan.id "${id}" is outside the safe namespace (lowercase letters, digits, "-", "_" only)`,
+    };
+  }
+  if (RESERVED_MODULE_NAMES.has(id)) {
+    return {
+      code: "scaffold/reserved-id",
+      severity: "error",
+      field: "plan.id",
+      message:
+        `plan.id "${id}" names a module under generated/ that scaffold does not own — ` +
+        `refused whatever "overwrite" says`,
+    };
+  }
+  return null;
+}
+
+/** Serializes a plan as the `export const plan: LevelPlan = …;` body. */
+function renderModuleSource(plan) {
+  return (
+    `import type { LevelPlan } from "@game/levels/levelPlan";\n\n` +
+    `/**\n` +
+    ` * Generated by the MCP level-editor \`scaffold\` tool — review before shipping.\n` +
+    ` * This module is data only: add "${plan.id}" to \`GENERATED_PLANS\` in\n` +
+    ` * \`src/game/levels/generated/index.ts\` to activate it (\`scaffold\` never\n` +
+    ` * edits that file itself — the aggregation line is a reviewed human gesture).\n` +
+    ` */\n` +
+    `export const plan: LevelPlan = ${JSON.stringify(plan, null, 2)};\n`
+  );
+}
+
+/** tmp-then-rename in the SAME directory, so the rename is an atomic swap. */
+function writeAtomic(targetPath, contents) {
+  const dir = path.dirname(targetPath);
+  mkdirSync(dir, { recursive: true });
+  const tmpPath = path.join(
+    dir,
+    `.${path.basename(targetPath)}.tmp-${String(process.pid)}-${String(Date.now())}`,
+  );
+  writeFileSync(tmpPath, contents, "utf8");
+  renameSync(tmpPath, targetPath);
+}
+
+/**
+ * `scaffold({ plan, overwrite? }) → { ok, path, issues, reminder? }` (spec
+ * §3/§5, ADR-0081 D4). Three hard disciplines, in order, none skipped:
+ *  1. the id must be a safe, separator-free namespace (checked before any
+ *     disk access, and before `validate` — a `/` or `..` never even reaches
+ *     the validators);
+ *  2. `validate` must be clean (no `LevelIssue`) — checked before any disk
+ *     access;
+ *  3. the write path is derived from the validated id and confined by
+ *     construction under `src/game/levels/generated/`; an existing module is
+ *     never overwritten without `overwrite: true`.
+ * Never touches `generated/index.ts`, never runs git — the response only
+ * reminds the caller of the aggregation line a human still has to add.
+ */
+export function scaffold(
+  { plan, overwrite = false } = {},
+  { plans = GENERATED_PLANS, rootDir = repoRoot() } = {},
+) {
+  const idIssue = scaffoldIdIssue(plan?.id);
+  if (idIssue !== null) return { ok: false, path: null, issues: [idIssue] };
+
+  const { issues } = validate({ plan }, { plans });
+  if (issues.length > 0) return { ok: false, path: null, issues };
+
+  const dir = generatedDir(rootDir);
+  const targetPath = path.resolve(dir, `${plan.id}.ts`);
+  // Belt-and-suspenders on top of the id charset check above: the resolved path
+  // must still land strictly under `generated/`.
+  if (!targetPath.startsWith(path.resolve(dir) + path.sep)) {
+    return {
+      ok: false,
+      path: null,
+      issues: [
+        {
+          code: "scaffold/invalid-id",
+          severity: "error",
+          field: "plan.id",
+          message: `plan.id "${plan.id}" resolves outside src/game/levels/generated/`,
+        },
+      ],
+    };
+  }
+
+  // Known TOCTOU between this check and the write, TRIAGED AND ACCEPTED by the
+  // architect (panel §6.7, n6a): a single-operator local tool has no concurrent
+  // writers, and the write itself is already tmp+rename atomic, so the worst case
+  // is a race that does not occur in the tool's usage model. Documented here so it
+  // is not re-litigated each review round.
+  if (existsSync(targetPath) && !overwrite) {
+    return {
+      ok: false,
+      path: targetPath,
+      issues: [
+        {
+          code: "scaffold/exists",
+          severity: "error",
+          field: "id",
+          message: `${plan.id}.ts already exists under generated/ — pass { overwrite: true } to replace it`,
+        },
+      ],
+    };
+  }
+
+  writeAtomic(targetPath, renderModuleSource(plan));
+
+  return {
+    ok: true,
+    path: targetPath,
+    issues: [],
+    reminder:
+      `Add "${plan.id}" to the GENERATED_PLANS aggregation in ` +
+      `src/game/levels/generated/index.ts — scaffold never edits index.ts, that ` +
+      `line stays a reviewed human gesture.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// dryrun / preview (T5) — the ONLY seam these two tools use is the generated-level
+// verification route booted straight into PLAYING, `?preview=level&level=<id>`
+// (spec-level-harness-sp1 §8, `src/render/scene/generatedHarness.ts`). Both need a
+// local vite dev server and, for `dryrun`, a local headless Chromium — no secret,
+// no network beyond localhost (ADR-0081 D5).
+
+const DEFAULT_PORT = 5173;
+// Mirrors `vite.config.ts`'s own default (`VITE_BASE`) — not re-read from that file
+// (a .ts import here would pull Vite's own build-time env handling into this
+// runtime module) but pinned to the same literal, and overridable the same way.
+const DEFAULT_BASE = process.env.VITE_BASE ?? "/prohimuf/";
+
+// A bare HTTP 200 is not enough (panel §6.4 n6b): SOMETHING could already be
+// listening on 5173, and `dryrun`/`preview` would then silently drive a
+// stranger's app and report a false verdict. Require this repo's own dev-server
+// signature — `index.html`'s `id="root"` mount point PLUS vite's own injected
+// dev-mode client script, both present on any `yarn vite` root response.
+function looksLikeThisDevServer(body) {
+  return body.includes('id="root"') && body.includes("/@vite/client");
+}
+
+async function isServerUp(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+    if (!res.ok) return false;
+    return looksLikeThisDevServer(await res.text());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Reuse a vite dev server already serving at `port`/`base` (fetches the root
+ * page), or spawn one under `rootDir` and wait for it to come up. Never kills a
+ * server it did not start itself.
+ *
+ * Returns a `release()` the caller MUST invoke when done. Concurrency is real on
+ * both ends here (panel r5 fixed the startup race, r6 this one): several
+ * `dryrun`/`preview` calls can share one dev server, so the spawner cannot simply
+ * kill it in its own `finally` — that would yank the server out from under a
+ * concurrent call still mid-navigation and report a spurious failure for a level
+ * that is sound. A per-port reference count decides instead: the server dies when
+ * the LAST holder releases it. A server we merely reused is never counted and never
+ * killed. `preview` deliberately holds its reference forever — its whole contract is
+ * that the server keeps serving after it returns — which is also what stops a
+ * concurrent `dryrun` from tearing down the URL it just handed a human.
+ */
+const spawnedServers = new Map();
+
+/** One slot per distinct target: two calls on the same port but a different base or
+ * rootDir are NOT the same server, and must never share a Map entry (panel r7). */
+function serverKey(port, base, rootDir) {
+  return `${String(port)}::${base}::${rootDir}`;
+}
+
+/** Drop one hold on that server; the last one out kills what WE spawned. */
+function releaseDevServer(key) {
+  const entry = spawnedServers.get(key);
+  if (entry === undefined) return;
+  entry.refs -= 1;
+  if (entry.refs > 0) return;
+  spawnedServers.delete(key);
+  entry.proc.kill();
+}
+
+/** A reused (not spawned by us) server: nothing to count, nothing to kill. */
+function NO_RELEASE() {
+  // Intentionally empty: we never started this server, so we never stop it.
+}
+
+async function ensureDevServer({
+  rootDir = repoRoot(),
+  port = DEFAULT_PORT,
+  base = DEFAULT_BASE,
+} = {}) {
+  const url = `http://localhost:${String(port)}${base}`;
+  const key = serverKey(port, base, rootDir);
+  const holdOn = (entry) => {
+    entry.refs += 1;
+    return {
+      url,
+      release: () => {
+        releaseDevServer(key);
+      },
+    };
+  };
+
+  // UNE seule sonde réseau (panel r8 : deux conditions faisaient payer deux
+  // fetch-avec-timeout à tout appel tombant sur une entrée périmée) — mais la table
+  // est relue APRÈS l'await, jamais avant (panel r9). Une inscription qui atterrit
+  // pendant la sonde doit être vue : la lire d'abord faisait prendre la branche
+  // NO_RELEASE à un appel qui va pourtant piloter ce serveur, donc sans compter son
+  // hold — et le porteur d'en face pouvait le tuer en pleine navigation.
+  if (await isServerUp(url)) {
+    const held = spawnedServers.get(key);
+    return held === undefined ? { url, release: NO_RELEASE } : holdOn(held);
+  }
+
+  // stdio fully ignored: readiness is polled via isServerUp, and piped stdout/
+  // stderr would keep a short-lived library caller's event loop alive forever
+  // after preview() returns (unref only detaches the child handle, not pipes).
+  const proc = spawn("yarn", ["vite", "--port", String(port), "--strictPort"], {
+    cwd: rootDir,
+    stdio: "ignore",
+  });
+  proc.unref();
+  // TWO distinct ways our child can fail, and they arrive on different channels
+  // (panel r7 MAJEUR — only the first was handled, and the comment wrongly claimed
+  // the second was too):
+  //  - 'error': the spawn itself failed (ENOENT — `yarn` not on PATH). Without a
+  //    listener this is an unhandled event that kills the WHOLE server process.
+  //  - 'exit' non-zero: the spawn worked but vite died — notably on EADDRINUSE when
+  //    another call won the race for this port. That is an ordinary exit, NOT an
+  //    'error', so it must be watched separately or we would poll on believing our
+  //    own dead child is the live server.
+  let spawnError = null;
+  let exited = false;
+  proc.on("error", (err) => {
+    spawnError = err;
+  });
+  proc.on("exit", () => {
+    exited = true;
+  });
+
+  /**
+   * Our child is gone: adopt whoever IS serving, or report the failure. Polls to the
+   * SAME deadline as the main loop rather than probing once (panel r8): the loser of a
+   * cold-port race dies on EADDRINUSE almost instantly, while the winner's vite takes
+   * noticeably longer to boot — a single probe would call a healthy startup a failure.
+   * And when a winner IS registered, take a REFERENCE on it instead of NO_RELEASE, or
+   * the winner's own release() could kill the server while this caller is still
+   * driving Playwright through it.
+   */
+  const adoptOrFail = async (reason, deadline) => {
+    while (Date.now() < deadline) {
+      if (await isServerUp(url)) {
+        const existing = spawnedServers.get(key);
+        return existing === undefined ? { url, release: NO_RELEASE } : holdOn(existing);
+      }
+      await sleep(300);
+    }
+    throw new Error(`dryrun/preview: failed to start the dev server: ${reason}`);
+  };
+
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    if (spawnError !== null) return await adoptOrFail(spawnError.message, deadline);
+    // Our own process died (EADDRINUSE and friends). Never register a dead `proc`
+    // in the Map: doing so would overwrite the real winner's entry, reset its
+    // refcount, and leak the live server while `release()` kills a corpse.
+    if (exited) return await adoptOrFail(`the dev server on port ${String(port)} exited`, deadline);
+    if (await isServerUp(url)) {
+      // Only OUR live child gets registered — and only if nobody registered this
+      // target while we were polling (first writer wins, later ones just hold).
+      const existing = spawnedServers.get(key);
+      if (existing !== undefined) {
+        proc.kill();
+        return holdOn(existing);
+      }
+      const entry = { proc, refs: 0 };
+      spawnedServers.set(key, entry);
+      return holdOn(entry);
+    }
+    await sleep(300);
+  }
+  proc.kill();
+  throw new Error(`dryrun/preview: dev server did not become ready at ${url} within 20s`);
+}
+
+function resolvePlanOrThrow(levelId, plans, caller) {
+  const plan = plans.find((p) => p.id === levelId);
+  if (plan === undefined) {
+    throw new Error(
+      `${caller}: no generated level with id "${levelId}" (known ids: ` +
+        `${plans.map((p) => p.id).join(", ") || "none"})`,
+    );
+  }
+  return plan;
+}
+
+/** The value span immediately after the "temps" label span, e.g. "48s" → 48. */
+async function readTempsSeconds(page) {
+  const text = await page.locator("span:text-is('temps') + span").first().innerText();
+  const match = /(\d+)/.exec(text);
+  if (match === null) throw new Error(`dryrun: could not parse TEMPS from "${text}"`);
+  return Number(match[1]);
+}
+
+/**
+ * The HUD ticker's rendered text, whitespace-collapsed — same content as the
+ * SP1 §8 evidence's `hudSnippet` field. Located by CSS `:has()` rather than a
+ * hashed CSS-module class name: the smallest element containing BOTH the
+ * "score" and "temps" labels is the HUD container (`:has()` matches every
+ * ancestor, `.last()` picks the innermost — the two labels are siblings, so no
+ * element nested any deeper also has both).
+ */
+async function readHudSnippet(page) {
+  const hud = page.locator("div:has(span:text-is('score')):has(span:text-is('temps'))").last();
+  return (await hud.innerText()).replace(/\s+/g, " ").trim();
+}
+
+/**
+ * `dryrun({ levelId }) → report.json` (spec-mcp-level-editor §3/§6): boots the
+ * `?preview=level&level=<id>` seam headless, reads the timer twice (proving the
+ * clock ticks) and the HUD text, and reports any uncaught page error. The ONE
+ * driver both this tool and a future SP2/SP3 CI script call (§6's "two
+ * surfaces" — SP2 T6 did not land its own generalized driver yet, so this is
+ * the sole implementation for now; SP2 dedupes onto it later).
+ */
+export async function dryrun(
+  { levelId } = {},
+  {
+    rootDir = repoRoot(),
+    plans = GENERATED_PLANS,
+    port = DEFAULT_PORT,
+    base = DEFAULT_BASE,
+    settleMs = 3000,
+  } = {},
+) {
+  resolvePlanOrThrow(levelId, plans, "dryrun");
+  const { url: baseUrl, release } = await ensureDevServer({ rootDir, port, base });
+  const navUrl = `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}`;
+
+  // `PLAYWRIGHT_CHROMIUM_PATH` is an escape hatch for a sandbox whose preinstalled
+  // Chromium revision does not match this repo's pinned `playwright` version
+  // (CI installs the matching revision itself — `playwright install` in
+  // preview.yml — so this is unset there). Unset by default: `undefined` makes
+  // Playwright resolve its own bundled browser, same as every other e2e-*.mjs.
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  // The launch itself is INSIDE the try: a Chromium that fails to start (missing
+  // system deps, revision mismatch — the very case PLAYWRIGHT_CHROMIUM_PATH
+  // exists for) would otherwise throw before the teardown block is armed and
+  // orphan the `--strictPort` vite server, blocking every later dryrun/preview.
+  let browser = null;
+  try {
+    browser = await chromium.launch({
+      args: SWIFTSHADER_ARGS,
+      ...(executablePath === undefined ? {} : { executablePath }),
+    });
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await context.newPage();
+    const pageErrors = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // No unlock list needed: the preview seam bypasses menu/unlock entirely
+    // (generatedHarness.ts) — only the mute/lives/difficulty prefs matter here.
+    await seedDeterminism(page, [], { crt: false });
+    await page.goto(navUrl, { waitUntil: "networkidle", timeout: 30000 });
+    await page.locator("canvas").first().waitFor({ timeout: 20000 });
+    await page.locator("span:text-is('temps')").first().waitFor({ timeout: 20000 });
+
+    const tempsFirstRead = await readTempsSeconds(page);
+    await sleep(settleMs);
+    const tempsSecondRead = await readTempsSeconds(page);
+    const hudSnippet = await readHudSnippet(page);
+
+    return {
+      url: navUrl,
+      pageErrors,
+      tempsFirstRead,
+      tempsSecondRead,
+      timerTicking: tempsSecondRead < tempsFirstRead,
+      hudSnippet,
+    };
+  } finally {
+    // `release()` must run even when the browser never opened or `close()` throws —
+    // nested try/finally so neither a failed launch nor a teardown error can orphan a
+    // `--strictPort` vite server that would then block every subsequent `dryrun`
+    // (panel §6.3 m7, CI panel MAJEUR on ae1aa10b). `release` drops THIS call's hold;
+    // the server only dies if no concurrent dryrun/preview still holds one (r6).
+    try {
+      if (browser !== null) await browser.close();
+    } finally {
+      release();
+    }
+  }
+}
+
+/**
+ * `preview({ levelId }) → { url }` (spec-mcp-level-editor §3): ensures a local
+ * vite dev server is up (reusing one already running) and returns the
+ * `?preview=level&level=<id>` URL for a human (or a real browser) to open. Never
+ * tears the server down — unlike `dryrun`, the whole point is for it to keep
+ * serving after this call returns.
+ */
+export async function preview(
+  { levelId } = {},
+  { rootDir = repoRoot(), plans = GENERATED_PLANS, port = DEFAULT_PORT, base = DEFAULT_BASE } = {},
+) {
+  resolvePlanOrThrow(levelId, plans, "preview");
+  // The hold is taken and DELIBERATELY never released: preview's contract is that the
+  // URL it returns keeps working after it returns, so its reference is what stops a
+  // concurrent `dryrun` from killing the server out from under the human it was
+  // handed to. The dev server outlives this process only until it exits.
+  const { url: baseUrl } = await ensureDevServer({ rootDir, port, base });
+  return { url: `${baseUrl}?preview=level&level=${encodeURIComponent(levelId)}` };
+}
+
+/** Escapes regex metacharacters — used to embed `base`/`levelId` literally in a pattern. */
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Structural comparison for the spec §6 acceptance criterion — `dryrun("fixture")`
+ * against the COMMITTED evidence report
+ * (`docs/qa/evidence/story-level-harness-sp1/report.json`) — with the volatile
+ * fields named and excluded explicitly rather than silently:
+ *  - `pageErrors`: exact equality. Deterministic — cops are frozen
+ *    (`seedDeterminism`), so a fresh run must be just as error-free.
+ *  - `timerTicking`: exact equality. Deterministic BEHAVIOURAL claim (the level
+ *    clock counts down), not a value.
+ *  - `tempsFirstRead` / `tempsSecondRead`: EXCLUDED from cross-report comparison
+ *    (volatile — real elapsed wall-clock seconds, machine-speed-dependent). Only
+ *    checked for INTERNAL consistency against the actual report's own
+ *    `timerTicking`.
+ *  - `url`: EXCLUDED from exact-string comparison (the dev server port is an
+ *    environment detail, not a level property) — checked structurally, the
+ *    `?preview=level&level=<id>` query survives on ANY `http://localhost:<port>`
+ *    origin.
+ *  - `hudSnippet`: EXCLUDED from exact-string comparison — score/lives/energy
+ *    are gameplay state that legitimately drifts between two independent runs
+ *    even with cops frozen (e.g. authoring changes to the fixture's starting
+ *    stats). Checked structurally: the same ORDERED set of HUD labels must
+ *    appear, in the same left-to-right order (SCORE, NIVEAU, VAGUE, TEMPS,
+ *    VIES, ÉNERGIE, ARME).
+ *
+ * `{ base, levelId }` mirror `dryrun`'s own options (same `DEFAULT_BASE`,
+ * default `levelId: "fixture"` matching the committed fixture evidence) — the
+ * url pattern is derived from them rather than hardcoding `/prohimuf/` and
+ * `level=fixture`, so a second level (SP2) can reuse this SAME comparator
+ * instead of forking one (spec-mcp-level-editor §6, D3 "two surfaces, one
+ * core"). Defaults are unchanged, so no existing caller moves.
+ */
+export function compareDryrunReport(
+  actual,
+  expected,
+  { base = DEFAULT_BASE, levelId = "fixture" } = {},
+) {
+  const mismatches = [];
+
+  if (JSON.stringify(actual.pageErrors) !== JSON.stringify(expected.pageErrors)) {
+    mismatches.push(
+      `pageErrors: expected ${JSON.stringify(expected.pageErrors)}, got ${JSON.stringify(actual.pageErrors)}`,
+    );
+  }
+
+  if (actual.timerTicking !== expected.timerTicking) {
+    mismatches.push(
+      `timerTicking: expected ${String(expected.timerTicking)}, got ${String(actual.timerTicking)}`,
+    );
+  }
+  if (!Number.isFinite(actual.tempsFirstRead) || !Number.isFinite(actual.tempsSecondRead)) {
+    mismatches.push(
+      `tempsFirstRead/tempsSecondRead: expected both to be finite numbers, got ` +
+        `${JSON.stringify(actual.tempsFirstRead)} → ${JSON.stringify(actual.tempsSecondRead)}`,
+    );
+  } else if (actual.tempsSecondRead < actual.tempsFirstRead !== actual.timerTicking) {
+    mismatches.push(
+      `timerTicking (${String(actual.timerTicking)}) disagrees with the actual report's own ` +
+        `tempsFirstRead/tempsSecondRead (${String(actual.tempsFirstRead)} → ${String(actual.tempsSecondRead)})`,
+    );
+  }
+
+  const urlPattern = new RegExp(
+    `^http://localhost:\\d+${escapeRegExp(base)}\\?preview=level&level=${escapeRegExp(levelId)}$`,
+  );
+  if (!urlPattern.test(actual.url)) {
+    mismatches.push(`url: "${actual.url}" does not match the expected preview-seam shape`);
+  }
+
+  const HUD_LABELS = ["SCORE", "NIVEAU", "VAGUE", "TEMPS", "VIES", "ÉNERGIE", "ARME"];
+  // Ordered by ACTUAL position in the snippet (not declaration order) — the
+  // promise is "same ordered set", so a scrambled HUD must be caught, not just
+  // a missing label (panel §6.4 n3).
+  const labelOrder = (snippet) => {
+    // The level's own display name sits between NIVEAU and VAGUE and can itself
+    // contain a label word (the district "Armentières" contains "ARME"), which
+    // would pin that label's position INSIDE the name and blind the ordering
+    // check for that level — the exact regression it exists to catch. Mask the
+    // name span first, so only real HUD labels are located.
+    const upper = snippet.replace(/(NIVEAU\s+).+?(\s+VAGUE)/iu, "$1$2").toUpperCase();
+    return HUD_LABELS.map((label) => ({ label, at: upper.indexOf(label) }))
+      .filter((entry) => entry.at !== -1)
+      .sort((a, b) => a.at - b.at)
+      .map((entry) => entry.label);
+  };
+  const actualLabels = labelOrder(actual.hudSnippet ?? "");
+  const expectedLabels = labelOrder(expected.hudSnippet ?? "");
+  if (JSON.stringify(actualLabels) !== JSON.stringify(expectedLabels)) {
+    mismatches.push(
+      `hudSnippet labels: expected ${JSON.stringify(expectedLabels)}, got ${JSON.stringify(actualLabels)} ` +
+        `(full snippet: "${actual.hudSnippet}")`,
+    );
+  }
+  // The level name is READ from the expected snippet (the committed evidence),
+  // never hardcoded — same reason as the url pattern above: SP2's second level
+  // must reuse this comparator instead of forking one. When the evidence carries
+  // no NIVEAU…VAGUE name, the ordered-label check above is what governs.
+  const levelNameOf = (snippet) => /NIVEAU\s+(.+?)\s+VAGUE/u.exec(snippet ?? "")?.[1];
+  const expectedName = levelNameOf(expected.hudSnippet);
+  if (expectedName !== undefined && levelNameOf(actual.hudSnippet) !== expectedName) {
+    mismatches.push(
+      `hudSnippet: expected the level name "${expectedName}", got "${actual.hudSnippet}"`,
+    );
+  }
+
+  return { ok: mismatches.length === 0, mismatches };
+}

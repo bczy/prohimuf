@@ -146,6 +146,8 @@ export default tseslint.config(
 
       "scripts/align-windows.mjs",
 
+      "scripts/e2e-generated-level.mjs",
+
       "scripts/e2e-lib.mjs",
 
       "scripts/screenshot-preview.mjs",
