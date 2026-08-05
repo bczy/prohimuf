@@ -374,4 +374,10 @@ origin/main...HEAD` ne rendait rien. Corrigé en amont (`refs/pull/N/head` sous 
   public entre deux modules et impose de réécrire les tests des emblèmes, donc hors du
   périmètre « mécanique et prouvé par la suite existante ».
 
+  **Suite : APPLIQUÉ.** Le panel a soulevé le même point indépendamment, ce qui a fourni le
+  mandat qui manquait ici — voir « Structure durcie après le panel » plus haut. Cette ligne
+  est conservée telle quelle plutôt que réécrite : elle date de la passe `simplify`, où le
+  constat « proposé, pas appliqué » était exact, et une passe de dégraissage n'a pas à
+  paraître avoir tranché ce qu'elle avait justement laissé à une lane.
+
 **REVERTED** : aucun. **Bugs repérés (non corrigés)** : aucun.
