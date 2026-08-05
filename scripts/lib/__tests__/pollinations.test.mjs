@@ -6,7 +6,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("https", () => ({ default: { get: vi.fn() } }));
 
 import https from "https";
-import { fluxUrl, kontextUrl, modelUrl, fetchImage } from "../pollinations.mjs";
+import {
+  fluxUrl,
+  kontextUrl,
+  modelUrl,
+  fetchImage,
+  fetchWithRetry,
+  PollinationsFetchError,
+} from "../pollinations.mjs";
 
 // A minimal stand-in for the http.ClientRequest chain fetchImage relies on:
 // `https.get(url, cb).on("error", reject)`, then `req.setTimeout(...)`.
@@ -130,6 +137,92 @@ describe("fetchImage redirect handling", () => {
       return fakeRequest();
     });
     await expect(fetchImage("https://example.com/start")).rejects.toThrow(/redirect/i);
+  });
+});
+
+describe("fetchWithRetry — non-retryable vs. transient failures", () => {
+  // The API is known to wrap a real error status INSIDE an HTTP 500 body
+  // rather than sending it as the literal HTTP status — this is the exact
+  // shape observed for an empty Pollinations balance.
+  function wrapped402Response() {
+    const res = fakeResponse(500);
+    const body =
+      'Gen Sana request failed with 402:\n {"message":"Insufficient balance. This request ' +
+      'costs ~0.0001 pollen, but your available balance is 0.0000","code":"PAYMENT_REQUIRED",' +
+      '"status":402}';
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "data") fn(Buffer.from(body));
+      if (ev === "end") fn();
+      return res;
+    });
+    return res;
+  }
+
+  function plain500Response() {
+    const res = fakeResponse(500);
+    const body = '{"error":"internal server error"}';
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "data") fn(Buffer.from(body));
+      if (ev === "end") fn();
+      return res;
+    });
+    return res;
+  }
+
+  beforeEach(() => {
+    https.get.mockReset();
+  });
+
+  it("does not retry a 402 wrapped in an HTTP 500 body — one attempt, actionable message", async () => {
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(wrapped402Response());
+      return fakeRequest();
+    });
+
+    await expect(fetchWithRetry("https://image.pollinations.ai/img")).rejects.toThrow(
+      /Pollinations account balance is empty.*recharge the account/,
+    );
+    expect(https.get).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws a PollinationsFetchError with realStatus=402 and retryable=false for the wrapped case", async () => {
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(wrapped402Response());
+      return fakeRequest();
+    });
+
+    try {
+      await fetchImage("https://image.pollinations.ai/img");
+      expect.unreachable("fetchImage should have rejected");
+    } catch (e) {
+      expect(e).toBeInstanceOf(PollinationsFetchError);
+      expect(e.httpStatus).toBe(500);
+      expect(e.realStatus).toBe(402);
+      expect(e.retryable).toBe(false);
+    }
+  });
+
+  it("still retries a real (unwrapped) HTTP 500 with backoff, up to `retries` attempts", async () => {
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(plain500Response());
+      return fakeRequest();
+    });
+
+    // Stub setTimeout (what sleep() is built on) to fire immediately, so the
+    // test proves the retry COUNT/behaviour without paying the real 8s/16s
+    // backoff wall-clock time.
+    const setTimeoutStub = vi.spyOn(globalThis, "setTimeout").mockImplementation((fn) => {
+      fn();
+      return 0;
+    });
+
+    await expect(fetchWithRetry("https://image.pollinations.ai/img", 3)).rejects.toThrow(
+      /HTTP 500/,
+    );
+    expect(https.get).toHaveBeenCalledTimes(3);
+    // 3 attempts ⇒ 2 backoff waits scheduled via setTimeout (sleep()).
+    expect(setTimeoutStub).toHaveBeenCalledTimes(2);
+    setTimeoutStub.mockRestore();
   });
 });
 

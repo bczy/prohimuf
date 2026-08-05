@@ -37,6 +37,52 @@ function authHeaders(url) {
   return {};
 }
 
+// HTTP statuses that no amount of retrying fixes: a rejected/authenticated
+// request stays rejected until a HUMAN acts (recharge the account, fix the
+// token, fix the prompt). Backoff exists for transient failures — real 5xx,
+// timeouts, dropped connections — and burning it on one of these just delays
+// the actionable message. 402 heads this list because it's the one that
+// actually happened (empty Pollinations balance, see PollinationsFetchError
+// below for the wrinkle in how it's reported).
+const NON_RETRYABLE_STATUSES = new Set([400, 401, 402, 403]);
+
+// One-line, human-actionable summaries for the statuses in
+// NON_RETRYABLE_STATUSES. Anything not listed here falls back to a generic
+// "won't retry" line that still includes the raw body for diagnosis.
+const NON_RETRYABLE_ADVICE = {
+  400: "request rejected as malformed (400 Bad Request) — check the prompt/URL, no retry will fix this",
+  401: "authentication rejected (401 Unauthorized) — POLLINATIONS_TOKEN is missing or invalid, no retry will fix this",
+  402: "Pollinations account balance is empty (402 Payment Required) — recharge the account; no image was generated",
+  403: "authentication rejected (403 Forbidden) — POLLINATIONS_TOKEN lacks access, no retry will fix this",
+};
+
+/** Thrown by `fetchImage` on any non-2xx response. Carries both the literal
+ * HTTP status and the "real" status the API actually meant — see
+ * `extractRealStatus` — so `fetchWithRetry` can decide retryable vs. not
+ * without callers re-parsing the message string. */
+export class PollinationsFetchError extends Error {
+  constructor(message, { httpStatus, realStatus, retryable }) {
+    super(message);
+    this.name = "PollinationsFetchError";
+    this.httpStatus = httpStatus;
+    this.realStatus = realStatus;
+    this.retryable = retryable;
+  }
+}
+
+// The API has been observed wrapping a real error status INSIDE an HTTP 500
+// body rather than sending it as the HTTP status itself — e.g. a 402
+// insufficient-balance rejection arrives as `HTTP 500` with the body
+// `Gen Sana request failed with 402:\n {"message":"...","code":"PAYMENT_REQUIRED","status":402}`.
+// Checking `res.statusCode` alone (or a fragile `body.includes("402")`, which
+// would also false-positive on a 402 mentioned only in prose) never sees the
+// real status. Pull `"status":<digits>` out of the JSON envelope wherever it
+// appears in the body and prefer it over the literal HTTP status.
+function extractRealStatus(httpStatus, body) {
+  const match = /"status"\s*:\s*(\d{3})/.exec(body);
+  return match ? Number(match[1]) : httpStatus;
+}
+
 export function fetchImage(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const req = https
@@ -61,7 +107,20 @@ export function fetchImage(url, redirects = 0) {
           res.on("data", (c) => errChunks.push(c));
           res.on("end", () => {
             const body = Buffer.concat(errChunks).toString("utf8").slice(0, 500);
-            reject(new Error(`HTTP ${res.statusCode}${body ? ` — ${body}` : ""}`));
+            const realStatus = extractRealStatus(res.statusCode, body);
+            const retryable = !NON_RETRYABLE_STATUSES.has(realStatus);
+            const advice = NON_RETRYABLE_ADVICE[realStatus];
+            const message = advice
+              ? advice
+              : `HTTP ${res.statusCode}${realStatus !== res.statusCode ? ` (real status ${realStatus} in body)` : ""}` +
+                `${body ? ` — ${body}` : ""}`;
+            reject(
+              new PollinationsFetchError(message, {
+                httpStatus: res.statusCode,
+                realStatus,
+                retryable,
+              }),
+            );
           });
           return;
         }
@@ -79,6 +138,12 @@ export async function fetchWithRetry(url, retries = 5) {
     try {
       return await fetchImage(url);
     } catch (e) {
+      if (e instanceof PollinationsFetchError && !e.retryable) {
+        // A payment/auth/malformed-request rejection is not transient —
+        // retrying just spends the backoff budget (previously up to 3m30s
+        // across 4 waits) waiting out an error that never resolves itself.
+        throw e;
+      }
       if (i < retries - 1) {
         const wait = (i + 1) * 8000;
         console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
