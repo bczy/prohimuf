@@ -26,8 +26,11 @@
  *       `block.plate` (already the dormer-POV string, no `image=` at all) on the PAID
  *       gen.pollinations.ai farm. No conditioning to contradict, so the model's hands are
  *       free on composition/angle.
- *       Stage 2 (`plate.png`, shipped) — `kontext` img2img conditioned on Stage 1's OWN
- *       output (not the frontal street-wide crop), same prompt text. Kontext's job here is
+ *       Stage 2 (`plate.png`, shipped) — `kontext` img2img via the multipart POST
+ *       /v1/images/edits (`editImagePaid`, lib/pollinations.mjs), conditioned on Stage 1's
+ *       OWN output bytes uploaded directly (not the frontal street-wide crop, and not a
+ *       GET `image=<data-URI>` — a 2048x1152 PNG doesn't fit in a query string, 414s),
+ *       same prompt text. Kontext's job here is
  *       narrower: refine linework/register toward the fanzine house style while preserving
  *       Stage 1's composition — a same-angle edit, not an angle-vs-reference fight. Style
  *       continuity with the shipped street comes from the prompt's own tokens (bay rhythm,
@@ -64,7 +67,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { fluxUrl, genPaidUrl, fetchWithRetry } from "./lib/pollinations.mjs";
+import { fluxUrl, genPaidUrl, editImagePaid, fetchWithRetry } from "./lib/pollinations.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
 
@@ -187,18 +190,6 @@ async function resizeToTarget(buf, width, height, label) {
   return canvas.toBuffer("image/png");
 }
 
-// Pollinations sometimes serves JPEG bytes even from a .png request path — sniff the mime
-// from the magic bytes rather than assume, same idiom as bakeoff-boss-models.mjs's dataUri().
-function dataUriFromBuffer(buf) {
-  const mime =
-    buf[0] === 0x89 && buf[1] === 0x50
-      ? "image/png"
-      : buf[0] === 0xff && buf[1] === 0xd8
-        ? "image/jpeg"
-        : "application/octet-stream";
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
-
 // ── Generation (flux, or two-stage flux+kontext for the plate via the PAID farm) ──
 async function generate(a) {
   if (a.twoStagePlate) {
@@ -224,24 +215,24 @@ async function generate(a) {
       `${a.key} (stage 1 flux)`,
     );
 
-    // Stage 2 — kontext img2img conditioned on STAGE 1'S OWN bytes (data URI — stage 1
+    // Stage 2 — kontext img2img conditioned on STAGE 1'S OWN bytes, via the multipart
+    // POST /v1/images/edits (editImagePaid) rather than a GET `image=<data-URI>` — stage 1
     // is not pushed to the remote yet within this same run, so raw.githubusercontent.com
-    // cannot see it; a data: URI needs no round trip). Same prompt text: kontext's job is
-    // a same-composition style refinement, not an angle negotiation.
+    // cannot see it, and a 2048x1152 PNG base64-encoded into a query string blows past the
+    // server's URL length limit (observed: HTTP 414 in CI, run 8). Same prompt text:
+    // kontext's job is a same-composition style refinement, not an angle negotiation.
     console.log(
-      `  [seed] ${a.key} seed=${a.seed} (pinned) — stage 2: ${PLATE_MODEL} img2img (paid), ref=stage 1 render`,
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — stage 2: ${PLATE_MODEL} img2img (paid, multipart), ref=stage 1 render`,
     );
     try {
-      const stage2 = await fetchWithRetry(
-        genPaidUrl({
-          prompt: a.prompt,
-          seed: a.seed,
-          width: a.width,
-          height: a.height,
-          model: PLATE_MODEL,
-          imageUrl: dataUriFromBuffer(stage1Resized),
-        }),
-      );
+      const stage2 = await editImagePaid({
+        prompt: a.prompt,
+        seed: a.seed,
+        width: a.width,
+        height: a.height,
+        model: PLATE_MODEL,
+        imageBuf: stage1Resized,
+      });
       return await resizeToTarget(stage2, a.width, a.height, `${a.key} (stage 2 ${PLATE_MODEL})`);
     } catch (e) {
       // Pre-authorised fallback: ship Stage 1 as-is rather than a broken/mushy Stage 2 —

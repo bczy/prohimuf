@@ -149,6 +149,43 @@ export function genPaidUrl({ prompt, seed, width, height, model, imageUrl }) {
   return u;
 }
 
+// OpenAI-compatible img2img edit, MULTIPART (POST /v1/images/edits — APIDOCS.md
+// "Multipart uploads in depth"), for when the reference image is a LOCAL buffer rather
+// than something already reachable at a URL (e.g. a same-run intermediate render that
+// has not been pushed yet, so raw.githubusercontent.com can't see it). A `GET .../image/
+// {prompt}?image=<data-URI>` (the naive fix) blows past the server's URL length limit for
+// anything above a few KB and 414s — this is the documented alternative, a real multipart
+// body, no URL-length ceiling. CI-only: requires POLLINATIONS_TOKEN (same as genPaidUrl).
+export async function editImagePaid({ prompt, seed, width, height, model, imageBuf, mime }) {
+  const token = process.env.POLLINATIONS_TOKEN;
+  if (!token || !token.trim()) {
+    throw new Error(
+      "editImagePaid: POLLINATIONS_TOKEN is required (no anonymous tier for /v1/images/edits)",
+    );
+  }
+  const form = new FormData();
+  form.set("image", new Blob([imageBuf], { type: mime || "image/png" }), "reference.png");
+  form.set("prompt", prompt);
+  form.set("model", model);
+  form.set("size", `${width}x${height}`);
+  if (seed !== undefined) form.set("seed", String(seed));
+  const res = await fetch("https://gen.pollinations.ai/v1/images/edits", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token.trim()}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = (await res.text()).slice(0, 500);
+    throw new Error(`HTTP ${res.status}${body ? ` — ${body}` : ""}`);
+  }
+  const json = await res.json();
+  const entry = json?.data?.[0];
+  if (!entry) throw new Error("editImagePaid: no data[0] in response");
+  if (entry.b64_json) return Buffer.from(entry.b64_json, "base64");
+  if (entry.url) return fetchWithRetry(entry.url);
+  throw new Error("editImagePaid: response data[0] has neither b64_json nor url");
+}
+
 // THE single "hero ⇒ image=" decision point (ADR-0043 §2): every caller that
 // may or may not have a reference image routes through here instead of
 // choosing between fluxUrl/kontextUrl itself, so a generator and
