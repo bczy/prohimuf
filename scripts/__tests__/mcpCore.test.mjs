@@ -224,6 +224,13 @@ describe("inspect", () => {
   it("throws on an unknown levelId", () => {
     expect(() => inspect({ levelId: "does-not-exist" })).toThrow(/does-not-exist/);
   });
+
+  it("answers a missing argument with its documented throw, not a raw TypeError (panel r15)", () => {
+    // `inspect` throws BY DESIGN on a bad id; what it must not do is fail earlier,
+    // in the destructuring, with a message that names no level at all.
+    expect(() => inspect()).toThrow(/inspect/);
+    expect(() => inspect()).not.toThrow(TypeError);
+  });
 });
 
 describe("scaffold", () => {
@@ -236,6 +243,17 @@ describe("scaffold", () => {
     dir = mkdtempSync(join(tmpdir(), "mcp-scaffold-"));
     return dir;
   };
+
+  it("reports a structured issue for a missing argument instead of throwing (panel r15)", () => {
+    // The library surface is advertised as importable by a script or a test, and
+    // `validate(undefined)` already answers `plan/missing-input` rather than throwing.
+    // `scaffold`, which composes it, owed the same courtesy to the same caller.
+    for (const input of [undefined, {}]) {
+      const result = scaffold(input, { rootDir: rootDirFor() });
+      expect(result.ok).toBe(false);
+      expect(result.issues[0].code).toBe("scaffold/invalid-id");
+    }
+  });
 
   it("refuses to scaffold over generated/index.ts even with overwrite: true (panel r8)", () => {
     const rootDir = rootDirFor();

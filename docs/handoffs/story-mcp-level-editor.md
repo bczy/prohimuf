@@ -1218,8 +1218,10 @@ MAJEUR round 13). Les quatre findings portent tous sur la TRACE, pas sur le fix 
   « Il ne reste que le merge » en ne citant que `69d0f69e` (round 12), sans jamais mentionner
   qu'un round CI ultérieur avait tourné sur le HEAD réellement livré (`74da5920`) ni que ce
   fix n'avait alors jamais été revérifié par le panel. Fermé par CE round lui-même : c'est la
-  revérification que le finding réclamait. Bannière PR et présente entrée mises à jour dans
-  le même geste pour ne plus répéter le motif r6/r11 (code corrigé, trace pas encore).
+  revérification que le finding réclamait. **Cette phrase annonçait aussi une bannière PR mise
+  à jour « dans le même geste » — elle ne l'a pas été** ; le round 15 l'a relevé (ci-dessous)
+  et c'est là, pas ici, que le motif r6/r11 a réellement été cassé. Corrigé plutôt que laissé :
+  une trace qui se déclare à jour sans l'être vaut moins que pas de trace du tout.
 - **[MAJEUR] l'acceptation `pm` (§7.5) ne se recoupait qu'avec §5/§6, jamais avec le panel CI
   (§8)** — juste, note de portée ajoutée en fin de §7.5 (ci-dessus) : l'ACCEPTED ne couvre que
   ce qu'il a réellement revu, le panel CI reste l'autorité bloquante pour tout ce qui a bougé
@@ -1236,3 +1238,33 @@ MAJEUR round 13). Les quatre findings portent tous sur la TRACE, pas sur le fix 
 
 **État réel à ce round : le fix round 13 est solide, la trace est maintenant à jour, et CE
 round CI valide le HEAD qui le porte** — le point exact que le BLOQUANT réclamait.
+
+### Round 15 — `0c526608` : **FAIL** (1 BLOQUANT, 0 MAJEUR, 2 MINEUR)
+
+Round exécuté sur le commit qui apporte la garde de traversée sur `plan.id` (le MINEUR du
+round 14). Aucun finding ne conteste ce correctif.
+
+- **[BLOQUANT] la bannière PR n'a jamais été mise à jour, contrairement à ce que l'entrée
+  round 14 affirmait** — juste, et c'est le reproche le plus mérité de toute la série : le
+  shard se déclarait à jour « dans le même geste » alors que le corps de la PR s'arrêtait
+  toujours au round 13 CONDITIONAL et annonçait « mergeable dès que tu le décides », sans
+  une ligne sur le round 14 ni son FAIL. Quelqu'un qui ne lit que la PR — l'artefact fait
+  pour décider du merge — n'avait aucun moyen de le savoir. Fermé pour de bon : entrée
+  round 14 corrigée ci-dessus (elle affirmait un fait faux), rounds 14 ET 15 ajoutés à la
+  table de la PR, bannière réécrite, le tout poussé dans le même commit que ce texte.
+- **[MINEUR] `scaffold()` lançait un `TypeError` brut sur un argument manquant** — juste et
+  corrigé : `validate(undefined)` rend `plan/missing-input` depuis le round 1, la surface
+  bibliothèque est annoncée importable par un script ou un test, et `scaffold`/`inspect`
+  déstructuraient leur premier paramètre sans défaut. `= {}` sur les deux ; `scaffold()`
+  rend maintenant `scaffold/invalid-id`, `inspect()` lance son erreur documentée au lieu
+  d'un `TypeError` qui ne nomme aucun level. Deux tests ajoutés, mutation vérifiée (retirer
+  les défauts les repasse au rouge).
+- **[MINEUR] les trois nouvelles devDependencies** — cinquième passage du même point, et le
+  reviewer conclut lui-même « no action needed » : l'audit ADR-0081 D2 fait foi. Non
+  actionné, comme aux rounds précédents.
+
+**Arrêt.** Quinze rounds, dont un PASS (r12) démenti par un CONDITIONAL sur un diff de prose
+(r13) : la démonstration de non-convergence est faite et documentée. Les findings de code des
+trois derniers rounds sont tous traités ; ce qui reste tourne autour de la trace elle-même,
+que ce commit met à jour partout en même temps. La décision de merge revient à Bertrand, avec
+le verdict du round 16 (déclenché par ce push) sous les yeux.

@@ -219,7 +219,7 @@ function scanAssets(plan, rootDir) {
  * unknown id — `inspect` (unlike `validate`) has nothing useful to compose from a
  * bad id, so a thrown error is the server's to turn into an MCP error result.
  */
-export function inspect({ levelId }, { plans = GENERATED_PLANS, rootDir = repoRoot() } = {}) {
+export function inspect({ levelId } = {}, { plans = GENERATED_PLANS, rootDir = repoRoot() } = {}) {
   const plan = resolvePlanOrThrow(levelId, plans, "inspect");
   return {
     plan,
@@ -330,7 +330,7 @@ function writeAtomic(targetPath, contents) {
  * reminds the caller of the aggregation line a human still has to add.
  */
 export function scaffold(
-  { plan, overwrite = false },
+  { plan, overwrite = false } = {},
   { plans = GENERATED_PLANS, rootDir = repoRoot() } = {},
 ) {
   const idIssue = scaffoldIdIssue(plan?.id);
