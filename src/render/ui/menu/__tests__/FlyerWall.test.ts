@@ -827,6 +827,39 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
   });
 
+  it("stops guarding once the wall is at rest — no listener outlives the cascade", () => {
+    // The eight window listeners exist for ONE job: recognise a player arriving so the wall
+    // can settle. Once it IS at rest they observe a state nothing reads, and `pointermove`
+    // costs a Map lookup on every mouse move anywhere on the page — for as long as the
+    // player stays on NIVEAUX, which can be indefinite.
+    //
+    // Counted, not merely observed as "a cleanup ran": the effect re-runs on its own deps,
+    // so a teardown followed by a re-registration would look identical to a real teardown.
+    // What matters is the NET state — nothing left listening.
+    markTutorialNudgeSeen();
+    let live = 0;
+    const addSpy = vi.spyOn(window, "addEventListener");
+    const removeSpy = vi.spyOn(window, "removeEventListener");
+    addSpy.mockImplementation((type: string) => {
+      if (type === "pointermove") live += 1;
+    });
+    removeSpy.mockImplementation((type: string) => {
+      if (type === "pointermove") live -= 1;
+    });
+    const container = mountWall();
+    expect(live, "guards installed while the cascade falls").toBe(1);
+
+    // The last slot finishing IS the end of the cascade.
+    const slots = container.querySelectorAll(".muf-flyer-slot");
+    const last = slots[slots.length - 1];
+    act(() => {
+      last?.dispatchEvent(new AnimationEvent("animationend", { bubbles: true }));
+    });
+    expect(live, "nothing left listening once the wall is at rest").toBe(0);
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
   it("still settles when assistive tech lands on a flyer clicked earlier", () => {
     // The pointer marker must not outlive its own gesture. A press that produces NO focus
     // — macOS Safari does not focus a control on click without Full Keyboard Access, and a

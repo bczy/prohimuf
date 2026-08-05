@@ -376,12 +376,16 @@ export function FlyerWall({
   }, [playCascade, reducedMotion]);
 
   useEffect(() => {
-    // Nothing to track when no cascade can play: `interrupted` and `showingConsumed` only
-    // ever decide whether to stop an animation that is not running. That is the COMMON case
-    // — every NIVEAUX visit after the first of a session — so eight window listeners would
-    // otherwise sit on pointerdown/up/cancel/move, blur, click, contextmenu and keydown for
-    // the whole mount, on every visit, to observe a state nothing reads.
-    if (!playCascade) return;
+    // Only while a cascade is actually falling. These eight listeners exist for ONE job —
+    // recognise a player arriving so the wall can settle — and that job is over the moment
+    // the wall is at rest, whether the player cut it short or it simply finished.
+    //
+    // Two windows would otherwise stay open for the whole mount, which on NIVEAUX can be
+    // indefinite: every visit after the first of a session (where no cascade can play at
+    // all), and the rest of the first visit once the ~2.6s fall is done. `pointermove`
+    // fires on every mouse movement anywhere on the page, so that is a Map lookup per
+    // event, forever, to observe a state nothing reads any more.
+    if (!playCascade || interrupted) return;
     // Release only the gestures that have ENDED, never the whole map. Wholesale clearing
     // was safe while a single marker was tracked; with one per pointer it is not, because
     // pointers overlap: a finger lifting fires the click that would wipe the marker of a
@@ -456,7 +460,7 @@ export function FlyerWall({
       window.removeEventListener("contextmenu", releaseEnded, true);
       window.removeEventListener("keydown", releaseEnded, true);
     };
-  }, [playCascade]);
+  }, [playCascade, interrupted]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -695,7 +699,14 @@ export function FlyerWall({
                 i === LEVELS.length - 1
                   ? (e) => {
                       // Not a child's animation bubbling up through us.
-                      if (e.target === e.currentTarget) showingConsumed.current = true;
+                      if (e.target !== e.currentTarget) return;
+                      showingConsumed.current = true;
+                      // Also flips `interrupted`, which is what tears the guard listeners
+                      // down. Visually a no-op: the animation has just ended holding its
+                      // 100% keyframe (`fill: both`), and `.slotSettled` holds the same
+                      // rest position by removing it. The flag stops meaning "the player
+                      // cut it short" and starts meaning "this wall is at rest".
+                      setInterrupted(true);
                     }
                   : undefined
               }
