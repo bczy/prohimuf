@@ -1,0 +1,119 @@
+name: Generate photo QTE sprites
+
+# Regenerates the QTE photo paparazzi set-piece art (STORY-QTE-PHOTO-PAPARAZZI,
+# host level belliard) from the `photoQte` block of src/game/levels/levelArt.json:
+# the `plate` (KONTEXT img2img, conditioned on a committed crop of the shipped
+# street-wide.png — street continuity is an ELIMINATORY gate criterion) plus the
+# 4 pose sprites + 3 stamps (plain flux text-to-image, chroma-keyed magenta).
+# See scripts/gen-photo-sprites.mjs header for the full method and the resolution
+# ruling docs/art-direction/gates/photo-qte-resolution-and-sweep-ruling.md.
+#
+# This workflow is the missing piece behind a real incident: run locally, the
+# anonymous Pollinations tier silently refused kontext (no street-seam
+# conditioning ever ran) and silently halved the plate's >1024px request
+# (1024x576 shipped instead of the decided 2048x1152) — the failures never
+# surfaced because neither the token nor CI ran. POLLINATIONS_TOKEN only exists
+# as a repo secret, so real (full-res, kontext-conditioned) generation only
+# happens here. Deliberate runs only: manual (workflow_dispatch) or by touching
+# the dispatch marker .github/dispatch/gen-photo-sprites with a `ci(dispatch):`
+# commit.
+on:
+  workflow_dispatch:
+    inputs:
+      asset:
+        description: "Regenerate one asset only (key from --list), empty = all"
+        required: false
+        default: ""
+      force:
+        description: "Regenerate even assets that already exist on disk"
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: "List the assets that would be generated and stop (no network call, no commit)"
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-photo-sprites"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-photo-sprites-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main (a manual dispatch on main would push art past the merge
+    # gate); for pushes only explicit ci(dispatch): commits may fire it.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      # flux/kontext have an anonymous fallback; the token, when set, lifts rate
+      # limits, keeps the rolls off the public feed, and — critically for the
+      # 2048x1152 plate — avoids the anonymous tier's silent >1024px downscale.
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install @napi-rs/canvas (chroma-key / despeckle / mobile downsample)
+        run: npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: List assets (dry run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: node scripts/gen-photo-sprites.mjs --list
+
+      - name: Generate photo QTE sprites (flux / kontext)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          FORCE: ${{ github.event.inputs.force == 'true' && '1' || '' }}
+        run: |
+          if [ -n "${{ github.event.inputs.asset }}" ]; then
+            node scripts/gen-photo-sprites.mjs --asset "${{ github.event.inputs.asset }}"
+          else
+            node scripts/gen-photo-sprites.mjs
+          fi
+
+      - name: Commit photo QTE sprites
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f public/assets/photoqte/*.png 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No photo QTE sprites to commit."
+          else
+            git commit -m "chore(assets): generate photo QTE paparazzi sprites"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated sprites (push failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: photo-qte-sprites-unpushed
+          path: public/assets/photoqte/*.png
+          if-no-files-found: warn
+          retention-days: 14

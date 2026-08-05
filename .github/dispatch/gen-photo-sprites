@@ -1,0 +1,2 @@
+Dispatch marker for .github/workflows/gen-photo-sprites.yml — touch and push with a
+`ci(dispatch):` head-commit message to trigger a run without workflow_dispatch access.
