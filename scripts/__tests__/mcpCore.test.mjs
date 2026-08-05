@@ -228,6 +228,15 @@ describe("inspect", () => {
     expect(() => inspect({ levelId: "does-not-exist" })).toThrow(/does-not-exist/);
   });
 
+  it("dryrun and preview answer a missing argument the same way (panel r16)", async () => {
+    // Same defect as scaffold/inspect below, on the two tools the r15 fix missed —
+    // closed here so the family is uniform rather than mostly-uniform.
+    const { dryrun, preview } = await import("../mcp-level-editor/core.mjs");
+    for (const tool of [dryrun, preview]) {
+      await expect(tool()).rejects.toThrow(/no generated level with id "undefined"/);
+    }
+  });
+
   it("answers a missing argument with its documented throw, not a raw TypeError (panel r15)", () => {
     // `inspect` throws BY DESIGN on a bad id; what it must not do is fail earlier,
     // in the destructuring, with a message that names no level at all.

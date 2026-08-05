@@ -148,6 +148,26 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
       issues.push(planIssue("malformed", field, `${field}: expected an object`));
     }
   }
+  // `calibration` is the fourth nested object, and the only OPTIONAL one — which is
+  // exactly why it escaped the loop above when SP2 introduced it. Absent is legal;
+  // present-but-not-an-object is not, because the calibration rule further down
+  // destructures `calibration.windowBand` and would throw a raw TypeError on
+  // `null`/`"x"`/`{}` — breaking the never-throws contract the MCP tools rest on
+  // (panel round on the post-merge HEAD, 2 MAJEUR). Same treatment as its siblings,
+  // one level deeper because the rule dereferences one level deeper.
+  if (p.calibration !== undefined) {
+    if (!isRecord(p.calibration)) {
+      issues.push(planIssue("malformed", "calibration", "calibration: expected an object"));
+    } else if (!isRecord(p.calibration.windowBand)) {
+      issues.push(
+        planIssue(
+          "malformed",
+          "calibration.windowBand",
+          "calibration.windowBand: expected an object with numeric top and bottom",
+        ),
+      );
+    }
+  }
   // EVERY required string the plan carries, walked from one table instead of one
   // guard per field. Three review rounds each surfaced another unchecked string
   // (`fiction.*`, then `backdrop.file`, then `props[].asset`) with the identical

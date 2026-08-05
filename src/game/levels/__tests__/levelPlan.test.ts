@@ -507,9 +507,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
         ...base,
         calibration: { windowBand: { top: 0.5, bottom: 0.5 } },
       };
-      expect(messagesOf(plan)).toContainEqual(
-        expect.stringContaining("calibration.windowBand"),
-      );
+      expect(messagesOf(plan)).toContainEqual(expect.stringContaining("calibration.windowBand"));
     });
 
     it("rejects a band bound outside [0, 1]", () => {
@@ -519,9 +517,7 @@ describe("validateLevelPlan — panel run-3 hardenings", () => {
         { top: Number.NaN, bottom: 0.5 },
       ]) {
         const plan: LevelPlan = { ...base, calibration: { windowBand: band } };
-        expect(messagesOf(plan)).toContainEqual(
-          expect.stringContaining("calibration.windowBand"),
-        );
+        expect(messagesOf(plan)).toContainEqual(expect.stringContaining("calibration.windowBand"));
       }
     });
 
@@ -599,9 +595,7 @@ describe("validateLevelPlan — un id de level à TIRETS (panel #156 run 9)", ()
       ...hyphenated,
       archetypes: [{ ...hyphenated.archetypes[0], spriteBase: "enemy_sprite" }],
     } as LevelPlan;
-    expect(messagesOf(plan)).toContainEqual(
-      expect.stringContaining("enemy_porte_de_vanves_"),
-    );
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("enemy_porte_de_vanves_"));
   });
 });
 
@@ -611,9 +605,7 @@ describe("validateLevelPlan — le namespace des props (panel #156 run 12)", () 
       ...base,
       props: [{ ...prop("fixture:vol"), asset: "assets/nearfg/belliard/lampadaire.png" }],
     } as LevelPlan;
-    expect(messagesOf(plan)).toContainEqual(
-      expect.stringContaining("assets/nearfg/fixture/"),
-    );
+    expect(messagesOf(plan)).toContainEqual(expect.stringContaining("assets/nearfg/fixture/"));
   });
 
   it("rejette une profondeur supplémentaire que le commit du workflow ne verrait pas", () => {
@@ -850,6 +842,16 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     { ...base, archetypes: [{ ...vigile, artRetired: "oui" }] },
     { ...base, backdrop: { ...base.backdrop, mode: "troncon-sequence" } },
     { ...base, props: [{ ...base.props[0], row: "middle" }] },
+    // `calibration` : le quatrième objet imbriqué, et le seul OPTIONNEL — donc le seul
+    // que la boucle fiction/backdrop/gameplay ne gardait pas quand SP2 l'a introduit.
+    // La règle de calibration déstructure `calibration.windowBand` : sans garde, chacune
+    // de ces cinq formes faisait throw un TypeError brut au lieu de rendre une issue.
+    { ...base, calibration: null },
+    { ...base, calibration: 42 },
+    { ...base, calibration: "haut/bas" },
+    { ...base, calibration: {} },
+    { ...base, calibration: { windowBand: null } },
+    { ...base, calibration: { expectedCols: 3 } },
   ];
 
   it("never throws on an arbitrary input, and answers only in plan/malformed issues", () => {

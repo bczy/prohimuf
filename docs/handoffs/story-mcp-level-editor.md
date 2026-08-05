@@ -1268,3 +1268,35 @@ round 14). Aucun finding ne conteste ce correctif.
 trois derniers rounds sont tous traités ; ce qui reste tourne autour de la trace elle-même,
 que ce commit met à jour partout en même temps. La décision de merge revient à Bertrand, avec
 le verdict du round 16 (déclenché par ce push) sous les yeux.
+
+### Round 16 — `8ed027a2` : **PASS** (0 BLOQUANT, 0 MAJEUR, 3 MINEUR)
+
+Le merge gate est satisfait. Les trois MINEUR : (a) `dryrun()`/`preview()` throwaient
+encore un `TypeError` sur argument manquant — les deux frères que le correctif r15 avait
+ratés, corrigés au round suivant ; (b) le reviewer reproche à la bannière de la PR de
+plaider l'arrêt du review avec un récit de rounds invérifiable depuis le diff — reproche
+juste sur la forme, et il précise avoir review le diff indépendamment du récit, ce qui est
+la bonne réaction ; (c) devDependencies, sixième passage, sans action.
+
+### Round 17 — `2631407d` (HEAD post-merge de `main`) : **CONDITIONAL** (0 BLOQUANT, 2 MAJEUR, 1 MINEUR)
+
+`main` a apporté SP2 (#156), qui introduit `plan.calibration`. **Les deux MAJEUR sont réels,
+identiques, et c'est une régression de MERGE que ni la branche ni `main` ne portaient
+seules** : `planShapeIssues` (venu d'ici) garde `fiction`/`backdrop`/`gameplay` par une
+boucle sur les objets imbriqués REQUIS ; `calibration` est le seul optionnel, donc le seul
+hors boucle. Or la règle de calibration (venue de là-bas) déstructure
+`plan.calibration.windowBand` sans filet. Résultat : `validateLevelPlan({…, calibration:
+null})` — ou `{}`, ou `{ expectedCols: 3 }` — throwait un `TypeError` brut au lieu de rendre
+une issue, cassant le contrat « ne throw jamais » sur lequel `core.validate`/`core.scaffold`
+reposent, atteignable depuis le serveur MCP (`planShape = z.unknown()` par conception).
+
+Corrigé : garde de forme sur `calibration` puis `calibration.windowBand` dans
+`planShapeIssues`, six cas ajoutés au tableau `junk`, mutation vérifiée (neutraliser la
+garde repasse le test au rouge). Les deux MINEUR de forme du round 16 sont traités dans le
+même commit (`dryrun`/`preview`), le MINEUR devDependencies reste non actionné.
+
+**Leçon, et c'est la plus utile de la série :** deux branches vertes chacune de leur côté
+peuvent produire un défaut à la fusion, qu'aucun des deux panels n'avait de raison de voir.
+Le panel joué APRÈS le merge de `main` est le seul qui pouvait l'attraper — et il l'a
+attrapé. C'est un argument pour rejouer le gate après un merge de base non trivial, pas
+pour boucler indéfiniment avant.

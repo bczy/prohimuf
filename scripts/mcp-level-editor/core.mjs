@@ -602,7 +602,7 @@ async function readHudSnippet(page) {
  * the sole implementation for now; SP2 dedupes onto it later).
  */
 export async function dryrun(
-  { levelId },
+  { levelId } = {},
   {
     rootDir = repoRoot(),
     plans = GENERATED_PLANS,
@@ -678,7 +678,7 @@ export async function dryrun(
  * serving after this call returns.
  */
 export async function preview(
-  { levelId },
+  { levelId } = {},
   { rootDir = repoRoot(), plans = GENERATED_PLANS, port = DEFAULT_PORT, base = DEFAULT_BASE } = {},
 ) {
   resolvePlanOrThrow(levelId, plans, "preview");
