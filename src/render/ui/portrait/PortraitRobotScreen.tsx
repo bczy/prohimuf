@@ -35,6 +35,13 @@ export interface PortraitBandView {
   readonly label: string;
   /** BASE-relative asset of the currently selected variant. */
   readonly src: string;
+  /**
+   * `true` once the reveal has walked this band and swapped it to the TRUTH
+   * variant (story AC4). It exists only after the scene is `RESOLVED` — during
+   * play it is `false` on all four bands, which is what keeps gate A16's "no
+   * per-band feedback" true: there is nothing to read here while it matters.
+   */
+  readonly corrected: boolean;
   /** 1-based position of the selection among the band's slots — state legibility only. */
   readonly ordinal: number;
   readonly total: number;
@@ -53,6 +60,12 @@ export interface PortraitRobotScreenProps {
   readonly targetBands: readonly string[];
   /** Device class (ADR-0003), decided once at boot by the shell. */
   readonly isMobile: boolean;
+  /**
+   * `true` behind `RotateOverlay`. Every control is disabled, not merely ignored:
+   * a click that is silently swallowed is reported to the player as an action
+   * taken (panel run-1 minor).
+   */
+  readonly paused: boolean;
   /** Every player request leaves here as an intent; the screen never mutates a scene. */
   readonly onIntent: (intent: PortraitIntent) => void;
   /**
@@ -96,12 +109,14 @@ export function PortraitRobotScreen({
   bands,
   targetBands,
   isMobile,
+  paused,
   onIntent,
   bandStackRef,
 }: PortraitRobotScreenProps): JSX.Element {
   const resolved = scene.phase === "RESOLVED";
   const outcome = scene.result?.outcome ?? null;
   const device = isMobile ? "mobile" : "desktop";
+  const frozen = resolved || paused;
 
   // The interactive surface. Built once and placed by device: inside the stage on
   // mobile (where it doubles as the reconstruction), under it on desktop.
@@ -117,6 +132,7 @@ export function PortraitRobotScreen({
           className={styles.band}
           role="group"
           data-band={BAND_TEST_ID[band.id]}
+          data-corrected={band.corrected ? "true" : undefined}
           aria-label={bandGroupLabel(band.label, band.ordinal, band.total)}
         >
           <span className={styles.bandLabel}>{band.label}</span>
@@ -124,7 +140,7 @@ export function PortraitRobotScreen({
             type="button"
             className={styles.chevron}
             aria-label={chevronLabel(-1, band.label)}
-            disabled={resolved}
+            disabled={frozen}
             onClick={() => {
               onIntent({ kind: "CYCLE", band: band.id, delta: -1 });
             }}
@@ -136,7 +152,7 @@ export function PortraitRobotScreen({
             type="button"
             className={styles.chevron}
             aria-label={chevronLabel(1, band.label)}
-            disabled={resolved}
+            disabled={frozen}
             onClick={() => {
               onIntent({ kind: "CYCLE", band: band.id, delta: 1 });
             }}
@@ -164,14 +180,7 @@ export function PortraitRobotScreen({
           remainingSeconds={scene.remainingSeconds}
           timerSeconds={scene.timerSeconds}
           palier={scene.palier}
-          frozen={resolved}
-        />
-        <EarlyExitButton
-          isMobile={isMobile}
-          disabled={resolved}
-          onExit={() => {
-            onIntent({ kind: "ABANDON" });
-          }}
+          frozen={frozen}
         />
       </header>
 
@@ -231,16 +240,42 @@ export function PortraitRobotScreen({
       <p className={styles.srOnly} aria-live="polite">
         {PALIER_LINE[scene.palier]}
       </p>
-      {/* The assertive one carries the single terminal signal — the lock-in. */}
+      {/*
+       * The assertive one carries the single terminal signal: the scene ending.
+       * `IDENTIFIED` gets the lock-in line; `PARTIAL` and `FAILED` used to get
+       * NOTHING — a screen-reader player was told the verdict of a win and left in
+       * silence on a loss, which is the one outcome that needs saying (panel run-1,
+       * accessibility). The stamp string is the same one the sighted player reads.
+       */}
       <p className={styles.srOnly} aria-live="assertive">
-        {outcome === "IDENTIFIED" ? LOCK_LINE : ""}
+        {outcome === null ? "" : outcome === "IDENTIFIED" ? LOCK_LINE : OUTCOME_STAMP[outcome]}
       </p>
 
       {outcome !== null && (
-        <div className={styles.verdict} data-outcome={outcome}>
+        <div className={styles.verdict}>
           <span className={styles.verdictStamp}>{OUTCOME_STAMP[outcome]}</span>
         </div>
       )}
+
+      {/*
+       * LAST in the DOM, pinned to the HUD corner by CSS.
+       *
+       * It used to be the FIRST focusable element of the screen: one `Tab` and one
+       * `Enter` — the most ordinary reflex a keyboard player has on a new screen —
+       * ended the scene instantly and definitively (panel M5-aggravant). Its visual
+       * place is unchanged, and the corner is still what keeps it out of the
+       * target↔bands reading axis; only the tab order moved, so the four bands are
+       * reached first and the exit is the last thing the keyboard offers.
+       */}
+      <div className={styles.exitSlot}>
+        <EarlyExitButton
+          isMobile={isMobile}
+          disabled={frozen}
+          onExit={() => {
+            onIntent({ kind: "ABANDON" });
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -57,9 +57,22 @@
   min-width: 0;
 }
 
-.hud > button {
-  flex: 0 0 auto;
-  margin-left: auto;
+/*
+ * The exit target is LAST in the DOM and placed here — it was the first focusable
+ * element of the screen, so one Tab + Enter ended the scene (panel M5-aggravant).
+ * Position, size and corner are unchanged; only the tab order moved.
+ */
+.exitSlot {
+  position: absolute;
+  top: 0;
+  right: var(--space-sm);
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.root[data-device="mobile"] .exitSlot {
+  height: 32px;
 }
 
 .title {
@@ -242,6 +255,17 @@
   white-space: nowrap;
 }
 
+/*
+ * REVEAL (story AC4). A band the reveal has walked shows the TRUTH variant, and it
+ * says so with an ink recalage rule along its edge — shape and weight, no hue, no
+ * animation, so `prefers-reduced-motion` has nothing to strip and the cue survives
+ * the cut of the sequence. It can only ever be set on a RESOLVED scene, so gate
+ * A16's "no per-band feedback" is untouched while it would matter.
+ */
+.band[data-corrected="true"] {
+  box-shadow: inset calc(var(--keyline-width) * 3) 0 0 0 var(--ink-black);
+}
+
 /* The four simultaneous stamps of the lock-in — an ink mark, no text, no hue code. */
 .stamp {
   position: absolute;
@@ -315,7 +339,7 @@
 /* The mobile HUD is 32px INCLUDING its ink rule, so the exit target keeps its
    equivalent 44×44 area by trading height for width (2016px² ≥ 1936px², UX §9.1)
    instead of overflowing the strip by a pixel. */
-.root[data-device="mobile"] .hud > button {
+.root[data-device="mobile"] .exitSlot > button {
   min-width: 72px;
   min-height: 28px;
 }

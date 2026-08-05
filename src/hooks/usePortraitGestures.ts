@@ -1,14 +1,12 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
-import { VARIANTS_PER_BAND } from "@game/systems/portraitRobotSystem";
+import { PORTRAIT_BAND_ORDER } from "@game/systems/portraitRobotSystem";
 import {
   DRAG_CRAN_DISTANCE,
   accumulateDrag,
   classifySwipe,
 } from "@game/systems/swipeGestureSystem";
 import type { PortraitBandId, PortraitIntent } from "@game/types/portraitRobot";
-
-const BAND_IDS: readonly PortraitBandId[] = ["hair", "eyes", "nose", "mouth"];
 
 /** Vertical drift tolerated BEFORE engagement, as a share of the band's height (UX §2.3.4.2). */
 const PRE_ENGAGE_DRIFT_RATIO = 0.5;
@@ -36,8 +34,6 @@ export interface PortraitGestureOptions {
   readonly enabled: boolean;
   /** Keyboard / screen-reader cursor, read off the scene. */
   readonly focusedBand: PortraitBandId;
-  /** Current slot of a band — needed to turn N crans into ONE `SET`. */
-  readonly indexOf: (band: PortraitBandId) => number;
   /** Where every intent goes: the fold's inbox, never a reducer call. */
   readonly onIntent: (intent: PortraitIntent) => void;
 }
@@ -59,7 +55,7 @@ export interface PortraitGestureOptions {
  * | Input | Intent |
  * | --- | --- |
  * | horizontal swipe on band `i` (mobile primary) | `CYCLE(i, ±1)` |
- * | horizontal drag on band `i` (desktop primary) | `SET(i, index + crans)` |
+ * | horizontal drag on band `i` (desktop primary) | `CYCLE(i, ±crans)` |
  * | `↑` / `↓` | `FOCUS(prev/next)` |
  * | `←` / `→` | `CYCLE(focused, ∓1)` |
  * | `1`…`6` | `SET(focused, n-1)` |
@@ -80,26 +76,30 @@ export interface PortraitGestureOptions {
  *
  * ## Why crans are banked and spent at release
  *
- * A drag crossing three crans emits **one** `SET`, not three `CYCLE`s: the lock-in
- * post-condition then runs once, on the board the player aimed at, instead of three
- * times on intermediate boards they never chose (ADR-0082 D2bis).
+ * A drag crossing three crans emits **one** `CYCLE(±3)`, not three `CYCLE(±1)`s: the
+ * lock-in post-condition then runs once, on the board the player aimed at, instead of
+ * three times on intermediate boards they never chose (ADR-0082 D2bis).
+ *
+ * It is RELATIVE, and that is the ordering fix of panel run-1: the hook used to bank
+ * crans and emit an absolute `SET(indexOf(band) + crans)`, computed from the selection
+ * REACT had rendered rather than the one the fold holds. Anything else already in the
+ * inbox that frame silently moved the target. A relative entry cannot be stale, and it
+ * also stops the hook wrapping on `VARIANTS_PER_BAND` — the fold wraps on the band's
+ * real length, which is what a plate with a short band would have needed.
  */
 export function usePortraitGestures({
   stackRef,
   enabled,
   focusedBand,
-  indexOf,
   onIntent,
 }: PortraitGestureOptions): void {
   // Live values behind refs so the listeners are bound ONCE per element: rebinding
   // them on every scene tick would drop a gesture mid-travel every frame.
   const enabledRef = useRef(enabled);
   const focusedRef = useRef(focusedBand);
-  const indexOfRef = useRef(indexOf);
   const onIntentRef = useRef(onIntent);
   enabledRef.current = enabled;
   focusedRef.current = focusedBand;
-  indexOfRef.current = indexOf;
   onIntentRef.current = onIntent;
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export function usePortraitGestures({
       const el = target.closest("[data-band]");
       if (el === null) return null;
       const id = el.getAttribute("data-band");
-      const known = BAND_IDS.find((b) => b === id);
+      const known = PORTRAIT_BAND_ORDER.find((b) => b === id);
       if (known === undefined) return null;
       return { id: known, height: el.getBoundingClientRect().height / window.innerHeight };
     };
@@ -166,11 +166,8 @@ export function usePortraitGestures({
       if (event.type === "pointercancel") return;
 
       if (g.crans !== 0) {
-        // One SET for the whole travel — see the header note on banked crans.
-        const wrapped =
-          (((indexOfRef.current(g.band) + g.crans) % VARIANTS_PER_BAND) + VARIANTS_PER_BAND) %
-          VARIANTS_PER_BAND;
-        onIntentRef.current({ kind: "SET", band: g.band, index: wrapped });
+        // ONE entry for the whole travel, and a RELATIVE one — see the header note.
+        onIntentRef.current({ kind: "CYCLE", band: g.band, delta: g.crans });
         return;
       }
       // Nothing banked: a quick flick can still be a swipe, judged as a finished
@@ -199,12 +196,16 @@ export function usePortraitGestures({
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (!enabledRef.current) return;
+      // A chord is a BROWSER command, never a scene entry: `Ctrl+A` used to cycle a
+      // variant and `Cmd+→` used to jump one, because the handler only looked at
+      // `event.key` (panel run-1 minor). `Escape` never carries a modifier either.
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const band = focusedRef.current;
-      const bandIndex = BAND_IDS.indexOf(band);
+      const bandIndex = PORTRAIT_BAND_ORDER.indexOf(band);
       // Total by construction: `bandIndex` comes from the union itself, so the modulo
       // always lands on a member — the fallback exists for the type, not for a case.
       const neighbour = (offset: number): PortraitBandId =>
-        BAND_IDS[(bandIndex + offset) % BAND_IDS.length] ?? band;
+        PORTRAIT_BAND_ORDER[(bandIndex + offset) % PORTRAIT_BAND_ORDER.length] ?? band;
       const emit = (intent: PortraitIntent): void => {
         event.preventDefault();
         onIntentRef.current(intent);
@@ -212,7 +213,7 @@ export function usePortraitGestures({
       switch (event.key) {
         case "ArrowUp":
         case "w":
-          emit({ kind: "FOCUS", band: neighbour(BAND_IDS.length - 1) });
+          emit({ kind: "FOCUS", band: neighbour(PORTRAIT_BAND_ORDER.length - 1) });
           return;
         case "ArrowDown":
         case "s":

@@ -15,6 +15,22 @@ export interface TelecarteGaugeProps {
 }
 
 /**
+ * Palier as an ordinal, for `aria-valuenow`. FOUR values over the whole scene, and
+ * they are steps, not seconds.
+ *
+ * `aria-valuenow={remainingSeconds}` used to be rewritten ~2100 times per scene and
+ * exposed the raw countdown to any tool reading the attribute — the digit gate A13
+ * forbids on every channel (panel run-1 minor). The gauge's visual fill still moves
+ * continuously; it travels as a CSS custom property, which is not an announcement.
+ */
+const PALIER_STEP: Readonly<Record<PortraitPalier, number>> = {
+  NONE: 3,
+  MID: 2,
+  URGENT: 1,
+  LAST: 0,
+};
+
+/**
  * The télécarte gauge (gate A13 / ADR-0082 D4/D5).
  *
  * A card that EMPTIES, not a counter that decrements: the ink leaves, the outline
@@ -27,10 +43,10 @@ export interface TelecarteGaugeProps {
  * own and, worse, would be the template for an `aria-live` firing every frame
  * (ADR-0079 D9).
  *
- * `aria-valuenow` carries the seconds because a screen-reader user navigating to
- * the element deserves the state on demand; `aria-valuetext` overrides how it is
- * SPOKEN with a qualitative step (UX §5.5.3), so no number is ever read aloud
- * either. That asymmetry is deliberate, not an oversight.
+ * `aria-valuenow` carries the PALIER STEP, never the seconds: it changes three
+ * times over a whole scene instead of once per frame, and no channel — spoken,
+ * attribute or otherwise — ever exposes a countdown (gate A13, ADR-0079 D9).
+ * `aria-valuetext` remains the qualitative wording (UX §5.5.3).
  */
 export function TelecarteGauge({
   remainingSeconds,
@@ -48,8 +64,8 @@ export function TelecarteGauge({
         role="progressbar"
         aria-label={GAUGE_LABEL}
         aria-valuemin={0}
-        aria-valuemax={timerSeconds}
-        aria-valuenow={remainingSeconds}
+        aria-valuemax={PALIER_STEP.NONE}
+        aria-valuenow={PALIER_STEP[palier]}
         aria-valuetext={PALIER_VALUETEXT[palier]}
         style={{ "--gauge-ratio": ratio } as CSSProperties}
       >

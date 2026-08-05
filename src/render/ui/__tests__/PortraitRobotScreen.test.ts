@@ -12,10 +12,10 @@ import { EarlyExitButton, ARM_WINDOW_MS } from "../portrait/EarlyExitButton";
 import { OUTCOME_STAMP } from "../portrait/copy";
 
 const BANDS: readonly PortraitBandView[] = [
-  { id: "hair", label: "LA COUPE", src: "assets/portrait/hair-01.png", ordinal: 1, total: 6 },
-  { id: "eyes", label: "LE REGARD", src: "assets/portrait/eyes-03.png", ordinal: 3, total: 6 },
-  { id: "nose", label: "LE NEZ", src: "assets/portrait/nose-02.png", ordinal: 2, total: 6 },
-  { id: "mouth", label: "LA BOUCHE", src: "assets/portrait/mouth-05.png", ordinal: 5, total: 6 },
+  { id: "hair", label: "LA COUPE", src: "hair-01.png", corrected: false, ordinal: 1, total: 6 },
+  { id: "eyes", label: "LE REGARD", src: "eyes-03.png", corrected: false, ordinal: 3, total: 6 },
+  { id: "nose", label: "LE NEZ", src: "nose-02.png", corrected: false, ordinal: 2, total: 6 },
+  { id: "mouth", label: "LA BOUCHE", src: "mouth-05.png", corrected: false, ordinal: 5, total: 6 },
 ];
 
 // A board mid-scene. `puzzle` is only carried, never read by the screen.
@@ -54,6 +54,7 @@ const BASE: PortraitRobotScreenProps = {
     "assets/portrait/mouth-02.png",
   ],
   isMobile: false,
+  paused: false,
   onIntent: noop,
 };
 
@@ -152,6 +153,40 @@ describe("PortraitRobotScreen — the prohibitions", () => {
     const html = markup({ scene: resolvedScene("PARTIAL", 3) });
     // 8 chevrons + the exit button, all disabled.
     expect(html.match(/disabled=""/g) ?? []).toHaveLength(9);
+  });
+
+  it("freezes every input path while PAUSED too — a swallowed click is a lie (panel run-1)", () => {
+    // Behind RotateOverlay the fold stops, so a chevron click was accepted by the DOM,
+    // dropped by the hook, and reported to the player as an action taken.
+    const html = markup({ paused: true });
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(9);
+  });
+
+  it("does not put the early exit first in the tab order (panel M5-aggravant)", () => {
+    // One Tab and one Enter used to end the scene, definitively, before it was played.
+    const html = markup();
+    const exitAt = html.indexOf("ÇA PART COMME ÇA");
+    const firstChevronAt = html.indexOf("Variante précédente");
+    expect(exitAt).toBeGreaterThan(firstChevronAt);
+    // And no positive tabindex was used to fake it — the DOM order IS the fix.
+    expect(html).not.toMatch(/tabindex="[1-9]/);
+  });
+
+  it("announces the verdict to a screen reader on EVERY outcome, not only on a win", () => {
+    for (const outcome of ["PARTIAL", "FAILED"] as const) {
+      const html = markup({ scene: resolvedScene(outcome, outcome === "PARTIAL" ? 3 : 1) });
+      const assertive = /aria-live="assertive">([^<]*)</.exec(html)?.[1] ?? "";
+      expect(assertive).toBe(OUTCOME_STAMP[outcome]);
+    }
+  });
+
+  it("carries no chrono seconds on ANY channel, aria-valuenow included (gate A13)", () => {
+    // `aria-valuenow` used to hold `remainingSeconds`: the digit the gate forbids,
+    // rewritten ~60x a second (panel run-1).
+    const html = markup();
+    expect(html).not.toContain('aria-valuenow="21"');
+    const now = /aria-valuenow="(\d+)"/.exec(html)?.[1] ?? "";
+    expect(Number(now)).toBeLessThanOrEqual(3);
   });
 
   it("labels each band group and each chevron for the non-gestural path (UX §5.4)", () => {

@@ -20,7 +20,6 @@ function Harness({ onIntent }: { onIntent: (i: PortraitIntent) => void }): JSX.E
     stackRef,
     enabled: true,
     focusedBand: "eyes",
-    indexOf: () => 2,
     onIntent,
   });
   return createElement(
@@ -85,14 +84,16 @@ describe("usePortraitGestures — pointer", () => {
     document.body.innerHTML = "";
   });
 
-  it("banks a multi-cran drag into ONE SET on the band touched first", () => {
+  it("banks a multi-cran drag into ONE RELATIVE entry on the band touched first", () => {
     const { el, seen, unmount } = mount();
     const travel = window.innerWidth * DRAG_CRAN_DISTANCE * 2.2;
     pointer(bandOf(el, "eyes"), "pointerdown", 100, 100, 0);
     pointer(bandOf(el, "eyes"), "pointermove", 100 + travel, 100, 300);
     pointer(bandOf(el, "eyes"), "pointerup", 100 + travel, 100, 320);
-    // indexOf() === 2, two crans right, six variants ⇒ slot 4. One intent, not two.
-    expect(seen).toEqual([{ kind: "SET", band: "eyes", index: 4 }]);
+    // Two crans right ⇒ ONE `CYCLE(+2)`, not two `CYCLE(±1)` and not an absolute `SET`
+    // computed off a selection React had rendered a frame earlier (panel run-1 minor:
+    // the fold, not the hook, holds the board the entry applies to).
+    expect(seen).toEqual([{ kind: "CYCLE", band: "eyes", delta: 2 }]);
     unmount();
   });
 
@@ -114,7 +115,7 @@ describe("usePortraitGestures — pointer", () => {
     pointer(bandOf(el, "nose"), "pointermove", 100 + travel, 100 + BAND_HEIGHT_PX * 2, 200);
     pointer(bandOf(el, "nose"), "pointerup", 100 + travel, 100 + BAND_HEIGHT_PX * 2, 220);
     expect(seen).toHaveLength(1);
-    expect(seen[0]).toMatchObject({ kind: "SET", band: "eyes" });
+    expect(seen[0]).toMatchObject({ kind: "CYCLE", band: "eyes" });
     unmount();
   });
 
@@ -167,6 +168,19 @@ describe("usePortraitGestures — keyboard", () => {
       { kind: "SET", band: "eyes", index: 2 },
       { kind: "ABANDON" },
     ]);
+    unmount();
+  });
+
+  it("ignores a chord — a browser command is never a scene entry (panel run-1)", () => {
+    const { seen, unmount } = mount();
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", ctrlKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", metaKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "3", altKey: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", ctrlKey: true }));
+    });
+    // `Ctrl+A` used to cycle a variant: the handler only ever looked at `event.key`.
+    expect(seen).toEqual([]);
     unmount();
   });
 
