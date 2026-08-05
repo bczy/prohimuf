@@ -55,6 +55,32 @@ The struck-through originals stay so the reasoning that was replaced is still le
 canon. The status line is stale, but granting a PASS is not the author's to write — left to
 `lead-game-designer`.
 
+**Amendment round 2 — 2026-08-06 · `narrative-designer` (Yasmine) · submitted for
+`lead-game-designer` PASS, not self-granted.** Post-merge follow-up on PR #145. Round 1
+closed K-1's five items; re-reading the merged deck against the merged code surfaced one
+seam it left open, and one owed debt that has since become blocked. Nothing here changes a
+player-facing string.
+
+| #   | Section           | Change                                                                                                 |
+| --- | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| A-8 | §2 preamble, §9.2 | States the **two-level rule** the round-1 pass left implicit: shared _motifs_ vs the exclusive _mark_. |
+| A-9 | §9.3              | Records the bible fold-in as **due and blocked**, and names what blocks it.                            |
+
+**Why A-8 is not pedantry.** Round 1 swapped the nouns (`biohazard` → rings, `acid smiley`
+→ plumb bob) but never restated the **doctrine** underneath them, and the two gated artefacts
+now read differently on it:
+
+- **This deck** still lists `spiral, 23` in the motif line of §2.2, §2.3 **and** §2.4 — three
+  sheets, one motif — and A-7 defends that explicitly as "a shared scene sign, like the `23`".
+- **`FlyerMotif.tsx`** (`FlyerEmblem.kind`) says the opposite in one clause: "the deck's
+  earlier shared-motif doctrine **is superseded**".
+
+Both are right about their own object and wrong about each other's, because the deck has been
+using one word — _motif_ — for two different things. A-8 separates them once, so the next
+reader of §2.3 is not left deciding whether the spiral listed there contradicts the rings
+stamped there. It ratifies nothing new: it writes down the distinction that round 1, the
+fiction gate and the code were each already relying on.
+
 ---
 
 ## 0. Canonical naming decisions (quick reference)
@@ -114,6 +140,31 @@ one-word, in-scope render change (no data touch) owned by the render dev. Flyer 
 (AMBIANCE) sits alongside the stamp (display only, data unchanged). With shipped data only
 `FACILE` (belliard) and `DIFFICILE` (stalingrad, vitry) ever render — the middle tier is
 latent (see §2.3).
+
+> **Amendment A-8 (2026-08-06, Yasmine — round 2). Two levels of sign, one word until now.**
+> Each `2.x` section below ends on a `Motifs:` line, and §9.2 says every mark is UNIQUE across
+> the wall. Those are not in conflict, because they describe **different things**, and this is
+> where that is stated:
+>
+> - **The motifs** are the sheet's **print vocabulary** — what a photocopied 1998 flyer has
+>   lying around: the spiral, the number `23`, "no logo". They are **shared on purpose**, and
+>   they stay shared: they are what makes the three gig flyers read as one scene, one circuit,
+>   one photocopier. A motif belongs to the period, not to a crew.
+> - **The mark** is the sheet's **single ink stamp** (§9.2) — one per sheet, **exclusive**,
+>   and it is the one thing that identifies its owner. A mark that appeared on two sheets
+>   would identify neither: **a mark that is everywhere is nobody's mark.** That is why
+>   SPIRALE 23 may hold the spiral as its stamp while the spiral also survives as a motif on
+>   the other two sheets — the crew's own **name** is what claims it, not the drawing.
+>
+> So: `Motifs:` lines are vocabulary and may repeat; §9.2's marks are signatures and may not.
+> The exclusivity ratified at the fiction gate applies to the **stamp**, and only to it.
+>
+> **Request to `dev-r3f-render` — a request, not a change; `src/**`is not this lane.**`FlyerEmblem.kind`in`src/render/ui/menu/FlyerMotif.tsx`currently reads "the deck's earlier
+shared-motif doctrine is superseded". Under this amendment that is a half-truth that will
+mislead: the **shared-motif** doctrine stands, the **shared-stamp** reading is what was
+superseded — and it was never the deck's doctrine, only a possible misreading of it. Suggested
+sense (wording free, English as the file is): _one stamp per sheet, unique across the wall;
+the deck's shared motifs are print vocabulary and are a separate layer._ To be routed through`lead-game-designer` with the rest of this round, not actioned off this document.
 
 ### 2.1 Tutoriel — `tutorial` (district `Repérage`, 1998)
 
@@ -536,8 +587,13 @@ belongs to or serves a crew. Never merge a crew name with a contact name.
 | Vitry — 94      | `vitry`        | `NADIR 94`       | **plumb bob**        | `hero` | A plumb bob points at the nadir: the sign IS the name (§2.4).            |
 | L'Éden (finale) | `niveau-final` | la salle (venue) | **chandelier**       | `body` | The hall's own fixture — `spec-niveau-final-fiction.md` §1.3 (§2.6).     |
 
-Two rules this table encodes, both binding on any future contributor:
+Three rules this table encodes, all binding on any future contributor (the third added by
+**Amendment A-8**, 2026-08-06):
 
+- **A mark is not a motif.** This table lists **marks** — one ink stamp per sheet, exclusive.
+  The `Motifs:` lines of §2.2-§2.4 list the sheets' shared **print vocabulary**, which repeats
+  across sheets by design. Exclusivity binds the mark and nothing else; see the A-8 block at
+  the head of §2. Do not "fix" a `Motifs:` line to match this table — they are different layers.
 - **A mark belongs to an owner.** Four of the five sheets have one (three crews, one venue).
   The fifth has none, and therefore has no mark. An emblem with no owner is decoration.
 - **`hero` is not a style choice.** Only Vitry leads with its image (§2.4). Do not normalise
@@ -556,3 +612,23 @@ are the whole set.
   to the orchestrator/lead since this pass edits **only** the copy deck.
 - Open a story to seed `narrative-bible.md` + `characters.md`, folding in §9 plus the §7
   contacts and the `31 déc 1999` final level. Out of scope here.
+
+> **Amendment A-9 (2026-08-06, Yasmine — round 2). The emblem canon owes the bible five
+> lines, and that debt is DUE but BLOCKED.** Recorded here rather than left in a verdict,
+> because a debt nobody can find is a debt nobody pays.
+>
+> - **What is owed.** The sheet↔mark set of §9.2 folded into `narrative-bible.md` — §1.4
+>   (named entities) for the four marks and their owners, §3.2 (registre IMPRIMÉ) for the two
+>   rules of A-8 and for the standing ban on glossing a mark in player-facing copy. Five lines
+>   of canon, sized as such by both flyer-emblem gates: **a fold-in, not a story.** It creates
+>   no entity, no name, no line of dialogue.
+> - **What blocks it.** `narrative-bible.md` **does not exist on `main`.** It lives only on the
+>   unmerged branch `docs/narrative-pipeline-adrs-stories` (ADR-0082 extraction). Amending a
+>   file absent from the target would produce exactly the unverifiable document the bible's own
+>   §10 C-1→C-8 were opened to stop — the same trap that made the superseded emblem verdict
+>   cite bible sections no reviewer could open.
+> - **When it unblocks.** On the merge of that branch, and not before. The fold-in is one short
+>   `narrative-designer` pass plus a `lead-game-designer` re-gate.
+> - **Meanwhile the canon is not homeless:** §9.2 of this deck is its authoritative record, and
+>   `docs/game-design/README.md` § "Gated canon" carries the set. Nothing is lost if the merge
+>   is slow; only the consolidation waits.
