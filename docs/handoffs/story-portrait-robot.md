@@ -978,3 +978,78 @@ ajouts ci-dessus par `83abd537`. Rien n'est perdu et tout est vert, mais **la r�
   `scoreDelta`, la queue de révélation, la dépendance `POST_LEVEL_NARRATIVE` levée ; ADR-0082 D1 :
   `CYCLE.delta` relatif) · `game-designer` (rythme de la scène résolue) · puis **un seul** nouveau
   tour de panel.
+
+---
+
+## 15 — `dev-gameplay` (Amelia) · RE-PANEL tour 2 · le contrat de la timeline de révélation
+
+**Périmètre :** `src/game/**` seul. Le hook a été corrigé en parallèle par `dev-r3f-render`
+contre ce même contrat ; les deux voies ont convergé sans divergence.
+
+### 15.1 Le défaut (bloquant, né du correctif M7)
+
+`tickPortraitScene` **décrémentait** `scene.revealSeconds` pendant que le hook **accumulait**
+un temps écoulé, puis comparait l'un à l'autre. Les deux se croisaient à **la moitié** de la
+valeur canonique : révélation `FAILED` jouée en 1,3 s au lieu de 2,6 s, `IDENTIFIED` en 0,7 s
+au lieu de 1,4 s. Le pas de reptation, recalculé chaque frame sur une valeur qui rétrécit,
+**accélérait** — les 4 bandes finissaient par basculer quasi ensemble, exactement
+l'illisibilité que R-4 existe pour supprimer. Même classe que le bloquant du tour 1 : **une
+valeur produite d'un côté, réinterprétée de l'autre.**
+
+Second défaut : **`resultHoldSeconds` = 2,2 s avait été SUPPRIMÉ, pas déplacé.** Le tour 1
+reprochait sa redéclaration dans `src/render` ; le correctif l'a effacé. Les « 4,8 s » qu'on
+croyait devoir réduire étaient `2,6 + 2,2`, soit le canon (§3, A15) — pas un excès.
+
+### 15.2 Le contrat retenu
+
+| Champ / fonction                                | Rôle                                                                                         |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `scene.revealSeconds`                           | **DURÉE** totale de la révélation. Constante. 2,6 (`PARTIAL`/`FAILED`) · 1,4 (`IDENTIFIED`). |
+| `scene.resultHoldSeconds`                       | **DURÉE** du hold, phase distincte. **2,2 s, toutes issues.** Constante.                     |
+| `scene.revealElapsed`                           | **ACCUMULATEUR** `dt`, montant, clampé à `revealSeconds + resultHoldSeconds`.                |
+| `portraitRevealProgress(scene, reducedMotion?)` | **Seul lecteur des trois** → `stage` · `revealedBands` · `handoverReady`.                    |
+| `revealBandStepSeconds(outcome)`                | Prend l'**issue**, plus une durée : 0,45 s sinon, **0 à `IDENTIFIED`** (canon §3).           |
+
+`stage` : `NONE → REVEALING → HOLDING → DONE`, forward-only. Le hook ne détient plus **ni
+horloge ni seuil** : il lit `revealedBands` et `handoverReady`. « Comparer un montant à un
+descendant » n'est plus corrigé, il est **inexprimable** — il n'y a plus qu'un seul site où la
+comparaison existe, et il est dans la couche pure.
+
+### 15.3 Les tests — des INSTANTS, pas des ordres
+
+`src/game/systems/__tests__/portraitRobotSystem.reveal.test.ts` (12 tests). L'ancien test ne
+vérifiait que `doneAt > allCorrectedAt` : un ordre reste vrai sur une révélation divisée par
+deux, ce qui a laissé passer deux bloquants. Chaque assertion est désormais un **moment** :
+
+- révélation totale **2,6 s** (`FAILED`) / **1,4 s** (`IDENTIFIED`), tolérance une frame ;
+- les 4 bandes basculent à **0,45 s** d'intervalle, chaque intervalle asserté séparément ;
+- **`REVEAL_HOLD_TAIL_SECONDS` (0,8 s)** — signalé non couvert par le reviewer C — est tenu
+  entre le dernier verdict et le début du hold ;
+- **hold = 2,2 s sur les DEUX issues** ;
+- `reducedMotion` coupe la marche, **jamais les durées** (ADR-0054 §3) ;
+- `revealSeconds` constante sur 600 frames · `revealElapsed` monotone et clampé · pause =
+  aucun avancement · `ABANDON` a la même timeline que l'expiration.
+
+**Sondes de mutation** (jetées) : `RESULT_HOLD_SECONDS → 0` ⇒ 3 rouges ;
+`REVEAL_HOLD_TAIL_SECONDS → 0` ⇒ 2 rouges. Les tests mordent.
+
+### 15.4 Vérification
+
+- `vitest run src/game` : **54 fichiers / 1145 tests, 0 échec.**
+- `vitest run` (suite complète) : **149 fichiers / 2067 tests, 0 échec**, deux passages
+  consécutifs.
+- `tsc -p tsconfig.json --noEmit` : **propre** (hook de la voie render inclus).
+- `prettier --check src/game` : **propre.**
+
+### 15.5 Non fait / à signaler
+
+- **`REVEAL_SECONDS_IDENTIFIED` n'a plus de queue de 0,8 s** : à `IDENTIFIED` le pas vaut 0,
+  les 4 tampons sont posés à `t = 0` et la face est tenue 1,4 s. C'est le canon §3
+  (« pas de reptation, 4 tampons simultanés »), mais c'est un **changement de rythme
+  perceptible** par rapport au code du tour 1, qui y jouait une reptation de 0,15 s/bande
+  non prescrite. À confirmer au playtest par `game-designer`.
+- La durée totale de la scène résolue redevient **4,8 s** (2,6 + 2,2) : la remarque §14.5
+  (« 2,6 s au lieu de 4,8 s ») est **close**.
+
+- **next :** `dev-r3f-render` (déjà aligné) · `game-designer` (playtest du rythme
+  `IDENTIFIED`) · `qa-lead` puis nouveau tour de panel.
