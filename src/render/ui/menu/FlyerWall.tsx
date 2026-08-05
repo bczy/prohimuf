@@ -377,6 +377,21 @@ export function FlyerWall({
       const entry = pointerPressed.current.get(e.pointerId);
       if (entry !== undefined) entry.ended = true;
     };
+    // A pointer whose buttons are all up is no longer pressed, whatever we were told. Some
+    // releases never reach us at all — letting go outside the window, or the OS taking the
+    // pointer during an app switch mid-press, fire neither pointerup nor pointercancel — and
+    // an entry stuck at `ended: false` is never collected, so that flyer would be denied its
+    // settle for the rest of the mount. The next move over the page repairs it, because a
+    // move that reports no buttons is proof the press is over.
+    const onMove = (e: PointerEvent) => {
+      if (e.buttons === 0) pointerPressed.current.delete(e.pointerId);
+    };
+    // Losing the window is the other half of that repair, and the one touch needs: a finger
+    // does not emit a hover move on the way back. Whatever was in flight when the page went
+    // away cannot be the gesture behind the focus that arrives once it returns.
+    const onBlur = () => {
+      pointerPressed.current.clear();
+    };
     // Cancelled gestures produce no focus at all, so theirs can go immediately.
     const onCancel = (e: PointerEvent) => {
       pointerPressed.current.delete(e.pointerId);
@@ -389,6 +404,8 @@ export function FlyerWall({
     // that never reach a click — a right-click dispatches none, and a long-press the OS
     // takes over does not reliably cancel. `keydown` covers the last case: a player who
     // pressed, released, and reached for the keyboard instead of completing the click.
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("blur", onBlur);
     window.addEventListener("click", releaseEnded, true);
     window.addEventListener("contextmenu", releaseEnded, true);
     window.addEventListener("keydown", releaseEnded, true);
@@ -396,6 +413,8 @@ export function FlyerWall({
       window.removeEventListener("pointerdown", onDown, true);
       window.removeEventListener("pointerup", onUp, true);
       window.removeEventListener("pointercancel", onCancel, true);
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("blur", onBlur);
       window.removeEventListener("click", releaseEnded, true);
       window.removeEventListener("contextmenu", releaseEnded, true);
       window.removeEventListener("keydown", releaseEnded, true);

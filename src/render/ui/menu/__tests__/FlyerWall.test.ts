@@ -642,6 +642,46 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });
 
+  it("repairs a marker whose release never reached the window", () => {
+    // Let go outside the window, or let the OS take the pointer during an app switch, and
+    // neither pointerup nor pointercancel ever arrives. The entry then sits at ended:false
+    // forever — releaseEnded skips it — and that flyer is denied its settle for the rest of
+    // the mount. A later move reporting no buttons is proof the press is over.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, buttons: 1 }));
+      // No pointerup, no pointercancel — the release happened off-window.
+      window.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, buttons: 0 }));
+    });
+    act(() => {
+      el?.focus(); // a keyboard or screen-reader arrival, much later
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
+  it("drops markers in flight when the page loses the window", () => {
+    // Touch needs its own repair: a finger emits no hover move on the way back, so the
+    // buttons check above never runs for it. Whatever was pressed when the page went away
+    // cannot be the gesture behind a focus that arrives after it returns.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
+      window.dispatchEvent(new Event("blur"));
+    });
+    act(() => {
+      el?.focus();
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
   it("still settles when assistive tech lands on a flyer clicked earlier", () => {
     // The pointer marker must not outlive its own gesture. A press that produces NO focus
     // — macOS Safari does not focus a control on click without Full Keyboard Access, and a
