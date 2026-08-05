@@ -482,7 +482,9 @@ function LockedBody({ level }: { level: LevelConfig }): JSX.Element {
       {/* Every slot the playable layout offers must exist here too, or a level placed in a
           slot this branch omits silently loses its emblem while it is locked — which is
           most of the wall on a first visit. That is how NADIR 94, the one sheet designed to
-          LEAD with its halftone, shipped with no emblem at all. */}
+          LEAD with its mark, shipped with no emblem at all. Said without naming the mark:
+          the one it carried then has since been replaced, and a comment that outlives the
+          shape it describes is how the shape comes back. */}
       <CrewMotif levelId={level.id} slot="hero" locked />
       {/* Crew name stays legible; the rest is the tear (deck §2.5). */}
       <div className={styles.crew}>{copy?.crew ?? level.district}</div>
