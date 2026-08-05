@@ -1008,3 +1008,219 @@ ROLL 1 consommé, il reste UN tirage avant escalade Bertrand** (cap 2 batches, b
 prochain tirage part au nouveau format ou ne part pas.
 
 **Verdict : PASS conditionnel sur VOIE B**, aux dimensions et tolérances ci-dessus.
+
+---
+
+## 10. GATE RECALAGE — VOIE B, recalage sur le dessin (lead-art, Nico) — 2026-08-05
+
+Bertrand a tranché : on abandonne les repères de marge, on recale sur le visage par densité
+d'encre. C'est le cran (3) de mon plan B §8.3 Q1. Le repli §5.2 n'est pas retenu aujourd'hui.
+
+**Ce que ROLL 2 a réfuté, et je l'acte sans réserve.** Ma clause de repères était un pari nommé
+comme tel ; il est perdu. Le diagnostic est plus dur qu'un mauvais placement : sur 3 des 4 repères,
+le meilleur candidat est à **1,0× la médiane du fond**. FLUX n'a pas mal dessiné les repères, il
+n'en a dessiné aucun et a rempli la marge de texture. Ma §9.4 avait nommé cette issue à l'avance
+(« FLUX ne sait pas dessiner un repère de recalage, aucune troisième géométrie ne le corrigera ») :
+elle est constatée. **La clause de repères ne se rejoue pas, à aucun format, sous aucune
+formulation.** Toute réapparition d'un token de repère de marge dans ce prompt est un FAIL de
+prompt gate, sans discussion. Les **traits de coupe** partent avec — même pari, même verdict.
+
+Je laisse §1.2bis et §9 en place tels quels : ils sont l'historique du raisonnement et §9.3 reste
+opposable (voir §10.3). Le tableau de repères de §1.2bis est **caduc**, remplacé par §10.2.
+
+### 10.1 Le prompt révisé — les trois champs
+
+Budget : l'assemblé passait à **118 mots**. Les 21 mots de la clause de repères sortent → 97.
+Je réinvestis **19 mots** dans `opening` et **2** dans `prompt` → **118 mots**, deux mots de marge
+rendus à la lane, comme en §8.
+
+**`opening`** (la clause de repères est supprimée et remplacée) :
+
+> `Flat 2D black ink drawing on a printed sheet: one human head, strict frontal view,
+> orthographic projection, centred, eye line level, crown to collarbone, constant skull width.
+> One unbroken closed skull outline containing the hair, crown and chin inside the sheet, blank
+> white cheeks and forehead. `
+
+**`prompt`** (une seule substitution, `thin level mouth` → `one thin level mouth line`) :
+
+> `Hard weathered face, broad flat forehead under a straight low hairline, wide-set eyes under a
+> heavy level brow, straight narrow nose ending blunt, long flat philtrum, one thin level mouth
+> line, square jaw, small ears flat to the skull, bare neck. `
+
+**`style`** : **inchangé**. Il n'a jamais servi le recalage, il sert le trait ; rien dans ROLL 2 ne
+le met en cause.
+
+> `Photocopied 1990s punk fanzine illustration: thick black ink outline of one constant weight,
+> sparse coarse halftone dots at one 45-degree angle, flat frontal light, uniform white paper
+> (#FFFFFF), high-contrast xerox toner.`
+
+**Ce que j'achète avec les 21 mots récupérés, clause par clause — c'est opposable :**
+
+| Clause neuve                                     | Ce qu'elle tient                                                                                                                                                                                                                              |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `One unbroken closed skull outline`              | Le contour devient le **référentiel de recalage** (§10.2) : il doit être un objet mesurable, donc fermé et continu. C'est aussi la clause §8.3 Q6 (contour porteur) promue de critère de lisibilité à **condition de mesurabilité**.          |
+| `containing the hair`                            | Rend opposable au dessin ce que §1.1 n'imposait qu'au découpage : **la coiffure ne redessine pas la silhouette du crâne**. Sans elle, la variante « cheveux » déplace le sommet du crâne et détruit le référentiel vertical d'une planche à l'autre. |
+| `crown and chin inside the sheet`                | Sommet et menton sont les **deux ancres verticales**. Tronqués, il n'y a plus d'échelle du tout. Ça remplace, en positif et sur le dessin, ce que les traits de coupe devaient garantir.                                                       |
+| `blank white cheeks and forehead`                | La clause la plus importante des trois. Elle ne décrit pas un style : elle garantit l'**unicité** des pics de densité (§10.2). Une joue tramée fabrique un maximum horizontal concurrent, et le détecteur choisit la joue.                     |
+| `one thin level mouth line`                      | `line` nomme la bouche comme **trait horizontal unique**, pas comme volume de lèvres. C'est le pic de contrôle bas.                                                                                                                            |
+
+Rien n'est sacrifié pour les payer : `small ears flat to the skull` reste (Q5 tient toujours,
+et l'oreille redevient importante — elle est sur le contour, donc sur le référentiel).
+
+**VERDICT PROMPT : PASS.** Zéro négation, description positive de forme, sol papier et sol encre
+présents, 118 mots ≤ 120. La reformulation exacte des 19 mots reste ouverte à `concept-artist` :
+elle peut proposer mieux **à contrat identique** (contour fermé / coiffure incluse / sommet-menton
+dans la planche / joues et front blancs), ça repasse par moi ; elle ne peut pas en retirer une.
+
+### 10.2 Les ancrages — ce qui est opposable à `dev-tooling-assets`
+
+**Le renversement, et c'est le cœur de ma réponse : on ne recale pas sur un trait du visage, on
+recale sur le CONTOUR.** Les traits du visage sont tous, sans exception, propriété d'une bande
+variante — cheveux (bande 1), yeux (2), nez (3), bouche (4). Recaler sur eux, c'est recaler sur ce
+qui change **par construction**. Le contour extérieur du crâne, lui, est déclaré invariant par
+§1.1 (« le contour appartient au gabarit, pas à la variante ») et cette invariance est désormais
+écrite **dans le prompt** (§10.1). C'est ça, la propriété qui garantit que l'ancrage tombe au même
+endroit d'une génération à l'autre — pas la stabilité statistique de FLUX, mais une **loi de
+gabarit déjà en vigueur, rendue mesurable**. Les repères devaient importer une invariance externe ;
+la voie B utilise celle qu'on possédait déjà.
+
+**Ancrages, par rang. Ce tableau est opposable ; `dev-tooling-assets` fixe ses seuils dessus.**
+
+| Rang | Ancrage                                                            | Rôle                                                    | Pourquoi il est stable                                                                                                                                        |
+| ---- | ------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0   | **Contour du crâne** : ordonnée du sommet, ordonnée du menton      | **Référentiel vertical unique** (origine + échelle H)   | Gabarit §1.1, verrouillé dans le prompt. Trait de 5-6 px continu = l'objet le plus encré de la planche, très au-dessus du fond. Aucune bande n'a le droit d'y toucher. |
+| A0   | **Demi-largeurs du contour, par ligne** → axe médian pondéré       | **Référentiel horizontal** (centrage + détection tilt)  | Même objet, même invariance. Se mesure déjà : c'est exactement la grandeur de §9.3.                                                                             |
+| A1   | **Barre sourcils + yeux** (pic de densité horizontal haut)         | **CONTRÔLE**, jamais référentiel                        | Ordonnée gabarit (`eye line level`, `heavy level brow`), mais dessin propriété de la bande 2. Sert à vérifier la proportion et à mesurer le tilt (pic G vs D).   |
+| A2   | **Ligne de bouche** (pic de densité horizontal bas)                | **CONTRÔLE**, jamais référentiel                        | Idem, bande 4. Deuxième point de proportion : le couple A1/A2 attrape une planche dont les proportions internes ont dérivé alors que A0 est bon.                |
+| —    | **Base du nez / narines**                                          | **ABANDONNÉ**                                           | C'était un nominal ADR-0080 D5 ; il ne survit pas au changement de méthode. Deux petites taches non jointives, faible encre, forte variance de forme : ça ne fait pas un maximum horizontal franc. Le retenir, c'est refabriquer le mode d'échec de ROLL 2 à l'intérieur du visage. |
+
+**Les quatre clauses de méthode, sans lesquelles ce tableau est décoratif :**
+
+1. **Un pic de densité n'est un ancrage que s'il est UNIQUE dans sa fenêtre.** Le critère n'est pas
+   « le plus sombre » (c'est exactement le défaut C-B de `findTickY`, qui retournait toujours une
+   ligne) mais **le plus sombre ET séparé du deuxième candidat de sa fenêtre**. Si le second pic
+   est à moins de 2× le premier, le détecteur **abort**. La clause `blank white cheeks and
+   forehead` existe pour rendre cette séparation atteignable.
+2. **C-B reste en vigueur, transposé.** Le détecteur doit pouvoir échouer sur le visage exactement
+   comme il devait pouvoir échouer sur la marge. Abort > recalage sur du bruit. C'était vrai en
+   marge, c'est plus vrai encore ici : un mauvais recalage intérieur donne une planche
+   **plausible**, donc une fracture qu'on découvre à l'écran.
+3. **Aucun ancrage ne tombe sur une couture.** C1 y=296 (front), C2 y=451 (au-dessus de l'arête),
+   C3 y=606 (philtrum) sont par construction des zones plates et peu contrastées : elles sont donc
+   exactement là où un pic de densité **ne doit pas** exister. A1 vit entre C1 et C2, A2 sous C3,
+   A0 hors bandes. Un pic de densité détecté à moins de 5 % de H d'une couture est un **défaut de
+   planche** (§8.4-5 : aucun trait fort ne traverse une couture), pas un ancrage.
+4. **Le recalage inter-planches se mesure, il ne se suppose pas.** Chaque planche dérivée est
+   recalée **sur la planche héros** (A0 → A0), et l'écart est journalisé, pas seulement testé. Une
+   planche qui abort n'est pas tranchée ; une planche qui passe sort avec ses chiffres.
+
+### 10.3 Tolérances — ce qui tient, ce qui ne tenait pas, et l'aveu
+
+La question est juste et la réponse tient en une distinction que je n'avais pas explicitée en §9 :
+**§9.3 ne mesure pas le recalage. §9.3 mesure les coutures.**
+
+- **Les seuils §9.3 tiennent, inchangés** (demi-largeur ≤ 1,5 px, axe ≤ 0,75 px, tangente ≤ 3°,
+  trait ≤ 10 %). Ils portent sur le **contour**, mesuré au **centroïde pondéré alpha d'un trait de
+  5-6 px**, de part et d'autre d'une couture, **à l'intérieur d'une même planche**. Ils ne
+  dépendent d'aucun repère et ne dépendaient déjà d'aucun : un recalage raté ne les déplace même
+  pas, puisqu'il translate les deux côtés de la couture de la même quantité. Le sous-pixel est
+  légitime ici parce que l'objet mesuré est un trait imprimé net, pas une structure floue. Je ne
+  les desserre pas et ce n'est pas de l'entêtement : rien dans le passage à la voie B ne les
+  concerne.
+- **Ce que la voie B dégrade, c'est le recalage inter-planches — et là je desserre franchement.**
+  A0 mesure une **courbure** (calotte crânienne, menton), pas un trait horizontal : l'ordonnée
+  extrême d'un arc est mal définie quand l'arc est plat, et une variante de coiffure fera bouger le
+  sommet de quelques pixels quoi qu'en dise le prompt. Prétendre y tenir 0,75 px serait produire un
+  rejet systématique, et **un contrôle qui rejette tout ne protège rien**. Nouveau tableau, il est
+  neuf, il ne remplace rien :
+
+| Grandeur, planche dérivée vs planche héros                       | PASS                   | Alerte        | Rejet de planche |
+| ---------------------------------------------------------------- | ---------------------- | ------------- | ---------------- |
+| **Hauteur de crâne H (sommet → menton)**                         | **≤ 0,5 % de H** (≈ 4 px) | 0,5 – 1,0 %   | **≥ 1,0 %**      |
+| **Axe médian, écart de centrage**                                | **≤ 1,5 px**           | 1,5 – 3,0 px  | **≥ 3,0 px**     |
+| **Ordonnée A1 (barre yeux), en fraction de H**                   | **≤ 1,0 % de H**       | 1,0 – 2,0 %   | **≥ 2,0 %**      |
+| **Ordonnée A2 (ligne bouche), en fraction de H**                 | **≤ 1,5 % de H**       | 1,5 – 3,0 %   | **≥ 3,0 %**      |
+| **Tilt : désaccord d'ordonnée entre pic œil G et pic œil D**     | **≤ 8 px**             | 8 – 16 px     | **≥ 16 px**      |
+
+Deux points que j'assume à voix haute :
+
+- **Le seuil de tilt passe de 24 px « rejet » à 16 px.** Ce n'est pas un durcissement de confort :
+  §8.3 Q2 chiffrait 24 px sur la **largeur de planche à 864**, soit ≈ 1,6°. À 676 px de large, le
+  même angle vaut ≈ 19 px et j'arrondis à 16 px pour rester du bon côté. L'exigence est constante,
+  c'est le chiffre qui bouge — même raisonnement qu'en §9.3.
+- **Ces seuils sont un plancher automatisable, pas un verdict.** Clause §1.2bis reconduite mot pour
+  mot : **le mécanique ne me lie pas.** Une planche qui passe les cinq mesures et dont un raccord
+  se voit à l'œil sur la planche de combinaisons G1 est FAIL quand même.
+
+### 10.4 Budget — nouveau cap, et sa condition d'abandon nommée d'avance
+
+**Cap : 2 tirages.** ROLL 3 = planche héros au prompt §10.1. ROLL 4 = un seul re-roll, et
+**uniquement** si l'échec de ROLL 3 est un échec de dessin nommable et corrigeable (voir ci-dessous).
+Au-delà : escalade Bertrand, deux options chiffrées, pas de troisième tirage en sous-main.
+
+**La distinction qui décide, et c'est la question posée : est-ce un mauvais tirage, ou la méthode
+qui ne marche pas ?** Le départage se fait sur **l'objet référentiel**, pas sur le visage.
+
+- **Mauvais tirage (retryable, ROLL 4 autorisé).** Le contour est fermé, continu, mesurable ; A0
+  sort des chiffres ; mais la planche échoue sur le registre, la parité G6, le tilt, une couture
+  traversée, ou un ancrage trop près d'une couture. Le référentiel existe, le dessin est raté :
+  on rebrûle une fois.
+- **La méthode ne marche pas (ABANDON de la voie B, escalade immédiate, pas de ROLL 4).** Un seul
+  des trois signaux suffit :
+  1. **Le contour n'est pas un objet.** Il se rompt, se dédouble, se fond dans la coiffure ou dans
+     la trame, ou son ordonnée de sommet/menton ne peut pas être extraite avec une séparation
+     franche. Le référentiel lui-même est inmesurable — c'est le mode d'échec de ROLL 2 déplacé de
+     la marge au dessin, et il vaut le même verdict.
+  2. **Les pics ne sont pas uniques.** A1 ou A2 sort avec un second candidat à moins de 2× dans sa
+     fenêtre, alors que `blank white cheeks and forehead` est dans le prompt. Ça signifierait que
+     FLUX remplit le visage de texture comme il a rempli la marge — même diagnostic
+     (« generalised noise »), même conclusion.
+  3. **Ça ne se reproduit pas d'une planche à l'autre.** ROLL 3 est bon, mais la première dérivée
+     `kontext` sort hors rejet sur H ou sur l'axe (≥ 1,0 % / ≥ 3,0 px). Le recalage n'est alors pas
+     imprécis, il est **non reproductible** — et c'est précisément le service que les repères
+     devaient rendre. Ce test-là est le vrai verdict de la voie B, et il faut le faire **tôt** :
+     `dev-tooling-assets` produit **une** planche dérivée de contrôle avant d'en produire 23.
+
+Ce dernier point est ma seule exigence de séquence sur le budget : **une dérivée de contrôle avant
+la série**. Découvrir la non-reproductibilité à la 24ᵉ planche coûterait le batch entier.
+
+**En cas d'abandon**, l'option chiffrée à mettre devant Bertrand reste le repli §5.2 (gabarit héros
+dessiné à la main, FLUX cantonné aux variations img2img masquées) — qui, à ce stade, ne serait plus
+un repli mais la conséquence logique de deux réfutations : FLUX ne dessine pas de repère, et FLUX
+ne reproduit pas un gabarit. Il aurait alors le droit de dessiner **dans** un gabarit, pas de le
+définir.
+
+### 10.5 Ordre de lecture du ROLL 3 — remplace §8.4
+
+§8.4 disait « les repères avant le visage ». Il n'y a plus de repères. Le nouveau principe est le
+même à un cran de profondeur : **le référentiel avant le visage**, et le référentiel est le
+contour.
+
+1. **Le contour du crâne.** Fermé, continu, d'une seule épaisseur, sur tout le pourtour. La
+   coiffure est **dedans**. C'est la seule chose que je regarde d'abord, et si elle rate je
+   n'ouvre pas la suite.
+2. **Sommet et menton.** Non tronqués, dans la planche, et **assez francs pour qu'une ordonnée
+   extrême ait un sens** — pas un crâne plat sur 200 px, pas un menton noyé dans le cou.
+3. **Le blanc.** Joues et front réellement blancs. C'est ce qui fait exister les pics ; une joue
+   tramée est un rejet, pas un effet de style.
+4. **Le format.** 676 × 871 exact.
+5. **Les deux pics.** Barre yeux/sourcils et ligne de bouche : horizontales, franches, uniques
+   dans leur zone. Et l'accord gauche/droite de la barre des yeux — c'est là que le tilt se lit
+   maintenant.
+6. **Le contour à la réduction** (critère §8.3 Q6, inchangé) : continu à hauteur de bande réelle.
+7. **Les zones de couture.** C1/C2/C3 plates, aucun trait fort, aucun pic de densité.
+8. **Balayage défauts IA (G6)**, sur fond contrastant : parité yeux / oreilles / sourcils, zones
+   claires encloses.
+9. **Le registre**, en dernier : gueule dure de fanzine, pas belle gueule lissée.
+
+Les motifs de **rejet immédiat** de §8.5 restent en vigueur, moins les deux premiers (repères), et
+plus un neuf : **contour ouvert, rompu, dédoublé, ou coiffure débordant la silhouette du crâne**.
+
+### 10.6 Portée
+
+Ce gate couvre **le prompt révisé, les ancrages, les tolérances de recalage et le budget**. Il ne
+vaut ni PASS d'asset (G1-G6, sur planche de combinaisons — sans elle, pas de verdict), ni gate
+composite (G7/G7a/G7b/G7c, sur captures in-game réelles). §10.1 remplace les mots gatés en §8 ;
+§10.2 rend caduc le tableau de repères de §1.2bis ; §10.3 ajoute un tableau et n'en retire aucun.
+
+**Verdict : PASS — voie B, prompt §10.1, ancrages §10.2, tolérances §10.3, cap 2 tirages §10.4.**
