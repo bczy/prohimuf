@@ -12,6 +12,7 @@
  *
  *   - enterMenuFromTitle(page)        — TITLE cover → single-action entry → MENU shell.
  *   - dismissNarrative(page)          — clear the pre-level "Passer" interstitial.
+ *   - waitForFlyerWallSettled(p, o)  — hold until every NIVEAUX float-in has finished.
  *   - seedDeterminism(page, ids, o)   — addInitScript: freeze cops + mute + unlock (+ crt off by default).
  *   - seedPlay(page, ids, o)          — ADR-0005 "play" mode: __MUF_PLAY__ + mute + unlock (never __MUF_FREEZE_COPS__).
  *   - readState(page)                 — one window.__MUF_STATE__() read (null if the seam isn't installed yet).
@@ -84,6 +85,96 @@ export async function enterMenuFromTitle(page, { timeout = 20000 } = {}) {
   await marker.click({ timeout });
   await page.getByText(MENU_MASTHEAD, { exact: true }).first().waitFor({ timeout });
   await page.locator('[data-flyers-armed="true"]').first().waitFor({ timeout });
+}
+
+/**
+ * Wait until the NIVEAUX flyer wall has visually SETTLED — every float-in entrance
+ * animation finished — which is what a capture of that screen must wait for.
+ *
+ * Asks the browser whether the animations are done (Web Animations API) rather than
+ * sleeping for `(count - 1) * stagger + duration`. That arithmetic would restate three
+ * values owned elsewhere — the 180ms stagger in FlyerWall.tsx, the 1400ms duration in
+ * FlyerWall.module.css, and LEVELS.length — with nothing keeping the copies in sync, so
+ * adding a level would silently push the real settle time past a fixed budget and bring
+ * back mid-animation screenshots. Waiting on the actual end state cannot drift: change
+ * the stagger, the duration or the level count and this still holds exactly long enough.
+ * It is also correct under reduced motion, where there is no animation to await.
+ *
+ * `data-flyers-armed` is NOT a substitute: it gates click-through, not the visual settle.
+ *
+ * CEILING — `timeout` is ONE budget shared by both waits (mount, then settle), not one
+ * each: they run off a single deadline, so this helper cannot exceed it in wall-clock.
+ * That matters because the two are chained — a slow mount would otherwise eat its own
+ * full budget before the settle poll even started, making the real worst case twice the
+ * documented one.
+ *
+ * It is a safety net, not a computed budget, and left that way ON PURPOSE — deriving it
+ * would reintroduce the very coupling described above. Only the ESCAPE HATCH is fixed, and
+ * it stops covering the wall at roughly 105 levels ((105-1) x 180ms + 1400ms > 20s),
+ * against 5 today. If the game ever approaches that, raise this default rather than
+ * bringing the arithmetic back.
+ */
+export async function waitForFlyerWallSettled(page, { timeout = 20000 } = {}) {
+  const deadline = Date.now() + timeout;
+  // Floor of 1ms, NOT 0: Playwright reads `timeout: 0` as "disable the timeout" and
+  // waits forever. Clamping to 0 once the budget is spent — a slow mount eating it all,
+  // or a caller passing `{ timeout: 0 }` — would turn this safety net into a hang.
+  const left = () => Math.max(1, deadline - Date.now());
+  await page.locator(".muf-flyer-slot").first().waitFor({ timeout: left() });
+  // Two frames before polling. A slot can be in the DOM — the waitFor above proves it —
+  // BEFORE the browser has run the style pass that creates its CSSAnimation object, and an
+  // empty getAnimations() is indistinguishable from a finished one. Without this, the poll
+  // could read "settled" on a wall that has not started animating. Two frames because the
+  // first only guarantees style resolution is scheduled.
+  // Raced against the shared deadline: `page.evaluate` honours no timeout of its own, and
+  // rAF does not fire at all in a backgrounded/hidden renderer — so an unraced await here
+  // could hang past the ceiling this function documents. Losing the race is NOT harmless on
+  // its own — the fallback can hand control to the poll before any CSSAnimation exists —
+  // so the predicate below closes that hole itself rather than trusting these frames.
+  await Promise.race([
+    // `.catch` on the racer itself, not on the race: whichever promise loses keeps
+    // running unobserved, and this one rejects with "execution context destroyed" once the
+    // caller closes or navigates the page — an unhandled rejection that can abort Node.
+    page
+      .evaluate(
+        () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
+      )
+      .catch(() => undefined),
+    new Promise((resolve) => setTimeout(resolve, Math.min(left(), 1000))),
+  ]);
+  await page.waitForFunction(
+    () => {
+      const slots = Array.from(document.querySelectorAll(".muf-flyer-slot"));
+      // `.every()` on an EMPTY array is true, so without this length guard the predicate
+      // reports "settled" on any poll tick where no slot exists. FlyerWall is mounted
+      // conditionally and unmounts fully on every rubrique round-trip, and the waitFor
+      // above only proves a slot existed at that earlier instant — not at this one.
+      return (
+        slots.length > 0 &&
+        slots.every((el) => {
+          // `getComputedStyle` FORCES the style pass, so this is true even on the very
+          // first tick — including the case where the two-frame wait above lost its race
+          // and rAF never fired at all (backgrounded renderer). Without it, a slot whose
+          // CSSAnimation the browser had not created yet returns `[]` from
+          // getAnimations(), and `.every()` on an empty array reports "settled" on a wall
+          // that has not started falling.
+          //
+          // Empty is only accepted when the computed animation is genuinely `none` — the
+          // reduced-motion kill switches and `.slotSettled`, where no animation will EVER
+          // exist. Demanding a non-empty list unconditionally would instead hang for the
+          // full timeout on a wall that is correctly, permanently at rest — a runner
+          // honouring `prefers-reduced-motion`, or any future caller that reaches the wall
+          // with the session key already set (each harness page is a fresh tab today, and
+          // sessionStorage is per-tab, so that second case does not arise here yet).
+          const animations = el.getAnimations();
+          if (animations.length === 0) return getComputedStyle(el).animationName === "none";
+          return animations.every((a) => a.playState === "finished");
+        })
+      );
+    },
+    undefined,
+    { timeout: left() },
+  );
 }
 
 /**

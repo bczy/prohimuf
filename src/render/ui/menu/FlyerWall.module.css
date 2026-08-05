@@ -28,6 +28,71 @@
   display: flex;
   flex-direction: column;
   width: min(100%, var(--flyer-max-width));
+  /* Flyers float in one by one on mount instead of appearing all at once, staggered
+     per-slot via the inline --slot-delay custom property (FlyerWall.tsx). The real
+     drop/drift/rotate values come from FLYER_FLOAT_IN_VARIANTS, set inline per flyer
+     index (one of three deterministic paths) so the wall doesn't read as one path
+     copy-pasted in time. Values only (not identifiers), so this stays safe under CSS
+     Modules' local scoping — unlike @keyframes names, custom-property values survive
+     the build verbatim.
+
+     The neutral fallbacks live at each `var()` USE SITE in the keyframe below, not as a
+     second block of declarations here. Some fallback is required — `FLYER_FLOAT_IN_VARIANTS[
+     i % 3]` is `| undefined` under noUncheckedIndexedAccess, and a `var()` with neither
+     value nor fallback makes the whole `transform` invalid at computed-value time — but a
+     hand-maintained copy of all 12 properties is a second thing to keep in step, and this
+     animation has already been tuned three times. At the use site there is nothing to
+     drift, and the degenerate case degrades to "appears in place". */
+  animation: mufFlyerFloatIn 1400ms both;
+  animation-delay: var(--slot-delay, 0ms);
+}
+
+/* The transform stops carry their own timing-function so the fall doesn't read as
+   evenly-paced steps: hard accelerating drop, decelerating swings, a soft back-out
+   overshoot on the settle — instead of one flat ease over the whole fall. A stop's
+   timing-function only governs the segment that follows it FOR THE PROPERTIES THAT
+   STOP DECLARES, so the 22% stop (opacity only, and opacity holds at 1 from there on)
+   deliberately carries none: the transform interval it sits inside is 0%→38% and is
+   driven end to end by the 0% curve. */
+@keyframes mufFlyerFloatIn {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--fio-y0, 0px)) translateX(var(--fio-x0, 0px))
+      rotate(var(--fio-r0, 0deg));
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  22% {
+    opacity: 1;
+  }
+  38% {
+    transform: translateY(var(--fio-y1, 0px)) translateX(var(--fio-x1, 0px))
+      rotate(var(--fio-r1, 0deg));
+    animation-timing-function: ease-in-out;
+  }
+  60% {
+    transform: translateY(var(--fio-y2, 0px)) translateX(var(--fio-x2, 0px))
+      rotate(var(--fio-r2, 0deg));
+    animation-timing-function: ease-out;
+  }
+  80% {
+    transform: translateY(var(--fio-y3, 0px)) translateX(var(--fio-x3, 0px))
+      rotate(var(--fio-r3, 0deg));
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot {
+    animation: none;
+  }
+}
+
+:root[data-reduced-motion="true"] .slot {
+  animation: none;
 }
 
 /* First-run tutorial nudge (spec-menus-ui-completion §4) — a felt-tip "COMMENCE ICI"
@@ -72,4 +137,20 @@
     flex: 0 0 auto;
     width: var(--flyer-max-width);
   }
+}
+
+/* Already played this session (ux-designer, PR #145): render in the resting position at
+   once. Same end state as the reduced-motion kill switches, reached the same way — by
+   removing the animation, not by adding a second one.
+
+   Written `.slot.slotSettled`, not `.slotSettled`: the component always applies BOTH
+   classes, so at equal specificity this rule would only win by sitting physically after
+   `.slot` in this file. Moving it up next to the reduced-motion kill switches — the
+   obvious readability edit — would hand `animation: mufFlyerFloatIn` back, replaying the
+   1400ms cascade for a session that already had it and for the keyboard/AT user who just
+   settled the wall. No test can catch that: jsdom applies no stylesheet, so the suite only
+   ever asserts the class is present. The doubled selector makes the win independent of
+   order, so the guarantee lives in the selector rather than in a line number. */
+.slot.slotSettled {
+  animation: none;
 }

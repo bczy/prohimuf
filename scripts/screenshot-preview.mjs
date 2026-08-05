@@ -13,7 +13,7 @@
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
-import { enterMenuFromTitle } from "./e2e-lib.mjs";
+import { enterMenuFromTitle, waitForFlyerWallSettled } from "./e2e-lib.mjs";
 
 const ROOT = process.cwd();
 const BASE_URL = process.env.PREVIEW_URL ?? "http://localhost:4173/prohimuf/";
@@ -30,6 +30,11 @@ const manifest = JSON.parse(
 const LEVELS = manifest.levels.map((l) => ({ id: l.id, name: l.name }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// `throw` can carry any value, not just an Error — a rejected string or a thrown object
+// would log `undefined` through `e.message` and cost us the actual failure detail in a CI
+// run we cannot reproduce locally.
+const errText = (e) => (e instanceof Error ? e.message : String(e));
 
 async function dismissNarrative(page) {
   for (let i = 0; i < 8; i++) {
@@ -76,8 +81,31 @@ async function captureLevel(context, level, withMenu) {
   await enterMenuFromTitle(page);
 
   if (withMenu) {
-    await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
-    console.log("  captured 00_menu.png");
+    // Hold until the flyer-wall entrance has actually finished, not for a duration
+    // guessed from its stagger and length (see waitForFlyerWallSettled).
+    //
+    // Isolated on purpose: this menu capture is a BYSTANDER in this function, whose real
+    // job is the level shot below. Letting the settle wait throw here would abort before
+    // the level click and silently drop `level_<first>.png`, which nothing else in the
+    // script re-attempts — a cosmetic wait must not be able to cost an unrelated capture.
+    // Two separate catches, not one around both: a single block would report a disk or
+    // page-crash failure in `screenshot()` as "flyer wall never settled", sending the
+    // next engineer after a phantom animation-timing bug.
+    let settled = true;
+    try {
+      await waitForFlyerWallSettled(page);
+    } catch (e) {
+      settled = false;
+      console.error(`  failed 00_menu.png (flyer wall never settled): ${errText(e)}`);
+    }
+    if (settled) {
+      try {
+        await page.screenshot({ path: path.join(OUT_DIR, "00_menu.png") });
+        console.log("  captured 00_menu.png");
+      } catch (e) {
+        console.error(`  failed 00_menu.png (screenshot failed): ${errText(e)}`);
+      }
+    }
   }
 
   await page.getByText(level.name, { exact: true }).first().click();
@@ -92,15 +120,28 @@ async function captureLevel(context, level, withMenu) {
 }
 
 // Capture a front-end screen booted directly via the ?preview= hook (no play).
-async function captureScreen(context, file, query) {
+// `settleFlyers` additionally waits out the NIVEAUX entrance animation; the flat sleep
+// covers the typewriter/backdrop, but only the flyer wall has a settle condition we can
+// actually observe, so that screen waits on the real thing instead of a duration.
+async function captureScreen(context, file, query, { settleFlyers = false } = {}) {
   const page = await context.newPage();
+  const out = path.join(OUT_DIR, file);
   try {
     await page.goto(`${BASE_URL}${query}`, { waitUntil: "networkidle" });
     await sleep(2500); // let the typewriter / backdrop settle
-    await page.screenshot({ path: path.join(OUT_DIR, file) });
+
+    // A settle failure here just falls through to the outer catch, leaving whatever
+    // `captureLevel` already wrote in place. That file is NOT stale: captureLevel now
+    // waits for the same settle condition and skips its screenshot entirely when the
+    // wait fails, so a mid-animation 00_menu.png can no longer exist. Deleting it on
+    // this second, independent page load would therefore destroy a good capture over a
+    // failure unrelated to animation timing (a slow runner, a hiccup on ?preview=menu).
+    if (settleFlyers) await waitForFlyerWallSettled(page);
+
+    await page.screenshot({ path: out });
     console.log(`  captured ${file}`);
   } catch (e) {
-    console.error(`  failed ${file}: ${e.message}`);
+    console.error(`  failed ${file}: ${errText(e)}`);
   } finally {
     await page.close();
   }
@@ -176,7 +217,7 @@ async function main() {
     try {
       await captureLevel(context, LEVELS[i], i === 0);
     } catch (e) {
-      console.error(`  failed ${LEVELS[i].id}: ${e.message}`);
+      console.error(`  failed ${LEVELS[i].id}: ${errText(e)}`);
     }
   }
 
@@ -186,7 +227,7 @@ async function main() {
   console.log("[screen] title");
   await captureScreen(context, "00_title.png", "?preview=title");
   console.log("[screen] menu");
-  await captureScreen(context, "00_menu.png", "?preview=menu");
+  await captureScreen(context, "00_menu.png", "?preview=menu", { settleFlyers: true });
 
   console.log("[screen] narrative");
   await captureScreen(context, "01_narrative.png", "?preview=narrative");
@@ -218,6 +259,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("Fatal:", e.message);
+  console.error("Fatal:", errText(e));
   process.exit(1);
 });
