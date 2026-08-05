@@ -16,25 +16,32 @@
  * (plate crop + pose crop), so generating it would ship an asset nobody draws.
  *
  * GENERATION METHOD (ruling §2 / gate §4):
- *   - `plate` — KONTEXT img2img, conditioned on a COMMITTED crop of the shipped
- *     assets/levels/belliard/street-wide.png around x_norm 0.30-0.45 (continuity is a gate
- *     criterion, not a style note), via the PAID gen.pollinations.ai render farm (same
- *     Bearer POLLINATIONS_TOKEN, `genPaidUrl` from lib/pollinations.mjs — the exact method
- *     gen-street-paid.mjs uses to produce the shipped street-wide.png, not duplicated here).
- *     The anonymous image.pollinations.ai tier refuses `kontext` outright ("kontext model is
- *     only available on enter.pollinations.ai") AND silently halves any request above
- *     ~1024px — gen.pollinations.ai does neither: it accepts `kontext` for a real Bearer
- *     account and honours width/height exactly, so img2img conditioning and the decided
- *     2048x1152 resolution are NOT a trade-off here (confirmed against the live
- *     pollinations/APIDOCS.md `image` param table: kontext/gptimage/seedream/klein/nanobanana
- *     all accept a reference `image=` URL on this endpoint). Pinned seed, private, high
- *     quality. Plain `flux` on the paid endpoint (still exact-res, still no anonymous
- *     downscale, but WITHOUT the street-seam conditioning) is the pre-authorised fallback if
- *     kontext errors or returns mushy/over-locked art. CAP: 2 batches FOR THE PLATE (kontext,
- *     then the flux fallback — exactly what `generate()` below does, no further re-roll) —
- *     past that, options go to Bertrand, not more rolls (gate §4 C4; the cap is scoped to the
- *     plate's own generation method, not to the 8-asset set as a whole). The crop itself is
- *     produced ONCE by `--make-crop` and committed (reproducible, never regenerated per-run).
+ *   - `plate` — TWO-STAGE (Bertrand-approved route, 2026-08): a single kontext pass
+ *     conditioned on the FRONTAL elevation crop of street-wide.png fights the text — the
+ *     reference shows eye-level, the prompt asks for a plunging dormer POV, and the image
+ *     conditioning wins, which is exactly how the v1-v6 runs shipped a street-level plate
+ *     despite a dormer prompt. Splitting "the right angle" and "the right style" into two
+ *     separate generations removes that fight:
+ *       Stage 1 (`plate-angle.png`, intermediate, NOT shipped) — plain `flux` TEXT-ONLY on
+ *       `block.plate` (already the dormer-POV string, no `image=` at all) on the PAID
+ *       gen.pollinations.ai farm. No conditioning to contradict, so the model's hands are
+ *       free on composition/angle.
+ *       Stage 2 (`plate.png`, shipped) — `kontext` img2img conditioned on Stage 1's OWN
+ *       output (not the frontal street-wide crop), same prompt text. Kontext's job here is
+ *       narrower: refine linework/register toward the fanzine house style while preserving
+ *       Stage 1's composition — a same-angle edit, not an angle-vs-reference fight. Style
+ *       continuity with the shipped street comes from the prompt's own tokens (bay rhythm,
+ *       tagged shutters, cast-iron mast — all named in `block.plate` verbatim), which a
+ *       same-composition kontext pass does not have to defend against a competing reference.
+ *     `plate-source-crop.png` (the frontal street-wide crop) is KEPT committed for gate
+ *     history/provenance but is no longer read by `generate()` — see `sourceCrop` below,
+ *     now unused by the plate path (only Stage 1's own render feeds Stage 2).
+ *     Plain `flux` on the paid endpoint straight from Stage 1's prompt (skip Stage 2 entirely)
+ *     is the pre-authorised fallback if Stage 2 kontext errors or over-locks the art back
+ *     toward street-level. CAP: 2 batches FOR THE PLATE (Stage 2 kontext, then the flux
+ *     fallback on Stage 1's own render — exactly what `generate()` below does, no further
+ *     re-roll) — past that, options go to Bertrand, not more rolls (gate §4 C4; the cap is
+ *     scoped to the plate's own generation method, not to the 8-asset set as a whole).
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *
@@ -66,18 +73,13 @@ const ROOT = path.resolve(__dirname, "..");
 const LEVEL_ART = path.resolve(ROOT, "src/game/levels/levelArt.json");
 const FORCE = process.env.FORCE === "1";
 
-const REPO = process.env.GITHUB_REPOSITORY ?? "bczy/prohimuf";
-const SHA = process.env.GITHUB_SHA ?? "main";
-
 // x_norm 0.30-0.45 of the shipped street-wide.png (6418 x 1248), full height —
 // gate C1: "source crop of the SHIPPED street-wide.png ... committed as a reference file
-// and its path recorded in the draft, so the plate is reproducible."
+// and its path recorded in the draft, so the plate is reproducible." Kept for provenance/
+// `--make-crop` only — no longer fed into `generate()` (two-stage plate, see file header:
+// conditioning the plate on this FRONTAL elevation is what fought the dormer-POV prompt).
 const SOURCE_CROP_X_NORM = { from: 0.3, to: 0.45 };
 const SOURCE_STREET_WIDE = "assets/levels/belliard/street-wide.png";
-
-function rawUrl(repoRelativePath) {
-  return `https://raw.githubusercontent.com/${REPO}/${SHA}/${repoRelativePath}`;
-}
 
 // ── Load the photoQte definitions from levelArt.json (single source) ─────────
 // `photoQte.plate` is the concept-artist's gate-owned prompt STRING; the sibling
@@ -109,7 +111,7 @@ function loadPhotoQte() {
     height: plateAsset.size.height,
     seed: plateAsset.seed,
     outFile: path.resolve(ROOT, "public", plateAsset.asset),
-    sourceCrop: plateAsset.sourceCrop,
+    twoStagePlate: true, // flux angle-only, THEN kontext img2img on that render (see header)
     opaque: true, // no chroma-key, no mobile variant (ruling §1.1 — one asset, both viewports)
     mobile: false,
   });
@@ -185,54 +187,73 @@ async function resizeToTarget(buf, width, height, label) {
   return canvas.toBuffer("image/png");
 }
 
-// ── Generation (flux, or kontext img2img for the plate via the PAID farm) ────
+// Pollinations sometimes serves JPEG bytes even from a .png request path — sniff the mime
+// from the magic bytes rather than assume, same idiom as bakeoff-boss-models.mjs's dataUri().
+function dataUriFromBuffer(buf) {
+  const mime =
+    buf[0] === 0x89 && buf[1] === 0x50
+      ? "image/png"
+      : buf[0] === 0xff && buf[1] === 0xd8
+        ? "image/jpeg"
+        : "application/octet-stream";
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
+// ── Generation (flux, or two-stage flux+kontext for the plate via the PAID farm) ──
 async function generate(a) {
-  if (a.sourceCrop) {
-    // `sourceCrop` (like `asset`) is stored relative to public/ in levelArt.json, but the
-    // committed file lives at repo path public/<sourceCrop> — rawUrl() needs that full repo
-    // path, not the public/-relative one, or raw.githubusercontent.com 404s (root cause of
-    // every "kontext img2img FAILED ... HTTP 404" seen in CI so far: the URL pointed at
-    // <repo>/<sha>/assets/photoqte/plate-source-crop.png, missing the public/ segment where
-    // the file actually is).
-    const imageUrl = rawUrl(`public/${a.sourceCrop}`);
+  if (a.twoStagePlate) {
+    // Stage 1 — plain flux, TEXT ONLY, no `image=`: the model's hands are free on
+    // composition/angle, nothing to contradict (see file header for why this is split
+    // out of the kontext pass). Not written to disk unless Stage 2 fails outright.
     console.log(
-      `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_MODEL} img2img (paid), ref=${imageUrl}`,
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — stage 1: flux text-only (paid), angle-free`,
+    );
+    const stage1 = await fetchWithRetry(
+      genPaidUrl({
+        prompt: a.prompt,
+        seed: a.seed,
+        width: a.width,
+        height: a.height,
+        model: "flux",
+      }),
+    );
+    const stage1Resized = await resizeToTarget(
+      stage1,
+      a.width,
+      a.height,
+      `${a.key} (stage 1 flux)`,
+    );
+
+    // Stage 2 — kontext img2img conditioned on STAGE 1'S OWN bytes (data URI — stage 1
+    // is not pushed to the remote yet within this same run, so raw.githubusercontent.com
+    // cannot see it; a data: URI needs no round trip). Same prompt text: kontext's job is
+    // a same-composition style refinement, not an angle negotiation.
+    console.log(
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — stage 2: ${PLATE_MODEL} img2img (paid), ref=stage 1 render`,
     );
     try {
-      const buf = await fetchWithRetry(
+      const stage2 = await fetchWithRetry(
         genPaidUrl({
           prompt: a.prompt,
           seed: a.seed,
           width: a.width,
           height: a.height,
           model: PLATE_MODEL,
-          imageUrl,
+          imageUrl: dataUriFromBuffer(stage1Resized),
         }),
       );
-      return await resizeToTarget(buf, a.width, a.height, `${a.key} (${PLATE_MODEL})`);
+      return await resizeToTarget(stage2, a.width, a.height, `${a.key} (stage 2 ${PLATE_MODEL})`);
     } catch (e) {
-      // Gate §4 C4 — pre-authorised fallback: plain `flux` on the SAME paid endpoint (still
-      // exact-res, still no anonymous-tier downscale). Loud on purpose (::warning:: GH Actions
-      // annotation, not just a console.log line): the fallback drops the street-continuity
-      // conditioning that IS the plate's ELIMINATORY gate criterion, so a silent fallback
-      // previously shipped a decor with no seam and nobody noticed until review.
-      const msg =
-        `${a.key}: ${PLATE_MODEL} img2img (paid) FAILED (${e.message}) — falling back to ` +
-        `flux text-to-image on the same paid endpoint. This is the pre-authorised fallback ` +
-        `(gate §4 C4) but the shipped asset then has NO street-continuity conditioning` +
-        (a.key === "plate" ? " (an ELIMINATORY criterion for the plate)" : "") +
-        ` — verify the result against the gate before merge.`;
-      console.warn(`::warning::${msg}`);
-      const buf = await fetchWithRetry(
-        genPaidUrl({
-          prompt: a.prompt,
-          seed: a.seed,
-          width: a.width,
-          height: a.height,
-          model: "flux",
-        }),
+      // Pre-authorised fallback: ship Stage 1 as-is rather than a broken/mushy Stage 2 —
+      // Stage 1 already carries the correct angle (the ELIMINATORY criterion), it just
+      // misses the kontext style refinement. Loud on purpose (::warning:: GH Actions
+      // annotation), so a silent fallback doesn't quietly ship the unrefined stage again.
+      console.warn(
+        `::warning::${a.key}: stage 2 (${PLATE_MODEL} img2img, paid) FAILED (${e.message}) — ` +
+          `shipping stage 1 (flux text-only) unrefined. Angle is correct; style refinement is ` +
+          `missing — verify against the gate before merge.`,
       );
-      return await resizeToTarget(buf, a.width, a.height, `${a.key} (flux fallback)`);
+      return stage1Resized;
     }
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
