@@ -7,6 +7,7 @@ import {
   PALIER_LINE,
   SCREEN_TITLE,
   SUPERTITLE,
+  SUPERTITLE_SHORT,
   TARGET_ALT,
   bandGroupLabel,
   chevronLabel,
@@ -102,6 +103,56 @@ export function PortraitRobotScreen({
   const outcome = scene.result?.outcome ?? null;
   const device = isMobile ? "mobile" : "desktop";
 
+  // The interactive surface. Built once and placed by device: inside the stage on
+  // mobile (where it doubles as the reconstruction), under it on desktop.
+  const stack = (
+    <div
+      ref={bandStackRef}
+      className={styles.stack}
+      data-locked={outcome === "IDENTIFIED" ? "true" : "false"}
+    >
+      {bands.map((band) => (
+        <div
+          key={band.id}
+          className={styles.band}
+          role="group"
+          data-band={BAND_TEST_ID[band.id]}
+          data-correct={band.ordinal === 1 ? "true" : "false"}
+          aria-label={bandGroupLabel(band.label, band.ordinal, band.total)}
+        >
+          <span className={styles.bandLabel}>{band.label}</span>
+          <button
+            type="button"
+            className={styles.chevron}
+            aria-label={chevronLabel(-1, band.label)}
+            disabled={resolved}
+            onClick={() => {
+              onIntent({ kind: "CYCLE", band: band.id, delta: -1 });
+            }}
+          >
+            <span aria-hidden="true">◁</span>
+          </button>
+          <img className={styles.bandImage} src={band.src} alt="" draggable={false} />
+          <button
+            type="button"
+            className={styles.chevron}
+            aria-label={chevronLabel(1, band.label)}
+            disabled={resolved}
+            onClick={() => {
+              onIntent({ kind: "CYCLE", band: band.id, delta: 1 });
+            }}
+          >
+            <span aria-hidden="true">▷</span>
+          </button>
+          <span className={styles.counter}>{variantCounter(band.ordinal, band.total)}</span>
+          {/* Stamps only exist once the scene is over, and only when all four bands
+              are right — four at once, never one band at a time. */}
+          {outcome === "IDENTIFIED" && <span className={styles.stamp} aria-hidden="true" />}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className={styles.root}
@@ -126,65 +177,51 @@ export function PortraitRobotScreen({
       </header>
 
       <div className={styles.stage}>
-        <figure className={styles.target}>
-          <div className={styles.targetStack} role="img" aria-label={TARGET_ALT}>
-            {targetBands.map((src) => (
-              <img key={src} className={styles.bandImage} src={src} alt="" draggable={false} />
+        <figure className={styles.face}>
+          <div className={styles.faceStack} role="img" aria-label={TARGET_ALT}>
+            {targetBands.map((src, i) => (
+              <img
+                key={`${src}-${String(i)}`}
+                className={styles.faceBand}
+                src={src}
+                alt=""
+                draggable={false}
+              />
             ))}
           </div>
-          <figcaption className={styles.supertitle}>{SUPERTITLE}</figcaption>
+          <figcaption className={styles.supertitle}>
+            {isMobile ? SUPERTITLE_SHORT : SUPERTITLE}
+          </figcaption>
         </figure>
 
         {/*
-         * The joined surface. `data-locked` carries the ONE feedback of the scene:
-         * the ambient hairline becomes a thick full frame around the WHOLE stack —
-         * a change of shape and thickness, never of hue alone (UX §2.5, §5.2).
+         * Desktop keeps the ST mise-en-scène: the reconstruction is a face beside
+         * the target, at the SAME gabarit and the same alignment, and the four
+         * controls live in a strip below. On mobile there is no room for a third
+         * column, so the interactive stack IS the reconstruction (UX §1.2) — which
+         * is exactly why both are drawn by the same `faceStack` geometry.
          */}
-        <div
-          ref={bandStackRef}
-          className={styles.stack}
-          data-locked={outcome === "IDENTIFIED" ? "true" : "false"}
-        >
-          {bands.map((band) => (
-            <div
-              key={band.id}
-              className={styles.band}
-              role="group"
-              data-band={BAND_TEST_ID[band.id]}
-              aria-label={bandGroupLabel(band.label, band.ordinal, band.total)}
-            >
-              <span className={styles.bandLabel}>{band.label}</span>
-              <button
-                type="button"
-                className={styles.chevron}
-                aria-label={chevronLabel(-1, band.label)}
-                disabled={resolved}
-                onClick={() => {
-                  onIntent({ kind: "CYCLE", band: band.id, delta: -1 });
-                }}
-              >
-                <span aria-hidden="true">◁</span>
-              </button>
-              <img className={styles.bandImage} src={band.src} alt="" draggable={false} />
-              <button
-                type="button"
-                className={styles.chevron}
-                aria-label={chevronLabel(1, band.label)}
-                disabled={resolved}
-                onClick={() => {
-                  onIntent({ kind: "CYCLE", band: band.id, delta: 1 });
-                }}
-              >
-                <span aria-hidden="true">▷</span>
-              </button>
-              <span className={styles.counter}>{variantCounter(band.ordinal, band.total)}</span>
-              {/* Stamps only exist once the scene is over, and only when all four
-                  bands are right — four at once, never one band at a time. */}
-              {outcome === "IDENTIFIED" && <span className={styles.stamp} aria-hidden="true" />}
+        {!isMobile && (
+          <figure className={styles.face}>
+            <div className={styles.faceStack} aria-hidden="true">
+              {bands.map((band) => (
+                <img
+                  key={band.id}
+                  className={styles.faceBand}
+                  src={band.src}
+                  alt=""
+                  draggable={false}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+            <figcaption className={styles.supertitle}>&nbsp;</figcaption>
+          </figure>
+        )}
+
+        {isMobile && stack}
       </div>
+
+      {!isMobile && stack}
 
       {/*
        * Two live regions, and exactly two. The polite one carries KENZA's palier

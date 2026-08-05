@@ -23,8 +23,13 @@ import type { PortraitBandId, PortraitOutcome, PortraitPalier } from "@game/type
 /** Screen masthead (fiction §4.1). Never « PORTRAIT-ROBOT » — that is the internal name (§6). */
 export const SCREEN_TITLE = "TÊTE À CONNAÎTRE";
 
-/** Zine rubric above the target portrait (fiction §4.1). */
+/**
+ * Zine rubric under the target portrait (fiction §4.1), with the authored narrow-slot
+ * fallback (§4.12). The mobile column is 28 % of 844px — the full rubric ellipsises
+ * there, and an ellipsis is not a fallback, it is a truncation that reads as a bug.
+ */
 export const SUPERTITLE = "UNDERGROUND PARIS · PAGE 23";
+export const SUPERTITLE_SHORT = "PAGE 23";
 
 /**
  * Gauge label (fiction §4.5) — the word alone, 9 chars, no separator, no value.
