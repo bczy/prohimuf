@@ -4,8 +4,25 @@
 authority figure through a telephoto lens instead of shooting him. This spec owns the
 **mechanic, the tuning and the 3C**; it is the `game-designer` deliverable of the ADR-0077
 design loop.
-**Author:** `game-designer` (Sacha) · **Date:** 2026-08-02
-**Status:** **Rev. 5** — closes the gate's **D-1b** (T-6: F14 bounded authored frozen time and
+**Author:** `game-designer` (Sacha) · **Date:** 2026-08-05
+**Status:** **Rev. 6.1** — **`PHOTO_MAX_ATTEMPTS` devient une donnée authored réglable**
+(décision Bertrand : « sois flexible sur le nombre de retry »), **F14 devient une contrainte
+paramétrée en `n`** avec la valeur max légale calculée, et **le triptyque est revérifié contre
+le pivot de fiction « terrasse »** — deux instants passent sans qu'une valeur bouge, **LA PLAQUE
+casse si la berline est immobile** et remonte au gate. **§A.12.** Rev. 6 ci-dessous tient
+intégralement pour tout le reste.
+
+**Rev. 6 (carried)** — **PIVOT (Bertrand, 2026-08-05): the scene is DENSE and there are
+DECOYS.** The single-subject contract of §2.1 is generalised to a **candidate set** (§A.2),
+the shutter becomes designatable and mis-designatable (§A.3), `filmCount` 6 → **8** (§A.5),
+four new floors **F16-F19** (§A.8). **Two gate-ratified values are broken by the pivot and I
+do not absorb them** — `PHOTO_BRIEFING_MAX_SECONDS` must rise to **20.0 s** and the composed
+wall clock **F14 goes over 280 s at two attempts**; the escalation, with all three costed
+options, is **§A.9**. **This revision is NOT a drop-in for lane A**: unlike Rev. 5, it moves
+the typed contract (`subjectTrack` → `candidateTracks`). Everything below §A is Rev. 5 and
+stands except where §A names it.
+
+**Rev. 5 status (carried):** closes the gate's **D-1b** (T-6: F14 bounded authored frozen time and
 called it real time) and answers the `sound-designer`'s open question on the **BGM during the
 frozen block**. **F14 is rewritten in wall-clock** per **G-4** (§7, §1.3.a-bis):
 `PHOTO_BRIEFING_MAX_SECONDS` 25.0 → **15.0 s**, `CONTACT_SHEET_READ_BUDGET` 30.0 → **20.0 s**,
@@ -64,14 +81,535 @@ bloquantes pour F12(1).
 
 ---
 
-| Rev.     | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1        | 2026-08-01 | Initial spec.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **2**    | 2026-08-01 | **K-1** F5 re-derived against **effective** slack (formula pinned in §3.3), `SWAY_AMP_X` 2.4 → **2.00 su** + dependent constants, F5 becomes a **three-leg** floor (sway share / untracked grace / pan authority), new `PAN_RATE_MAX`. **K-2** the full **9-keyframe `subjectTrack` table** is authored (§2.5) and floor **F12** added in three legs. **K-3** F10 becomes a **compound** floor against the gated `SHIELD_BREAK_LULL_CUT`, `rewardMultiplier` is **phase-scoped and Niveau-Final-scoped**, tiers re-tuned ×0.90/×0.80, R1 transcribed as **AMENDMENT A1** (§D7.2). **K-4** the **decline exit** is specified (§1.3) and the ≤ 2 min attempt budget becomes floor **F13** + AC13.                                                                                                                                                                                               |
-| **3**    | 2026-08-02 | **Relocation to Belliard** (Bertrand, override of R-10): sound cover re-derived on the **traffic-light cycle** (§4.1, `TRAIN_*` → `WAVE_*`, period re-derived from a 42 s two-phase cycle, **windows unmoved**), keyframe staging re-read on the **passage / reverse-out** geometry (§2.5, **no value moved**, two new art constraints), run-scoped carry renamed `Belliard → Niveau Final`, all Stalingrad/quai/métro references purged. **C-2** fixed: §1.2 posture is the T-2 **device fork**. No floor, window, keyframe or tier value changed.                                                                                                                                                                                                                                                                                                                                           |
-| **4**    | 2026-08-02 | **D-1 closed** (delta gate): the set-piece is INSIDE the mission, so its frozen time is now **bounded** — `PHOTO_MAX_ATTEMPTS = 2` mission-scoped, `BRIEFING` on attempt 1 only (retry = 62.8 s), new floors **F14** (150.6 s / composed 262.1 s = 4.37 min) and **F15** (8.0 s frozen-scene separation), `triggerAtElapsedSeconds = **2.5 s**` frozen for lane A. Rulings **R3-1** (21.0 s is the wave interval, 42 is never a value; two waves same duration/attack), **R3-2** (prohibition: nothing on the plate encodes cover but the headlights), **R3-3** (`BRIEFING` added to §1.1, carries the ellipse), **R3-5** (`enabledOnFirstRun = false`), **R3-6** (no rarity) acted. **C-5/C-6/C-7/C-8** fixed, **N-2** specified (§7.2.a), **AC14** and **AC15** added. **No window, keyframe, floor value or tier moved.**                                                                  |
-| **5**    | 2026-08-02 | **D-1b closed** (gate arbitrage A-2, T-6): **F14 rewritten in wall-clock** under **G-4** — `90 + Σ attempts(authored frozen + sheet budget) + 21.5` ≤ **280 s** ⇒ **279.1 s = 4.65 min**, reserve **20.9 s**. Re-tuned the two reading constants — `PHOTO_BRIEFING_MAX_SECONDS` 25.0 → **15.0 s**, `CONTACT_SHEET_READ_BUDGET` 30.0 → **20.0 s** — plus one new **design** budget, `CONTACT_SHEET_DECISION_BUDGET = 7.0 s` (the sheet a player _retries from_ is judged, not read; §1.3.a-bis decision 3). Decision 3's measured ceilings are now **derived formulas**, not posed numbers (gate point 3). `PHOTO_MAX_ATTEMPTS` stays **2**, `ACTIVE` untouched, Decision 6 unchanged. **§1.3.b** answers the audio spec's open question: the tension BGM **ducks −24 dB, it neither stops nor continues at level** — behaviour, not level data. **C-9** applied. F14a (authored) now 140.6 s. |
-| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.** (R-10's host level is the **one** ratification Bertrand overrode — Rev. 3.)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+## AMENDEMENT Rev.6 — LA SCÈNE DENSE ET LES LEURRES (décision Bertrand, 2026-08-05) {#rev6}
+
+> **Critique de Bertrand, mot pour mot :** « là on prend quoi en photo ? Il faut prendre dans
+> un décor complexe une partie de la scène où on voit clairement un ou deux antagonistes dans
+> une scène compromettante. Là il n'y a qu'un truc à prendre en photo sur toute la scène,
+> intérêt ZÉRO. » Et : « chaque scène doit être très détaillée, avec beaucoup de choses où
+> zoomer pour justifier la boucle. »
+>
+> **Nouvelle architecture décidée :** un décor riche et peuplé (niveau de détail Belliard),
+> **plusieurs sprites posés dessus, dont un seul compte** — un sprite spécial généré pour la
+> scène.
+
+**Je prends la critique comme une critique de MA mécanique, pas de l'art.** Elle est juste, et
+elle vise précisément l'endroit où Rev. 1-5 étaient faibles : `subjectTrack(t)` est une boîte
+**unique** définie partout, donc la seule question posée au joueur est **QUAND**, jamais **QUI**.
+Le zoom n'arbitre alors que du cadrage contre du tremblement — jamais de la lecture. Sur un
+plateau à un seul acteur photographiable, viser est une formalité et « chercher » n'existe pas.
+Le verbe promis par l'ADR-0077 (`cadrer + zoomer + déclencher`) n'a jamais eu son premier tiers.
+
+### A.1 — Ce qui change, en une table
+
+| Contrat Rev. 5                                                | Contrat **Rev. 6**                                                                  | §       |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------- |
+| `subjectTrack(t)` — **une** boîte, définie partout            | `candidateTracks` — **N** pistes continues, une `master`, N−1 `decoy`               | A.2     |
+| Les brackets lisent « la » boîte                              | Les brackets lisent **le candidat résolu** par le viseur (désignation par centrage) | A.3     |
+| T2 = « t est dans une fenêtre »                               | T2 = « t est dans une fenêtre **du candidat résolu**, et ce candidat est `master` » | A.4     |
+| `rejectReason ∈ {no-subject, out-of-frame, …}`                | + **`wrong-subject`** — la photo est nette, cadrée, et **ce n'est pas eux**         | A.4     |
+| `filmCount = 6`                                               | **8** (plafond F6/UX conservé, grille 2×4, pas de pagination)                       | A.5     |
+| Briefing = QUI + OÙ en prose                                  | Briefing = **signalement à 2 critères** (1 statique + 1 comportemental) + zone      | A.6     |
+| F12 s'assure d'**une** piste                                  | F12 généralisé à **chaque** piste ; **F16-F19** nouveaux                            | A.8     |
+| `PHOTO_BRIEFING_MAX_SECONDS = 15.0`, `PHOTO_MAX_ATTEMPTS = 2` | **cassés par le pivot — escalade, non absorbés**                                    | **A.9** |
+
+**Ce qui NE bouge PAS, et je le vérifie plutôt que je ne l'affirme :** les trois instants et
+leur triptyque · les fenêtres de couverture `[10,17] [31,38] [52,59]` · `WAVE_PERIOD = 21.0 s`
+· `SCENE_DURATION = 60.0 s` · les 9 keyframes du `master` (§2.5, ils deviennent la piste
+`master` sans qu'une valeur bouge) · `FILL_MIN/FILL_MAX/FRAME_MARGIN` · le modèle de sway et
+`SWAY_AMP_X = 2.00 su` · `FOCUS_HOLD` · le barème de suspicion et F7 · F1-F5, F8-F13, F15 ·
+le duck BGM §1.3.b · le levier de récompense R1.
+
+### A.2 — `candidateTracks` : la généralisation, et pourquoi c'est la même mécanique
+
+**Décision A2.1 — la scène autorise `N` pistes-candidats, chacune exactement de la forme du
+`subjectTrack` de §2.1 : une boîte continue, keyframée, interpolée linéairement, totale sur
+`[0, sceneDuration]`.** Une et une seule porte `role: "master"` — c'est le sprite spécial de
+la décision de Bertrand, et c'est la piste des 9 keyframes de §2.5, **inchangés**. Les autres
+portent `role: "decoy"`.
+
+Ce n'est pas un nouveau système : c'est le **même** système instancié N fois. Tout ce que §2.1
+démontre (lecture live possible en permanence, secret sémantique préservé, transit uniquement
+pendant un tell) reste vrai piste par piste. La règle **piecewise-constant sauf pendant SON
+PROPRE télégraphe** s'applique à chaque piste séparément (F12(2) généralisé, §A.8).
+
+**Décision A2.2 — `N = 4` sur Belliard : 1 `master` + 3 `decoy`.** Bornes : `DECOY_COUNT_MIN = 2`,
+`DECOY_COUNT_MAX = 4`. Sous 2 leurres, le joueur devine par élimination et l'observation
+redevient nulle ; au-delà de 4, la table de keyframes à contrôler en intervalle (§7.2.a) coûte
+plus cher en art et en outillage qu'elle ne rend en jeu, et le plateau de `13,0 × 7,3 m` (§2.5)
+ne loge plus 5 groupes séparés par F17 sans les empiler.
+
+**Décision A2.3 — un leurre est un GROUPE PLAUSIBLE, pas un figurant décoratif.** Un passant
+seul n'est pas un faux positif : personne ne le photographie. Chaque `decoy` est une
+composition qui **ressemble à la preuve** — deux silhouettes rapprochées, un geste d'échange,
+un véhicule et un homme penché à sa portière. **C'est là que passe la demande de Bertrand :
+« beaucoup de choses où zoomer ».** Le décor riche est le contexte ; les 3 leurres sont ce sur
+quoi on zoome pour rien.
+
+| Slot   | Rôle     | Zone sur le plateau (su)        | Ce que ça a l'air d'être                                                   |
+| ------ | -------- | ------------------------------- | -------------------------------------------------------------------------- |
+| **C0** | `master` | bouche du passage, `cx ≈ 54-65` | Le Commandant + le manteau clair — les 9 keyframes de §2.5, **inchangés**  |
+| **C1** | `decoy`  | trottoir gauche, `cx ≈ 20-28`   | Deux hommes devant un rideau de fer, l'un tend **quelque chose** à l'autre |
+| **C2** | `decoy`  | amorce BOULANGERIE, `cx ≈ 8-14` | Un homme penché à la portière d'une voiture arrêtée, moteur tournant       |
+| **C3** | `decoy`  | fond de rue, `cx ≈ 86-94`       | Deux silhouettes sous le feu tricolore, tête contre tête                   |
+
+**Les valeurs de keyframes de C1/C2/C3 ne sont PAS authored ici.** Elles dépendent de la
+composition du plateau dense que `lead-art` doit livrer, et les inventer avant le plateau
+reproduirait exactement le défaut que le F12(1) existant interdit (une boîte qui ne coïncide
+pas avec ce qui est dessiné). **Rev. 6.1 les authore dès que le plateau existe**, sous les
+contraintes A.8 qui, elles, sont décidées ici et sont vérifiables sur la livraison.
+
+### A.3 — La désignation : comment le joueur choisit QUI, sans qu'on lui dise QUI
+
+C'est le cœur du pivot et la question 1 de la commande. **Le risque à ne pas rouvrir : F12
+ferme une fuite sémantique, et un modèle où les brackets s'accrochent au bon sujet la
+rouvrirait en grand** (« les crochets se sont posés ⇒ c'est lui »).
+
+**Décision A3.1 — la résolution se fait par CENTRAGE, jamais par pertinence.** À chaque tick,
+le candidat **résolu** `C*(t)` est celui dont le centre de boîte est le plus proche du centre
+du viseur, **parmi les candidats intégralement contenus dans `V` avec `FRAME_MARGIN`** (le
+test T3, appliqué candidat par candidat). Si aucun ne l'est, `C* = ∅` et les brackets sont
+`dashed` — exactement l'état Rev. 5 « composition invalide ».
+
+- La règle ne consulte **jamais** `role`, ni `openAt/closeAt`, ni l'instant courant. Elle est
+  purement géométrique. **Elle ne peut donc rien fuiter** : elle répond « tu as proprement
+  cadré **quelqu'un** », jamais « tu as cadré **le bon** ».
+- Elle est **déterministe** (F11 intact) : distance euclidienne sur des flottants authored,
+  départage par index de piste croissant en cas d'égalité exacte.
+- Elle donne au verbe `cadrer` son sens : **viser, c'est désigner.** C'est le tiers manquant
+  du verbe de l'ADR-0077, et il n'a coûté aucun nouveau binding (§6.3 inchangé).
+
+**Décision A3.2 — la résolution est verrouillée par le hold, pas par une hystérésis ad hoc.**
+Un changement de `C*` **remet `FOCUS_HOLD` à zéro**, au même titre qu'une rupture de T3/T4
+(§2.3). Aucune nouvelle constante : la règle existante fait déjà le travail, et elle interdit
+le cas dégénéré « la photo part sur le voisin au dernier instant ».
+
+**Décision A3.3 — le sway ne peut JAMAIS faire basculer la résolution, et c'est un plancher
+(F17), pas un espoir.** Faire passer un leurre devant le master en distance-au-centre demande
+un déplacement du viseur de la moitié de la séparation des centres. Avec
+`CANDIDATE_CENTRE_SEPARATION_FLOOR = 6.0 su`, il faut **3,0 su** ; le pic de sway est
+`SWAY_AMP_X = 2.00 su`. **Marge 1,0 su, soit 50 %.** Un joueur centré sur le master reste
+centré sur le master, tremblement compris. C'est la condition pour que le leurre soit une
+erreur de **lecture** et jamais une erreur de **tremblement** — la distinction entre un test
+d'observation et une taxe.
+
+### A.4 — Le contrat de validation, amendé (§2.2 reste, T2 est réécrit)
+
+Les cinq tests restent conjonctifs et dans le même ordre. **T3, T4, T5 s'évaluent sur `C*(t)`**
+(la boîte du candidat résolu) au lieu de `subjectTrack(t)`. Seul **T2** change :
+
+| #      | Test Rev. 6                                                                                                              | Montré live ?             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| **T2** | `C*` existe **et** `C*.role === "master"` **et** `t ∈ [openAt, closeAt]` d'un instant. Sinon la vignette est `REJECTED`. | **NON — c'est le secret** |
+
+Deux `rejectReason` distincts, et la distinction est de la pédagogie, pas de la décoration :
+
+- **`no-subject`** — le master était cadré, mais hors fenêtre. _« Rien à voir. »_ → le joueur
+  a bon sur le QUI, faux sur le QUAND.
+- **`wrong-subject`** _(nouveau)_ — la photo est nette et bien cadrée, sur **quelqu'un
+  d'autre**. → le joueur a bon sur le QUAND (ou pas), faux sur le QUI.
+
+**Ces deux motifs sont sémantiques, donc révélés à la planche-contact et nulle part ailleurs**
+(D8, §2.4 inchangé). Le déclic reste **mécanique** : une photo de leurre parfaitement tenue
+produit un **déclic net et un flash discret**, exactement comme une preuve. Le refuser serait
+la fuite maximale. La copie des deux tampons est à Yasmine (§A.10).
+
+### A.5 — Les leurres sont-ils photographiables ? OUI, et voici le prix (question 2, tranchée)
+
+**Décision A5.1 — un leurre est intégralement photographiable. T1..T5 s'y appliquent sans
+exception, la pellicule est décrémentée, le bruit est produit, la suspicion monte selon le
+même barème.** Une pellicule qui refuse de partir sur un figurant est un objectif qui connaît
+la réponse : ce serait la plus grosse fuite sémantique possible, plus grosse que tout ce que
+F12 ferme. **Non négociable.**
+
+**Décision A5.2 — le prix est UNE POSE, et rien d'autre. Aucune surtaxe.** Pas de suspicion
+supplémentaire, pas de pénalité de score, pas de cooldown, pas de « il t'a vu ». La photo d'un
+leurre prise **sous couverture** coûte **0 de suspicion**, comme n'importe quelle photo sous
+couverture (§5.2). Conséquence directe et voulue : **la course parfaite à zéro suspicion
+survit au pivot** — F3 garantit toujours qu'elle existe, même pour un joueur qui se trompe de
+sujet, tant qu'il se trompe dans la couverture. C'est l'arbitrage exact demandé : du **poids**
+(la pellicule est enfin une ressource qu'on peut gaspiller par erreur de lecture, ce qu'elle
+n'était pas) sans **punition** (une erreur de lecture ne fait jamais perdre la scène).
+
+**Décision A5.3 — `filmCount` 6 → 8, et la marge d'erreur est re-dérivée, pas gonflée.**
+F6 devient : `filmCount ≥ instantCount + DECOY_ERROR_ALLOWANCE + 2`, avec
+`DECOY_ERROR_ALLOWANCE = 2` (le joueur a droit à **deux** faux positifs assumés — un par
+apprentissage, un par malchance — sans perdre l'accès au master). ⇒ `3 + 2 + 2 = 7` de
+plancher, **8 shippé**, qui reste **au plafond UX de 8** (planche 2×4, pas de pagination,
+UX §4.1). À 6, chaque leurre photographié coûtait un tiers de la marge d'erreur existante :
+c'est là que la mécanique serait devenue punitive, et c'est la seule raison pour laquelle je
+touche à une valeur ratifiée.
+
+### A.6 — Le briefing hybride : le signalement à deux critères (le travail d'observation)
+
+**Le briefing doit dire assez pour que l'échec soit une faute d'attention, pas un tirage — et
+pas assez pour que la scène se résolve sans regarder.** Le curseur exact :
+
+**Décision A6.1 — le briefing donne un signalement à EXACTEMENT deux critères, et une zone
+large.**
+
+| Critère                                       | Ce que c'est                                                                             | Ce qu'il coûte au joueur        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------- |
+| **1 — statique** (silhouette / vêtement)      | lisible dès le pré-roll, à l'œil, sans zoom max                                          | **restreint** : 4 candidats → 2 |
+| **2 — comportemental** (ce que le sujet FAIT) | ne se lit qu'**en observant dans la durée**, et seulement au téléobjectif                | **tranche** : 2 candidats → 1   |
+| **Zone**                                      | large — un tiers de plateau, pas un point. `x_norm` de la fiction, jamais une coordonnée | **oriente** le premier regard   |
+
+Deux critères et pas un : un seul critère statique se lit d'un coup d'œil et la scène redevient
+une formalité ; un seul critère comportemental n'est pas assez amorcé et le joueur balaye au
+hasard pendant tout le pré-roll. **Deux critères, dont un qui exige de zoomer et d'attendre,
+c'est la définition opérationnelle de « il doit rester du travail d'observation ».**
+
+**Décision A6.2 — le briefing ne pointe JAMAIS. Interdits explicites** (à faire respecter à la
+revue de copie, gate F-1) : pas de coordonnée, pas de « à droite du feu », pas de vignette
+d'aperçu du plateau avec un cercle, pas de nom de leurre (« ce n'est pas les deux du fond »).
+Un briefing qui élimine à la place du joueur détruit la mécanique qu'il est censé amorcer.
+
+**Décision A6.3 — `IDENTIFICATION_LEAD_FLOOR = 6.0 s` (F19).** Le master doit satisfaire ses
+**deux** critères de signalement, visible et inspectable, pendant au moins 6,0 s **avant**
+l'ouverture du premier instant. Valeur réelle sur Belliard : le master est en scène dès
+`t = 0` et le premier `openAt` est à **11,0 s** ⇒ **11,0 s ✓**, presque le double du plancher.
+6,0 s est dérivé, pas rond : balayage du plateau au grand-angle ≈ 2,0 s + une traverse de zoom
+`ZOOM_TRAVERSE_SECONDS = 2,2 s` + une lecture de comportement ≈ 1,8 s (la durée d'un tell,
+c'est-à-dire le temps qu'un geste met à se lire dans ce jeu). **Sans ce plancher, la scène
+dense devient un test de réflexe déguisé en test d'observation.**
+
+### A.7 — Le cadrage et le double arbitrage de zoom tiennent-ils ? (question 3)
+
+**Réponse : ils tiennent, ils ne sont pas retouchés, et le pivot les RENFORCE. Vérifié, pas
+supposé.**
+
+1. **`FILL_MIN = 0.45` gagne un second métier et n'a pas besoin de monter.** Rev. 5 :
+   « on ne résout pas le set-piece en restant large ». Rev. 6 ajoute : **rester large, c'est
+   embarquer les voisins dans le cadre**. Le remplissage était une règle de lisibilité ; il
+   devient aussi une règle d'**exclusion**. Contrôle chiffré, au sweet spot de chaque instant :
+
+   | Instant   | Sweet spot | `fovW = 3500/f` | Boîte master | Largeur restante hors sujet | Un leurre à ≥ 8 su du centre master peut-il être **entièrement** dans `V` ? |
+   | --------- | ---------- | --------------- | ------------ | --------------------------- | --------------------------------------------------------------------------- |
+   | ARRIVÉE   | 94 mm      | 37,2 su         | 24,0 su      | 13,2 su (6,6 par bord)      | **Non** — il en dépasse toujours un morceau                                 |
+   | L'ÉCHANGE | 132 mm     | 26,5 su         | 17,0 su      | 9,5 su (4,75 par bord)      | **Non**                                                                     |
+   | LA PLAQUE | 251 mm     | 13,9 su         | 7,5 su       | 6,4 su (3,2 par bord)       | **Non**                                                                     |
+
+   Autrement dit : **au remplissage légal, un leurre ne peut jamais entrer entier dans le
+   cadre en même temps que le master.** Un bout de leurre peut y être — et c'est voulu, c'est
+   ce qui fait une scène habitée — mais T3 étant un test de **contenance intégrale**, un
+   fragment de leurre ne devient jamais un candidat résolu. Le risque « la photo part sur le
+   voisin » est **structurellement fermé par des valeurs déjà ratifiées**. Je n'y touche pas.
+
+2. **Le double arbitrage de zoom devient enfin bilatéral.** Rev. 5 : trop large ⇒ invalide,
+   trop long ⇒ le tremblement mange la marge. Rev. 6 ajoute une troisième pression, et c'est
+   la demande de Bertrand : **on doit zoomer pour lire le critère comportemental**, sur des
+   candidats dont on ne sait pas encore lequel compte — donc le zoom coûte du **temps
+   d'observation**, pas seulement de la stabilité. C'est le premier moment du set-piece où
+   `zoomer` sert à **savoir** et pas seulement à **valider**. Aucune constante ne bouge :
+   c'est du contenu (les leurres) qui fait travailler un axe existant.
+
+3. **La contrainte de remplissage n'a pas besoin d'une dérogation « scène dense ».** Je l'ai
+   cherchée et je ne la trouve pas : le seul cas qui l'aurait exigée est « deux candidats
+   légitimement dans le même cadre », et F17 (séparation ≥ 6,0 su, authored ≥ 8,0) plus le
+   tableau ci-dessus le rendent impossible au remplissage légal.
+
+### A.8 — Les instants survivent (question 4), et les quatre nouveaux planchers
+
+**Décision A8.1 — le triptyque ARRIVÉE / L'ÉCHANGE / LA PLAQUE est CONSERVÉ tel quel, et je
+refuse d'en ajouter un quatrième. La raison est arithmétique, pas conservatrice.** Un
+quatrième instant demande ≈ +10 s de `ACTIVE` (tell 1,8 + fenêtre ≈ 3 + un temps mort lisible),
+soit **+20 s de temps mur sur le chemin à deux tentatives**, contre **20,9 s de réserve**
+(F14, §1.3.a-bis). Un quatrième instant mange la totalité de la réserve du gate à lui seul.
+
+**La densité voulue par Bertrand se paye en ESPACE, pas en TEMPS.** Même durée, mêmes trois
+fenêtres, mais 4 candidats au lieu d'1 : le nombre de choses à examiner passe de 1 à 4, la
+durée de la scène ne bouge pas d'une seconde. **C'est la seule forme du pivot qui ne casse pas
+F14 davantage** — et c'est aussi la meilleure conception : trois instants sur quatre candidats
+est un problème plus riche que six instants sur un seul.
+
+**Décision A8.2 — les quatre nouveaux planchers.**
+
+| #       | Plancher                                                                                                                                                                                                                               | Valeur                                             | Belliard                                                       | Pourquoi                                                                                                                                                                                        |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **F16** | Nombre de leurres **actifs et intégralement définis** sur tout `[0, sceneDuration]`                                                                                                                                                    | `∈ [DECOY_COUNT_MIN 2, DECOY_COUNT_MAX 4]`         | **3** ✓                                                        | Sous 2, l'élimination remplace l'observation ; au-dessus de 4, le plateau ne loge plus F17 et le contrôle en intervalle (§7.2.a) explose côté art et outillage.                                 |
+| **F17** | Séparation des centres : `∀ t, ∀ (i≠j), ‖centre_i(t) − centre_j(t)‖ ≥ CANDIDATE_CENTRE_SEPARATION_FLOOR`                                                                                                                               | **6,0 su** (`= 3 × SWAY_AMP_X`)                    | authored **≥ 8,0 su** ✓ (marge 33 % sur le plancher)           | Le sway ne doit **jamais** pouvoir faire basculer la résolution (§A3.3) : il faudrait 3,0 su de dérive, le pic est de 2,00 su. Un leurre gagné par tremblement est une taxe, pas un test.       |
+| **F18** | **Non-discriminabilité des télégraphes.** Pour chaque tell de la piste `master` à `t_m`, au moins un leurre télégraphie dans `[t_m − 1,0 s ; t_m + 1,0 s]`, et aucun canal de rendu (taille, vitesse, contraste) ne trie master/leurre | ≥ **1** leurre concurrent par tell, sur les **3**  | 3/3 ✓ (à authorer en Rev. 6.1, contrainte livrée à `lead-art`) | Sans ce plancher, « quelque chose vient de bouger » redevient la réponse gratuite et les leurres ne sont plus qu'un décor mobile. C'est **le** plancher qui empêche le pivot d'être cosmétique. |
+| **F19** | **Amorce d'identification** : le master satisfait ses deux critères de signalement, visible, pendant ≥ `IDENTIFICATION_LEAD_FLOOR` avant le premier `openAt`                                                                           | **6,0 s** (dérivé : 2,0 balayage + 2,2 zoom + 1,8) | **11,0 s** ✓                                                   | Une scène dense sans amorce d'identification est un test de réflexe déguisé. C'est le pendant exact de F2 (aucun instant sans tell) appliqué au QUI au lieu du QUAND.                           |
+
+**Décision A8.3 — F12 est généralisé piste par piste, et je nomme le coût plutôt que de le
+cacher.** F12(1) (drawn == box, `SUBJECT_BOX_TOLERANCE`), F12(2) (pas de transit avant le tell)
+et F12(3) (totale et finie) s'appliquent **à chacune des 4 pistes**, et le contrôle en
+intervalle de §7.2.a aussi. **Le coût de vérification est multiplié par 4** — c'est réel, c'est
+à `qa-lead` + `dev-tooling-assets`, et c'est le prix de la densité. Je ne demande aucune
+tolérance élargie en compensation : une boîte de leurre qui ment coûte au joueur exactement ce
+qu'une boîte de master qui ment lui coûte, puisque la résolution est purement géométrique.
+
+**Décision A8.4 — F6 est re-dérivé** (§A5.3) : `filmCount ≥ instantCount + DECOY_ERROR_ALLOWANCE + 2`
+et `≤ 8`. Belliard : plancher 7, shippé **8**, plafond 8 ✓ (au plafond, assumé : c'est la
+grille sans pagination et il n'y a pas d'air au-dessus).
+
+**F7 revérifié sous le pivot :** `SUSPICION_MAX / SUSPICION_SHUTTER_EXPOSED = 100/34 = 2,94`
+⇒ 2 photos hors couverture survivables, inchangé. Le pivot **n'augmente pas** le nombre de
+photos qu'un joueur prendra hors couverture (les leurres sont photographiables dans la
+couverture comme le reste) : F7 n'a pas besoin d'être retuné, et je l'ai vérifié plutôt que
+supposé.
+
+### A.9 — ⚠️ CE QUE LE PIVOT CASSE — escalade au gate, non absorbée
+
+**Deux valeurs ratifiées ne survivent pas au pivot. Je les remonte au lieu de raboter.**
+
+**Casse 1 — `PHOTO_BRIEFING_MAX_SECONDS = 15.0 s` est trop court pour un signalement.** La
+valeur a été dérivée en Rev. 5 pour « ~50 mots ≈ 3 lignes courtes » (l'ellipse). Le briefing
+Rev. 6 doit porter **deux critères + une zone** sans jamais pointer : ≈ **75 mots**, soit
+~5 lignes, soit **22,5 s** à 200 mots/min. **Je propose 20,0 s** (le briefing est _skippable_
+et payé **une seule fois par entrée**, jamais sur la reprise — §1.1 — donc c'est un plafond de
+lecteur lent, pas une cadence). En dessous de ~18 s, le second critère cesse d'atterrir, et
+un signalement à un critère et demi, c'est le tirage au sort que F19 est censé interdire.
+
+**Casse 2 — `filmCount = 8` allonge la planche-contact terminale, et F14 passe au-dessus de
+280 s.** `CONTACT_SHEET_READ_BUDGET` est une **dérivation**, pas un choix (§1.3.a-bis,
+décision 3) : `8 × (0,3 + 0,4 + 2,2) + 2,5 = **25,7 s**` (contre 20,0 s à 6 vignettes).
+`CONTACT_SHEET_DECISION_BUDGET` ne bouge pas (7,0 s : le balayage de la rangée de tampons est
+en `n × 0,6` ⇒ 8 × 0,6 + décision ≈ 7,0 s, inchangé au dixième).
+
+> **F14b sous Rev. 6, à `PHOTO_MAX_ATTEMPTS = 2` :**
+> `90 + 20,0 + 62,8 + 7,0 + 62,8 + 25,7 + 21,5 = **289,8 s = 4,83 min**`
+> ⇒ **au-dessus des 280 s**, réserve **10,2 s** au lieu des **≥ 20 s** exigées par le gate. ✗
+
+**Je ne rabote pas, et je ne redéfinis pas la contrainte.** Les leviers de mon ressort sont
+épuisés : `ACTIVE = 60,0 s` est la cadence (F1-F5, F12, les 9 keyframes, les 3 fenêtres en
+dépendent), les deux budgets de lecture sont des dérivations au plancher de lisibilité
+(§1.3.a-bis décision 6 l'a pré-déclaré), et `filmCount` en dessous de 8 rend les leurres
+punitifs (§A5.3). **Trois options, chiffrées, au gate :**
+
+| Opt.                        | Ce qu'on change                                          | F14b wall clock                                             | Réserve      | Ce que ça coûte                                                                                                                                                                              |
+| --------------------------- | -------------------------------------------------------- | ----------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A** _(ma recommandation)_ | `PHOTO_MAX_ATTEMPTS` **2 → 1**                           | `90 + 20,0 + 62,8 + 25,7 + 21,5 = **220,0 s = 3,67 min**`   | **80,0 s** ✓ | La reprise disparaît ⇒ **la forme à deux CTA appairés (A-1 / R2-5) ne s'affiche plus jamais** et E4/H4 perdent leur pas d'apprentissage. **C'est un item de gate, pas une décision mienne.** |
+| **B**                       | `filmCount` **8 → 6** (on garde 2 tentatives)            | `90 + 20,0 + 62,8 + 7,0 + 62,8 + 20,0 + 21,5 = **284,1 s**` | 15,9 s ✗     | Toujours au-dessus, **et** les leurres redeviennent punitifs (3 poses de marge pour 3 instants + 3 leurres). Je la liste pour qu'on voie qu'elle ne sauve rien.                              |
+| **C**                       | Assouplir la réserve du gate de 20 s à 10 s, tout garder | 289,8 s                                                     | 10,2 s       | Redéfinit la promesse au lieu de la tenir — exactement ce que **G-4** interdit. Je la liste pour la refuser explicitement, pas pour la proposer.                                             |
+
+**Pourquoi A et pas B :** avec 8 poses dont 2 de marge d'erreur assumée et une planche-contact
+qui nomme désormais **pourquoi** (`wrong-subject` vs `no-subject`), **le pas d'apprentissage
+est passé de la reprise vers l'intérieur de la tentative**. La reprise existait parce que la
+scène n'apprenait rien pendant qu'on la jouait ; le pivot lui donne 8 essais informés. Perdre
+la reprise coûte donc beaucoup moins cher en Rev. 6 qu'en Rev. 5 — et §1.3.a-bis décision 6
+avait **pré-déclaré `PHOTO_MAX_ATTEMPTS = 1` comme le levier réservé** exactement à ce genre de
+mesure. C'est ce levier qui se déclenche, à l'heure, sur le motif prévu.
+
+**Ce que je NE décide pas seul :** `PHOTO_MAX_ATTEMPTS = 1` retire une forme d'écran que le
+gate a ratifiée (A-1, deux CTA appairés). **Karim + Bertrand tranchent.** Si l'option A est
+refusée, la conséquence honnête est que le pivot de densité et la reprise ne tiennent pas
+ensemble dans 5 minutes, et c'est la **portée du set-piece** qui doit rouvrir (`pm`), pas
+mes planchers.
+
+### A.10 — Ce que le pivot fait remonter aux autres lanes
+
+| Lane                           | Ce qui est dû                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lead-art` / `concept-artist`  | **(1)** un plateau dense au niveau de détail Belliard ; **(2)** 4 groupes-candidats aux zones du tableau §A.2, séparés de **≥ 8,0 su** de centre à centre à tout instant (F17) ; **(3)** chaque candidat = un **ensemble énuméré** d'éléments dessinés dont l'AABB est la boîte (F12(1), §2.5 contrainte 1, × 4) ; **(4)** les 3 leurres doivent **ressembler à une preuve** (§A2.3), pas décorer ; **(5)** F18 : aucun canal de rendu ne doit trier master/leurre. Le master est le **sprite spécial** de la décision de Bertrand. |
+| `narrative-designer` (Yasmine) | **(1)** le signalement à 2 critères (1 statique + 1 comportemental) dans le briefing, sous les interdits A6.2 ; **(2)** la copie du tampon **`wrong-subject`** — un constat, jamais un reproche ; **(3)** 3 leurres qui existent diégétiquement (des gens de la rue Belliard, pas des mannequins).                                                                                                                                                                                                                                  |
+| `ux-designer` (Tony)           | **(1)** les brackets se posent désormais sur **un candidat parmi N** — le contrat « composition seulement, jamais le verdict » est **inchangé** mais doit être re-validé sur la scène dense ; **(2)** planche-contact à **8** vignettes (2×4, toujours sans pagination) ; **(3)** deux motifs de rejet distincts.                                                                                                                                                                                                                   |
+| `qa-lead` (Inès)               | Le contrôle en intervalle §7.2.a est **× 4** ; F16/F17/F18/F19 sont assertables sur les données authored ; F17 est le plus important (un échec = un leurre gagnable au tremblement).                                                                                                                                                                                                                                                                                                                                                |
+| `senior-architect` (Winston)   | ⚠️ **Contrat typé modifié** : `subjectTrack: Keyframe[]` → `candidateTracks: { id, role, keyframes }[]`. La résolution `C*(t)` est une fonction pure de plus dans `src/game`. **Rev. 6 n'est pas une substitution de constantes comme Rev. 5** — la lane A doit le savoir avant d'écrire la donnée.                                                                                                                                                                                                                                 |
+| `pm` (John)                    | Si l'option A de §A.9 est refusée, la portée du set-piece rouvre (voir §A.9).                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+### A.11 — Critères d'acceptation ajoutés (stage 5)
+
+- **AC17 — La désignation est géométrique et ne fuite rien.** En `ACTIVE`, cadrer proprement un
+  **leurre** produit des brackets `solid` puis `locked` et un **déclic net + flash** identiques
+  à ceux du master ; rien à l'écran, dans le texte ni dans le son ne distingue les deux avant
+  la planche-contact. Assertion : le hash d'état comparé par AC10 est **identique** entre une
+  prise master valide et une prise leurre valide, à `role` près.
+- **AC18 — Le sway ne bascule jamais la résolution (F17).** Test unitaire balayant le sway sur
+  une période complète, viseur centré sur le master à ± 1,0 su : `C*` reste le master sur
+  **100 %** des ticks, sur les trois instants.
+- **AC19 — Le pivot est joué, pas raisonné.** Au `verify` : sur une première partie, un joueur
+  qui n'a lu que le briefing identifie le master **avant** `openAt` #1 (F19) ; et sur 3 sessions,
+  **au moins une** photo de leurre est prise (si zéro, les leurres sont trop évidents ⇒ F18 est
+  violé en pratique, et le levier est le contraste comportemental des leurres, jamais un
+  affaiblissement du signalement).
+- **AC20 — Le budget mur re-mesuré sous Rev. 6.** AC15 est rejoué avec `filmCount = 8`, le
+  briefing à 20,0 s et l'option retenue en §A.9. **Un dépassement de 280 s revient au gate**, il
+  ne se rattrape pas en raccourcissant un budget de lecture.
+
+### A.12 — Rev. 6.1 : la reprise devient réglable, F14 devient paramétrée (décision Bertrand, 2026-08-05)
+
+> **Décision de Bertrand sur mon escalade n°3 : « sois flexible sur le nombre de retry ».**
+> Lecture que j'en fais et que j'inscris : **le chiffre ne se grave pas maintenant**, il se
+> règle au playtest. Ma recommandation de 1 (§A.9) reste, mais comme **point de départ
+> authored**, plus comme verdict.
+
+**Décision A12.1 — `maxAttempts` sort des constantes de module et devient une donnée authored
+du set-piece.** L'architecte l'avait mis en constante sur l'argument « une seule valeur gatée,
+un seul set-piece » ; cet argument tombe le jour où Bertrand veut la régler. Elle rejoint donc
+`sceneDuration`, `filmCount` et `triggerAtElapsedSeconds` dans `photoQteSpec` (§8, table
+« Authored per set-piece »). `PHOTO_MAX_ATTEMPTS` **disparaît** de la table des constantes.
+
+**Rien à recoder côté rendu, et je le dis parce que c'est le point qui rend la décision peu
+chère.** La lane A a déjà `retryOffered = attemptIndex + 1 < maxAttempts`, et la lane B a déjà
+**les deux formes d'écran** (un CTA seul / deux CTA appairés, A-1). La forme suit donc la
+valeur automatiquement : authorer 1 donne `[ LAISSER TOMBER ]` seul, authorer 2 donne la paire
+ratifiée. **La forme A-1 n'est pas supprimée, elle est conditionnée** — ce qui est très
+supérieur à ce que proposait §A.9 option A, où elle disparaissait du jeu.
+
+**Décision A12.2 — valeur de départ authored : `maxAttempts = 1`.** Point de départ, pas
+verdict. Le motif est celui de §A.9 (le pas d'apprentissage est passé dans la tentative :
+8 poses, 2 erreurs de lecture assumées, une planche qui nomme désormais `wrong-subject` vs
+`no-subject`) **et** c'est la seule valeur qui passe F14 aujourd'hui sans rien devoir à
+personne. **Le playtest (AC20/AC21) a autorité pour la monter à 2 si — et seulement si — les
+~10 s manquantes ont été trouvées** (§A12.4).
+
+**Décision A12.3 — F14 est réécrite comme une CONTRAINTE PARAMÉTRÉE, pas comme un chiffre.**
+C'est la forme correcte pour une valeur réglable : la borne ne vieillit pas quand la donnée
+bouge, et une donnée illégale devient rouge en CI au lieu de passer en silence.
+
+> **F14b(n)** = `90 (mission jouée) + briefingMax + n × 62,8 + (n − 1) × decisionBudget
+>
+> - readBudget + 21,5 (otage, pire cas)`≤ **280 s**
+avec, sous Rev. 6 :`briefingMax = 20,0`(§A.9 casse 1),`decisionBudget = 7,0`,
+`readBudget = 25,7` (8 vignettes, dérivé §A.9 casse 2).
+
+| `n` (`maxAttempts` authored) | F14b(n)                | Réserve sous 300 s | Verdict                                         |
+| ---------------------------- | ---------------------- | ------------------ | ----------------------------------------------- |
+| **1**                        | **220,0 s = 3,67 min** | **80,0 s**         | ✓ — **valeur MAXIMALE légale aujourd'hui**      |
+| 2                            | **289,8 s = 4,83 min** | 10,2 s             | ✗ — dépasse 280 s, réserve < 20 s (**−9,8 s**)  |
+| 3                            | **359,6 s = 5,99 min** | −59,6 s            | ✗✗ — au-dessus du plafond dur de 300 s lui-même |
+
+**Donc : la valeur maximale qui respecte 300 s avec réserve ≥ 20 s, à 8 poses et planche à
+8 vignettes, est `n = 1`.** `n = 2` demande de **récupérer ~9,8 s ailleurs**.
+
+**Décision A12.4 — où sont ces 9,8 s, et pourquoi aucun de mes leviers ne les fournit.** Je
+l'avais dit en §A.9 ; je le redis chiffré, parce que c'est l'information utile au playtest :
+
+| Levier                          | Gain      | Propriétaire | Verdict                                                                                                                           |
+| ------------------------------- | --------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `briefingMax` 20,0 → 15,0       | −5,0 s    | **moi**      | ✗ Casse le signalement à 2 critères ⇒ casse **F19**. Refusé.                                                                      |
+| `filmCount` 8 → 7               | −2,9 s    | **moi**      | ✗ Ronge `DECOY_ERROR_ALLOWANCE` ⇒ les leurres redeviennent punitifs (§A5.3). Refusé.                                              |
+| **Les deux ensemble**           | −7,9 s    | **moi**      | ✗ **281,9 s — toujours au-dessus**, en ayant cassé deux planchers. **C'est la preuve que mes leviers sont épuisés**, pas un avis. |
+| `ACTIVE` 60,0 s                 | jusqu'à ∞ | moi          | ✗ Intouchable : F1-F5, F12, les 9 keyframes et les 3 fenêtres en dépendent.                                                       |
+| Bloc otage, pire cas **21,5 s** | ≤ 21,5 s  | `techplan`   | ⚠️ **Hors de ma lane.** −10 s ici suffiraient à eux seuls.                                                                        |
+| Mission jouée **90 s**          | ?         | `pm`         | ⚠️ **Hors de ma lane.**                                                                                                           |
+
+**Conclusion à porter au playtest telle quelle : `maxAttempts = 2` n'est atteignable par aucun
+levier de game design. Il exige du temps rendu par le plan otage ou par la durée de mission —
+c'est une négociation `pm` / `senior-architect`, pas un réglage de tuning.** Régler la valeur
+est libre ; la régler **au-dessus de la borne** ne l'est pas.
+
+**Décision A12.5 — F14 est assertée sur la donnée authored, pas sur une constante.** Le contrôle
+en CI évalue `F14b(spec.maxAttempts) ≤ 280`. Autoriser 2 sans avoir bougé un autre terme rend
+la suite **rouge**, avec le nom du terme fautif. C'est exactement la flexibilité demandée :
+**réglable, jamais silencieux.**
+
+- **AC21 (nouveau)** — au `verify`, la valeur authored de `maxAttempts` est mesurée au
+  chronomètre sur le chemin le plus long réellement jouable, et le résultat est comparé à
+  `F14b(n)`. Un écart > 5 % entre la formule et le chronomètre est un défaut de la **formule**
+  (elle a oublié un temps mur), pas du joueur — et il revient au gate, comme T-6 en Rev. 5.
+
+### A.13 — Rev. 6.1 : le triptyque et les leurres revérifiés contre le pivot de fiction « TERRASSE »
+
+**Le pivot de fiction :** la scène compromettante n'est plus une remise d'enveloppe mais **le
+Commandant attablé en terrasse avec quelqu'un** (une liaison, pas une corruption) ; **la berline
+garée** prouve qu'il est venu en fonction ; l'art propose **sept tables voisines au même geste**
+comme leurres naturels.
+
+**Ma mécanique candidats/leurres ne bouge pas d'une ligne** — §A.2 à §A.8 sont indifférents à ce
+que les gens font, ils ne parlent que de boîtes, de séparation et de télégraphes. **Mais trois
+choses doivent être vérifiées instant par instant plutôt que supposées**, et l'une des trois
+casse.
+
+#### A13.1 — Les trois instants, relus sur la terrasse
+
+| #   | Instant Rev. 6                                             | Devient, en terrasse                                                                                                              | Valeurs authored | Verdict                      |
+| --- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------- |
+| 1   | **ARRIVÉE** — les deux hommes se font face (24×13,5)       | **ILS S'ASSOIENT** : les deux silhouettes entières se rejoignent à la table                                                       | **inchangées**   | ✓ passe                      |
+| 2   | **L'ÉCHANGE** — 2 visages + 2 mains + enveloppe (17×9,56)  | **LE GESTE** : 2 visages rapprochés + 2 mains qui se touchent. L'enveloppe sort de l'ensemble énuméré, la main de l'autre y entre | **inchangées**   | ✓ passe — **même géométrie** |
+| 3   | **LA PLAQUE** — la berline recule, boîte MOBILE 3,103 su/s | La berline est **garée**, donc **immobile**                                                                                       | **CASSENT**      | ✗ **voir A13.2**             |
+
+Les deux premiers passent parce que la boîte est l'AABB d'un **ensemble énuméré** (§2.5,
+contrainte 1) : changer les éléments énumérés sans changer leur encombrement ne touche aucun
+nombre. `24,0 × 13,5` su, c'est deux hommes debout ou deux hommes qui s'attablent ; `17,0 × 9,56`
+su, c'est deux visages et deux mains, que la main tienne une enveloppe ou l'autre main. **Le
+renommage `L'ÉCHANGE` → `LE GESTE` est de la fiction ; la géométrie est identique et je n'y
+touche pas.** La preuve maîtresse reste « deux visages ET deux mains dans le cadre » — la
+formulation gatée survit mot pour mot au changement de sujet.
+
+#### A13.2 — ⚠️ LA PLAQUE casse si la berline est immobile : escalade n°5
+
+K6→K7→K8 authorent une boîte **mobile** à **3,103 su/s**. Une berline garée a une vitesse de
+zéro. Ce n'est pas un détail de mise en scène : c'est le **sujet mobile** du set-piece, et il
+porte à lui seul **F5b** (grâce non-trackée), **F5c** (`PAN_RATE_MAX ≥ v_max + v_sway_peak`,
+d'où vient la valeur 12,0 su/s), **§3.3.b**, **§4.3** en entier et **AC6c**. Le figer, c'est
+supprimer le test de tracking, la justification de `PAN_RATE_MAX` et « la frame la plus dure du
+set-piece » d'un seul geste. §2.5 le disait déjà : _« si l'art a besoin que la voiture bouge
+autrement, ce n'est pas une note d'art — c'est un ré-authoring de K6/K7. Revenez me voir, ne
+l'absorbez pas en silence. »_ Je m'applique ma propre règle.
+
+| Option                                                                                                                                                                                                                              | Ce que ça coûte                                                                                                                                                                                                                                                                              | Verdict                      |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **(i)** La berline **repart** en fin de scène — elle est garée et visible tout du long (la preuve « venu en fonction » est faite par sa **présence**), et elle s'en va sur `[53,0 ; 55,9]`, ce qui **est déjà** la fenêtre authored | **Zéro.** Les 9 keyframes, `3,103 su/s`, F5b, F5c, §3.3.b, §4.3 et AC6c tiennent tous. La fiction y gagne même une clôture de scène naturelle : le sujet s'en va, la scène finit.                                                                                                            | **Ma recommandation**        |
+| **(ii)** Plaque **statique**, ré-authoring de K6/K7/K8                                                                                                                                                                              | Supprime le test de tracking ; **F5b et F5c perdent leur objet** et `PAN_RATE_MAX = 12,0` devient une valeur sans dérivation ; §4.3 et AC6c à réécrire. L'instant reste dur (7,5×4,22 su à 251 mm, sway en haut de plage) mais devient un test de **stabilité** seul, plus de **poursuite**. | Faisable, **coûteux, à moi** |
+| **(iii)** Un autre mobile porte l'instant 3 (le serveur, un passant qui démasque la table)                                                                                                                                          | Change le **sujet** de l'instant 3 et donc son ensemble énuméré, sa boîte et sa bande focale ⇒ ré-authoring complet de l'instant + F4 à revérifier.                                                                                                                                          | Non recommandé               |
+
+**Je ne tranche pas seul : c'est de la fiction autant que de la mécanique.** Option (i) est
+gratuite mécaniquement et coûte une phrase à Yasmine (« la berline repart »). Si la fiction
+exige que la berline reste garée jusqu'au bout, c'est **(ii)** et je porte le ré-authoring —
+mais je veux que le gate sache qu'il achète la suppression du seul test de poursuite du jeu.
+
+#### A13.3 — Les sept tables : l'art a raison, et ça fait monter un plancher
+
+Sept tables au même geste, c'est **exactement** le décor que §A2.3 demandait (« un leurre est un
+groupe plausible, pas un figurant décoratif ») — et c'est mieux que mes trois slots inventés en
+§A.2, parce que ça naît du lieu au lieu d'être posé dessus. **J'adopte la proposition de l'art
+et je paie ce qu'elle coûte.**
+
+**Décision A13.3.a — `DECOY_COUNT_MAX` 4 → 6 (F16 amendé).** 1 table `master` + **6** tables
+`decoy` = les sept tables de l'art. `DECOY_COUNT_MIN` reste **2**.
+
+**Décision A13.3.b — nouveau plancher F20, « pas de cible orpheline », et c'est un trou que la
+terrasse ouvre vraiment.** Avec sept tables identiques, une table qui **ressemble à une cible**
+sans être un candidat authored produirait, si le joueur la photographie parfaitement, `C* = ∅`
+⇒ échec de T3 ⇒ `rejectReason = out-of-frame`. Or le joueur a cadré impeccablement : la planche
+lui dirait **« hors cadre »** sur une photo parfaitement cadrée. **C'est un mensonge de
+tampon**, la même faute que F12 ferme du côté des brackets.
+
+> **F20 — Aucun groupe dessiné ne peut se lire comme un sujet photographiable sans être une
+> piste authored.** Toute table occupée par ≥ 2 personnes en interaction est **soit** un
+> candidat (`master` ou `decoy`, avec sa piste, ses keyframes et son contrôle en intervalle),
+> **soit** mise en scène comme non-photographiable (table seule, dos tourné, table vide).
+> Vérifié à la livraison du plateau, par énumération, comme F12(1).
+
+**Décision A13.3.c — F17 est revérifiée sur un pas de terrasse, pas supposée.** Un pas de tables
+parisien ≈ 1,5 m ; à `1 su ≈ 0,13 m` (§2.5), cela fait **≈ 11,5 su de centre à centre entre
+tables voisines** — contre un plancher F17 de **6,0 su** et un authored visé de 8,0. ✓ **avec
+44 % de marge sur l'authored**, et la géométrie du lieu la produit gratuitement. Sept tables à
+11,5 su occupent ≈ 80 su sur un plateau de 100 : ça tient, sans empiler.
+
+**Décision A13.3.d — §A.7 revérifiée, et elle se renforce.** Le tableau de §A.7 montrait qu'à
+8 su de séparation, aucun leurre n'entre **entier** dans le cadre au remplissage légal. À
+11,5 su, la marge grandit encore. **Aucune constante de cadrage ne bouge.** Un bout de table
+voisine dans le cadre : oui, et c'est la scène habitée que Bertrand demande. Un leurre entier
+qui vole la résolution : structurellement impossible.
+
+**Décision A13.3.e — le coût, dit franchement.** Le contrôle en intervalle §7.2.a passe de
+**× 4 à × 7**. C'est du temps `qa-lead` + `dev-tooling-assets` et de l'art énuméré table par
+table. Je ne demande aucune tolérance élargie en compensation : `SUBJECT_BOX_TOLERANCE` ne
+bouge pas.
+
+**Décision A13.3.f — le signalement à 2 critères devient plus fort, pas plus faible.** Sept
+tables au même geste, c'est le meilleur cas d'usage possible de F19 : le critère **statique**
+(la silhouette du Commandant, le vêtement) élimine cinq tables au grand-angle, le critère
+**comportemental** ne se lit qu'au téléobjectif et tranche entre les deux qui restent. Les
+11,0 s d'amorce avant `openAt` #1 (F19, plancher 6,0) restent le budget de ce travail. **La
+demande de Bertrand — « beaucoup de choses où zoomer » — est littéralement satisfaite : six
+tables sur lesquelles zoomer pour rien.**
+
+---
+
+| Rev.     | Date       | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | 2026-08-01 | Initial spec.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **2**    | 2026-08-01 | **K-1** F5 re-derived against **effective** slack (formula pinned in §3.3), `SWAY_AMP_X` 2.4 → **2.00 su** + dependent constants, F5 becomes a **three-leg** floor (sway share / untracked grace / pan authority), new `PAN_RATE_MAX`. **K-2** the full **9-keyframe `subjectTrack` table** is authored (§2.5) and floor **F12** added in three legs. **K-3** F10 becomes a **compound** floor against the gated `SHIELD_BREAK_LULL_CUT`, `rewardMultiplier` is **phase-scoped and Niveau-Final-scoped**, tiers re-tuned ×0.90/×0.80, R1 transcribed as **AMENDMENT A1** (§D7.2). **K-4** the **decline exit** is specified (§1.3) and the ≤ 2 min attempt budget becomes floor **F13** + AC13.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **3**    | 2026-08-02 | **Relocation to Belliard** (Bertrand, override of R-10): sound cover re-derived on the **traffic-light cycle** (§4.1, `TRAIN_*` → `WAVE_*`, period re-derived from a 42 s two-phase cycle, **windows unmoved**), keyframe staging re-read on the **passage / reverse-out** geometry (§2.5, **no value moved**, two new art constraints), run-scoped carry renamed `Belliard → Niveau Final`, all Stalingrad/quai/métro references purged. **C-2** fixed: §1.2 posture is the T-2 **device fork**. No floor, window, keyframe or tier value changed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **4**    | 2026-08-02 | **D-1 closed** (delta gate): the set-piece is INSIDE the mission, so its frozen time is now **bounded** — `PHOTO_MAX_ATTEMPTS = 2` mission-scoped, `BRIEFING` on attempt 1 only (retry = 62.8 s), new floors **F14** (150.6 s / composed 262.1 s = 4.37 min) and **F15** (8.0 s frozen-scene separation), `triggerAtElapsedSeconds = **2.5 s**` frozen for lane A. Rulings **R3-1** (21.0 s is the wave interval, 42 is never a value; two waves same duration/attack), **R3-2** (prohibition: nothing on the plate encodes cover but the headlights), **R3-3** (`BRIEFING` added to §1.1, carries the ellipse), **R3-5** (`enabledOnFirstRun = false`), **R3-6** (no rarity) acted. **C-5/C-6/C-7/C-8** fixed, **N-2** specified (§7.2.a), **AC14** and **AC15** added. **No window, keyframe, floor value or tier moved.**                                                                                                                                                                                                                                                                                                                                                                                         |
+| **5**    | 2026-08-02 | **D-1b closed** (gate arbitrage A-2, T-6): **F14 rewritten in wall-clock** under **G-4** — `90 + Σ attempts(authored frozen + sheet budget) + 21.5` ≤ **280 s** ⇒ **279.1 s = 4.65 min**, reserve **20.9 s**. Re-tuned the two reading constants — `PHOTO_BRIEFING_MAX_SECONDS` 25.0 → **15.0 s**, `CONTACT_SHEET_READ_BUDGET` 30.0 → **20.0 s** — plus one new **design** budget, `CONTACT_SHEET_DECISION_BUDGET = 7.0 s` (the sheet a player _retries from_ is judged, not read; §1.3.a-bis decision 3). Decision 3's measured ceilings are now **derived formulas**, not posed numbers (gate point 3). `PHOTO_MAX_ATTEMPTS` stays **2**, `ACTIVE` untouched, Decision 6 unchanged. **§1.3.b** answers the audio spec's open question: the tension BGM **ducks −24 dB, it neither stops nor continues at level** — behaviour, not level data. **C-9** applied. F14a (authored) now 140.6 s.                                                                                                                                                                                                                                                                                                                        |
+| **6**    | 2026-08-05 | **PIVOT DENSITÉ + LEURRES (Bertrand)** — §A. `subjectTrack` (une boîte) → **`candidateTracks`** (1 `master` + 3 `decoy`, même forme, F16) ; **désignation par centrage** `C*(t)`, purement géométrique, aucune fuite sémantique (A.3) ; T2 réécrit + `rejectReason` **`wrong-subject`** (A.4) ; **leurres pleinement photographiables, prix = 1 pose, aucune surtaxe** (A.5) ; `filmCount` 6 → **8**, F6 re-dérivé ; **briefing = signalement à 2 critères** + interdits de pointage (A.6) ; `FILL_MIN`/zoom **inchangés et vérifiés** — au remplissage légal un leurre ne peut jamais entrer entier dans le cadre (A.7) ; **triptyque conservé, refus d'un 4e instant** pour raison de budget mur (A.8) ; nouveaux planchers **F16/F17/F18/F19**, F12 et §7.2.a généralisés × 4. **CASSES ESCALADÉES (A.9) :** `PHOTO_BRIEFING_MAX_SECONDS` 15,0 → **20,0 s** et **F14b = 289,8 s > 280 s à 2 tentatives** ⇒ recommandation **`PHOTO_MAX_ATTEMPTS` 2 → 1** (220,0 s, réserve 80 s), qui retire la forme A-1 ratifiée ⇒ **décision Karim + Bertrand**. **Contrat typé modifié : ce n'est PAS un drop-in pour lane A.**                                                                                               |
+| **6.1**  | 2026-08-05 | **Reprise réglable + fiction terrasse.** §A.12 : `PHOTO_MAX_ATTEMPTS` sort des constantes et devient **`maxAttempts`, donnée authored** (Bertrand : « sois flexible sur le nombre de retry ») ; **la forme A-1 à deux CTA n'est pas supprimée, elle est conditionnée** par la valeur (lane A a déjà `retryOffered`, lane B a déjà les deux formes ⇒ **rien à recoder**) ; **F14 devient paramétrée `F14b(n)`**, assertée sur la donnée (rouge en CI si illégale) ⇒ **max légal = 1** (220,0 s, réserve 80 s), **2 = 289,8 s ✗ et exige ~9,8 s rendues par le plan otage ou `pm` — aucun levier de game design ne les fournit** (démonstration chiffrée A12.4) ; départ authored **1**, réglable ; **AC21**. §A.13 : triptyque relu sur la **terrasse** — ARRIVÉE et **L'ÉCHANGE → LE GESTE** passent **sans qu'une valeur bouge** (même AABB, ensemble énuméré différent), **LA PLAQUE casse si la berline est immobile ⇒ escalade n°5** (reco : elle **repart** sur `[53,0 ; 55,9]`, coût zéro) ; les **7 tables** adoptées ⇒ `DECOY_COUNT_MAX` 4 → **6**, nouveau plancher **F20 « pas de cible orpheline »**, F17 revérifiée sur un pas de terrasse (**11,5 su ≫ 6,0**), §A.7 renforcée, contrôle §7.2.a **× 7**. |
+| ratified | —          | Carried unchanged from round 1 per the gate: `SPOTTED` → contact sheet, `SUSPICION_SHUTTER_EXPOSED +34` with **no decay**, `filmCount = 6`, `FOCUS_HOLD = 0.35 s` HOLD model, D1.a/D1.b, floors F1/F2/F3/F4/F6/F7/F8/F9/F11. **Not re-opened here.** (R-10's host level is the **one** ratification Bertrand overrode — Rev. 3.)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 **Design source (DECIDED upstream, not re-opened here):**
 [`docs/adr/0077-qte-photo-paparazzi-set-pieces.md`](../adr/0077-qte-photo-paparazzi-set-pieces.md)
@@ -1395,24 +1933,26 @@ reverse-out genuinely must arc or grow, that is a **re-author of K6/K7** which m
 **System constants** (**Belliard**-first, exactly as the hostage QTE's wander constants are —
 promoted to authored fields only when a second set-piece needs to curve them):
 
-| Constant                        | Default                                                       |     | Constant                        | Default                       |
-| ------------------------------- | ------------------------------------------------------------- | --- | ------------------------------- | ----------------------------- |
-| `PHOTO_ESTABLISH_SECONDS`       | 2.0 s                                                         |     | `SWAY_AMP_X`                    | **2.00 su** _(Rev.2)_         |
-| `PHOTO_DEVELOP_SECONDS`         | 0.8 s                                                         |     | `SWAY_AMP_Y`                    | **1.125 su** _(Rev.2)_        |
-| `PHOTO_BRIEFING_MAX_SECONDS`    | **15.0 s** _(Rev.5, was 25.0 — D-1b)_                         |     | `SWAY_LEG_DURATION`             | 0.55 s                        |
-| `CONTACT_SHEET_READ_BUDGET`     | **20.0 s** _(Rev.5, was 30.0 — design budget, never a timer)_ |     | `SWAY_LEG_DURATION_RM`          | 1.30 s                        |
-| `CONTACT_SHEET_DECISION_BUDGET` | **7.0 s** _(Rev.5, new — non-terminal sheet, design budget)_  |     | `FROZEN_BLOCK_BGM_DUCK_DB`      | **−24 dB** _(Rev.5, §1.3.b)_  |
-| `FROZEN_BLOCK_BGM_DUCK_IN_MS`   | **1200 ms** _(Rev.5, §1.3.b)_                                 |     | `FROZEN_BLOCK_BGM_DUCK_OUT_MS`  | **1600 ms** _(Rev.5, §1.3.b)_ |
-| `SHUTTER_ARM_SECONDS`           | 0.40 s                                                        |     | `MIN_LEG_DISPLACEMENT`          | **0.50 su** _(Rev.2)_         |
-| `FOCUS_HOLD`                    | 0.35 s                                                        |     | `MAX_LEG_DISPLACEMENT`          | **2.60 su** _(Rev.2)_         |
-| `FOCAL_MIN` / `FOCAL_MAX`       | 35 / 300 mm                                                   |     | `PAN_RATE_MAX`                  | **12.0 su/s** _(new)_         |
-| `ZOOM_TRAVERSE_SECONDS`         | 2.2 s                                                         |     | `SUSPICION_MAX`                 | 100                           |
-| `FRAME_MARGIN`                  | 0.04                                                          |     | `SUSPICION_SHUTTER_EXPOSED`     | +34                           |
-| `FILL_MIN`                      | 0.45                                                          |     | `SUSPICION_SHUTTER_COVERED`     | 0                             |
-| `FILL_MAX` (derived)            | 0.92                                                          |     | `SUBJECT_BOX_TOLERANCE`         | **max(0.40 su, 5 %)** _(new)_ |
-| `TELEGRAPH_LEAD_PHOTO`          | 1.8 s                                                         |     | `LULL_RESIDUAL_FLOOR` (ε)       | **0.35 s** _(new, boss-side)_ |
-| `PHOTO_MAX_ATTEMPTS`            | **2** _(Rev.4, D-1 — §1.3.a)_                                 |     | `FROZEN_SCENE_SEPARATION_FLOOR` | **8.0 s** _(Rev.4, F15)_      |
-| Floors **F1–F15**               | §7                                                            |     |                                 |                               |
+| Constant                            | Default                                                          |     | Constant                        | Default                               |
+| ----------------------------------- | ---------------------------------------------------------------- | --- | ------------------------------- | ------------------------------------- |
+| `PHOTO_ESTABLISH_SECONDS`           | 2.0 s                                                            |     | `SWAY_AMP_X`                    | **2.00 su** _(Rev.2)_                 |
+| `PHOTO_DEVELOP_SECONDS`             | 0.8 s                                                            |     | `SWAY_AMP_Y`                    | **1.125 su** _(Rev.2)_                |
+| `PHOTO_BRIEFING_MAX_SECONDS`        | **15.0 s** _(Rev.5, was 25.0 — D-1b)_                            |     | `SWAY_LEG_DURATION`             | 0.55 s                                |
+| `CONTACT_SHEET_READ_BUDGET`         | **20.0 s** _(Rev.5, was 30.0 — design budget, never a timer)_    |     | `SWAY_LEG_DURATION_RM`          | 1.30 s                                |
+| `CONTACT_SHEET_DECISION_BUDGET`     | **7.0 s** _(Rev.5, new — non-terminal sheet, design budget)_     |     | `FROZEN_BLOCK_BGM_DUCK_DB`      | **−24 dB** _(Rev.5, §1.3.b)_          |
+| `FROZEN_BLOCK_BGM_DUCK_IN_MS`       | **1200 ms** _(Rev.5, §1.3.b)_                                    |     | `FROZEN_BLOCK_BGM_DUCK_OUT_MS`  | **1600 ms** _(Rev.5, §1.3.b)_         |
+| `SHUTTER_ARM_SECONDS`               | 0.40 s                                                           |     | `MIN_LEG_DISPLACEMENT`          | **0.50 su** _(Rev.2)_                 |
+| `FOCUS_HOLD`                        | 0.35 s                                                           |     | `MAX_LEG_DISPLACEMENT`          | **2.60 su** _(Rev.2)_                 |
+| `FOCAL_MIN` / `FOCAL_MAX`           | 35 / 300 mm                                                      |     | `PAN_RATE_MAX`                  | **12.0 su/s** _(new)_                 |
+| `ZOOM_TRAVERSE_SECONDS`             | 2.2 s                                                            |     | `SUSPICION_MAX`                 | 100                                   |
+| `FRAME_MARGIN`                      | 0.04                                                             |     | `SUSPICION_SHUTTER_EXPOSED`     | +34                                   |
+| `FILL_MIN`                          | 0.45                                                             |     | `SUSPICION_SHUTTER_COVERED`     | 0                                     |
+| `FILL_MAX` (derived)                | 0.92                                                             |     | `SUBJECT_BOX_TOLERANCE`         | **max(0.40 su, 5 %)** _(new)_         |
+| `TELEGRAPH_LEAD_PHOTO`              | 1.8 s                                                            |     | `LULL_RESIDUAL_FLOOR` (ε)       | **0.35 s** _(new, boss-side)_         |
+| ~~`PHOTO_MAX_ATTEMPTS`~~            | ⚠️ **SUPPRIMÉ (Rev.6.1)** → donnée authored `maxAttempts`, §A.12 |     | `FROZEN_SCENE_SEPARATION_FLOOR` | **8.0 s** _(Rev.4, F15)_              |
+| Floors **F1–F20**                   | §7 + **§A.8** + **§A.13.3.b** (F20)                              |     | `DECOY_COUNT_MIN` / `_MAX`      | **2 / 6** _(Rev.6.1, F16 — 7 tables)_ |
+| `CANDIDATE_CENTRE_SEPARATION_FLOOR` | **6,0 su** _(Rev.6, F17 = 3 × `SWAY_AMP_X`)_                     |     | `IDENTIFICATION_LEAD_FLOOR`     | **6,0 s** _(Rev.6, F19)_              |
+| `DECOY_ERROR_ALLOWANCE`             | **2** _(Rev.6, F6 re-dérivé — `filmCount` 6 → **8**)_            |     | `PHOTO_BRIEFING_MAX_SECONDS`    | ⚠️ **20,0 s proposé** (§A.9)          |
 
 **Rev. 5 note for lane A (zero-rework substitution).** The five changed/new values above are
 **authored tuning data and nothing else**. `PHOTO_MAX_ATTEMPTS` stays **2**; the phase machine,
@@ -1424,20 +1964,20 @@ audio-wiring lane's, per §1.3.b(5) — behaviour, not level data.
 
 **Authored per set-piece** (`photoQteSpec` — the data shape is `senior-architect`'s call):
 
-| Key                       | **Belliard** set-piece #1 (Rev. 3)                                                                                                                                                                                            |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scenePlate`              | **la bouche du passage, rue Belliard** (`x_norm 0,372–0,408`), vue plongeante depuis la lucarne du haut de rue — `100 × 56.25 su` ≈ 13,0 × 7,3 m (art request: fiction Rev.3 §6)                                              |
-| `sceneDuration`           | 60.0 s                                                                                                                                                                                                                        |
-| `filmCount`               | 6                                                                                                                                                                                                                             |
-| `swaySeed`                | integer, **pinned at stage-5 `verify`** (§9 AC10 — the ADR-0034 K-5 discipline)                                                                                                                                               |
-| `coverWindows`            | **traffic waves** — `WAVE_PERIOD` 21.0 s, `WAVE_FIRST_OPEN` 10.0 s, `WAVE_COVER_SECONDS` 7.0 s, `WAVE_TELL_SECONDS` 1.8 s ⇒ [10,17] [31,38] [52,59] (§4.1)                                                                    |
-| `subjectTrack`            | **the 9-keyframe table of §2.5** — `{ t, cx, cy, w, h }[]`, linearly interpolated, total on `[0, 60.0]`                                                                                                                       |
-| `instants`                | the three rows of §4.2 (`openAt`, `closeAt`, `role`, tell)                                                                                                                                                                    |
-| `briefingMaxSeconds`      | 25.0 s, skippable (§1.3), **played on attempt 1 only** (§1.1)                                                                                                                                                                 |
-| `triggerAtElapsedSeconds` | **2.5 s** — authored window `[2.0, 3.0]`, **frozen and free for lane A** (D-1 closed, §1.3.a decision 5). Pinned by **F15** (`12 − 2.5 = 9.5 s ≥ 8.0`), not by taste. Above 4.0 s the floor breaks.                           |
-| `maxAttempts`             | **2** (one entry + one `[ RECOMMENCER ]`), **mission-scoped** — resets on a new Belliard mission, which is what keeps R3-6 (no rarity) intact (§1.3.a)                                                                        |
-| `enabledOnFirstRun`       | **false** — the set-piece does **not** trigger on the player's first Belliard run (ruling **R3-5**). The exact predicate is `pm`'s; the "not the first" is not.                                                               |
-| `rewardMultiplier`        | **×0.90** master-only, **×0.80** master + ≥1 bonus, **×1.00** on decline — authored on the **Niveau Final** `bossQteSpec`, applied to **phases 1-2 only** (§D7.1, amendment §D7.2). Not a field of this set-piece's own data. |
+| Key                                        | **Belliard** set-piece #1 (Rev. 3)                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scenePlate`                               | **la bouche du passage, rue Belliard** (`x_norm 0,372–0,408`), vue plongeante depuis la lucarne du haut de rue — `100 × 56.25 su` ≈ 13,0 × 7,3 m (art request: fiction Rev.3 §6)                                                                                                                                                                                                                                          |
+| `sceneDuration`                            | 60.0 s                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `filmCount`                                | **8** _(Rev.6, §A5.3 — F6 re-dérivé avec `DECOY_ERROR_ALLOWANCE = 2` ; plancher 7, plafond UX 8, grille 2×4 sans pagination)_                                                                                                                                                                                                                                                                                             |
+| `swaySeed`                                 | integer, **pinned at stage-5 `verify`** (§9 AC10 — the ADR-0034 K-5 discipline)                                                                                                                                                                                                                                                                                                                                           |
+| `coverWindows`                             | **traffic waves** — `WAVE_PERIOD` 21.0 s, `WAVE_FIRST_OPEN` 10.0 s, `WAVE_COVER_SECONDS` 7.0 s, `WAVE_TELL_SECONDS` 1.8 s ⇒ [10,17] [31,38] [52,59] (§4.1)                                                                                                                                                                                                                                                                |
+| ~~`subjectTrack`~~ → **`candidateTracks`** | ⚠️ **CONTRAT TYPÉ MODIFIÉ (Rev.6, §A.2)** — `{ id, role: "master" \| "decoy", keyframes: { t, cx, cy, w, h }[] }[]`. La piste `master` = **les 9 keyframes de §2.5, inchangées** ; **6 pistes `decoy`** (les 7 tables, §A.13.3) authorées en **Rev. 6.2** à la livraison du plateau dense. Chacune interpolée linéairement et totale sur `[0, 60.0]` (F12(3) × 7).                                                        |
+| `instants`                                 | the three rows of §4.2 (`openAt`, `closeAt`, `role`, tell)                                                                                                                                                                                                                                                                                                                                                                |
+| `briefingMaxSeconds`                       | ⚠️ **20,0 s proposé** _(Rev.6, §A.9 casse 1 — **en attente de ratification du gate** ; 15,0 s en Rev.5 ne loge pas le signalement à 2 critères et casserait F19)_, skippable (§1.3), **played on attempt 1 only** (§1.1)                                                                                                                                                                                                  |
+| `triggerAtElapsedSeconds`                  | **2.5 s** — authored window `[2.0, 3.0]`, **frozen and free for lane A** (D-1 closed, §1.3.a decision 5). Pinned by **F15** (`12 − 2.5 = 9.5 s ≥ 8.0`), not by taste. Above 4.0 s the floor breaks.                                                                                                                                                                                                                       |
+| `maxAttempts`                              | ⚠️ **RÉGLABLE (Rev.6.1, décision Bertrand)** — **départ authored : 1**, point de départ et non verdict (§A.12). **Borne : `F14b(n) ≤ 280 s` assertée sur la valeur authored** ⇒ max légal **1** aujourd'hui ; `2` = 289,8 s ✗ tant que ~9,8 s ne sont pas rendues par le plan otage ou `pm` (A12.4). Reste **mission-scoped** (R3-6 intact). La forme à deux CTA (A-1) est **conditionnée** par la valeur, pas supprimée. |
+| `enabledOnFirstRun`                        | **false** — the set-piece does **not** trigger on the player's first Belliard run (ruling **R3-5**). The exact predicate is `pm`'s; the "not the first" is not.                                                                                                                                                                                                                                                           |
+| `rewardMultiplier`                         | **×0.90** master-only, **×0.80** master + ≥1 bonus, **×1.00** on decline — authored on the **Niveau Final** `bossQteSpec`, applied to **phases 1-2 only** (§D7.1, amendment §D7.2). Not a field of this set-piece's own data.                                                                                                                                                                                             |
 
 ---
 

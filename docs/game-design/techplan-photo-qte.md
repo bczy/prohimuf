@@ -1505,3 +1505,294 @@ empty-slot visual and the one line of copy for a roll shot with zero frames — 
 above ships with a placeholder string and does not wait for them.
 
 _Winston — `senior-architect`, 2026-08-02, stage 4 blocker triage (T-1, T-2, T-7, T-11)._
+
+---
+
+## AMENDEMENT Rev.6.1 — le plateau dense : `candidateTracks`, `C*(t)`, `maxAttempts`
+
+_Winston — `senior-architect`, 2026-08-05, stage 3bis (changement de contrat typé après
+livraison des lanes A et B)._
+
+**Ce que je signe ici, en une phrase :** la Rev.6.1 n'est **pas** une substitution de
+constantes comme la Rev.5 — elle **casse le contrat typé** que la lane A a livré, elle **casse
+deux surfaces de la lane B** (la planche à 6 fentes, la boîte non-nulle), et elle **ouvre une
+fuite sémantique que ma garantie de type actuelle ne couvre pas** (§R6-3). Les trois se
+ferment, et le coût est borné : personne ne réécrit son système, tout le monde généralise le
+sien.
+
+### R6-1 — La table de vérité : additif vs cassant, ligne par ligne
+
+| Delta Rev.6.1                                                           | Nature                                                           | Ce que `tsc` fait                                                        | Qui paie                         |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------- |
+| `subjectTrack: SubjectKeyframe[]` → `candidateTracks: CandidateTrack[]` | **CASSANT**                                                      | Rouge sur `photoQteSystem` (7 sites), `photoQteBelliard`, le script CI   | A (+ C pour le script)           |
+| `PhotoQte.subjectBox: Box` → `resolvedBox: Box \| null`                 | **CASSANT**                                                      | Rouge sur `PhotoQteView` / `photoFraming` (lane B)                       | A publie, **B consomme**         |
+| `rejectReason: "wrong-subject"`                                         | additif **sur le type**, cassant **sur les `switch` exhaustifs** | Rouge sur la table de copie de la planche — **et c'est voulu**           | B (copie : `narrative-designer`) |
+| `filmCount` 6 → 8                                                       | donnée…                                                          | …**mais R5-4 fige une grille 2×3 de six fentes** ⇒ deux poses invisibles | **B, cassant** (§R6-6)           |
+| `PHOTO_MAX_ATTEMPTS` (const) → `spec.maxAttempts` (authored)            | **CASSANT** (3 sites)                                            | Rouge sur `photoQteSystem` ×3 + `stateMachine`                           | A. **Zéro pour B** (§R6-7)       |
+| `DECOY_COUNT_MIN/MAX = 2 / 6`, `CANDIDATE_CENTRE_SEPARATION_FLOOR`      | additif                                                          | Nouvelles constantes + legs de plancher                                  | A                                |
+| F16–F20                                                                 | additif                                                          | Nouveaux legs d'assertion (F20 : moitié CI, moitié gate — §R6-9)         | A + C                            |
+| `C*(t)`                                                                 | **nouvelle fonction pure**                                       | —                                                                        | A (§R6-4)                        |
+
+**Ce qui SURVIT intégralement, et c'est la majorité du livré :** la machine à phases
+forward-only et ses 10 phases ; `subjectBoxAt` **mot pour mot** (elle devient l'évaluateur
+**par piste**, appelée N fois au lieu d'une — c'est exactement pour ça qu'elle prenait déjà
+`track` en argument plutôt que `spec`) ; `swayOffsetAt` et le noyau de hash ; `inCover` /
+`coverTellAt` / `instantAt` ; T3/T4/T5 et `FOCUS_HOLD` ; les cinq tests conjonctifs dans leur
+ordre ; `PhotoLeverage` et son algèbre monotone ; `photoSheetView` et la règle du `null` avant
+`CONTACT_SHEET` ; le canal de contrôle, les guards QTE-active, la projection HUD ; **tout le
+plateau de la lane B sauf deux surfaces**. Aucun test de la lane A n'est jeté : ils sont
+re-paramétrés sur une piste, et le fichier de test gagne une seconde piste.
+
+### R6-2 — Le contrat typé amendé (remplace §2.1 pour les parties citées)
+
+```ts
+export type CandidateRole = "master" | "decoy";
+
+export interface CandidateTrack {
+  /** Id OPAQUE et stable. Ne doit encoder ni le rôle ni le rang — voir R6-3(c). */
+  readonly id: string;
+  readonly role: CandidateRole;
+  /** Même forme, mêmes invariants qu'au Rev.5 : trié, total sur [0, sceneDuration]. */
+  readonly keyframes: readonly SubjectKeyframe[];
+}
+```
+
+`PhotoQteSpec` : `subjectTrack` **disparaît**, remplacé par
+`readonly candidateTracks: readonly CandidateTrack[]` (exactement un `master`, 2 à 6 `decoy`,
+assertés à la construction), et gagne `readonly maxAttempts: number`.
+
+`PhotoQte` : `subjectBox: Box` devient **`resolvedBox: Box | null`** et gagne
+**`resolvedId: string | null`** (nécessaire au reset de `FOCUS_HOLD` sur changement de `C*`,
+spec A3.2). Les deux sont évalués **une seule fois par tick** — D-C tient, généralisé.
+
+**Décision W6-1 — `resolvedBox` est nullable et le render n'a pas le droit de fabriquer un
+substitut.** `C* = ∅` est un **état légal permanent** (le joueur cadre le vide) ; c'est la
+Rev.5 « composition invalide » avec brackets `dashed`, et le type l'exprime au lieu de le
+promettre. Le render ne synthétise **jamais** de boîte de repli à partir du viseur, du plateau
+ou d'une piste : brackets `dashed` sur le rect du viseur, point. Un `?? previousBox` serait une
+régression de fuite (le joueur verrait les crochets « accrocher » ce qu'il vient de quitter).
+
+### R6-3 — La garantie anti-fuite : elle ne tient PLUS telle quelle. Je la referme, structurellement
+
+C'était mon invariant le plus fort et la question mérite une réponse franche : **non, elle ne
+tient plus, et elle était déjà plus faible que sa propre docstring.**
+
+**(a) Le trou, nommé.** `PhotoSceneView` n'a effectivement aucun champ capable d'exprimer un
+verdict — vrai, et ça reste vrai après Rev.6.1. Mais **la lane B ne consomme pas seulement
+`PhotoSceneView`** : `src/render/scene/PhotoQteLayer.tsx` reçoit `stateRef: RefObject<GameState>`,
+lit `stateRef.current.photoQte` (un `PhotoQte` **complet**), appelle lui-même `photoSceneView`,
+et lit déjà `qte.spec.cover` en clair. Donc **`spec` est dans le scope du render**. Aujourd'hui
+le dégât est théorique (`PhotoInstant.role` et `openAt/closeAt` y sont, mais dessiner « la
+fenêtre est ouverte » demande du travail volontaire). **Avec `candidateTracks`, la fuite devient
+une ligne** : `spec.candidateTracks.find(t => t.role === "master")` puis un marqueur. C'est le
+genre de raccourci qu'un dev pressé écrit sans intention de tricher, et aucun test ne l'attrape
+puisque le rendu « marche mieux ».
+
+**(b) Décision W6-2 — la projection remonte dans le bridge ; `src/render` cesse de nommer
+`PhotoQte` et `GameState.photoQte`.** `photoSceneView` / `photoSheetView` / `isPhotoQteActive`
+sont appelés dans `src/hooks` (là où la couche pure et R3F ont déjà le droit de se voir), et
+`PhotoQteLayer` reçoit **`PhotoSceneView | null`** et **`PhotoSheetView | null`** en props. Le
+render n'a plus l'objet d'état, donc plus le `spec`, donc plus le `role` : **la garantie
+redevient structurelle au lieu d'être une politesse.** Corollaire heureux : le `sweepPhase` que
+`PhotoQteView` demandait en commentaire depuis la livraison (« SEAM ASK to lane A ») devient un
+champ de `PhotoSceneView`, calculé pur — la lecture de `qte.spec.cover` dans le render
+disparaît par le même geste au lieu d'être tolérée.
+
+**(c) Décision W6-3 — deux modules de types, pas un.** `@game/types/photoQte.ts` garde les
+types de **seam** (`Box`, `PhotoSceneView`, `PhotoSheetView`, `PhotoBracket`, `PhotoQtePhase`,
+`PhotoPosture`, `PhotoFrameRecord`, `PhotoRejectReason`, `PhotoCta`, `PlateExtent`). Les types
+**d'authoring** — `CandidateTrack`, `CandidateRole`, `SubjectKeyframe`, `PhotoInstant`,
+`PhotoInstantRole`, `CoverWindows`, `PhotoQteSpec`, `PhotoQte` — partent dans
+`@game/types/photoQteAuthoring.ts`. `src/render/ui/photo/photoSeam.ts` ne peut re-exporter que
+du premier : **le rôle n'est plus importable depuis `src/render` sans créer un chemin d'import
+qui n'existe pas.** Doublé d'une règle ESLint `no-restricted-imports` sous `src/render/**` sur
+`@game/types/photoQteAuthoring`, `@game/systems/photoQteSystem` et `@game/levels/*` — la règle
+est la ceinture, la scission est les bretelles, et c'est la scission qui porte.
+
+**(d) Décision W6-4 — les ids de candidats sont opaques, et c'est asserté.** `"C0_master"`
+fuirait par le seul nom si un id atteignait un jour une surface de debug, un log ou une
+capture. `assertPhotoQteFloors` refuse tout `id` contenant `master`/`decoy`/`leurre` (insensible
+à la casse) et tout id qui n'est pas de la forme authored opaque. Coût : trois lignes. Et
+`resolvedId` **ne sort jamais** sur `PhotoSceneView` — il vit dans l'état pour le reset de
+`FOCUS_HOLD` et pour rien d'autre.
+
+**Verdict :** après W6-2 + W6-3, la phrase « le render ne peut pas fuiter parce que le secret
+n'est pas dans son scope » redevient **littéralement vraie**, pour la première fois depuis la
+livraison. Rev.6.1 n'affaiblit pas la garantie : elle force à la rendre réelle.
+
+### R6-4 — `C*(t)` : où elle vit, sa signature, et comment le rôle lui est INACCESSIBLE
+
+**Décision W6-5 — signature, et c'est la signature qui porte la preuve :**
+
+```ts
+// src/game/systems/photoQteSystem.ts — pure, à côté de `subjectBoxAt`
+export interface ResolvedCandidate {
+  readonly id: string;
+  readonly box: Box;
+}
+
+export function resolveCandidate(
+  boxes: readonly { readonly id: string; readonly box: Box }[],
+  viewfinder: Box,
+): ResolvedCandidate | null;
+```
+
+Elle vit dans `src/game/systems/photoQteSystem.ts` (pas de nouveau module : elle est de la même
+famille que `subjectBoxAt`/`focalBandOf` et n'a pas d'état). **Elle ne prend pas
+`candidateTracks`, elle ne prend pas `t`, elle ne prend pas le `spec`.** Elle reçoit une liste
+de boîtes déjà évaluées et le viseur — c'est-à-dire **exactement les arguments dont T3 et la
+distance-au-centre ont besoin, et rien d'autre.**
+
+**Pourquoi ça ferme la question mieux qu'un test :** un test dit « aujourd'hui elle ne lit pas
+`role` » ; ici **`role` n'est pas dans son type d'entrée**, ni `t`, ni `openAt/closeAt`. Pour la
+faire tricher il faudrait élargir sa signature — un diff visible, motivé, qui arrive au panel.
+C'est la règle maison (« un test ne suffit pas si le type le permet ») appliquée à la lettre.
+L'appelant fait `candidateTracks.map(tr => ({ id: tr.id, box: subjectBoxAt(tr.keyframes, t) }))`
+et **jette `role` sur place**. Départage documenté par la spec (A3.1) : distance euclidienne des
+centres, égalité exacte tranchée par index croissant dans le tableau passé — donc déterministe,
+F11 intact ; l'appelant doit passer les boîtes dans l'ordre authored, ce qui est asserté par un
+test de l'ordre, pas laissé à l'usage.
+
+**Où `role` est lu, alors ?** À **un seul endroit** : T2, dans le classement de la vignette
+(`frames[]`), après la prise, du côté sémantique — `spec.candidateTracks.find(t => t.id ===
+resolvedId)?.role === "master"`. Un site, dans le module qui a déjà le droit de connaître le
+verdict, et dont le résultat ne sort que par `photoSheetView`. Un test d'architecture (grep sur
+`.role` hors de ce site) est alors une confirmation bon marché, pas la garantie.
+
+### R6-5 — Lane A (`dev-gameplay`) : ce qui est modifié, ce qui est ajouté
+
+1. **Types** : la scission W6-3 + `CandidateTrack` + `maxAttempts` + `resolvedBox`/`resolvedId`.
+2. **`photoQteSystem.ts`** : `subjectBoxAt` inchangée ; `resolveCandidate` ajoutée ; les 7 sites
+   `subjectBoxAt(spec.subjectTrack, …)` deviennent des boucles sur `candidateTracks` ;
+   `PHOTO_MAX_ATTEMPTS` supprimée, 3 lectures redirigées sur `qte.spec.maxAttempts` ; T2 réécrit
+   (§R6-4) ; `FOCUS_HOLD` reset ajouté sur changement de `resolvedId` (A3.2).
+3. **Planchers** : F1–F4 et F12 s'évaluent désormais **par piste** (la boucle est la seule
+   nouveauté) ; F16 (`2 ≤ decoys ≤ 6`, exactement 1 `master`), F17 (séparation des centres
+   ≥ 6,0 su **à tout instant échantillonné**, pas seulement aux keyframes — sinon deux pistes
+   peuvent se croiser entre deux keyframes et A3.3 tombe), F18/F19 selon spec, F20 (§R6-9),
+   W6-4 (ids opaques).
+4. **`maxAttempts` : où l'asserter — décision W6-6.** `F13`/`F14a` restent dans
+   `assertPhotoQteFloors` (ils ne parlent que du set-piece). **`F14b(n)` NON** : elle compose le
+   temps de mission (90 s), le bloc otage (21,5 s) et les budgets de lecture — des termes que
+   `photoQteSystem` **ne connaît pas et ne doit pas connaître**. Elle part dans
+   `validateLevel.ts`, à côté de `photoSetpieceOrderingIssue`, qui a déjà `timeSeconds` et
+   `hostageQte` sous la main. C'est la même leçon que l'ordering : **une contrainte qui compose
+   plusieurs systèmes s'assert là où le niveau est visible, pas dans le module d'un système.**
+   Le message d'erreur nomme le terme fautif (exigence A12.5).
+5. **`photoQteBelliard.ts`** : `master` = les 9 keyframes **transcrites telles quelles** (zéro
+   valeur bougée) ; 6 pistes `decoy` **en attente du plateau dense** — elles ne sont pas
+   inventables avant l'art (F12(1)). D'ici là la donnée est **légale à 2 decoys** (`DECOY_COUNT_MIN`)
+   ou le niveau ne charge pas : **lane A ne bloque pas sur l'art, mais Belliard n'est pas
+   jouable-conforme avant la livraison des 7 tables.** À dire au `producer`, c'est un jalon.
+6. **`stateMachine.ts`** : deux lignes (le cap et le retry lisent `spec.maxAttempts`). La
+   sémantique `photoQteAttempts` sur `GameState` (Rev.5 T-2) est **intacte** — c'est elle qui
+   fait que le passage à une donnée authored ne rouvre pas R3-6 (pas de rareté).
+
+### R6-6 — Lane B (`dev-r3f-render`) : trois surfaces, dont deux qu'elle ne peut pas ignorer
+
+**Les projections changent-elles de forme ? Oui, sur trois champs, et pas ailleurs :**
+`subjectBox: Box` → `resolvedBox: Box | null` (**cassant**, `tsc` rouge sur `photoFraming` et
+`PhotoQteView`) ; `sweepPhase: number` **ajouté** (et le render arrête de lire `qte.spec.cover`) ;
+`PhotoRejectReason` gagne `"wrong-subject"` (**rouge sur la table de copie**, ce qui est le
+comportement recherché : une planche muette sur un motif serait pire).
+
+**Le reste de `PhotoSceneView` est byte-identique.** Aucun champ « candidats », aucune liste,
+aucun id : **le render ne reçoit pas les N boîtes**, il reçoit la boîte résolue ou `null`. Les
+sept tables sont dessinées par le **plateau et ses sprites** (lane C), pas par de la géométrie
+projetée — c'est ce qui fait que la densité coûte 0 au seam.
+
+**Ce qui casse en plus, et que personne n'avait relié : `filmCount` 6 → 8 contre la grille 2×3
+de R5-4.** Rev.5 a figé « une grille fixe de **six** fentes, jamais de mise en page
+conditionnelle » ; à 8 poses, deux vignettes n'ont pas de fente. **Décision W6-7 : la grille
+passe à 4×2 (huit fentes), la règle de R5-4 est conservée mot pour mot** — grille fixe,
+remplissage par `ordinal`, fentes vides traitées, aucun `frames.length` en condition. La règle
+survit, son cardinal était une valeur recopiée : il devient `filmCount`, lu de la donnée. La
+lecture est déjà budgétée à 8 vignettes côté spec (`readBudget = 25,7 s`) et l'UX exige ≤ 8 pour
+rester sans pagination : 8 est un **plafond**, pas une étape.
+
+**Ce qui ne bouge pas :** les deux formes d'écran A-1 (un CTA / deux CTA appairés) — `retryOffered`
+est déjà dérivé, il dérivera de la donnée au lieu de la constante, **la lane B ne recode rien**
+(A12.1, et je le confirme sur le code livré : `photoSheetView` est le seul site).
+
+**Le coût réel de la lane B, c'est W6-2** (recevoir les vues en props au lieu de lire
+`stateRef`) : un déplacement d'une trentaine de lignes de `PhotoQteLayer` vers `src/hooks`,
+mécanique, sans changement de comportement ni de fréquence de re-render (les mêmes mémos
+d'arête partent avec). Je l'exige quand même : c'est le seul geste qui rend la garantie vraie.
+
+**Le hash d'état ?** **Aucun changement.** Le noyau `hash.ts` est le générateur de waypoints de
+sway, clé `swaySeed` + `raiseIndex` ; `C*` n'y entre pas, le sway est identique, F11 tient sans
+un octet de plus. Ce qui bouge, c'est la **donnée authored** de Belliard, donc les fixtures de
+parité du catalogue (`levelsCatalogue.pre.json`) — churn de test attendu, à régénérer, pas une
+régression.
+
+### R6-7 — Le contrôle en intervalle ×1 → ×7 : ce que ça coûte vraiment
+
+Le script `check-photo-subject-boxes.mjs` est **déjà data-driven** (il dérive ses intervalles de
+la donnée, importe `subjectBoxAt` et `SUBJECT_BOX_TOLERANCE` du module de jeu). La
+généralisation est donc une **boucle sur `candidateTracks`**, pas une réécriture.
+
+- **Coût CPU : négligeable et je le chiffre pour couper court.** Pas de 0,10 s sur 60 s = 601
+  échantillons par intervalle déclaré ; ×7 pistes, on reste dans les milliers d'évaluations de
+  fonction pure. **Le temps CI n'est pas là** : il est dans le **décodage des images** des
+  frames livrées. Exigence : **un décodage par frame livrée, mémoïsé**, réutilisé sur tous les
+  échantillons qui tombent dessus. Sans ça, ×7 pistes × densité d'échantillonnage fait exploser
+  le job pour rien. Avec ça, le job croît **linéairement avec le nombre de frames d'art
+  livrées** — c'est-à-dire avec ce qu'on livre, ce qui est la bonne loi.
+- **Le message d'erreur nomme la piste** (`id` opaque), l'intervalle, et le **premier**
+  échantillon fautif — la règle Rev.3 tient, elle gagne une coordonnée.
+- **Le vrai coût est humain, pas machine** : 7 tables de keyframes à authorer et 7 jeux de
+  sprites à vérifier. C'est du temps `lead-art` + `qa-lead`, et c'est le prix que la
+  `game-designer` a explicitement refusé de faire baisser en élargissant la tolérance. **Je
+  confirme : `SUBJECT_BOX_TOLERANCE` ne bouge pas.** Élargir la tolérance pour absorber la
+  densité, ce serait payer l'art avec la précision du gameplay.
+- **Livraison partielle : interdite en silence.** Le script échoue si une piste authored n'a pas
+  son groupe d'art, ET si un groupe d'art n'a pas sa piste (c'est le versant CI de F20).
+
+### R6-8 — Décision W6-8 : `maxAttempts` reste borné, réglable, jamais silencieux
+
+Je ratifie A12.1/A12.5 sans réserve : sortir la valeur des constantes est la **bonne** forme dès
+qu'elle est réglable, à la condition — remplie — que la **borne** soit assertée sur la donnée
+(F14b(n) en `validateLevel`, §R6-6 point 4). Départ authored **1**. Je note pour `pm` et
+`producer` que passer à **2** n'est pas un réglage mais une **négociation de budget mission**
+(~9,8 s à rendre) : ce n'est pas à la lane A de la trancher, et la CI dira non toute seule
+jusque-là. C'est exactement le comportement voulu.
+
+### R6-9 — F20 « pas de cible orpheline » : ce que la machine peut prouver, et ce qui reste au gate
+
+F20 est **à moitié mécanisable**, et je préfère le dire que prétendre l'automatiser.
+
+**Décision W6-9 — la liaison art ↔ piste devient une donnée, pas un accord tacite.** Chaque
+groupe dessiné du plateau déclare, dans son entrée `levelArt.json`, **soit** `candidateId: "<id
+de piste>"`, **soit** `nonPhotographable: true` avec un motif énuméré (`table-seule`,
+`dos-tourne`, `table-vide`). Trois assertions en découlent, toutes rouges en CI :
+
+1. **Bijection** (script CI, §R6-7) — tout `candidateId` référence une piste existante, toute
+   piste est référencée par exactement un groupe. Zéro orphelin **dans les deux sens**.
+2. **Exhaustivité** (script CI) — tout groupe du plateau porte l'un **ou** l'autre champ ; un
+   groupe sans les deux est une erreur, pas un défaut. C'est ce qui interdit d'ajouter une
+   huitième table « juste pour le décor » sans que quelqu'un la classe.
+3. **Structure** (`validateLevel.ts`) — `1 master + [2..6] decoy`, ids opaques, séparation F17.
+
+**Ce que ça NE prouve pas : qu'un groupe déclaré `nonPhotographable` a effectivement l'air de
+ne pas l'être.** « ≥ 2 personnes en interaction » est un jugement sur une image ; aucun script
+ne le rend. Cette moitié-là reste un **item de la checklist du gate `lead-art`**, à la livraison
+du plateau, par énumération — comme F12(1). Le gain de W6-9 est déjà décisif : il transforme
+« quelqu'un a-t-il regardé toutes les tables ? » en **une liste finie, close et comptée par la
+CI**, où l'oubli est structurellement impossible et où seul le **classement** est humain.
+
+### R6-10 — Refaire vs survivre, en clair
+
+| Statut                                          | Ce que ça couvre                                                                                                                                                                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Survit tel quel**                             | Machine à phases, `subjectBoxAt`, sway + hash + F11, cover/instants, T3/T4/T5, `FOCUS_HOLD`, `PhotoLeverage`, canal de contrôle, guards, HUD, les deux formes A-1, `photoSheetView` |
+| **Généralisé** (boucle, pas réécriture)         | F1–F4, F12, le script CI, la donnée Belliard, les tests de la lane A                                                                                                                |
+| **Réécrit**                                     | T2 (+ `wrong-subject`), le cap de tentatives (constante → donnée), F14b (déplacée en `validateLevel`)                                                                               |
+| **Nouveau**                                     | `resolveCandidate` (§R6-4), F16–F20, W6-9 (liaison art ↔ piste)                                                                                                                     |
+| **Déplacé** (dette de garantie, non négociable) | La projection `PhotoQte` → vues remonte dans `src/hooks` (W6-2) ; scission des modules de types (W6-3)                                                                              |
+| **Cassé côté B**                                | `resolvedBox` nullable ; grille de planche 6 → 8 fentes (W6-7) ; table de copie des motifs de rejet                                                                                 |
+| **Bloqué sur l'art**                            | Les 6 pistes `decoy` de Belliard (F12(1) interdit de les inventer avant le plateau)                                                                                                 |
+
+**Sign-off :** je signe le pivot. Il coûte une généralisation, pas une refonte, et il **rend**
+plus qu'il ne prend : la garantie anti-fuite passe de docstring à structure. Les deux points que
+je remonte au `producer` — le jalon « plateau dense livré » qui conditionne la conformité de
+Belliard, et le fait que `maxAttempts = 2` est une négociation `pm`, pas un tuning.
