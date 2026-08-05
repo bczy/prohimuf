@@ -101,7 +101,12 @@ jobs:
                 break
               fi
               echo "push attempt $attempt rejected — rebasing and retrying"
-              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+              # NO --autostash: a stale runner's working-tree PNGs would be stashed,
+              # replayed on top of a concurrent DELETION and silently resurrect assets
+              # a gate had rejected (observed 2026-08-05: run at c4a8246 restored the
+              # v1 art, nude included, over the purge commit 2d1a1592). Anything this
+              # run generated is already committed by now; anything else is stale.
+              git pull --rebase origin "$GITHUB_REF_NAME"
             done
             if [ "$pushed" != "1" ]; then
               echo "::error::push rejected after 3 attempts"
