@@ -18,6 +18,16 @@ import { join } from "node:path";
 
 const FORBIDDEN_OUTSIDE_GAME = ["applyPortraitIntent", "tickPortraitScene", "resolvePortraitScene"];
 
+/**
+ * The invariant is about CALL SITES, not about strings: a hook whose doc comment says
+ * "this never calls `applyPortraitIntent`" is honouring the rule, not breaking it, and a
+ * test that cannot tell the two apart would be paid in false positives until someone
+ * deleted it. Comments out, code in.
+ */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -32,13 +42,13 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("the frame fold is the only entry point across the seam", () => {
-  it("no file outside src/game names a rule other than stepPortraitScene", () => {
+  it("no file outside src/game imports or calls a rule other than stepPortraitScene", () => {
     const offenders: string[] = [];
     for (const dir of ["src/hooks", "src/render"]) {
       for (const file of sourceFiles(dir)) {
-        const source = readFileSync(file, "utf8");
+        const code = stripComments(readFileSync(file, "utf8"));
         for (const symbol of FORBIDDEN_OUTSIDE_GAME) {
-          if (source.includes(symbol)) offenders.push(`${file} → ${symbol}`);
+          if (new RegExp(`\\b${symbol}\\b`).test(code)) offenders.push(`${file} → ${symbol}`);
         }
       }
     }
@@ -59,9 +69,8 @@ describe("the frame fold is the only entry point across the seam", () => {
   it("src/game invents no entropy and reads no clock", () => {
     const offenders: string[] = [];
     for (const file of sourceFiles("src/game")) {
-      const source = readFileSync(file, "utf8");
       // Comments are the only legitimate mention (every one of them is a prohibition).
-      const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+      const code = stripComments(readFileSync(file, "utf8"));
       if (/Math\.random|Date\.now|new Date\(/.test(code)) offenders.push(file);
     }
     expect(offenders).toEqual([]);
