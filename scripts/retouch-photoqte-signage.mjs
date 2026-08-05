@@ -8,17 +8,46 @@
  * (4083d6bc). Two tirages, two opposite failure modes ⇒ the edit endpoint is not
  * controllable at this granularity (no strength/guidance/fidelity knob exists on
  * POST /v1/images/edits — checked APIDOCS.md, not assumed; see gen-photo-sprites.mjs).
- * Blanking two rectangular, well-delimited sign bands is a DETERMINISTIC image operation
- * — it does not need a generative model at all. This script does it directly on pixels,
- * the same way retouch-belliard-decor.mjs's xerox pass fixes a register defect without a
+ * Blanking rectangular, well-delimited sign bands is a DETERMINISTIC image operation — it
+ * does not need a generative model at all. This script does it directly on pixels, the
+ * same way retouch-belliard-decor.mjs's xerox pass fixes a register defect without a
  * re-roll: measured, documented, reproducible.
  *
- * THREE TARGETS on `plate-v2-reference.png` (2048x1152), located by inspection (crops with
- * a coordinate grid overlaid, not eyeballed off the full plate):
+ * FIVE TARGETS on `plate-v2-reference.png` (2048x1152), located by inspection (crops with
+ * a coordinate grid overlaid, not eyeballed off the full plate, and not off a
+ * downscaled preview — see CALIBRATION below):
  *   1. `laindorete` — the fascia band lettered "LAINDORETE" above the right-hand shopfront.
  *   2. `gytten` — the small framed paper notice lettered "GYTTEN" inside the left window.
  *   3. `coolam` — the sign text "Coolam" painted on the interior back wall of the other
  *      left window.
+ *   4. `bcra` — a second lettering ("Bcra."/"Bero") on the display window pane above the
+ *      row of exhibited chairs, right-hand shopfront corner. Missed by the first pass
+ *      because that inspection worked off a downscaled preview of the plate — at 1:1 the
+ *      lettering is unmistakable; at preview scale it reads as glass glare.
+ *   5. `fascia-glyphs` — a row of small gibberish glyphs on the fascia trim strip directly
+ *      below the "LAINDORETE" band and above the shutter, running most of the shopfront's
+ *      width. Same miss cause as `bcra`: legible at 1:1, illegible at preview scale — this
+ *      row sits one eye-scan below LAINDORETE, exactly where a player's eye lands next.
+ *
+ * CALIBRATION WARNING — READ BEFORE TOUCHING `TARGETS`: every rect below is a set of pixel
+ * coordinates measured on ONE SPECIFIC RASTER, `plate-v2-reference.png` as committed. They
+ * are not proportional/relative and do not "follow" the artwork if the plate is ever
+ * regenerated (new pollinations tirage, re-crop, upscale, style pass, etc.) — a
+ * regenerated plate can move or resize every shopfront, and these rects would then either
+ * miss the new lettering entirely or blank an unrelated patch of wall, SILENTLY (the
+ * script would still run and still "succeed"). A silently-misaligned retouch script is
+ * worse than no retouch script at all — it launders a defect into looking fixed. Two
+ * guards enforce that:
+ *   - `EXPECTED_SOURCE_SHA256` pins the exact source bytes this calibration was measured
+ *     against. A mismatch aborts before touching a single pixel (bypass with
+ *     `--allow-recalibration` only once you have re-measured every rect against the new
+ *     source and updated this hash — never to silence the check on stale coordinates).
+ *   - Each target's `rect` is required to contain real contrast (a min/max luma spread
+ *     above `MIN_LETTERING_CONTRAST`) before it is painted — the same statistical
+ *     footprint real ink lettering leaves against a flatter surface. A rect that measures
+ *     as flat (because the plate moved and the rect now lands on plain wall) is skipped
+ *     with a loud warning instead of blanking the wrong patch.
+ *
  * Concept-artist's clause for the generative route applies just as much to a retouch: "the
  * blanked panel must carry the same ink hatching and the same grey tone as the surface it
  * is fixed to" — a flat clean rectangle on a textured wall is as much an AI tell as the
@@ -32,14 +61,19 @@
  *
  * IDEMPOTENT BY CONSTRUCTION: every sample strip lies OUTSIDE its own target rect, so a
  * second run measures the same (already-blanked) surroundings and repaints the same flat
- * tone + the same seeded grain — a true fixed point, not a re-roll or a re-darken.
+ * tone + the same seeded grain — a true fixed point, not a re-roll or a re-darken. (Note:
+ * the contrast guard above means a second run on an already-blanked plate will now SKIP
+ * every target rather than repaint it, since a correctly blanked rect measures flat by
+ * design — which is also a true fixed point, just a cheaper one.)
  *
  * Usage:
  *   node scripts/retouch-photoqte-signage.mjs                # retouch (only if not already fixed-point)
  *   node scripts/retouch-photoqte-signage.mjs --out <path>    # write to a different file (debugging)
  *   node scripts/retouch-photoqte-signage.mjs --dry-run       # log the measured tone/grain, write nothing
+ *   node scripts/retouch-photoqte-signage.mjs --allow-recalibration  # skip the source hash pin
  */
 import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -47,6 +81,19 @@ import { fileURLToPath, pathToFileURL } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SOURCE = path.resolve(ROOT, "public/assets/photoqte/plate-v2-reference.png");
+
+// Pinned to the exact `plate-v2-reference.png` this calibration was measured against —
+// see the CALIBRATION WARNING above. Recompute with `shasum -a 256` after a deliberate
+// re-measure, never to make a stale-coordinates warning go away.
+const EXPECTED_SOURCE_SHA256 = "a2c353d6c0525938cbf18b0f4b2314006eb5bb4fc23293de0d9018030d2b7ba4";
+
+// Minimum (max-min) luma spread a target rect must contain to be treated as real
+// lettering worth blanking. Real ink strokes on a flat wall/glass ground read as a wide
+// spread (near-black strokes on a near-white or mid-grey ground); a rect that has drifted
+// onto plain textured wall measures a narrow spread. House toner grain alone (GRAIN_AMP
+// 0.14 of the local tone) stays well under this on a mid-grey ground, so the guard doesn't
+// false-positive on ordinary wall texture.
+const MIN_LETTERING_CONTRAST = 40;
 
 // Grain constants — same values and same darken-only-multiply idiom as
 // retouch-belliard-decor.mjs's XEROX_GRAIN_AMP/XEROX_GRAIN_BLOCK (house toner law).
@@ -111,6 +158,32 @@ const TARGETS = [
     // start lower in the same window; kept clear of the feathered edge.
     sampleRects: [{ x0: 405, y0: 680, x1: 570, y1: 692 }],
     seed: 130503,
+  },
+  {
+    key: "bcra",
+    // The window pane above the exhibited chairs, right-hand shopfront corner. Covers the
+    // full "Bcra."-like lettering plus the stray mark just past it, re-verified by cropping
+    // the exact rect back out of the source at 10x.
+    rect: { x0: 1435, y0: 651, x1: 1540, y1: 671 },
+    // Clear glass in the same pane, below the lettering and above the pane's lower frame
+    // bar (outside the feathered edge) — glass is the correct sample surface here, same as
+    // `gytten`'s wall: the lettering sits ON a plain surface, not on its own material.
+    sampleRects: [{ x0: 1405, y0: 679, x1: 1545, y1: 687 }],
+    seed: 130504,
+  },
+  {
+    key: "fascia-glyphs",
+    // The fascia trim strip below "LAINDORETE" and above the shutter — a row of small
+    // gibberish glyphs running most of the shopfront's width. Right edge stops short of
+    // the plate border, left edge stops short of the corner return, both re-verified by
+    // cropping the exact rect back out of the source (first pass at x0=1642 left a glyph
+    // stroke uncovered at x~1614-1642 — re-cropped at 15x to find the true left extent).
+    rect: { x0: 1608, y0: 672, x1: 2008, y1: 690 },
+    // The same trim strip continues past the glyphs to the right, plain and undecorated —
+    // the correct sample surface (same material, same light, same shot) without touching
+    // the plate's right border.
+    sampleRects: [{ x0: 2010, y0: 676, x1: 2044, y1: 692 }],
+    seed: 130505,
   },
 ];
 
@@ -200,11 +273,43 @@ function paintMatchedPatch(img, rect, median, mad, seed) {
   }
 }
 
+/** Max-min luma spread inside `rect` — the statistical footprint real ink lettering
+ * leaves against a flatter ground. Used to guard against a rect that has silently drifted
+ * off its lettering (see CALIBRATION WARNING at the top of this file). */
+function measureRectContrast(img, rect) {
+  const { x0, y0, x1, y1 } = rect;
+  let min = 255;
+  let max = 0;
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      const i = (y * img.width + x) * 4;
+      const v = lum(img.data[i], img.data[i + 1], img.data[i + 2]);
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+  }
+  return max - min;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
+  const allowRecalibration = args.includes("--allow-recalibration");
   const outIdx = args.indexOf("--out");
   const outFile = outIdx >= 0 ? path.resolve(ROOT, args[outIdx + 1]) : SOURCE;
+
+  const sourceHash = createHash("sha256").update(fs.readFileSync(SOURCE)).digest("hex");
+  if (sourceHash !== EXPECTED_SOURCE_SHA256 && !allowRecalibration) {
+    console.error(
+      `Fatal: ${path.relative(ROOT, SOURCE)} does not match the raster this script's ` +
+        `TARGETS rects were calibrated against (got sha256 ${sourceHash}, expected ` +
+        `${EXPECTED_SOURCE_SHA256}). The plate was likely regenerated — every rect in ` +
+        `TARGETS needs re-measuring against the new source before this script can be ` +
+        `trusted again. Re-run with --allow-recalibration only once you've done that and ` +
+        `updated EXPECTED_SOURCE_SHA256.`,
+    );
+    process.exit(1);
+  }
 
   const loaded = await loadImage(SOURCE);
   const canvas = createCanvas(loaded.width, loaded.height);
@@ -213,6 +318,16 @@ async function main() {
   const image = ctx.getImageData(0, 0, loaded.width, loaded.height);
 
   for (const target of TARGETS) {
+    const contrast = measureRectContrast(image, target.rect);
+    if (contrast < MIN_LETTERING_CONTRAST) {
+      console.warn(
+        `[${target.key}] SKIPPED — rect contrast ${contrast.toFixed(1)} is below ` +
+          `MIN_LETTERING_CONTRAST (${MIN_LETTERING_CONTRAST}); this rect no longer looks ` +
+          `like it contains lettering. Either it is already blanked (expected on a ` +
+          `second run) or the source has drifted from calibration — check before assuming.`,
+      );
+      continue;
+    }
     const { median, mad } = measureSampleLuma(image, target.sampleRects);
     console.log(
       `[${target.key}] sampled median luma ${median.toFixed(1)}, mad ${mad.toFixed(1)} → ` +
