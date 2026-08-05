@@ -177,37 +177,35 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
 
 **Ce qui MANQUE, nommé plutôt que sous-entendu :**
 
-- **Gate `lead-art` — PASSÉ sur le jeu D'ALORS, PAS sur celui qui est livré.** Verdict final
-  PASS sur les cinq emblèmes qu'il a jugés (spirale, smiley, anneaux, fil à plomb, invader),
-  réserve bloquante levée après rework. Mais le gate fiction a depuis retiré le smiley et
-  remplacé l'invader : **le lustre n'a jamais été jugé par `lead-art`**. Une passe d'exécution
-  sur cette marque est DUE avant merge — c'est le seul gate manquant restant, et il n'est pas
-  théorique : ce gate a déjà refusé une marque de ce mur (la trame) pour non-lisibilité. Réclamé par moi auprès de
-  Bertrand à la fusion, puis indépendamment par le panel, puis demandé par Bertrand.
-  Verdict : [`docs/art-direction/decision-flyer-crew-emblems.md`](../art-direction/decision-flyer-crew-emblems.md).
-  Quatre emblèmes sur cinq passent ; **`halftone` (NADIR 94) est refusé** — le champ de
-  points ne résout aucune forme quand on recule, donc c'est une texture et non une marque,
-  il entre en collision avec le dot-screen du papier, et il est le seul aplat tonal d'un set
-  d'encres pleines (bible §2 loi 2 : un asset hors-famille fait tomber le set).
-  **Arbitré par Bertrand** : voie (b), remplacer par une marque d'encre pleine — la trame
-  devient un **fil à plomb** (`plumb`), nadir = le point le plus bas, masse pleine et trou
-  de visée percé comme les yeux du smiley. Les cinq marques sont désormais homogènes, ce
-  qui referme le grief de famille. \*\*Re-gate : R1 LEVÉE\*\* — la loi de famille est refermée,
-  la marque tient à trois mètres y compris sous le filtre de verrouillage (une masse pleine
-  encaisse là où un aplat tonal se dissolvait), le trou de visée reste ouvert à ~100 px, et
-  la silhouette axiale est la seule du mur qui pointe. `lead-art` juge l'attribution « la
-  mieux fondée du mur avec la spirale » : un fil à plomb est l'instrument qui DÉFINIT le
-  point le plus bas, donc la marque ne décore pas le nom, elle le démontre. Les 5°
-  d'inclinaison sur un instrument dont la fonction est la verticale sont conservés à sa
-  demande — ce n'est pas le plomb qui penche, c'est le tampon tapé à la main.
+- **Gate `lead-art` — PASSÉ sur le jeu LIVRÉ**, en trois passages. Verdict :
+  [`docs/art-direction/decision-flyer-crew-emblems.md`](../art-direction/decision-flyer-crew-emblems.md).
 
-  Deux corrections de prose demandées au passage et faites : des commentaires décrivaient
-  encore la trame supprimée (« un commentaire qui décrit une forme disparue est précisément
-  par où une trame reviendrait »), et l'ancrage de l'invader défendait par une absence
-  d'anachronisme — ce qui l'aurait justifié sur n'importe quel mur postérieur à 1978 —
-  au lieu du bon motif : Invader carrelait Paris à partir de 1998, même ville, même année,
-  même geste que le joueur. Refinement facultatif non appliqué, noté dans la note : abaisser
-  le point le plus large de la masse d'un dixième de hauteur.
+  Passage 1 : PASS sur cinq marques avec une réserve BLOQUANTE — la trame de NADIR 94
+  refusée (« un emblème est une marque, pas une texture »). Passage 2 : réserve levée après
+  rework en fil à plomb. **Passage 3, 5 août** : le lustre, arrivé après coup par le gate
+  fiction, n'avait jamais été jugé — c'était le dernier gate manquant de cette story, et le
+  panel le bloquait à ce titre. **PASS**, deux réserves non bloquantes.
+
+  Ce troisième passage n'était pas une formalité : le gate a re-testé le lustre contre le
+  critère même qui avait tué la trame (marque ou texture ?) et contre le cumul qui l'avait
+  dissoute (`feDisplacementMap scale=2.1` puis `opacity: .5 × --flyer-lock-filter`), en
+  agrandissant ×5 la capture VERROUILLÉE. Il a inspecté une jonction qu'il soupçonnait —
+  tige contre moyeu, à moins de 0,4 px de recouvrement au rendu — et l'a trouvée franche,
+  avec une marge « réelle mais mince » sous ~70 px.
+
+  Il constate aussi que le mur tient à quatre marques : le tutoriel n'est pas vide mais
+  porte trois incidents d'encre (tampon `REPÉRAGE`, ovale `TUTORIEL`, flèche `COMMENCE ICI`),
+  donc il lit « annoté à la main » et non « inachevé » — et l'absence de tampon de crew sur
+  la feuille dont la copie dit « sans système » travaille pour la fiction.
+
+  **Réserves non bloquantes** : R4-1, la marque lit « astre » autant que « lustre » (rayons
+  équidistants, compte impair avec une branche plein axe) — deux retouches optionnelles
+  décrites, pampilles/coupelle/flamme interdites ; R4-2, conditionnelle, le vide bas du
+  tutoriel basculerait de respiration à trou si la pile se repliait un jour — ce serait alors
+  la hauteur de feuille à reprendre, jamais y remettre une marque.
+
+  **Ajout au bible dû à `tech-writer`** : « Un luminaire dessiné n'est pas une source de
+  lumière » — un objet qui éclaire dans la fiction n'a aucun droit à briller dans le dessin.
 
 - **Gate fiction — PASSÉ, après ARBITRAGE.** Gate en vigueur :
   [`docs/game-design/decision-flyer-crew-emblems-fiction.md`](../game-design/decision-flyer-crew-emblems-fiction.md)

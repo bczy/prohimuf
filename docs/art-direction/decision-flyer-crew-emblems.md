@@ -259,3 +259,158 @@ fichier : un seul aller-retour `dev-r3f-render` les solde, et **aucun ne redeman
 verdict**, puisque aucun ne change un pixel.
 
 Verdicts (les deux passages) à reporter dans `docs/agent-handoffs.md`.
+
+---
+
+## Addendum — 3ᵉ passage, 5 août 2026 : le lustre de L'Éden (`chandelier`)
+
+**Portée : une seule marque.** Le lustre, et lui seul. Ni le retrait du smiley ni le
+remplacement de l'invader ne sont rejugés ici — ce sont des décisions de fiction déjà
+gatées ; je juge la marque qui en sort et ce qu'elle fait au mur.
+
+**Preuve jugée :** deux captures du build (cascade stabilisée), pas une maquette — la
+feuille finale seule dans son état par défaut **VERROUILLÉ** (`opacity: .5` ×
+`--flyer-lock-filter`), puis le mur entier ; plus un agrandissement ×5 et ×3 des deux
+captures pour lire la jonction tige/moyeu et le trou central. Code lu :
+`ChandelierPath` dans `src/render/ui/menu/FlyerMotif.tsx`.
+
+**Note de titre :** le titre de cette note dit « les cinq emblèmes ». État canonique
+depuis ce passage : **quatre marques, cinq feuilles** — spirale, anneaux, fil à plomb,
+lustre ; le tutoriel est non signé (`SANS SYSTÈME · AVANT LE SON`) et n'a pas d'entrée
+dans `FLYER_EMBLEMS`. Le titre est laissé tel quel pour ne pas casser les liens ; c'est
+cette ligne qui fait foi.
+
+### Verdict — **PASS** (deux réserves, aucune bloquante)
+
+Les cinq questions posées, dans l'ordre, avec ce que la capture montre :
+
+1. **Marque ou texture ? — Marque, sans hésitation.** C'est le test qui a tué la trame,
+   et le lustre le passe par le haut : la forme se résout d'un bloc quand on recule —
+   une tige, un moyeu percé, cinq branches, cinq bulbes. Rien à interpréter, rien qui se
+   dissolve en champ de points. Sur le mur à 88 px, verrouillé, elle est encore une
+   forme close et nommable ; la trame ne l'a jamais été à aucune taille.
+2. **§2 loi 2 à quatre marques — tient, et tient mieux qu'à cinq.** Encre pleine
+   partout : traits pleins de graisse voisine (spirale 7, anneaux 5, branches 6),
+   masses pleines (plomb, moyeu, bulbes), même filtre d'usure, même fantôme de
+   repérage, mêmes tailles volontairement inégales. Aucune pièce tonale, aucune valeur
+   qui dépende de la densité interne d'une forme. Un même tirage, quatre machines.
+3. **Survie au cumul `scale=2.1` + `opacity: .5` × lock — oui, vérifiée à
+   l'agrandissement.** C'était mon vrai doute et il portait sur une jonction précise :
+   la tige (`M47 0h6v26h-6z`, x 47→53) rencontre le moyeu (cercle r 18 centré 50,44)
+   **quasiment par tangence** — le recouvrement géométrique fait moins d'une demi-unité
+   de viewBox, soit à peine 0,4 px à 88. C'est exactement la configuration que j'avais
+   signalée sur les antennes de l'invader (contact d'un coin, rompu par le
+   déplacement). **Le rendu réel dit non** : sur les deux captures agrandies, la tige
+   entre franchement dans le moyeu, sans pincement ni fil rompu — le déplacement
+   fractal l'épaissit autant qu'il l'entame à cette échelle. Aucun élément détaché,
+   aucune branche sectionnée, aucun bulbe orphelin. **Le trou central reste
+   franchement ouvert** sous la double atténuation, comme le trou de visée du plomb :
+   percé en even-odd, donc c'est un trou dans l'encre et pas un rond peint dessus.
+   Réserve d'exécution héritée, non bloquante : si la marque descend un jour sous
+   ~70 px, ou si `scale` monte, **souder la tige au moyeu** (allonger la tige de 3 ou 4
+   unités dans la masse) — la marge actuelle est réelle mais mince.
+4. **Le mur à quatre marques — il tient.** Le tutoriel vide ne déséquilibre pas la pile,
+   pour une raison qui n'est pas de la chance : cette feuille porte déjà trois
+   incidents d'encre à elle (le tampon `REPÉRAGE`, l'ovale `TUTORIEL`, la flèche
+   manuscrite `COMMENCE ICI` qui vient de l'extérieur se poser dessus). Elle se lit
+   comme une feuille **annotée à la main**, pas comme une feuille inachevée — et
+   l'absence de tampon de crew sur la seule feuille dont la copie dit « sans système »
+   est le genre de silence qui travaille pour la fiction. Rien à corriger. **R4-2,
+   non bloquante et conditionnelle** : le bas de la feuille tutoriel est la plus grande
+   zone blanche du mur ; si un jour la copie du tutoriel raccourcit encore, ou si les
+   feuilles se replient (passe de pile différée, §2bis.2 pt5), le vide basculera de
+   « respiration » à « trou » — c'est alors la hauteur de la feuille qu'il faudra
+   reprendre, jamais y remettre une marque.
+5. **Zéro glow — conforme, vérifié au code et à la capture.** Les bulbes sont des
+   disques `fill="currentColor"` : de l'encre, pas de la lumière. Aucun `filter` de
+   flou, aucun halo, aucun dégradé, aucune seconde couleur — le seul filtre est le
+   `feTurbulence`/`feDisplacementMap` d'usure déjà sanctionné, et le seul doublage est
+   le fantôme de repérage à 28 % dessiné **sous** l'encre. Un lustre est le motif où le
+   glow serait le plus tentant ; personne n'a cédé. Noté et approuvé.
+
+### Le raisonnement du code — je le contresigne
+
+Le pendentif rayonnant plutôt que le lustre à étages : **bon appel, et pour la bonne
+raison.** Un lustre à étages réduit à une marque, c'est une coupelle sous deux bougies,
+donc deux yeux et une bouche — un visage. Ce mur vient précisément de se débarrasser du
+seul visage qu'il portait ; le réintroduire par accident aurait été la pire façon de
+perdre la décision de fiction. La symétrie radiale est aussi ce qui survit à une
+photocopieuse, là où des pampilles feraient un pâté. Rien à redire non plus au
+« rien ne rayonne vers le haut » : un luminaire pend, les branches partent sous le
+moyeu, la tige monte vers un plafond que la feuille ne montre pas. La marque a un haut
+et un bas, ce qui est déjà plus que ce que beaucoup d'emblèmes obtiennent.
+
+Ce que l'attribution gagne : la feuille finale est la seule signée par **un lieu** et
+non par un crew, et la marque le dit d'elle-même — un objet fixé au plafond, immobile,
+suspendu au-dessus de tout ce qui bougera dessous. Le « vieux monde suspendu au-dessus
+de la fête » de la spec est là sans qu'on ait à l'écrire. Attribution validée.
+
+### R4-1 — la marque lit « astre » autant que « lustre » : non bloquante
+
+La seule réserve d'art de ce passage, et je la pose sans en faire une condition. À la
+capture, la silhouette lit d'abord **soleil / astérisque / molécule**, et « lustre » en
+second. Deux causes géométriques, toutes deux tenues par le code :
+
+- **rayons de longueur égale** (toutes les branches à r 38, bulbes à 42) : l'équidistance
+  parfaite est la signature du soleil rayonnant, pas celle d'un luminaire, qui est
+  toujours **plus large que haut** depuis son moyeu ;
+- **compte impair avec une branche plein axe** (15/52/90/128/165°) : la branche à 90°
+  tombe exactement sous le moyeu, ce qui produit une lecture d'étoile/étincelle. Un
+  luminaire se lit mieux en compte **pair**, sans rien au centre-bas.
+
+Si `dev-r3f-render` y repasse un jour, deux retouches suffisent — non cumulatives, aucune
+n'ajoute d'étage ni de visage, aucune ne touche au zéro-glow :
+
+- **(a) la moins chère** : allonger les deux branches latérales (15° et 165°) d'environ
+  6 unités et raccourcir la branche à 90° d'autant. Le moyeu devient plus large que
+  haut, le rayonnement cesse d'être isotrope, la lecture bascule vers le luminaire.
+- **(b) la plus juste** : supprimer la branche à 90° et passer à quatre branches
+  (≈ 20°, 55°, 125°, 160°). Compte pair, centre-bas dégagé sous le moyeu percé,
+  silhouette franchement horizontale.
+
+**Ce que je ne veux pas :** des pampilles, une coupelle, un second étage, une flamme, ou
+un bulbe traité autrement que comme un disque plein. La marque est bonne ; elle serait
+juste un cran plus nommable.
+
+### État des réserves antérieures à ce passage
+
+- **R3 (ancrage de l'invader) : CADUQUE.** L'invader n'existe plus, la réserve tombe
+  avec lui. Aucune action.
+- **R1b-2 (commentaires périmés sur la trame) : SOLDÉE.** Vérifiée dans le fichier :
+  le bloc au-dessus de `PlumbPath` porte le bon raisonnement, et la borne de taille de
+  `FlyerEmblem` parle désormais de « punched detail […] below ~70px » et non plus de la
+  trame. Rien ne subsiste de `halftone` dans le fichier.
+- **R1b-1 (épaule du plomb) : ouverte, facultative, inchangée.**
+- **R2 (voisinage spirale/anneaux) : ouverte, conditionnelle.** Le lustre ne l'aggrave
+  pas — il l'élargit d'un cran : son moyeu est un anneau épais, donc trois des quatre
+  marques comportent un rond concentrique. Les branches les séparent sans ambiguïté
+  aujourd'hui (vérifié sur le mur, deux feuilles d'écart). Même condition de
+  réexamen : un repli de pile qui rendrait `rings` et `chandelier` adjacents sur des
+  stocks proches.
+
+### Ce que ce passage ajoute au bible
+
+Une règle, en prolongement de la loi du glow, à reporter par `tech-writer` dans
+`docs/art-direction.md` §2bis sur ce texte-ci, sans le reformuler :
+
+3. **Un luminaire dessiné n'est pas une source de lumière.** Sur une surface imprimée,
+   une ampoule, une bougie, un néon ou un lustre se dessine en **encre pleine** — un
+   disque, un trait, une masse — jamais en halo, en dégradé, en rayons émis ni en
+   seconde couleur. La loi du glow réserve la lumière à l'interactif : un objet qui
+   éclaire dans la fiction n'a aucun droit à briller dans le dessin. `ChandelierPath`
+   est la forme de référence.
+
+### Verdict de ce passage
+
+**PASS.** `chandelier` / L'Éden entre dans le set. C'est une marque et non une texture,
+elle est d'encre pleine et du même tirage que les trois autres, elle survit intacte au
+cumul déplacement + verrouillage avec son trou franchement ouvert, elle ne brille pas
+d'un pixel, et le mur à quatre marques tient sans que le tutoriel non signé fasse un
+trou. Réserves ouvertes, **aucune bloquante et aucune qui redemande mon verdict** :
+**R4-1** (géométrie des branches, facultative, deux options fournies), **R4-2** (vide du
+tutoriel, conditionnelle à un futur repli de pile), **R1b-1** et **R2** (inchangées).
+
+Le set des quatre emblèmes passe la gate d'asset. **Rien ne bloque le merge de ce
+côté** — le gate manquant de PR #145 est rendu ici.
+
+_Verdict à reporter dans `docs/agent-handoffs.md` (`lead-art`, 3ᵉ passage, PR #145)._
