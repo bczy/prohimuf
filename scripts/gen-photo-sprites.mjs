@@ -161,7 +161,7 @@ async function makeCrop() {
 // choice (img2img street-continuity conditioning, ruling §2). Overridable for a one-off A/B
 // against another paid image-editing model that also accepts `image=` (e.g. `nanobanana-2`,
 // `seedream-pro`) WITHOUT touching this file — a Bertrand-sanctioned re-roll, not a default.
-const PLATE_MODEL = process.env.PLATE_MODEL || "kontext";
+const PLATE_MODEL = process.env.PLATE_MODEL || "nanobanana-2";
 
 // ── Generation (flux, or kontext img2img for the plate via the PAID farm) ────
 async function generate(a) {
