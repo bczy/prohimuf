@@ -27,14 +27,23 @@
  *
  *   node scripts/slice-portrait-plate.mjs [--plate <path>]
  *     The REAL pipeline: fetch (or read, with --plate) a face plate, run the
- *     recalage pass against its margin registration marks (eye-line / nose-base
- *     ticks, art brief §1.2bis), slice at the 3 seams with bleed removed at the
- *     ordinate, measure the 4 seam-tolerance grandeurs of §1.2bis on every
- *     internal seam, and write all 24 files + the manifest ONLY if every seam
- *     passes. FLUX generation is normally BLOCKED in the local sandbox
- *     (AGENTS.md) — this mode is exercised in CI
- *     (.github/workflows/gen-portrait-plate.yml). `--plate <path>` bypasses the
- *     network call for local testing against a hand-supplied PNG.
+ *     recalage pass against the skull OUTLINE (crown/chin ordinates + per-row
+ *     half-widths, art brief §10.2 — margin ticks are abandoned), slice at
+ *     the 3 seams with bleed removed at the ordinate, measure the 4
+ *     seam-tolerance grandeurs of §9.3 on every internal seam, and write all
+ *     24 files + the manifest ONLY if every seam passes. FLUX generation is
+ *     normally BLOCKED in the local sandbox (AGENTS.md) — this mode is
+ *     exercised in CI (.github/workflows/gen-portrait-plate.yml). `--plate
+ *     <path>` bypasses the network call for local testing against a
+ *     hand-supplied PNG.
+ *
+ *   node scripts/slice-portrait-plate.mjs --control-derivative <candidate> --hero-plate <hero>
+ *     Brief §10.4's sequencing requirement: register + measure ONE candidate
+ *     plate against an already-registered hero plate and report PASS/ALERT/
+ *     REJECT (§10.3's inter-plate table) WITHOUT writing any bands — run
+ *     this on the first `kontext` derivative before deriving the other 23,
+ *     because discovering non-reproducibility at derivative 24 costs the
+ *     whole batch.
  *
  * `FORCE=1` regenerates even if all 24 files already exist. Without it, an
  * existing complete set is left untouched (idempotent).
@@ -43,21 +52,45 @@
  * HONEST LIMIT — read before trusting this on a real plate (root-cause note).
  * -----------------------------------------------------------------------
  * The recalage pass below corrects VERTICAL drift only (a uniform scale +
- * offset fitted to the two registration marks, eye-line and nose-base). It
- * does NOT resample for rotation/tangent drift — the brief's tangent
- * tolerance (§1.2bis, ≤3° pass / ≥6° reject) is a real risk the pass cannot
- * fix, only detect: the left/right registration-mark disagreement is used as
- * a tilt ESTIMATE and folded into the seam measurement, but the pixels are
- * never rotated back straight. If FLUX drifts framing AND tilts the face,
- * this pass will not save the plate — it will (correctly) cause the seam
- * measurement to reject it, and the plate must be regenerated, not patched.
- * A full affine (rotation + scale) resample is the natural next step if plate
- * rejects turn out to cluster on tilt rather than pure vertical drift; not
- * built here because it cannot be validated without a real plate to test
- * against (network is blocked in this sandbox), and shipping unverified
+ * offset fitted to the skull outline's crown/chin ordinates, art brief
+ * §10.2 A0 — VOIE B, Bertrand/lead-art, ROLL 2 retrospective 2026-08-05,
+ * replacing the abandoned margin-tick approach). It does NOT resample for
+ * rotation/tangent drift — the brow/eye density bar's left/right
+ * disagreement is used as a tilt ESTIMATE (§10.2 A1) and folded into the
+ * plate-level verdict, but the pixels are never rotated back straight. If
+ * FLUX drifts framing AND tilts the face, this pass will not save the plate
+ * — it will (correctly) cause registration or the seam measurement to
+ * reject it, and the plate must be regenerated, not patched. A full affine
+ * (rotation + scale) resample is the natural next step if plate rejects
+ * turn out to cluster on tilt rather than pure vertical drift; not built
+ * here because it cannot be validated without a real plate to test against
+ * (network is blocked in this sandbox), and shipping unverified
  * rotation-resampling code that silently miscorrects a face is worse than
  * shipping the honest, narrower correction plus a hard reject.
+ *
+ * WHAT THIS ASSUMES ABOUT THE DRAWING, cost of being wrong: TWO real draws
+ * already spent on the wrong assumption that FLUX reliably draws printed
+ * margin ticks (brief §9.4 named the failure mode in advance; ROLL 2
+ * confirmed it — 3 of 4 candidate ticks measured at ~1.0x ambient margin
+ * noise against a 3x confidence floor. FLUX did not draw the ticks badly,
+ * it did not draw them). VOIE B does not bet on FLUX's statistical
+ * reliability at all — it bets on a gabarit LAW already in force (brief
+ * §1.1: "le contour appartient au gabarit, pas à la variante") now written
+ * directly into the prompt (§10.1: "One unbroken closed skull outline...
+ * blank white cheeks and forehead"). This script still assumes the outline
+ * renders as ONE continuous ~5-6px stroke, closed, with crown/chin
+ * extractable as franc extremes and the brow/eye and mouth density peaks
+ * each unique in their window (>=2x their window's second-best candidate,
+ * §10.2 clause 1 — the direct fix for the confidence-gate defect that broke
+ * margin-tick detection). Nothing here GUARANTEES that assumption either;
+ * brief §10.4 names the exact abandon condition (the outline isn't a
+ * measurable object, OR a control peak isn't unique despite the blank-
+ * cheeks clause, OR the first `kontext` derivative fails reproducibility
+ * against the hero) and caps the budget at one re-roll beyond ROLL 3, only
+ * if the failure is a nameable, correctable drawing defect — not a third
+ * geometry this script invents on its own authority.
  */
+
 import fs from "fs";
 import path from "path";
 import zlib from "zlib";
@@ -101,20 +134,19 @@ export const SEAMS = [0.32, 0.52, 0.72];
 // production defect this script can see (brief §1.2bis). Absolute, unchanged
 // by §9 (anti-aliasing bleed doesn't shrink with the plate).
 export const BLEED_PX = 12;
-// Margin registration band around the portrait crop, where the eye-line /
-// nose-base / axis / corner ticks live (brief §1.2bis "repères d'alignement").
-// Absolute, unchanged by §9 GATE DIMENSIONS — this is lead-art's actual
-// decision, not an oversight: "la marge ne se met pas à l'échelle, le
-// portrait si". A printed tick's own anti-aliasing is 1-2px regardless of
-// plate size, and this script's own confidence gates (MIN_TICK_RUN_PX,
-// MIN_TICK_PEAK_RATIO below) require it detectable in absolute px — scaling
-// the margin down would shrink the noise window below FLUX's own placement
-// tolerance. The portrait absorbs the pixels the margin cannot give up.
+// Margin band around the portrait crop. Originally where the eye-line /
+// nose-base / axis / corner registration TICKS lived (brief §1.2bis) —
+// those are ABANDONED (brief §10, VOIE B: recalage now reads the skull
+// outline drawn INSIDE the portrait crop, not printed marks in this
+// margin). Still absolute, unchanged by §9 GATE DIMENSIONS: this constant
+// remains the fixed offset at which the portrait bbox sits inside the
+// fetched plate — cropping still needs a defined origin regardless of how
+// registration is done — and crop-crosses/corner marks may still be printed
+// here for a human to eyeball, they are simply no longer READ by any
+// detector in this file.
 export const PLATE_MARGIN_PX = 48;
 export const PLATE_WIDTH = PORTRAIT_WIDTH + PLATE_MARGIN_PX * 2;
 export const PLATE_HEIGHT = PORTRAIT_HEIGHT + PLATE_MARGIN_PX * 2;
-export const EYE_LINE_FRAC = 0.4;
-export const NOSE_BASE_FRAC = 0.65;
 
 // Seam-tolerance table, brief §9.3 (lead-art, 2026-08-05) — supersedes the
 // original §1.2bis table. The invariant lead-art holds constant is the
@@ -146,17 +178,24 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // filled; concept-artist/lead-art re-pin at the prompt gate if they want a
   // different roll.
   seed: 190226,
-  // Cadrage lock (brief §1.1/§1.2bis, bible §3.6 drafting vocabulary). Front-
-  // loaded because FLUX over-weights early tokens: medium + view + centring +
-  // constant skull width land before any face word, and the margin
-  // registration marks are described as PART of the printed plate (a printer's
-  // sheet, not a technical overlay) so FLUX draws them instead of fighting
-  // them — `detectRegistration` above reads exactly those ticks.
+  // Cadrage lock (brief §1.1/§1.2bis, bible §3.6 drafting vocabulary; REVISED
+  // brief §10.1, lead-art, 2026-08-05 — VOIE B). Front-loaded because FLUX
+  // over-weights early tokens: medium + view + centring + constant skull
+  // width land before any face word. The margin-tick clause is GONE — margin
+  // ticks are abandoned outright (brief §10: "toute réapparition d'un token
+  // de repère de marge... est un FAIL de prompt gate, sans discussion") — and
+  // replaced by the clause that makes the skull OUTLINE itself the
+  // registration reference: "one unbroken closed skull outline containing
+  // the hair, crown and chin... blank white cheeks and forehead."
+  // `detectSkullContour`/`measureControlAnchors` above read exactly this:
+  // the closed outline (crown/chin extremes, A0), and the blank cheeks/
+  // forehead that keep the brow/eye and mouth density peaks (A1/A2) unique
+  // in their window (brief §10.1 table, clause-by-clause).
   opening:
     "Flat 2D black ink drawing on a printed sheet: one human head, strict frontal view, " +
     "orthographic projection, centred, eye line level, crown to collarbone, constant skull " +
-    "width. In the margin: pupil-line and nostril-base ticks at left and right, " +
-    "centre-axis ticks top and bottom, crop crosses at the corners. ",
+    "width. One unbroken closed skull outline containing the hair, crown and chin inside the " +
+    "sheet, blank white cheeks and forehead. ",
   // gabarit-01 hero face — subject + silhouette ONLY (no style, no ground, no
   // colour). Every feature is named as a flat, level volume so the three seam
   // ordinates (0.32 forehead / 0.52 above the nose bridge / 0.72 philtrum)
@@ -165,10 +204,13 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // Variation (6 per band) is derived later by `kontext` img2img from THIS
   // validated plate, one named descriptor at a time (brief §5.2 step 4) —
   // never by re-rolling this prompt, which would change the skull.
+  // `thin level mouth` → `one thin level mouth line` (brief §10.1): `line`
+  // names the mouth as the single horizontal control peak A2 reads, not a
+  // lip volume.
   prompt:
     "Hard weathered face, broad flat forehead under a straight low hairline, wide-set " +
     "eyes under a heavy level brow, straight narrow nose ending blunt, long flat philtrum, " +
-    "thin level mouth, square jaw, small ears flat to the skull, bare neck. ",
+    "one thin level mouth line, square jaw, small ears flat to the skull, bare neck. ",
   // Shared house tail, verbatim from the bible §1/§3 register: one constant
   // ink weight and one hatch angle (brief §1.3 — two weights or two angles
   // read as two draughtsmen), flat frontal light (no shadow crossing a seam),
@@ -351,40 +393,26 @@ function runPlaceholder() {
   );
 }
 
-// ── Recalage (registration) pass ─────────────────────────────────────────
-// Finds the eye-line / nose-base tick marks in the LEFT and RIGHT plate
-// margins (brief §1.2bis) as the y of darkest ink density within a search
-// window around the nominal ordinate, then fits a uniform vertical
-// scale+offset so the two marks land exactly on their nominal fractions
-// before slicing. See the file-header "HONEST LIMIT" note for what this does
-// NOT correct (tilt/rotation).
+// ── Recalage (registration) pass — VOIE B, skull-contour anchors ─────────
+// (brief §10.2, Bertrand/lead-art, ROLL 2 retrospective 2026-08-05).
+// Margin registration ticks are ABANDONED — see file header. This section
+// finds the skull OUTLINE instead (crown/chin ordinates = A0, the only
+// registration reference) plus two CONTROL-ONLY density peaks inside the
+// face (brow/eye bar = A1, mouth line = A2) — never used to derive a
+// resample, only measured and gated. The former nose-base anchor is
+// abandoned outright (brief §10.2: two small, non-contiguous, low-ink,
+// high-shape-variance blobs would rebuild ROLL 2's failure mode inside the
+// face).
 function luminance(png, x, y) {
   const idx = (png.width * y + x) << 2;
   return (png.data[idx] * 299 + png.data[idx + 1] * 587 + png.data[idx + 2] * 114) / 1000;
 }
 
-// A registration mark is a printed TICK — a short, continuous ink stroke —
-// not just "the darkest row in the window". Without these gates, a single
-// toner grain in an otherwise empty margin IS the darkest row (darkness=1 >
-// darkness=0 everywhere else) and gets silently promoted to a repère; the
-// rescale that follows would then be fitted to noise (art brief §8 C-B).
-// Two independent signals a grain cannot fake:
-//   - MIN_RUN_PX: a real tick is a continuous stroke, not an isolated pixel.
-//   - MIN_PEAK_RATIO: the winning row must stand out from the window's own
-//     background (a genuine ink mark against blank paper), not just edge out
-//     a field of equally-faint candidates.
-const MIN_TICK_RUN_PX = 6;
-const MIN_TICK_PEAK_RATIO = 3;
-// On a genuinely blank margin (the nominal shape of a FAILED plate — FLUX
-// drew no marks at all) every other row has run=0, so the window's own
-// median (`backgroundRun`) is 0 too: there is no neighbourhood to stand out
-// from, and the ratio check below is meaningless (division floored to /1).
-// Without a floor here, ANY lone ≥MIN_TICK_RUN_PX artefact in empty space —
-// a scanner hair, a fold, a residual crop line, an elongated toner smear —
-// clears MIN_TICK_RUN_PX alone and is promoted to a confident repère. Require
-// the same margin of confidence the ratio check would demand against the
-// smallest possible real background (1px): MIN_TICK_RUN_PX * MIN_TICK_PEAK_RATIO.
-const MIN_TICK_ISOLATED_RUN_PX = MIN_TICK_RUN_PX * MIN_TICK_PEAK_RATIO;
+// The skull outline is drawn as ONE continuous ~5-6px stroke (brief §10.2
+// A0 row; §10.1's `blank white cheeks and forehead` exists specifically so
+// this stroke has no competing dark structure nearby). 5 is the floor of
+// that stated range, not a value this script chose independently.
+const MIN_CONTOUR_RUN_PX = 5;
 
 /** Longest run of consecutive dark (`luminance < 128`) pixels in row `y`
  * over `[xStart, xEnd)`, plus the total dark-pixel count for that row. */
@@ -404,206 +432,286 @@ function scanRow(png, xStart, xEnd, y) {
   return { run: bestRun, dark };
 }
 
-/** Confidence-gated tick search: scans `[nominalYAbs - windowPx, +windowPx]`
- * for a row whose longest continuous dark run both (a) meets a minimum
- * stroke length and (b) clears the window's own background by
- * `MIN_TICK_PEAK_RATIO`. Returns `{ found: false, reason }` rather than a
- * best-effort guess when neither is met — callers must treat `found: false`
- * as "no mark here", never fall back to the guess. */
-function findTick(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
-  const yFrom = Math.max(0, nominalYAbs - windowPx);
-  const yTo = Math.min(png.height - 1, nominalYAbs + windowPx);
+/** Scans `[yFrom, yTo]` for the first row (in the given `direction`, "down"
+ * from `yFrom` or "up" from `yTo`) whose longest continuous dark run meets
+ * `MIN_CONTOUR_RUN_PX` — the crown/chin extreme. Returns `{ found: false,
+ * reason }` (never a guessed extreme) when no such row exists, naming how
+ * many rows were scanned and the longest run actually found, so a caller
+ * can tell "contour absent" from "contour present but too faint" without
+ * re-deriving the scan. */
+function findContourExtreme(png, xFrom, xTo, yFrom, yTo, direction) {
   if (yFrom > yTo) {
     return {
       found: false,
-      reason:
-        `search window y∈[${nominalYAbs - windowPx},${nominalYAbs + windowPx}] falls entirely ` +
-        `outside the plate (height=${png.height}px) — the plate is undersized or wrongly ` +
-        `resolved, this is not a missing tick`,
+      reason: `search window y∈[${yFrom},${yTo}] is empty (yFrom > yTo) — nothing to scan`,
     };
   }
-  const rows = [];
-  for (let y = yFrom; y <= yTo; y++) rows.push({ y, ...scanRow(png, xStart, xEnd, y) });
-
-  let best = rows[0];
-  for (const r of rows)
-    if (r.run > best.run || (r.run === best.run && r.dark > best.dark)) best = r;
-
-  if (best.run < MIN_TICK_RUN_PX) {
-    return {
-      found: false,
-      reason:
-        `no continuous stroke ≥${MIN_TICK_RUN_PX}px found (longest run was ${best.run}px ` +
-        `at y=${best.y})`,
-    };
+  const ys = direction === "down" ? range(yFrom, yTo, 1) : range(yTo, yFrom, -1);
+  let longestRunSeen = 0;
+  for (const y of ys) {
+    const { run } = scanRow(png, xFrom, xTo, y);
+    if (run > longestRunSeen) longestRunSeen = run;
+    if (run >= MIN_CONTOUR_RUN_PX) return { found: true, y, run };
   }
-
-  // Background = median run length of the OTHER rows in the window (best
-  // excluded). A genuine tick sits well above its own neighbourhood; grain
-  // sits in a field of comparably-noisy neighbours.
-  const otherRuns = rows
-    .filter((r) => r.y !== best.y)
-    .map((r) => r.run)
-    .sort((a, b) => a - b);
-  const backgroundRun = otherRuns.length > 0 ? otherRuns[Math.floor(otherRuns.length / 2)] : 0;
-
-  if (backgroundRun === 0) {
-    // Empty margin: no background to compute a ratio against. Fall back to
-    // the absolute floor above instead of short-circuiting to "confident".
-    if (best.run < MIN_TICK_ISOLATED_RUN_PX) {
-      return {
-        found: false,
-        reason:
-          `margin is otherwise empty (window median run = 0px) and the sole candidate ` +
-          `(${best.run}px at y=${best.y}) is below the ${MIN_TICK_ISOLATED_RUN_PX}px floor ` +
-          "required with no background to compare against — reads as an isolated artefact " +
-          "(scanner hair, fold, crop-line residue), not a printed tick",
-      };
-    }
-    return { found: true, y: best.y, run: best.run };
-  }
-
-  const peakRatio = best.run / backgroundRun;
-  if (peakRatio < MIN_TICK_PEAK_RATIO) {
-    return {
-      found: false,
-      reason:
-        `no row stands out from the margin's background (best run ${best.run}px at y=${best.y} ` +
-        `is only ${peakRatio.toFixed(1)}x the window median ${backgroundRun}px, need ` +
-        `${MIN_TICK_PEAK_RATIO}x) — reads as generalised noise, not a printed tick`,
-    };
-  }
-
-  return { found: true, y: best.y, run: best.run };
+  return {
+    found: false,
+    reason:
+      `no row in y∈[${yFrom},${yTo}] (x∈[${xFrom},${xTo})) has a continuous dark run ` +
+      `≥${MIN_CONTOUR_RUN_PX}px (longest run seen: ${longestRunSeen}px) — the outline is not a ` +
+      "measurable object here",
+  };
 }
 
-/** Runs `findTick` for the four registration marks (eye-line / nose-base ×
- * left / right margin) and throws a single, actionable error the moment ANY
- * is missing — naming which mark, which margin, and the y-window searched,
- * so `lead-art` can act on the message at roll 1 without re-deriving it. A
- * tick found on one side without its pair on the other is exactly the
- * "suspect" case the brief calls out, and is reported by name, not folded
- * into a generic failure. Per brief §1.2bis "portée du rejet", this throws
- * for the WHOLE plate — there is no partial/best-effort registration. */
-export function detectRegistration(png) {
-  const eyeNominalAbs = PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-  const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
-  const rightXStart = PLATE_MARGIN_PX + PORTRAIT_WIDTH;
+function range(from, to, step) {
+  const out = [];
+  for (let v = from; step > 0 ? v <= to : v >= to; v += step) out.push(v);
+  return out;
+}
 
-  const marks = [
-    {
-      label: "eye-line",
-      side: "left",
-      xStart: 0,
-      xEnd: PLATE_MARGIN_PX,
-      nominalYAbs: eyeNominalAbs,
-    },
-    {
-      label: "eye-line",
-      side: "right",
-      xStart: rightXStart,
-      xEnd: png.width,
-      nominalYAbs: eyeNominalAbs,
-    },
-    {
-      label: "nose-base",
-      side: "left",
-      xStart: 0,
-      xEnd: PLATE_MARGIN_PX,
-      nominalYAbs: noseNominalAbs,
-    },
-    {
-      label: "nose-base",
-      side: "right",
-      xStart: rightXStart,
-      xEnd: png.width,
-      nominalYAbs: noseNominalAbs,
-    },
-  ];
+// Fraction of the crown→chin span that must have BOTH a left and a right
+// contour edge for the axis to be trusted. This is this script's OWN
+// engineering floor (not a number lead-art specified) standing in for "the
+// outline doesn't break/double along its length" — brief §10.5's "fermé,
+// continu, d'une seule épaisseur, sur tout le pourtour" is a visual/human
+// criterion this script cannot fully verify (see HONEST LIMIT); this ratio
+// is a coarse, explicitly-approximate mechanical floor for the same idea,
+// not a substitute for it.
+const MIN_CONTOUR_ROW_COVERAGE_RATIO = 0.8;
 
-  const results = marks.map((m) => ({ ...m, ...findTick(png, m.xStart, m.xEnd, m.nominalYAbs) }));
-  const missing = results.filter((r) => !r.found);
+/** Detects the skull-outline registration reference (brief §10.2 A0) over
+ * `[xFrom, xTo) x [yFrom, yTo]`: crown ordinate (topmost row meeting
+ * `MIN_CONTOUR_RUN_PX`), chin ordinate (bottommost such row), and the
+ * density-weighted median axis (mean of each row's left/right sub-pixel
+ * centroid between crown and chin — same `subpixelEdgeCentroid` primitive
+ * `measureSeamContinuity` uses, reused here rather than re-derived).
+ * Throws — never returns a degraded/guessed value — when the crown, the
+ * chin, or enough of the axis coverage is missing; per brief §10.2 clause 2,
+ * "C-B reste en vigueur, transposé": the mechanism must be able to fail on
+ * the drawing exactly as it could fail on the margin. */
+export function detectSkullContour(png, { xFrom, xTo, yFrom, yTo }) {
+  const crown = findContourExtreme(png, xFrom, xTo, yFrom, yTo, "down");
+  const chin = findContourExtreme(png, xFrom, xTo, yFrom, yTo, "up");
+  const missing = [];
+  if (!crown.found) missing.push(`  ✗ crown — searched y∈[${yFrom},${yTo}]: ${crown.reason}`);
+  if (!chin.found) missing.push(`  ✗ chin — searched y∈[${yFrom},${yTo}]: ${chin.reason}`);
   if (missing.length > 0) {
-    const lines = missing.map(
-      (m) =>
-        `  ✗ ${m.label} tick, ${m.side} margin — searched x∈[${m.xStart},${m.xEnd}) ` +
-        `y∈[${Math.max(0, m.nominalYAbs - 24)},${Math.min(png.height - 1, m.nominalYAbs + 24)}] ` +
-        `(nominal y=${m.nominalYAbs}): ${m.reason}`,
-    );
-    const found = results.filter((r) => r.found).map((m) => `${m.label}/${m.side}`);
     throw new Error(
-      `registration ABORTED — ${missing.length}/4 mark(s) not found with confidence:\n` +
-        `${lines.join("\n")}\n` +
-        (found.length > 0 ? `  (found with confidence: ${found.join(", ")})\n` : "") +
-        "Refusing to rescale on an unconfirmed repère (art brief §8 C-B) — the plate is " +
-        "rejected WHOLE and must be regenerated, not patched.",
-    );
-  }
-
-  const [eyeLeft, eyeRight, noseLeft, noseRight] = results;
-  const eyeY = (eyeLeft.y + eyeRight.y) / 2;
-  const noseY = (noseLeft.y + noseRight.y) / 2;
-  // Tilt estimate only (not corrected — see file header). Expressed as the
-  // vertical disagreement between the two margins at each mark, in px. Both
-  // sides were independently confidence-gated above, so a large disagreement
-  // here is read as real tilt, not noise, and is left to the seam-tolerance
-  // gate downstream to accept or reject.
-  const tiltPx = Math.max(Math.abs(eyeLeft.y - eyeRight.y), Math.abs(noseLeft.y - noseRight.y));
-
-  return { eyeY, noseY, tiltPx };
-}
-
-/** Order sanity + vertical scale factor from measured eye-line/nose-base
- * absolute y's. Split out from `registerPortrait` so the sign guard is
- * directly unit-testable against arbitrary (eyeY, noseY) pairs — the
- * property under test ("a mirrored/inverted plate produces NOTHING, not a
- * plausible-looking mirrored portrait") does not depend on how those y's
- * were measured. Eye-line must sit strictly above nose-base (smaller y);
- * without this check a flipped plate, or two confident ticks read in the
- * wrong order, gives `noseLocal <= eyeLocal` ⇒ `scale <= 0` ⇒ a mirror or
- * degenerate rescale accepted in silence — the same failure mode this
- * file's confidence gates exist to close, just downstream of them. */
-export function computeVerticalScale(eyeY, noseY) {
-  const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-  const noseNominalLocal = Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
-  const eyeLocal = eyeY - PLATE_MARGIN_PX;
-  const noseLocal = noseY - PLATE_MARGIN_PX;
-  if (noseY <= eyeY) {
-    throw new Error(
-      `registration ABORTED — eye-line (measured y=${eyeY}) is not above nose-base ` +
-        `(measured y=${noseY}); a valid portrait has eye-line strictly above nose-base. ` +
-        "This reads as a flipped/mirrored plate or a mismatched mark pair, not a tilt — " +
-        "refusing to rescale (art brief §8 C-B). The plate is rejected WHOLE and must be " +
+      `skull contour ABORTED — ${missing.length}/2 extreme(s) not found with confidence:\n` +
+        `${missing.join("\n")}\n` +
+        "The skull outline is not a measurable object on this plate (brief §10.4 abandon " +
+        "condition 1) — refusing to register on it. The plate is rejected WHOLE and must be " +
         "regenerated, not patched.",
     );
   }
-  return { scale: (noseNominalLocal - eyeNominalLocal) / (noseLocal - eyeLocal || 1), eyeLocal };
+  if (crown.y >= chin.y) {
+    throw new Error(
+      `skull contour ABORTED — crown (measured y=${crown.y}) is not above chin ` +
+        `(measured y=${chin.y}); a valid portrait has the crown strictly above the chin. This ` +
+        "reads as a flipped/mirrored plate or a mismatched extreme pair, not a proportion " +
+        "issue — refusing to register. The plate is rejected WHOLE and must be regenerated.",
+    );
+  }
+
+  let sumCenters = 0;
+  let coveredRows = 0;
+  const totalRows = chin.y - crown.y + 1;
+  for (let y = crown.y; y <= chin.y; y++) {
+    const edges = skullEdges(png, y);
+    const left = subpixelEdgeCentroid(png, y, edges.left);
+    const right = subpixelEdgeCentroid(png, y, edges.right);
+    if (left === null || right === null) continue;
+    sumCenters += (left + right) / 2;
+    coveredRows++;
+  }
+  const coverageRatio = coveredRows / totalRows;
+  if (coverageRatio < MIN_CONTOUR_ROW_COVERAGE_RATIO) {
+    throw new Error(
+      `skull contour ABORTED — only ${coveredRows}/${totalRows} rows ` +
+        `(${(coverageRatio * 100).toFixed(0)}%) between crown (y=${crown.y}) and chin ` +
+        `(y=${chin.y}) have both a left and right edge, below the ` +
+        `${(MIN_CONTOUR_ROW_COVERAGE_RATIO * 100).toFixed(0)}% floor — the outline reads as ` +
+        "broken/discontinuous over its height, not a single closed stroke. The plate is " +
+        "rejected WHOLE and must be regenerated.",
+    );
+  }
+
+  return { crownY: crown.y, chinY: chin.y, axisX: sumCenters / coveredRows, coverageRatio };
 }
 
-/** Nearest-neighbour vertical-only resample driven by the two registration
- * marks. Returns a NEW pngjs-shaped {width,height,data} for just the portrait
- * bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT), corrected.
- *
- * Accepts an optional pre-computed `registration` ({eyeY, noseY, tiltPx}) so
- * a caller that already ran `detectRegistration` for the tilt estimate (see
- * `runReal`) doesn't pay for a second full margin scan — and, more
- * importantly, so there is exactly one call site that can go stale if the
- * detection logic is ever gated differently, not two. Defaults to running
- * detection itself so existing single-argument callers are unaffected. */
-export function registerPortrait(png, registration = detectRegistration(png)) {
-  const { eyeY, noseY } = registration;
-  const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-  const { scale, eyeLocal } = computeVerticalScale(eyeY, noseY);
+// The exact clause brief §10.2 makes opposable: "un pic de densité n'est un
+// ancrage que s'il est UNIQUE — le plus sombre ET séparé du deuxième
+// candidat de sa fenêtre par un facteur 2". This is the direct fix for the
+// margin-tick era's C-B defect (a "darkest row wins" detector that always
+// returns SOME row): the two candidates compared here are the two best
+// LOCAL MAXIMA of the row-density profile (non-maximum suppression), not
+// the two highest-density ROWS — adjacent rows of one genuine peak are
+// highly correlated and would trivially fail a naive top-2-rows comparison
+// even for an unambiguous feature.
+const PEAK_UNIQUENESS_RATIO = 2;
 
+function rowInkDensity(png, xFrom, xTo, y) {
+  let sum = 0;
+  for (let x = xFrom; x < xTo; x++) sum += inkDensity(png, x, y);
+  return sum / Math.max(1, xTo - xFrom);
+}
+
+/** Confidence-gated control-peak search (brief §10.2 A1/A2): scans
+ * `[yFrom, yTo]` for local maxima of the row-density profile over
+ * `[xFrom, xTo)`, and accepts the best one only if it is at least
+ * `PEAK_UNIQUENESS_RATIO`x the SECOND-best local maximum in the same
+ * window. Returns `{ found: false, reason }` naming both candidates' y and
+ * density (never a guess) when the window has no local maximum at all, or
+ * two competing ones — brief §10.4 abandon condition 2: this is meant to
+ * fire when FLUX fills the face with texture instead of the two named
+ * peaks, exactly as margin ticks failed on a textured margin. */
+function findDensityPeak(png, xFrom, xTo, yFrom, yTo) {
+  if (yFrom > yTo) {
+    return { found: false, reason: `search window y∈[${yFrom},${yTo}] is empty` };
+  }
+  const profile = [];
+  for (let y = yFrom; y <= yTo; y++)
+    profile.push({ y, density: rowInkDensity(png, xFrom, xTo, y) });
+
+  const isLocalMax = profile.map((r, i) => {
+    const prev = profile[i - 1];
+    const next = profile[i + 1];
+    return (!prev || r.density >= prev.density) && (!next || r.density >= next.density);
+  });
+  // Merge ADJACENT local-maximum rows into ONE cluster before comparing.
+  // Without this, a flat plateau (e.g. a solid-filled control band, exactly
+  // the shape a real brow/eye bar or mouth line draws) registers one
+  // "local maximum" per row of the plateau — the genuine single feature
+  // would then get compared against its own immediate neighbour (ratio
+  // ~1.0x) instead of an actual competing peak, and abort on itself.
+  const clusters = [];
+  for (let i = 0; i < profile.length; i++) {
+    if (!isLocalMax[i]) continue;
+    const lastCluster = clusters[clusters.length - 1];
+    const lastRow = lastCluster?.rows[lastCluster.rows.length - 1];
+    if (lastRow && profile[i].y === lastRow.y + 1) lastCluster.rows.push(profile[i]);
+    else clusters.push({ rows: [profile[i]] });
+  }
+  if (clusters.length === 0) {
+    return {
+      found: false,
+      reason: `no local maximum in the row-density profile over y∈[${yFrom},${yTo}]`,
+    };
+  }
+  const peaks = clusters.map((c) =>
+    c.rows.reduce((best, r) => (r.density > best.density ? r : best), c.rows[0]),
+  );
+  const sorted = [...peaks].sort((a, b) => b.density - a.density);
+  const [best, second] = sorted;
+  const secondDensity = second ? second.density : 0;
+  const ratio = best.density / Math.max(0.001, secondDensity);
+  if (ratio < PEAK_UNIQUENESS_RATIO) {
+    return {
+      found: false,
+      reason:
+        `best peak ${best.density.toFixed(3)} density at y=${best.y} is only ` +
+        `${ratio.toFixed(1)}x the window's second-best local maximum ` +
+        `${secondDensity.toFixed(3)} at y=${second.y} (need ${PEAK_UNIQUENESS_RATIO}x) — reads ` +
+        "as generalised texture, not a unique control peak",
+    };
+  }
+  return { found: true, y: best.y, density: best.density, ratio };
+}
+
+// Distance from a seam under which a control peak is ITSELF a plate defect
+// (brief §10.2 clause 3): C1/C2/C3 are, by construction, flat/low-contrast
+// zones (brief §1.2) — a density peak this close to one means a strong
+// line crossed a seam (brief §8.4-5), not a genuine anchor.
+const MIN_ANCHOR_SEAM_DISTANCE_FRAC = 0.05;
+
+/** Measures brief §10.2's CONTROL-ONLY anchors — A1 (brow/eye density bar,
+ * split left/right half of the portrait width for a tilt estimate) and A2
+ * (mouth-line density peak, searched between seam C3 and the measured
+ * chin) — plus the "no peak within 5% of H of a seam" plate-defect check
+ * (clause 3). NEVER used to derive a resample (see file header); this is
+ * diagnostic/gating only. Throws (never a degraded verdict) when a peak is
+ * missing or not unique, or when a peak sits on a seam — brief §10.4
+ * abandon condition 2 is written for exactly the first failure. */
+export function measureControlAnchors(png, contour) {
+  const seamsAbs = SEAMS.map((f) => PLATE_MARGIN_PX + Math.round(f * PORTRAIT_HEIGHT));
+  const [c1, c2, c3] = seamsAbs;
+  const portraitXFrom = PLATE_MARGIN_PX;
+  const portraitXTo = PLATE_MARGIN_PX + PORTRAIT_WIDTH;
+  const midX = portraitXFrom + Math.round(PORTRAIT_WIDTH / 2);
+
+  const a1Left = findDensityPeak(png, portraitXFrom, midX, c1, c2);
+  const a1Right = findDensityPeak(png, midX, portraitXTo, c1, c2);
+  const a2 = findDensityPeak(png, portraitXFrom, portraitXTo, c3, contour.chinY);
+
+  const missing = [];
+  if (!a1Left.found) {
+    missing.push(`  ✗ A1 (brow/eye bar), left half — y∈[${c1},${c2}]: ${a1Left.reason}`);
+  }
+  if (!a1Right.found) {
+    missing.push(`  ✗ A1 (brow/eye bar), right half — y∈[${c1},${c2}]: ${a1Right.reason}`);
+  }
+  if (!a2.found) {
+    missing.push(`  ✗ A2 (mouth line) — y∈[${c3},${contour.chinY}]: ${a2.reason}`);
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `control anchors ABORTED — ${missing.length}/3 not found with confidence:\n` +
+        `${missing.join("\n")}\n` +
+        "brief §10.4 abandon condition 2 — a control peak this ambiguous reads as FLUX filling " +
+        "the face with texture instead of drawing the two named peaks, the same failure mode " +
+        "margin ticks had. The plate is rejected WHOLE and must be regenerated.",
+    );
+  }
+
+  const anchors = [
+    { label: "A1 left", y: a1Left.y },
+    { label: "A1 right", y: a1Right.y },
+    { label: "A2", y: a2.y },
+  ];
+  const seamProblems = [];
+  for (const a of anchors) {
+    for (let i = 0; i < seamsAbs.length; i++) {
+      const distancePx = Math.abs(a.y - seamsAbs[i]);
+      if (distancePx < MIN_ANCHOR_SEAM_DISTANCE_FRAC * PORTRAIT_HEIGHT) {
+        seamProblems.push(
+          `  ✗ ${a.label} (y=${a.y}) is ${distancePx}px from seam C${i + 1} (y=${seamsAbs[i]}) ` +
+            `— closer than ${(MIN_ANCHOR_SEAM_DISTANCE_FRAC * 100).toFixed(0)}% of H`,
+        );
+      }
+    }
+  }
+  if (seamProblems.length > 0) {
+    throw new Error(
+      "control anchors ABORTED — a strong line crosses a seam (brief §10.2 clause 3 / " +
+        `§8.4-5):\n${seamProblems.join("\n")}\nThe plate is rejected WHOLE and must be ` +
+        "regenerated.",
+    );
+  }
+
+  return {
+    a1Y: (a1Left.y + a1Right.y) / 2,
+    a2Y: a2.y,
+    tiltPx: Math.abs(a1Left.y - a1Right.y),
+  };
+}
+
+/** Straight crop of the portrait bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT) at
+ * its fixed plate offset (PLATE_MARGIN_PX on every side). No resample: under
+ * VOIE B there is nothing to correct the HERO plate toward —
+ * `detectSkullContour`'s job on the hero plate is to validate the outline
+ * exists and RECORD its measurements (crownY/chinY/axisX) as the reference
+ * a future derivative plate gets compared against (`compareToHeroPlate`),
+ * not to warp pixels. A per-variant `kontext` pipeline that needs to ALIGN a
+ * derived plate onto the hero would resample here; not built, because
+ * nothing in this script derives per-variant plates yet (V1: every variant
+ * comes from this same hero slice — see the loop comment in `runReal`). */
+export function cropPortrait(png) {
   const out = {
     width: PORTRAIT_WIDTH,
     height: PORTRAIT_HEIGHT,
     data: Buffer.alloc(PORTRAIT_WIDTH * PORTRAIT_HEIGHT * 4),
   };
   for (let y = 0; y < PORTRAIT_HEIGHT; y++) {
-    let srcLocalY = eyeLocal + (y - eyeNominalLocal) / scale;
-    srcLocalY = Math.max(0, Math.min(PORTRAIT_HEIGHT - 1, Math.round(srcLocalY)));
-    const srcYAbs = PLATE_MARGIN_PX + srcLocalY;
+    const srcYAbs = PLATE_MARGIN_PX + y;
     for (let x = 0; x < PORTRAIT_WIDTH; x++) {
       const srcXAbs = PLATE_MARGIN_PX + x;
       const srcIdx = (png.width * srcYAbs + srcXAbs) << 2;
@@ -612,6 +720,65 @@ export function registerPortrait(png, registration = detectRegistration(png)) {
     }
   }
   return out;
+}
+
+// §10.3's NEW table — the INTER-PLATE reproducibility check (derived vs
+// hero), DISTINCT from `TOLERANCE` below (§9.3, seam continuity WITHIN one
+// plate — lead-art was explicit these do not change: "un recalage raté
+// translate les deux côtés d'une couture de la même quantité", so §9.3 never
+// depended on registration accuracy and doesn't loosen with it). These
+// thresholds ARE loosened relative to §9.3's, and deliberately: A0 measures
+// a CURVE (skull cap, chin), not a printed straight edge — the extreme
+// ordinate of a flat arc is inherently less well-defined than a sub-pixel
+// centroid on a printed line, and a hairstyle variant will move the crown by
+// a few px regardless of what the prompt says. Holding these to §9.3's
+// sub-pixel standard would reject every plate — lead-art's own words: "un
+// contrôle qui rejette tout ne protège rien".
+export const INTER_PLATE_TOLERANCE = {
+  heightDeltaPctOfH: { pass: 0.5, fail: 1.0 },
+  axisDeltaPx: { pass: 1.5, fail: 3.0 },
+  a1DeltaPctOfH: { pass: 1.0, fail: 2.0 },
+  a2DeltaPctOfH: { pass: 1.5, fail: 3.0 },
+  tiltPx: { pass: 8, fail: 16 },
+};
+
+/** Compares a candidate plate's A0/A1/A2 measurements against the HERO
+ * plate's (brief §10.2 clause 4: "chaque planche dérivée est recalée SUR LA
+ * PLANCHE HÉROS, A0 → A0" — a numeric comparison, not a pixel resample; see
+ * `cropPortrait` for why this script doesn't warp derived plates onto the
+ * hero today). Pure function over already-measured numbers — no image I/O —
+ * so it's directly testable against fixed inputs, independent of the
+ * density-peak/contour detectors above. Returns `{ pass, alerts, values }`,
+ * the same shape `measureSeamContinuity` returns: an outright FAIL value, OR
+ * ≥2 simultaneous alert-zone values, rejects the WHOLE candidate plate
+ * (brief §1.2bis "portée du rejet", carried over unchanged). */
+export function compareToHeroPlate(candidate, hero) {
+  const heroH = hero.chinY - hero.crownY;
+  const candidateH = candidate.chinY - candidate.crownY;
+  const values = {
+    heightDeltaPctOfH: (Math.abs(candidateH - heroH) / heroH) * 100,
+    axisDeltaPx: Math.abs(candidate.axisX - hero.axisX),
+    a1DeltaPctOfH:
+      (Math.abs(candidate.a1Y - candidate.crownY - (hero.a1Y - hero.crownY)) / heroH) * 100,
+    a2DeltaPctOfH:
+      (Math.abs(candidate.a2Y - candidate.crownY - (hero.a2Y - hero.crownY)) / heroH) * 100,
+    tiltPx: candidate.tiltPx,
+  };
+
+  const alerts = [];
+  let fail = false;
+  const check = (key, tol) => {
+    const v = values[key];
+    if (v >= tol.fail) fail = true;
+    else if (v > tol.pass) alerts.push(key);
+  };
+  check("heightDeltaPctOfH", INTER_PLATE_TOLERANCE.heightDeltaPctOfH);
+  check("axisDeltaPx", INTER_PLATE_TOLERANCE.axisDeltaPx);
+  check("a1DeltaPctOfH", INTER_PLATE_TOLERANCE.a1DeltaPctOfH);
+  check("a2DeltaPctOfH", INTER_PLATE_TOLERANCE.a2DeltaPctOfH);
+  check("tiltPx", INTER_PLATE_TOLERANCE.tiltPx);
+
+  return { pass: !fail && alerts.length < 2, alerts, values };
 }
 
 // ── Seam-tolerance measurement (art brief §1.2bis, tolerances per §9.3) ──
@@ -958,9 +1125,34 @@ export async function runReal(plateArg) {
         "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
     );
   }
-  const registration = detectRegistration(plate);
-  const { tiltPx } = registration;
-  const portrait = registerPortrait(plate, registration);
+  // A0 first (registration reference), THEN the face (brief §10.5's read
+  // order, one level deeper than §8.4's retired "repères avant le visage"):
+  // if the outline isn't measurable, there is no point measuring anything
+  // else, and the reader should see the reference failure first.
+  const contourRegion = {
+    xFrom: PLATE_MARGIN_PX,
+    xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
+    yFrom: PLATE_MARGIN_PX,
+    yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
+  };
+  const contour = detectSkullContour(plate, contourRegion);
+  const controls = measureControlAnchors(plate, contour);
+  const { tiltPx } = controls;
+  if (tiltPx >= INTER_PLATE_TOLERANCE.tiltPx.fail) {
+    throw new Error(
+      `plate rejected — A1 (brow/eye bar) tilt disagreement ${tiltPx}px between the left and ` +
+        `right halves is at or beyond the ${INTER_PLATE_TOLERANCE.tiltPx.fail}px reject ` +
+        "threshold (brief §10.3); rotation is not correctable here (see file-header HONEST " +
+        "LIMIT). The plate must be regenerated.",
+    );
+  }
+  if (tiltPx > INTER_PLATE_TOLERANCE.tiltPx.pass) {
+    console.warn(
+      `[slice-portrait-plate] ⚠ A1 tilt ${tiltPx}px is in the alert zone ` +
+        `(${INTER_PLATE_TOLERANCE.tiltPx.pass}-${INTER_PLATE_TOLERANCE.tiltPx.fail}px, brief §10.3)`,
+    );
+  }
+  const portrait = cropPortrait(plate);
 
   const seams = seamOrdinatesPx();
   const bandRGB = (top, bottom) => {
@@ -987,15 +1179,12 @@ export async function runReal(plateArg) {
     const report = measureSeamContinuity(portrait, seamY - 1, portrait, seamY);
     seamReports.push({ between: `${seams[i].id}/${seams[i + 1].id}`, ...report });
   }
+  // Tilt was already gated above (before any seam is even measured) — not
+  // repeated here.
   const failedSeams = seamReports.filter((r) => !r.pass);
-  if (failedSeams.length > 0 || tiltPx >= TOLERANCE.tangentDeg.fail * 4) {
+  if (failedSeams.length > 0) {
     console.error("[slice-portrait-plate] REJECTED — plate fails seam continuity:");
     for (const r of failedSeams) console.error(`  ✗ ${r.between}`, r.values);
-    if (tiltPx >= TOLERANCE.tangentDeg.fail * 4) {
-      console.error(
-        `  ✗ registration tilt disagreement ${tiltPx}px — rotation not correctable here`,
-      );
-    }
     throw new Error(
       "plate rejected — see above; the WHOLE plate must be regenerated (ADR-0080 D5)",
     );
@@ -1025,15 +1214,89 @@ export async function runReal(plateArg) {
     }
   }
   const checksum = `sha256:${sha256Hex([buf])}`;
-  writeManifest(checksum);
+  // Persist THIS plate's A0/A1/A2 measurements as the hero reference — brief
+  // §10.2 clause 4: every future derivative is registered against this
+  // plate's own numbers, not an external nominal. `--control-derivative`
+  // reads this back via `--hero-plate <path>`'s own re-measurement today
+  // (see main()); stashing it in the manifest too means a future run doesn't
+  // need the raw hero plate file on disk, only the committed manifest.
+  writeManifest(checksum, {
+    registration: {
+      crownY: contour.crownY,
+      chinY: contour.chinY,
+      axisX: contour.axisX,
+      a1Y: controls.a1Y,
+      a2Y: controls.a2Y,
+      tiltPx: controls.tiltPx,
+    },
+  });
   console.log(
     `[slice-portrait-plate] wrote ${written.length} PNGs + manifest (checksum ${checksum})`,
   );
 }
 
+/** Brief §10.4/§10.5 sequencing requirement: register + measure ONE
+ * candidate plate against an already-registered hero plate and report
+ * PASS/ALERT/REJECT (§10.3's inter-plate table) WITHOUT writing any bands —
+ * run this on the first `kontext` derivative before deriving the other 23,
+ * because discovering non-reproducibility at derivative 24 costs the whole
+ * batch. Re-measures the hero plate from its own PNG rather than trusting a
+ * possibly-stale committed manifest, since the whole point is to verify
+ * TODAY's method reproduces, not to compare against a stored number that
+ * itself might predate a method change. */
+export async function runControlDerivative(candidatePlateArg, heroPlateArg) {
+  const measure = (buf) => {
+    const png = PNG.sync.read(buf);
+    if (png.width !== PLATE_WIDTH || png.height !== PLATE_HEIGHT) {
+      throw new Error(
+        `plate is ${png.width}x${png.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — cannot ` +
+          "compare a wrongly-sized plate",
+      );
+    }
+    const region = {
+      xFrom: PLATE_MARGIN_PX,
+      xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
+      yFrom: PLATE_MARGIN_PX,
+      yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
+    };
+    const contour = detectSkullContour(png, region);
+    const controls = measureControlAnchors(png, contour);
+    return { ...contour, ...controls };
+  };
+
+  const hero = measure(fs.readFileSync(heroPlateArg));
+  const candidate = measure(fs.readFileSync(candidatePlateArg));
+  const report = compareToHeroPlate(candidate, hero);
+
+  console.log(
+    `[slice-portrait-plate] control derivative vs hero — ${report.pass ? "PASS" : "REJECT"}`,
+  );
+  console.log("  hero:     ", hero);
+  console.log("  candidate:", candidate);
+  console.log("  deltas:   ", report.values);
+  if (report.alerts.length > 0) console.warn("  alert zone:", report.alerts);
+  if (!report.pass) {
+    throw new Error(
+      "control derivative REJECTED — VOIE B does not reproduce plate-to-plate (brief §10.4 " +
+        "abandon condition 3): escalate, do not derive the other 23 variants on this method.",
+    );
+  }
+  return report;
+}
+
 // ── CLI ───────────────────────────────────────────────────────────────────
 async function main() {
   const args = process.argv.slice(2);
+
+  const cdi = args.indexOf("--control-derivative");
+  if (cdi !== -1) {
+    const hpi = args.indexOf("--hero-plate");
+    if (hpi === -1) {
+      throw new Error("--control-derivative requires --hero-plate <path> (brief §10.4/§10.5)");
+    }
+    await runControlDerivative(args[cdi + 1], args[hpi + 1]);
+    return;
+  }
 
   if (!FORCE) {
     const allExist = seamOrdinatesPx().every(({ id }) =>

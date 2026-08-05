@@ -1120,17 +1120,24 @@ paths, consumed read-only by `dev-gameplay`'s catalogue).
   writes all 24 files + the manifest together, or writes nothing. A plate
   failing the seam-continuity measurement is rejected WHOLE — see the "portée
   du rejet" rule in `docs/art-direction/brief-portrait-robot.md` §1.2bis.
-- **Two modes:**
+- **Three modes:**
   - `--placeholder` — 24 flat, mutually-distinguishable, correctly-sized filler
     PNGs, no network, no plate. What unblocks `dev-r3f-render` on day 1
     (`docs/handoffs/story-portrait-robot.md` §3.3 step 1). Run locally,
     committed directly — no CI workflow needed.
   - default / `[--plate <path>]` — the real pipeline: fetch (or read) a face
-    plate → recalage (vertical registration on the eye-line/nose-base margin
-    ticks) → slice at the 3 seams → measure the 4 §1.2bis tolerances on every
+    plate → recalage on the skull OUTLINE (crown/chin ordinates + per-row
+    half-widths, brief §10.2 A0 — margin registration ticks are ABANDONED,
+    brief §10) → slice at the 3 seams → measure the 4 §9.3 tolerances on every
     seam → write, or reject. Runs in CI
     (`.github/workflows/gen-portrait-plate.yml`) since FLUX is normally
     blocked in the local sandbox.
+  - `--control-derivative <candidate> --hero-plate <hero>` — brief §10.4/§10.5's
+    sequencing requirement: register + measure ONE candidate plate against an
+    already-registered hero and report PASS/ALERT/REJECT (brief §10.3's
+    inter-plate table) WITHOUT writing any bands. Run this on the first
+    `kontext` derivative before deriving the other 23 — discovering
+    non-reproducibility at derivative 24 costs the whole batch.
 - **Prompt family:** `PORTRAIT_PROMPT_FAMILY` in the script (not
   `levelArt.json` — ADR-0080 D1/A3 explicitly excludes this catalogue from
   that file). Ships `pending: true` with empty prose — the words are
@@ -1138,12 +1145,20 @@ paths, consumed read-only by `dev-gameplay`'s catalogue).
   FLUX call while pending, so the scaffold cannot burn the generation budget
   on empty text. `lintPromptFamily()` is this script's own prompt-gate-shaped
   lint (mirrors `check-art-prompts.mjs`'s report shape without depending on
-  `levelArt.json`).
+  `levelArt.json`). Any reappearance of a margin-tick token in this prompt is
+  a hard prompt-gate FAIL (brief §10: "toute réapparition... est un FAIL de
+  prompt gate, sans discussion").
+- **Two tolerance tables, not one — do not conflate them:** `TOLERANCE` (brief
+  §9.3) measures seam continuity WITHIN one already-registered plate
+  (sub-pixel, unaffected by registration accuracy); `INTER_PLATE_TOLERANCE`
+  (brief §10.3) measures whether a DERIVED plate's A0/A1/A2 reproduce the HERO
+  plate's (looser, because A0 measures a curve, not a printed line).
 - **Known limit, stated in the file header:** the recalage pass corrects
-  vertical drift only (uniform scale+offset from the two registration marks),
-  not rotation/tangent drift — a tilted plate is _detected_ (folds into the
-  seam-continuity reject) but not resampled straight. See the script's "HONEST
-  LIMIT" comment before extending it.
+  vertical drift only (uniform scale+offset fitted to the skull outline's
+  crown/chin), not rotation/tangent drift — the A1 brow/eye bar's left/right
+  disagreement is a tilt ESTIMATE, folded into the plate-level verdict, but
+  pixels are never rotated back straight. See the script's "HONEST LIMIT"
+  comment before extending it.
 
 ## gen-courier-sprites.mjs — Layered courier flipbook (bike + rider)
 

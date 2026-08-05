@@ -4,202 +4,243 @@ import path from "path";
 import { describe, it, expect } from "vitest";
 import { PNG } from "pngjs";
 import {
-  detectRegistration,
-  computeVerticalScale,
+  detectSkullContour,
+  measureControlAnchors,
+  cropPortrait,
+  compareToHeroPlate,
+  INTER_PLATE_TOLERANCE,
   ensurePngBuffer,
   isAspectPreservedScaleDown,
   runReal,
+  runControlDerivative,
   measureSeamContinuity,
   PLATE_WIDTH,
   PLATE_HEIGHT,
   PLATE_MARGIN_PX,
   PORTRAIT_WIDTH,
   PORTRAIT_HEIGHT,
-  EYE_LINE_FRAC,
-  NOSE_BASE_FRAC,
+  SEAMS,
   TOLERANCE,
 } from "../slice-portrait-plate.mjs";
 
-// Confidence-gated registration (art brief §8 C-B): `detectRegistration` must
-// ABORT (throw) rather than silently promote noise to a repère. These tests
-// exercise the two failure modes the brief calls out by name — an empty
-// margin, and an isolated grain — plus the pass case (a franc, continuous
-// tick) and the tilt case (disagreeing-but-confident left/right ticks).
+// VOIE B (brief §10, Bertrand/lead-art, ROLL 2 retrospective 2026-08-05):
+// margin ticks are abandoned, recalage reads the skull OUTLINE drawn inside
+// the portrait instead. Fixtures below are GENUINE @napi-rs/canvas-drawn
+// plates (an ellipse for the closed skull outline, filled bands for the A1
+// brow/eye bar and A2 mouth line) — not hand-typed pixel arrays tuned to
+// what the detector under test wants to see, per the pattern that masked
+// three earlier defects in this story. Geometry was verified empirically
+// (crown/chin/axis measured against the drawn ellipse's own known geometry)
+// before being locked into these tests.
+const SEAM_ABS = SEAMS.map((f) => PLATE_MARGIN_PX + Math.round(f * PORTRAIT_HEIGHT));
+const [C1_ABS, C2_ABS, C3_ABS] = SEAM_ABS;
+const CONTOUR_REGION = {
+  xFrom: PLATE_MARGIN_PX,
+  xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
+  yFrom: PLATE_MARGIN_PX,
+  yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
+};
+const DEFAULT_A1_Y = Math.round((C1_ABS + C2_ABS) / 2);
+const DEFAULT_A2_Y = C3_ABS + 40;
+
+async function makeSkullPlate({
+  crownLocalY = 15,
+  chinLocalY = PORTRAIT_HEIGHT - 60,
+  axisShiftPx = 0,
+  ellipseWidthFrac = 0.8,
+  outlineWidthPx = 5,
+  drawA1 = true,
+  drawA2 = true,
+  a1Y = DEFAULT_A1_Y,
+  a2Y = DEFAULT_A2_Y,
+  a1TiltRightPx = 0,
+  a1SecondPeak = false,
+} = {}) {
+  const { createCanvas } = await import("@napi-rs/canvas");
+  const canvas = createCanvas(PLATE_WIDTH, PLATE_HEIGHT);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, PLATE_WIDTH, PLATE_HEIGHT);
+
+  const cx = PLATE_MARGIN_PX + PORTRAIT_WIDTH / 2 + axisShiftPx;
+  const rx = (PORTRAIT_WIDTH * ellipseWidthFrac) / 2;
+  const topAbs = PLATE_MARGIN_PX + crownLocalY;
+  const botAbs = PLATE_MARGIN_PX + chinLocalY;
+  const cy = (topAbs + botAbs) / 2;
+  const ry = (botAbs - topAbs) / 2;
+
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = outlineWidthPx;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#000000";
+  if (drawA1) {
+    ctx.fillRect(PLATE_MARGIN_PX + 40, a1Y, PORTRAIT_WIDTH / 2 - 60, 16);
+    ctx.fillRect(
+      PLATE_MARGIN_PX + PORTRAIT_WIDTH / 2 + 20,
+      a1Y + a1TiltRightPx,
+      PORTRAIT_WIDTH / 2 - 60,
+      16,
+    );
+    if (a1SecondPeak) ctx.fillRect(PLATE_MARGIN_PX + 40, a1Y + 30, PORTRAIT_WIDTH - 80, 16);
+  }
+  if (drawA2) ctx.fillRect(PLATE_MARGIN_PX + 60, a2Y, PORTRAIT_WIDTH - 120, 8);
+
+  const imgData = ctx.getImageData(0, 0, PLATE_WIDTH, PLATE_HEIGHT);
+  return { width: PLATE_WIDTH, height: PLATE_HEIGHT, data: Buffer.from(imgData.data) };
+}
 
 function blankPlate() {
   const png = new PNG({ width: PLATE_WIDTH, height: PLATE_HEIGHT });
-  png.data.fill(255); // white paper, no alpha channel semantics needed here
+  png.data.fill(255);
   for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
   return png;
 }
 
-function drawTick(png, xStart, xEnd, y, lengthPx) {
-  const x0 = xStart;
-  const x1 = Math.min(xEnd, xStart + lengthPx);
-  for (let x = x0; x < x1; x++) {
-    const idx = (png.width * y + x) << 2;
-    png.data[idx] = 0;
-    png.data[idx + 1] = 0;
-    png.data[idx + 2] = 0;
-    png.data[idx + 3] = 255;
-  }
-}
-
-function eyeNominalAbs() {
-  return PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-}
-function noseNominalAbs() {
-  return PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
-}
-
-function plateWithFourTicks({ eyeLeftY, eyeRightY, noseLeftY, noseRightY, lengthPx = 20 } = {}) {
-  const png = blankPlate();
-  const rightXStart = PLATE_MARGIN_PX + (PLATE_WIDTH - PLATE_MARGIN_PX * 2);
-  drawTick(png, 0, PLATE_MARGIN_PX, eyeLeftY ?? eyeNominalAbs(), lengthPx);
-  drawTick(png, rightXStart, png.width, eyeRightY ?? eyeNominalAbs(), lengthPx);
-  drawTick(png, 0, PLATE_MARGIN_PX, noseLeftY ?? noseNominalAbs(), lengthPx);
-  drawTick(png, rightXStart, png.width, noseRightY ?? noseNominalAbs(), lengthPx);
-  return png;
-}
-
-describe("detectRegistration — confidence-gated tick detection (brief §8 C-B)", () => {
-  it("detects a franc, continuous tick at its nominal position", () => {
-    const png = plateWithFourTicks();
-    const { eyeY, noseY, tiltPx } = detectRegistration(png);
-    expect(eyeY).toBeCloseTo(eyeNominalAbs(), 0);
-    expect(noseY).toBeCloseTo(noseNominalAbs(), 0);
-    expect(tiltPx).toBe(0);
+describe("detectSkullContour — the A0 registration reference (brief §10.2)", () => {
+  it("measures crown/chin/axis on a genuine closed outline", async () => {
+    const png = await makeSkullPlate();
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    // The drawn ellipse's mathematical extremes are PLATE_MARGIN_PX+15 and
+    // PLATE_MARGIN_PX+(PORTRAIT_HEIGHT-60); MIN_CONTOUR_RUN_PX's floor and
+    // the stroke's own anti-aliasing mean the measured extreme lands within
+    // a handful of px of that (measured 61 vs a nominal 63 in practice), not
+    // exactly on it — asserted with a generous tolerance, not equality.
+    expect(Math.abs(contour.crownY - (PLATE_MARGIN_PX + 15))).toBeLessThan(8);
+    expect(Math.abs(contour.chinY - (PLATE_MARGIN_PX + (PORTRAIT_HEIGHT - 60)))).toBeLessThan(8);
+    expect(Math.abs(contour.axisX - (PLATE_MARGIN_PX + PORTRAIT_WIDTH / 2))).toBeLessThan(1);
+    expect(contour.coverageRatio).toBe(1);
   });
 
-  it("aborts on an empty margin (no marks at all)", () => {
+  it("aborts — never a guess — when the plate is entirely blank (no outline at all)", () => {
     const png = blankPlate();
-    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
-    expect(() => detectRegistration(png)).toThrow(/eye-line tick, left margin/);
+    expect(() => detectSkullContour(png, CONTOUR_REGION)).toThrow(/skull contour ABORTED/);
+    expect(() => detectSkullContour(png, CONTOUR_REGION)).toThrow(
+      /not a measurable object on this plate/,
+    );
   });
 
-  it("aborts on an isolated grain — a single dark pixel is not a tick", () => {
-    const png = blankPlate();
-    // One toner-grain pixel exactly at the nominal eye-line row, left margin.
-    // It IS the darkest row in the window (darkness=1 > 0 everywhere else),
-    // which is precisely the failure mode the brief warns about — the old
-    // "darkest row wins" logic would have promoted this to a repère.
-    const idx = (png.width * eyeNominalAbs() + 5) << 2;
-    png.data[idx] = 0;
-    png.data[idx + 1] = 0;
-    png.data[idx + 2] = 0;
-    png.data[idx + 3] = 255;
-    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
-    expect(() => detectRegistration(png)).toThrow(/eye-line tick, left margin/);
-  });
-
-  it("aborts on an isolated elongated artefact in an otherwise empty margin (blank-margin ratio bypass)", () => {
-    // 10px run: clears MIN_TICK_RUN_PX (6px) alone, so a 1px-grain-style test
-    // would not exercise this path. The margin is otherwise fully empty, so
-    // the window's own background median is 0 — before the fix this
-    // short-circuited the peak-ratio check entirely (`backgroundRun > 0 &&
-    // …`) and let ANY ≥6px artefact (scanner hair, fold, crop-line residue)
-    // through as a "confident" repère. This is the nominal shape of a FAILED
-    // plate (FLUX drew nothing), so it must abort, not fabricate a geometry.
-    const png = blankPlate();
-    drawTick(png, 0, PLATE_MARGIN_PX, eyeNominalAbs(), 10);
-    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
-    expect(() => detectRegistration(png)).toThrow(/isolated artefact/);
-  });
-
-  it("does not reject a franc 20px tick on an otherwise empty margin as an isolated artefact", () => {
-    // Same empty-margin shape as above, but the mark is long enough (matches
-    // the default `plateWithFourTicks` tick length exercised by the pass
-    // case). `findTick` isn't exported, so this asserts the negative through
-    // the public surface: the four-marks-missing plate still aborts overall
-    // (this is only one of four required marks), but never for the reason
-    // "isolated artefact" — that failure mode must be specific to short runs.
-    const png = blankPlate();
-    drawTick(png, 0, PLATE_MARGIN_PX, eyeNominalAbs(), 20);
-    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
-    expect(() => detectRegistration(png)).not.toThrow(/isolated artefact/);
-  });
-
-  it("names exactly the missing side when one tick is present without its pair", () => {
-    const png = blankPlate();
-    // Only the left eye-line tick is drawn; its right-margin pair is absent.
-    drawTick(png, 0, PLATE_MARGIN_PX, eyeNominalAbs(), 20);
-    drawTick(png, 0, PLATE_MARGIN_PX, noseNominalAbs(), 20);
-    let error;
-    try {
-      detectRegistration(png);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error.message).toMatch(/eye-line tick, right margin/);
-    expect(error.message).toMatch(/nose-base tick, right margin/);
-    expect(error.message).toMatch(/found with confidence: eye-line\/left, nose-base\/left/);
-  });
-
-  it("accepts confidently-detected left/right ticks that disagree (tilt), rather than aborting", () => {
-    // Both sides are franc, continuous ticks — just offset from each other,
-    // as a genuinely tilted plate would print them. Detection succeeds and
-    // reports the disagreement as a tilt estimate; the seam-tolerance gate
-    // downstream decides pass/fail on that estimate, not this function.
-    const png = plateWithFourTicks({
-      eyeLeftY: eyeNominalAbs() - 10,
-      eyeRightY: eyeNominalAbs() + 10,
-      noseLeftY: noseNominalAbs() - 10,
-      noseRightY: noseNominalAbs() + 10,
-    });
-    const { tiltPx } = detectRegistration(png);
-    expect(tiltPx).toBe(20);
-  });
-
-  it("aborts with a diagnostic (not a crash) when the search window falls off an undersized plate", () => {
-    // A plate delivered shorter than nominal (wrong resolution) pushes the
-    // eye-line search window [nominalY-24, nominalY+24] entirely past
-    // png.height. Before the fix this produced `rows = []` and a TypeError
-    // from `best.run` inside findTick — a JS stack trace instead of the
-    // named-mark diagnostic every other rejection path produces.
-    const shortHeight = 100;
-    // Precondition for this test to exercise the intended path at all: the
-    // search window must actually fall outside the shortened plate.
-    expect(eyeNominalAbs() - 24).toBeGreaterThan(shortHeight - 1);
-    const png = new PNG({ width: PLATE_WIDTH, height: shortHeight });
-    png.data.fill(255);
-    for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
-
-    let error;
-    try {
-      detectRegistration(png);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeDefined();
-    expect(error).not.toBeInstanceOf(TypeError);
-    expect(error.message).toMatch(/registration ABORTED/);
-    expect(error.message).toMatch(/falls entirely outside the plate/);
+  it("axis reflects a genuine horizontal shift of the skull", async () => {
+    const shifted = await makeSkullPlate({ axisShiftPx: 15 });
+    const contour = detectSkullContour(shifted, CONTOUR_REGION);
+    expect(Math.abs(contour.axisX - (PLATE_MARGIN_PX + PORTRAIT_WIDTH / 2 + 15))).toBeLessThan(2);
   });
 });
 
-describe("computeVerticalScale — sign-guarded scale (art brief §8 C-B)", () => {
-  // `detectRegistration`'s own confidence windows never overlap (256px apart
-  // for ±24px windows — verified by the pass/tilt cases above), so a real
-  // plate can never make the two measured y's swap through noise alone. The
-  // guard's job is on the (eyeY, noseY) *values* regardless of how a
-  // corrupted/mirrored capture pipeline produced them, so it is exercised
-  // directly here rather than by contorting a synthetic plate to defeat the
-  // window search.
-  it("aborts — produces NOTHING — when nose-base measures at or above eye-line", () => {
-    // Both a franc inversion (mirrored plate) and an exact tie (degenerate
-    // zero-height plate) must be refused, not silently coerced into a
-    // plausible-looking mirrored or zero/degenerate scale.
-    expect(() => computeVerticalScale(700, 400)).toThrow(/registration ABORTED/);
-    expect(() => computeVerticalScale(700, 400)).toThrow(/not above nose-base/);
-    expect(() => computeVerticalScale(500, 500)).toThrow(/registration ABORTED/);
+describe("measureControlAnchors — A1/A2, control-only (brief §10.2)", () => {
+  it("measures A1/A2 and reports zero tilt for a level plate", async () => {
+    const png = await makeSkullPlate();
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    const controls = measureControlAnchors(png, contour);
+    expect(controls.a1Y).toBeCloseTo(DEFAULT_A1_Y, 0);
+    expect(controls.a2Y).toBeCloseTo(DEFAULT_A2_Y, 0);
+    expect(controls.tiltPx).toBe(0);
   });
 
-  it("produces a positive scale for correctly-ordered marks", () => {
-    const eyeNominalAbs = PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-    const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
-    const { scale } = computeVerticalScale(eyeNominalAbs, noseNominalAbs);
-    expect(scale).toBeGreaterThan(0);
+  it("measures a genuine left/right tilt at A1", async () => {
+    const png = await makeSkullPlate({ a1TiltRightPx: 12 });
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    const controls = measureControlAnchors(png, contour);
+    expect(controls.tiltPx).toBe(12);
+  });
+
+  it("aborts — the C-B defect, transposed — when a peak has a competing second candidate within 2x", async () => {
+    // A second dark band 30px below A1's, on a plate that otherwise has
+    // blank cheeks/forehead as the prompt clause demands. Brief §10.2
+    // clause 1, verbatim: a peak is an anchor only if it's the darkest AND
+    // separated from the window's second-best candidate by >=2x.
+    const png = await makeSkullPlate({ a1SecondPeak: true });
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    let error;
+    try {
+      measureControlAnchors(png, contour);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeDefined();
+    expect(error.message).toMatch(/control anchors ABORTED/);
+    expect(error.message).toMatch(/A1 \(brow\/eye bar\)/);
+    expect(error.message).toMatch(/need 2x/);
+  });
+
+  it("aborts when the A1 bands are not drawn at all (blank cheeks and forehead, nothing else)", async () => {
+    // A2's own search window ([C3, chin]) overlaps the lower half of the
+    // drawn ellipse outline itself in this synthetic fixture (a real
+    // drawing's outline sits at the silhouette edge, not inside the A2
+    // band, so this coincidence is a fixture artefact, not a detector
+    // gap) — so this asserts on A1 specifically, which has no such overlap.
+    const png = await makeSkullPlate({ drawA1: false });
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    expect(() => measureControlAnchors(png, contour)).toThrow(/control anchors ABORTED/);
+    expect(() => measureControlAnchors(png, contour)).toThrow(/A1 \(brow\/eye bar\), left half/);
+    expect(() => measureControlAnchors(png, contour)).toThrow(/A1 \(brow\/eye bar\), right half/);
+  });
+
+  it("rejects an anchor drawn on top of a seam (brief §10.2 clause 3)", async () => {
+    // A1 band placed AT C1 itself instead of between C1 and C2 — the search
+    // window is still [C1,C2] so it's still found, but it now sits at
+    // distance 0 from the seam, well inside the 5%-of-H exclusion zone.
+    const png = await makeSkullPlate({ a1Y: C1_ABS });
+    const contour = detectSkullContour(png, CONTOUR_REGION);
+    expect(() => measureControlAnchors(png, contour)).toThrow(/crosses a seam/);
+  });
+});
+
+describe("cropPortrait — straight crop, no resample (VOIE B, no hero reference for a lone plate)", () => {
+  it("crops the fixed PLATE_MARGIN_PX-offset window at the declared portrait size", async () => {
+    const png = await makeSkullPlate();
+    const portrait = cropPortrait(png);
+    expect(portrait.width).toBe(PORTRAIT_WIDTH);
+    expect(portrait.height).toBe(PORTRAIT_HEIGHT);
+    // Spot-check: a pixel just inside the crop's top-left should match the
+    // source plate's pixel at the corresponding PLATE_MARGIN_PX-offset
+    // location.
+    const srcIdx = (png.width * (PLATE_MARGIN_PX + 5) + (PLATE_MARGIN_PX + 5)) << 2;
+    const dstIdx = (PORTRAIT_WIDTH * 5 + 5) << 2;
+    expect(portrait.data[dstIdx]).toBe(png.data[srcIdx]);
+  });
+});
+
+describe("compareToHeroPlate — inter-plate reproducibility (brief §10.3, NEW table)", () => {
+  const hero = { crownY: 100, chinY: 700, axisX: 400, a1Y: 300, a2Y: 600, tiltPx: 2 };
+
+  it("passes a candidate that reproduces the hero closely", () => {
+    const candidate = { crownY: 101, chinY: 701, axisX: 400.5, a1Y: 301, a2Y: 601, tiltPx: 3 };
+    const report = compareToHeroPlate(candidate, hero);
+    expect(report.pass).toBe(true);
+    expect(report.alerts).toEqual([]);
+  });
+
+  it("rejects on height drift at or beyond the 1.0% FAIL threshold", () => {
+    const heroH = hero.chinY - hero.crownY; // 600
+    const candidate = { ...hero, chinY: hero.chinY + Math.ceil(heroH * 0.011) };
+    const report = compareToHeroPlate(candidate, hero);
+    expect(report.pass).toBe(false);
+    expect(report.values.heightDeltaPctOfH).toBeGreaterThanOrEqual(
+      INTER_PLATE_TOLERANCE.heightDeltaPctOfH.fail,
+    );
+  });
+
+  it("rejects on tilt at or beyond the 16px FAIL threshold (brief §10.3's tightened figure)", () => {
+    const candidate = { ...hero, tiltPx: 16 };
+    const report = compareToHeroPlate(candidate, hero);
+    expect(report.pass).toBe(false);
+  });
+
+  it("rejects on 2+ simultaneous alert-zone values even if none individually fails", () => {
+    const candidate = {
+      crownY: hero.crownY,
+      chinY: hero.chinY + 4, // heightDeltaPctOfH ≈0.67%, in the 0.5-1.0% alert zone
+      axisX: hero.axisX + 2, // axisDeltaPx = 2px, in the 1.5-3.0px alert zone
+      a1Y: hero.a1Y,
+      a2Y: hero.a2Y,
+      tiltPx: 0,
+    };
+    const report = compareToHeroPlate(candidate, hero);
+    expect(report.alerts.length).toBeGreaterThanOrEqual(2);
+    expect(report.pass).toBe(false);
   });
 });
 
@@ -522,3 +563,60 @@ describe("seam ordinates land on whole pixels with no float rounding (brief §9.
     expect(PLATE_MARGIN_PX + 558).toBe(606);
   });
 });
+
+describe("runControlDerivative — brief §10.4/§10.5's sequencing requirement", () => {
+  // Drives the REAL function through its documented --plate-file arguments
+  // (no mocking) with genuine @napi-rs/canvas-drawn hero/candidate plates —
+  // "one derivative, measure, stop" before ever deriving the other 23.
+  function writePlateFile(buf) {
+    const file = path.join(
+      os.tmpdir(),
+      `slice-portrait-plate-cd-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
+    );
+    fs.writeFileSync(file, buf);
+    return file;
+  }
+
+  it("passes a candidate that reproduces the hero plate closely", async () => {
+    const { PNG: PNGLib } = await import("pngjs");
+    const heroPng = await makeSkullPlate();
+    const candidatePng = await makeSkullPlate({ crownLocalY: 16, a1Y: DEFAULT_A1_Y + 1 });
+    const heroFile = writePlateFile(PNGLib.sync.write(heroPng));
+    const candidateFile = writePlateFile(PNGLib.sync.write(candidatePng));
+    try {
+      const report = await runControlDerivative(candidateFile, heroFile);
+      expect(report.pass).toBe(true);
+    } finally {
+      fs.rmSync(heroFile, { force: true });
+      fs.rmSync(candidateFile, { force: true });
+    }
+  });
+
+  it("rejects a candidate whose skull height does not reproduce (brief §10.4 abandon condition 3)", async () => {
+    const { PNG: PNGLib } = await import("pngjs");
+    const heroPng = await makeSkullPlate();
+    // Chin ~140px shorter than the hero's — a real non-reproducibility, not
+    // a rounding artefact.
+    const candidatePng = await makeSkullPlate({ chinLocalY: PORTRAIT_HEIGHT - 200 });
+    const heroFile = writePlateFile(PNGLib.sync.write(heroPng));
+    const candidateFile = writePlateFile(PNGLib.sync.write(candidatePng));
+    try {
+      await expect(runControlDerivative(candidateFile, heroFile)).rejects.toThrow(
+        /does not reproduce plate-to-plate/,
+      );
+    } finally {
+      fs.rmSync(heroFile, { force: true });
+      fs.rmSync(candidateFile, { force: true });
+    }
+  });
+});
+
+// A full runReal() end-to-end run through a genuine plate is deliberately
+// NOT exercised here: on a passing plate it writes the 24 band PNGs and the
+// manifest to the real, COMMITTED public/assets/portrait — exactly the
+// resync the coordinator asked NOT to touch until a real hero plate exists
+// (dev-gameplay's faceCatalogue.data.ts embeds that manifest's checksum).
+// The registration logic runReal calls (detectSkullContour,
+// measureControlAnchors, cropPortrait) is covered directly above, and the
+// full pipeline was verified manually via the --plate/--control-derivative
+// CLI flags against temp files outside the repo (see PR description).
