@@ -264,3 +264,198 @@ animation, open a one-lane follow-up for the two emblem swaps, and **do not** tr
 tutorial and finale attributions as canon in the meantime. Belliard, Stalingrad and Vitry
 are gated by this doc and may be recorded as canon immediately. That call is Karim's +
 `producer`'s, not mine.
+
+---
+
+## Design gate — lead-game-designer
+
+**Gate:** `lead-game-designer` (Karim) · 2026-08-05 · PR #145,
+branch `claude/flyer-wall-float-in-animation` · rework round **1 of 2**.
+**Deliverable:** this document (`decision-flyer-crew-emblems-fiction.md`, Yasmine).
+**Read for this verdict:** the full text above, the real `FLYER_EMBLEMS` in
+`src/render/ui/menu/FlyerMotif.tsx` (branch), `docs/art-direction/decision-flyer-crew-emblems.md`
+(`lead-art`, PASS 2ᵉ passage), `docs/game-design/pregame-copy-deck.md` §2.1-§2.4 + §9,
+`docs/game-design/spec-niveau-final-fiction.md`, `docs/game-design/README.md`.
+
+### Verdict: **PASS WITH CHANGES**
+
+The document is a real fiction gate, not a taste memo: every ruling is anchored in a
+named, already-gated source, and §2.3 reverses its own earlier ask on the record after
+reading the code. That is how this gate is supposed to work, and I record it as such.
+It passes scope (no new mechanic, no new screen, no new asset family — five inline SVG
+shapes already in the diff), core loop (menu décor, zero effect on
+`Récupérer → Livrer → Éviter` or on the 3-5 min ceiling), and coherence with `lead-art`
+on the four points where the two docs meet (both land on the canal-wave anchor for the
+rings; both land on the plumb bob as the strongest mark of the set).
+
+It fails **verifiability** on one point and **coherence** on one, both fixable in this
+cycle — hence CHANGES, not REJECT. See K-1 and K-2.
+
+### The three disagreements I raised before reading — carried, revised, dropped
+
+**1. l'Éden — REVISED, and the swap stands.**
+
+My provisional objection was that Fault A (category error) over-read the code: the
+`FlyerMotif.tsx` header does _not_ confuse a venue for a crew. It says so out loud —
+"L'Éden is a venue, and the narrative bible files it as a Lieu, never a collectif". So
+the doc's §2.5 Fault A, _as written_, argues against a mistake the code did not make,
+and I do not accept it on that wording.
+
+But the code does something worse, which is the real fault and which I substitute for
+Fault A: that header **invents canon in a code comment**. It declares a doctrine — "the
+two sheets without a system carry the two marks without an owner, which is the symmetry
+to preserve if this table ever grows" — that exists in no gated document, and it cites
+_this very gate_ as its authority ("narrative gate, PR #145") while this gate was still
+DRAFT. A dev comment cannot forward-reference a PASS that has not been given. That is an
+undeclared extension of the fiction under PROJECT_GUIDELINES' cahier-des-charges test,
+and it is an automatic FAIL of the thing it asserts. The "unowned marks" doctrine is
+**not gated** and must not survive this PR in any form.
+
+With that doctrine removed, Yasmine's Faults B and C carry the swap on their own, and I
+uphold them: the invader reads as the developers waving at the player from the last
+flyer of the game, in the one register this fiction has never used, on the one sheet
+whose subject is the century turning. § 2.5's chandelier replacement is not an invention
+— it transcribes `spec-niveau-final-fiction.md` §1.3 (« le vieux monde suspendu
+au-dessus de la fête ») and the already-shipped `decorProp` of the finale. **A5 is
+upheld as blocking.**
+
+_Seam with `lead-art`, declared, not arbitrated:_ Nico PASSED the invader and asked
+(R3, non-blocking) that its intention note be re-anchored on Invader-tiling-Paris-1998.
+Execution was his call and I do not reopen it — but _which sign belongs to which sheet_
+is the fiction lane's, and on that axis A5 wins. Consequence: **R3 is moot**, since the
+comment it rewrites goes away with the shape. The replacement shape owes Nico an
+execution PASS on a real build capture — same cheap loop as R1-bis, no batch cost, and
+his own rule "un emblème est une marque, pas une texture" is the standard it must meet.
+That is his gate, not mine, and it does not re-open this one.
+
+**2. A5b (finale `body` → `hero`) — DROPPED as a disagreement, RULED as a no for this PR.**
+
+Her text already yields it explicitly ("A5b is a **recommendation**, A5 is the blocking
+part"), so I withdraw the objection — she pre-empted it. Operative ruling instead:
+**A5b is DEFERRED and must NOT be implemented in PR #145.** Wall rhythm across five
+sheets is a composition question owned jointly by `lead-art` and `ux-designer`, and
+`lead-art`'s R2 already parks a related adjacency question on the deferred pile-repli
+pass (art §2bis.2 pt5). A5b joins that pass. The finale keeps `slot: "body"`,
+`offsetY: 18`, unchanged. Re-raise it there, not here.
+
+**3. Copy-deck transcription — CARRIED, and it is a condition of this PASS.**
+
+Her table marks A2/A3 (deck amendments C1/C1b) as non-blocking because she owns them.
+That is the wrong axis: the question is not who does it, it is whether this PASS is
+valid while the gated deck says otherwise. `pregame-copy-deck.md` is gated canon
+(`pre-game-design-gate.md` §(f)); as it stands today it says `biohazard` at §2.3 and
+`acid smiley` at §2.4, and the merged code would contradict both. A gated doc
+contradicted by shipped code is exactly the drift this gate exists to prevent. So:
+
+**Condition K-1 (blocking on the gate, docs only, no code).** Before this PASS is final,
+transcribe into `docs/game-design/pregame-copy-deck.md`:
+
+- §2.3 — `Motifs: **biohazard** (warehouse/industrial), spiral, 23`
+  → `Motifs: **concentric rings** (canal ripple / speaker wavefront), spiral, 23`.
+- §2.4 — `Motifs: **acid smiley** (euphoria over the melancholy), spiral, 23`
+  → `Motifs: **plumb bob** (the nadir; the mason's tool of the barres), spiral, 23`.
+- §2.1 — record explicitly that the tutorial carries **no crew emblem** (it already
+  carries the no-crew, no-info-line doctrine; the emblem line is the missing one).
+- §2.5 / finale — record the chandelier mark, cross-referenced to
+  `spec-niveau-final-fiction.md` §1.3.
+- §9 — one row per sheet in the crew↔motif table, including the two sheets that have no
+  crew, so the next reader does not re-derive the map from the SVG.
+
+And into `docs/game-design/README.md` § Status: one row for this document
+(`decision-flyer-crew-emblems-fiction.md`, Yasmine, 2026-08-05, PASS WITH CHANGES), plus
+the emblem set appended to § "Gated canon (pending `narrative-bible.md`)". Owner:
+Yasmine (deck) + me (index). The gate is not closed until both land.
+
+**Condition K-2 (blocking, code comments).** The `FlyerMotif.tsx` header must lose the
+ungated "two marks without an owner" doctrine and the forward-reference to this gate,
+and state instead what is actually gated: five sheets, four marks, the tutorial
+unsigned. `lead-art`'s R1b-2 (two comments still describing the deleted halftone) rides
+the same round trip. Owner: `dev-r3f-render`.
+
+Everything else in the doc — A1 (spiral, homage logged), A2 (rings), A3 (withdrawn;
+plumb PASSES at `hero`, and I defend the asymmetry with her: do **not** normalise Vitry),
+A4, A6/C2 (stamp, not logo — recorded, execution stays Nico's), C3 (bible follow-up) —
+is accepted as written.
+
+### The operative ruling on the split
+
+The fact-check is settled: `git log origin/main -- src/render/ui/menu/FlyerMotif.tsx`
+returns zero commits. `FLYER_EMBLEMS` does not exist on `main`. This is **net-new
+content, not shipped content being repaired** — so the escape hatch I reserved for a
+"don't hold the animation hostage to a fiction fix" split does not open. There is no
+shipped behaviour to protect and no regression risk to weigh against the delay: the
+swaps are two shape substitutions in a file this branch is introducing anyway.
+
+**Ruling: no split. A4 and A5 land in PR #145, before merge.** The follow-up-story
+option offered in §4 is declined. Shipping the tutorial smiley and the finale invader
+would put ungated attributions in front of a player and make them de-facto canon by
+release — the precise failure mode the CI panel raised as MAJEUR. Landing them here
+costs one dev round trip that `lead-art`'s R1b-2 + K-2 already require on the same file.
+
+Belliard, Stalingrad and Vitry are gated by this document and are canon as of now.
+
+### Ask to `dev-r3f-render` — implementable as written, no re-opening of this gate
+
+Scope: `src/render/ui/menu/FlyerMotif.tsx` only. No change to `LevelFlyer.tsx`,
+`LevelFlyer.module.css`, the float-in animation, or any other emblem.
+
+**1. Tutorial — remove the emblem entirely.**
+Delete the `tutorial:` entry from `FLYER_EMBLEMS`. The map is
+`Readonly<Partial<Record<string, FlyerEmblem>>>` and the file's own contract already
+covers this: "a level absent from this map simply shows no motif". The tutorial sheet
+renders with no mark. This is not a fallback, it is the design: `SANS SYSTÈME · AVANT
+LE SON` means the sheet is unsigned, and an unsigned sheet has no stamp.
+Do **not** implement §2.4's hand-circled `23` + arrow — see FORBIDDEN below.
+
+**2. Finale (`niveau-final`) — swap `invader` → `chandelier`.**
+`kind: "chandelier"`, `slot: "body"` (unchanged), `offsetY: 18`, `sizePx: 88`,
+`tiltDeg: -3`, `wearSeed: 3` — every other field unchanged. The shape: the finale's
+chandelier reduced to a mark — a radiating pendant / starburst, drawn to the same
+constraints as the other four (one ink, flat solid shapes, `currentColor`, zero
+gradient, any interior detail **punched** even-odd rather than painted, readable at
+88 px and at three metres under `opacity: .5` × `--flyer-lock-filter`). Canon source to
+cite in the comment: `spec-niveau-final-fiction.md` §1.3, « le vieux monde suspendu
+au-dessus de la fête » — the same object the boss weaponises, so the flyer pays off
+in-game. Then remove `"invader"` from `MotifKind`, `MOTIF_SHAPES`, `InvaderPath` and
+`INVADER_ROWS`; a dead motif kind is a route back for the sign.
+
+**3. Comments — K-2 + `lead-art` R1b-2, same round trip.**
+Header: drop the "two marks without an owner" doctrine and the
+`(narrative gate, PR #145)` forward-reference. Replace with what is gated: five sheets,
+four marks; the tutorial is unsigned by canon; the finale's mark belongs to the hall,
+not to a sound system named L'Éden, which does not exist. Also fix the two stale
+halftone comments Nico named (the block above `PlumbPath`, and the `sizePx` lower-bound
+justification "the halftone reads as mud below ~70px").
+
+**4. Then, one capture back to `lead-art`.** The chandelier is a new shape and owes Nico
+an execution PASS on a real build screenshot (the finale sheet close-up + the wall of
+five, unlocked and locked), exactly as the plumb bob did at R1-bis. Cheap loop, no batch
+cost, no re-gate from me.
+
+**FORBIDDEN — any of these is an undeclared canon extension and fails this gate:**
+
+- Drawing **any new mark not named above.** The chandelier is the only new shape
+  authorised, and only because it transcribes already-gated canon. In particular: **do
+  not** draw the hand-circled `23` + arrow for the tutorial, **do not** draw the `00` or
+  the stopped-clock-at-midnight fallback for the finale. If the chandelier fails Nico's
+  execution PASS, the fallback comes back to **me** for a written amendment first — a
+  dev may not pick from §2.5's second-choice list.
+- Moving the finale to `hero`, or moving Vitry off `hero`, or touching any `slot`,
+  `offsetY`, `sizePx`, `tiltDeg` or `wearSeed` (A5b is deferred; Vitry's 5° tilt is
+  explicitly defended by `lead-art`).
+- Re-attributing an emblem, or filling the tutorial slot with an existing motif to keep
+  the map at five entries. Four marks on five sheets is the specified state.
+- Keeping the smiley anywhere in the set. It leaves the file.
+- Writing new fiction in a comment. Comments cite gated docs; they do not create canon.
+
+### Downstream
+
+- `narrative-designer` (Yasmine): K-1 deck transcription (§2.1/§2.3/§2.4/§2.5/§9).
+- `lead-game-designer` (me): K-1 index rows in `docs/game-design/README.md`; this
+  verdict logged in `docs/agent-handoffs.md`.
+- `dev-r3f-render`: asks 1-3 above, one round trip, then the capture to `lead-art`.
+- `lead-art` (Nico): execution PASS on the chandelier only. R3 is moot (its subject is
+  deleted); R1b-1, R1b-2, R2 unaffected.
+- `producer` (Marion): rework round 1 of 2 on this document. If the chandelier does not
+  survive Nico's execution gate, that is round 2 and it comes back to me with the
+  fallback named in writing — not a third free iteration.
