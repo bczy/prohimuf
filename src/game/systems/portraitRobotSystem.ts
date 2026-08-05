@@ -13,7 +13,7 @@ import type {
 import type { LevelModifier } from "@game/types/levelModifier";
 
 /**
- * Portrait-robot — every rule of the photofit scene, pure (ADR-0079, ADR-0080, ADR-0081).
+ * Portrait-robot — every rule of the photofit scene, pure (ADR-0079, ADR-0080, ADR-0082).
  *
  * This module is the ONLY place the gate §3 tuning table is written down
  * (`docs/game-design/design-gate-portrait-robot.md` §3, which primes over every lane

@@ -1,9 +1,9 @@
 /**
- * Pure gesture CLASSIFICATION for the portrait-robot bands (ADR-0081 D2/D2bis). The
+ * Pure gesture CLASSIFICATION for the portrait-robot bands (ADR-0082 D2/D2bis). The
  * `tapGestureSystem.ts` precedent, extended: this module knows what a swipe and a drag
  * *are*; it has no opinion on what they *mean*. The mapping to `PortraitIntent` lives in
  * `src/hooks/usePortraitGestures.ts`, and no gesture literal ever crosses into the game's
- * intent vocabulary (ADR-0081 D1).
+ * intent vocabulary (ADR-0082 D1).
  *
  * Coordinates are NORMALISED (0..1 of the viewport), never DOM pixels. No React, no DOM.
  *
@@ -11,7 +11,7 @@
  *
  * `SWIPE_MIN_DISTANCE`, `SWIPE_MAX_ANGLE_DEG` and `DRAG_CRAN_DISTANCE` are named
  * constants precisely so round 2 can land its values without touching a structural
- * decision (ADR-0081 D3). The values here are **provisional defaults** that make the
+ * decision (ADR-0082 D3). The values here are **provisional defaults** that make the
  * gesture usable on both device classes today; changing one is a one-line data edit and
  * the boundary tests below hold at any value.
  */
@@ -28,7 +28,7 @@ export const SWIPE_MAX_ANGLE_DEG = 30;
 /** A swipe is terminal and quick; a slower travel is a drag, judged by `accumulateDrag`. */
 export const SWIPE_MAX_MS = 600;
 
-/** Normalised travel per cran of a desktop drag (ADR-0081 D2bis, B3). */
+/** Normalised travel per cran of a desktop drag (ADR-0082 D2bis, B3). */
 export const DRAG_CRAN_DISTANCE = 0.08;
 
 export type SwipeDirection = "left" | "right" | "none";
@@ -55,7 +55,7 @@ export interface DragAccumulation {
 }
 
 /**
- * Fold one pointer-move delta into a carried remainder (ADR-0081 D2bis). A swipe is
+ * Fold one pointer-move delta into a carried remainder (ADR-0082 D2bis). A swipe is
  * terminal, a drag is continuous — `classifySwipe` answers a question about a finished
  * gesture and cannot serve here, which is why this is a second function and not a third
  * threshold.

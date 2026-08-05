@@ -1,5 +1,5 @@
 /**
- * Barrel for the PORTRAIT-ROBOT screen (ADR-0079 / ADR-0081). Render-only: it
+ * Barrel for the PORTRAIT-ROBOT screen (ADR-0079 / ADR-0082). Render-only: it
  * imports `src/game` TYPES and nothing else from the game layer.
  */
 export { PortraitRobotScreen } from "./PortraitRobotScreen";

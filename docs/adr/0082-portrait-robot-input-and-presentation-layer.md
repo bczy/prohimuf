@@ -1,12 +1,13 @@
-# 0081 — Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules
+# 0082 — Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules
 
 - **Status:** Proposed
 - **Date:** 2026-08-05
-- **Number:** 0081, allocated by producer (Marion) at story intake 2026-08-05. **File and title
+- **Number:** 0082, allocated by producer (Marion) at story intake 2026-08-05. **File and title
   renamed** on 2026-08-05 from `0081-portrait-robot-input-and-atari-st-render.md` — the
   scaffold's "Atari ST render" framing is void: Bertrand arbitrated on 2026-08-05 that the DA
   stays **house BD-comics** (story AC7), and the ST source is historical grounding for the
-  *mise-en-scène* only, never a production constraint.
+  *mise-en-scène* only, never a production constraint. **Renumbered to 0082 on 2026-08-05 due to
+  collision with ADR-0081 (MCP level-editor server) merged to origin/main via PR #159.**
 - **Author:** decision content by `senior-architect` (Winston), stage 3 TECH PLAN.
 - **Relates to:** ADR-0079 (the DOM phase this layer draws), ADR-0080 (the catalogue it
   displays), ADR-0046 (CSS Modules + `tokens.ts`→CSS-var bridge — the law this screen obeys),

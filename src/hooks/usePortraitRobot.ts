@@ -17,7 +17,7 @@ export interface PortraitRobotOptions {
   readonly seed: number;
   /** Chrono for this run's difficulty — the shell reads gate §3's table, never this hook. */
   readonly timerSeconds: number;
-  /** `true` under `RotateOverlay`: the fold simply stops being called (ADR-0081 D5). */
+  /** `true` under `RotateOverlay`: the fold simply stops being called (ADR-0082 D5). */
   readonly paused: boolean;
   /** Catalogue override for tests / a future second plate. */
   readonly catalogue?: FaceCatalogue;

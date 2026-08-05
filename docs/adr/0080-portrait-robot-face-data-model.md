@@ -4,7 +4,7 @@
 - **Date:** 2026-08-05
 - **Number:** 0080, allocated by producer (Marion) at story intake 2026-08-05.
 - **Author:** decision content by `senior-architect` (Winston), stage 3 TECH PLAN.
-- **Relates to:** ADR-0079 (the scene shell that consumes this catalogue), ADR-0081
+- **Relates to:** ADR-0079 (the scene shell that consumes this catalogue), ADR-0082
   (presentation), ADR-0074 (the `*.data.ts` + `validate*` + no-I/O-at-import pattern this ADR
   copies deliberately), ADR-0075 (generated data committed beside its source), ADR-0011
   (a global property cannot be obtained by repeating it in N local prompts — the reason for
