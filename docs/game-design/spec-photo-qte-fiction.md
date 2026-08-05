@@ -1,9 +1,10 @@
 # QTE photo paparazzi — fiction du PREMIER set-piece
 
 **Author:** `narrative-designer` (Yasmine) · **Gate:** `lead-game-designer` (Karim) —
-status **Rev.4 FINALE — PIVOT DE FICTION : l'enveloppe et la corruption sortent du sujet de la
-photo. Les 4 décisions de Bertrand du 2026-08-05 sont ACTÉES (option A / E-2 re-gravé / Q2 en
-réserve / la berline repart). Aucune question ouverte de ma lane.** · **Date:** 2026-08-05 ·
+status **Rev.5 — PIVOT DE FICTION (Rev.4) + DESCENTE DE L'AFFÛT AU NIVEAU DE LA RUE (Rev.5).
+Les 5 décisions de Bertrand du 2026-08-05 sont ACTÉES : option A / E-2 re-gravé / Q2 en réserve /
+la berline repart / l'affût passe de la lucarne à la bouche du passage, de plain-pied. Aucune
+question ouverte de ma lane.** · **Date:** 2026-08-05 ·
 **Frame:** `docs/adr/0077-qte-photo-paparazzi-set-pieces.md` (Proposed)
 
 ---
@@ -34,8 +35,9 @@ réserve / la berline repart). Aucune question ouverte de ma lane.** · **Date:*
 | §6                 | Fiches art : la terrasse dense, les autres couples, le geste. Aligné sur la refonte `concept-artist` en cours.     |
 | §8                 | Flags : le flag 3 (canon E-2) est **maintenu mais son support change** — c'est le point qui remonte à Bertrand.    |
 
-**Ce qui NE change PAS :** la cible = **le Commandant** (§1) · l'affût = la lucarne du bout de
-la rue Belliard (§2.1) · la couverture sonore = le cycle du feu (§2.3) · `filmCount = 6` (§3.4) ·
+**Ce qui NE change PAS :** la cible = **le Commandant** (§1) · ~~l'affût = la lucarne~~
+**← ANNULÉ Rev.5 : l'affût descend de plain-pied dans la bouche du passage (§2.1)** ·
+la couverture sonore = le cycle du feu (§2.3) · `filmCount = 6` (§3.4) ·
 la structure **une preuve maîtresse + deux bonus** (§3.2) · les deux CTA `[ RECOMMENCER ]` /
 `[ LAISSER TOMBER ]` (§4.3) · « isolé jamais affaibli » (§5.4) · alternative B = set-piece n°2
 (§1.2) · bonus jamais gate (§5.3) · **aucun dialogue shippé modifié** (§8.4).
@@ -332,31 +334,102 @@ cette cible : elle **rembourse** du canon existant au lieu d'en ajouter.
 
 ## 2. Lieu et moment — RÉÉCRITE Rev.3 (Belliard)
 
-### 2.1 Lieu de l'affût — la lucarne, en haut de la rue Belliard
+### 2.1 Lieu de l'affût — RÉÉCRITE Rev.5 : la bouche du passage, de plain-pied
 
-**Muf est sur les toits.** Il monte par la cage d'escalier du dernier immeuble de la rue —
-celui au **pignon aveugle** — et se cale dans une **lucarne de la mansarde**, à plat ventre
-sur le zinc, le boîtier posé sur le rebord.
+> **Décision Bertrand (2026-08-05), sur démonstration de l'art : l'affût descend du toit.**
+> D'une vue plongeante on photographie des chapeaux, des épaules et des dessus de table. De
+> plain-pied on photographie **les visages, les mains sur la nappe, la serviette contre un pied
+> de chaise, le chauffeur debout contre sa portière** — c'est-à-dire **exactement les signaux
+> que la scène est faite pour donner**. La plongée servait la fiction v1 (une remise
+> d'enveloppe se lit d'en haut) ; elle dessert celle-ci.
 
-Ce n'est pas une invention : c'est une **réplique shippée**. Dans `belliard_pre`, DISPATCH dit
-déjà `« Les flics patrouillent depuis la manif. Reste sur les toits. »` Le set-piece **exécute
-littéralement** l'ordre que le joueur a lu à sa première nuit de jeu. Là où le briefing
-d'origine disait « reste en hauteur pour ne pas te faire prendre », le set-piece ajoute :
-_en hauteur, on ne fait pas que se cacher — on voit._
+**Muf est dans la rue.** Il se tient dans **la bouche du passage**, le renfoncement noir entre
+deux immeubles (`x_norm 0,372 – 0,408`), sur le **trottoir d'en face**, en bas de rue. Le dos au
+rideau de fer, le coude calé contre l'angle du mur pour tenir le téléobjectif. Il ne s'accroupit
+pas, il ne se planque pas : **il attend, comme dix autres personnes attendent dans cette rue.**
 
-Pourquoi cette position tient :
+**Le passage change de rôle et le garde.** Il était le lieu de la scène en Rev.1-3, il devient
+le lieu de l'**affût** — et il emporte avec lui l'argument que j'avais construit pour lui :
+c'est le seul point de la rue dont le jeu a **déjà décidé** que personne n'y regarde jamais
+(zone d'exclusion : aucune fenêtre, aucun pop, aucune cible —
+`spec-belliard-street-wide-repositioning.md` §0.2). Rien n'est perdu, tout est déplacé.
 
-- **Ligne de vue.** La lucarne est au bout de la rue ; la cible est au **tiers gauche**
-  (`x_norm ≈ 0,39`, cf. `spec-belliard-street-wide-repositioning.md` §0.2). C'est toute la
-  diagonale de la rue — soixante, soixante-dix mètres en enfilade, sans un obstacle : la
-  distance qui **justifie le 300 mm**, et l'angle plongeant qui explique qu'on voie le fond
-  du passage depuis la rue.
-- **Personne ne regarde en l'air.** La rangée de pop du niveau est aux **fenêtres** (rangées
-  A/B/C) ; les toits, eux, n'ont jamais rien accueilli. L'affût est le seul point de la rue
-  que le jeu n'a jamais utilisé comme menace — donc le seul crédible comme planque.
-- **Zéro conflit de lecture.** Le set-piece se joue **depuis** un endroit d'où l'on ne tire
-  jamais. Le joueur ne peut pas confondre le beat photo avec un beat de tir : la position elle-
-  même est neuve.
+#### L'appui shippé — ce qu'il faut dire honnêtement
+
+**L'appui littéral tombe, et je ne fais pas semblant du contraire.** J'avais bâti la lucarne sur
+la réplique shippée de `belliard_pre` — `« Les flics patrouillent depuis la manif. Reste sur les
+toits. »` — dont le set-piece était l'exécution mot pour mot. **Cette citation ne justifie plus
+rien** : Muf n'est plus sur les toits, et prétendre le contraire serait un argument de gate
+recyclé de force.
+
+**Mais il y a un appui plus fort, et c'est une inversion, pas un écho.** Toute la géométrie
+shippée de muf tient en deux lignes de jeu : les menaces sont **aux fenêtres**, et
+`« On tire aux fenêtres, jamais dans la rue »` (bullet du tutoriel). La rue, dans ce jeu, est
+**le seul endroit où Muf n'est jamais** — c'est là que passent les civils qu'on ne touche pas.
+
+> Le set-piece photo est le premier moment du jeu où **Muf est dans la rue, à hauteur d'homme,
+> sans arme.** Il est à la place du livreur civil qu'on lui a appris à ne jamais toucher.
+
+Ça se branche directement sur la réplique 2 du briefing, écrite avant cette décision et qui la
+supporte sans un mot de retouche : `Bosser à quoi ? J'ai pas d'arme sur moi.` En haut, ne pas
+avoir d'arme était un détail. En bas, dans la rue, c'est **la définition de la scène**. Je
+préfère cet appui-là à l'ancien : il ne cite pas une ligne, il retourne une règle.
+
+#### Ce qui donne la distance, maintenant que la hauteur est partie
+
+Le 300 mm était justifié par la diagonale plongeante du toit. De plain-pied, trois sources la
+remplacent, et elles s'additionnent :
+
+1. **La longueur de la rue.** L'affût est en **bas** de rue (`x_norm ≈ 0,39`), la terrasse est en
+   **haut**, au carrefour. C'est la même enfilade de soixante à soixante-dix mètres qu'avant —
+   elle était en diagonale, elle est maintenant **à plat**. La distance n'a pas changé, son axe
+   si.
+2. **La largeur de la rue.** Il est sur le **trottoir opposé**. C'est ce qui rend le regard
+   possible sans être frontal — on ne traverse pas, donc on n'approche pas, donc on a besoin de
+   focale.
+3. **La profondeur de champ — le gain net de la décision.** À 300 mm de plain-pied, tout ce qui
+   est entre lui et la table (les passants, les autres tables, la circulation) **est dans l'axe
+   et hors du plan de netteté**. La longue focale ne sert plus seulement à rapprocher : elle
+   sert à **percer une foule**. C'est le seul cadrage où le 300 mm est photographiquement
+   nécessaire plutôt que confortable — et c'est period-correct, c'est de la photo de rue de 1998.
+
+_Note pour `game-designer` : la profondeur de champ est une **justification de fiction**, pas
+une demande de système. Si le rendu la suggère (un premier plan flou), tant mieux ; si elle
+reste dans le texte de la spec, la scène tient quand même. Je ne commande pas de feature._
+
+#### Le risque, qui change de nature — et c'est un gain
+
+**En haut, Muf regardait un monde auquel il n'appartenait pas. En bas, il est dans le même
+espace que sa cible**, et ça règle un problème que je traitais jusqu'ici à la rustine :
+
+- **La jauge de suspicion devient crédible sans explication.** Sur un toit, il fallait démontrer
+  qu'on peut entendre un obturateur à soixante mètres (je l'avais fait tenir par le chauffeur
+  posté sous la lucarne — une béquille honnête, mais une béquille). De plain-pied, **quelqu'un
+  peut simplement le voir** : un type immobile dans un renfoncement, un long tube noir sur
+  l'épaule, dans une rue qui passe. Il n'y a plus rien à justifier.
+- **Le chauffeur devient un personnage au lieu d'un mécanisme.** Il n'est plus « en bas de
+  l'immeuble de Muf » : il est **debout contre sa portière**, à trente mètres, dans le champ, en
+  train de faire exactement ce que fait Muf — **attendre et regarder la rue**. Deux hommes
+  immobiles dans la même rue, un seul a une raison avouable. C'est de là que vient `SPOTTED`, et
+  ça se photographie (l'art l'a mis dans le signalement).
+- **La menace n'est plus abstraite, elle est sociale.** Ce qui peut griller Muf, ce n'est pas un
+  système de détection : c'est **un passant qui trouve ça bizarre**. Le plus près du réel qu'on
+  puisse être, et le plus loin d'un cône de vision de jeu vidéo.
+- **La sortie existe déjà.** Un passage, ça traverse. Repéré, Muf **recule dans le noir et s'en
+  va par l'autre bout** — l'abort de l'ADR-0077 §7 a un décor, et toujours pas une mort.
+
+#### Ce qui tient encore de l'ancienne argumentation
+
+- **Zéro conflit de lecture — argument INTACT, et même renforcé.** Le set-piece se joue depuis
+  un endroit d'où l'on ne tire jamais : le passage est **zone d'exclusion** de tir depuis la
+  spec décor. Le joueur ne peut pas confondre le beat photo avec un beat de tir. Mieux : de
+  plain-pied, **Muf n'a pas la position d'un tireur**, il a celle d'un piéton.
+- **La ligne de vue tient, à plat.** Soixante à soixante-dix mètres en enfilade, avec la foule
+  dans l'axe — obstacle qui devient une ressource (§2.1, point 3 de la distance).
+- **Ce qui tombe :** « personne ne regarde en l'air ». Personne ne regardait en l'air ; **tout
+  le monde regarde la rue.** C'est le prix de la décision, il est payé par la crédibilité de la
+  suspicion (§2.1, « le risque change de nature »). Je le note pour que le gate voie l'échange
+  au lieu de le découvrir.
 
 ### 2.2 Lieu de la scène — RÉÉCRITE Rev.4 : la terrasse de la brasserie du carrefour
 
@@ -432,17 +505,24 @@ Trois raisons de préférer cette source à toute autre :
    Maréchaux qui coule toute la nuit : diesel, scooters, un bus. Zéro anachronisme, zéro
    technologie à dater.
 
-**Précision Rev.4 — QUI entend le déclencheur.** Une terrasse animée fait du bruit, donc
-l'objection est légitime : pourquoi le silence entre deux vagues serait-il dangereux ? Réponse
-diégétique, et elle ne coûte aucun asset : **ce n'est pas la terrasse qui entend, c'est la
-voiture de service.** Le chauffeur du Commandant attend en bas, moteur coupé, sur le trottoir
-**sous la lucarne** — à deux étages, pas à soixante mètres. Entre deux vagues il entend un
-obturateur ; quand le paquet descend, il n'entend plus rien. La chaîne d'alerte est courte et
-crédible : il lève la tête, il traverse, la table se vide (`SPOTTED`, §4.3).
+**Précision Rev.4, SIMPLIFIÉE Rev.5 — QUI repère Muf.** Une terrasse animée fait du bruit :
+pourquoi le silence entre deux vagues serait-il dangereux ? En Rev.4 je répondais par une
+béquille (le chauffeur posté juste sous la lucarne, seul capable d'entendre un obturateur à
+distance). **La descente au niveau de la rue supprime la béquille** : le danger n'est plus
+seulement d'être _entendu_, c'est d'être **remarqué**.
 
-_Statut : **net-new mineur, hors roster** (§8.6). Le chauffeur ne tire jamais, n'a pas de
-sprite, et peut rester **hors cadre** de la planche 2D. `concept-artist` est libre de le
-montrer ou pas ; la fiction fonctionne dans les deux cas._
+- **Le déclencheur reste le déclic qui trahit** — un obturateur de reflex, dans une rue, ça
+  s'entend à quelques mètres et **ça fait tourner les têtes**. Quand la vague descend, personne
+  n'entend rien. La règle mécanique est **inchangée** ; c'est sa justification qui devient
+  triviale.
+- **Le chauffeur est le regard le plus dangereux de la rue.** Debout contre sa portière à trente
+  mètres, il fait la même chose que Muf : il attend en regardant la rue. C'est un professionnel
+  de l'attente, et il est le seul dans le champ à avoir une raison de s'intéresser à un homme
+  immobile. Il lève la tête, il approche, la table se vide (`SPOTTED`, §4.3).
+
+_Statut : **net-new mineur, hors roster** (§8.6). Le chauffeur ne tire jamais et n'a pas de
+sprite. **Rev.5 : il n'est plus optionnel dans le cadre** — l'art l'a retenu comme un des
+signaux du signalement, donc il est **dans** la planche, debout contre sa portière._
 
 **~~Bonus de lisibilité~~ — PROPOSITION DÉCLINÉE AU GATE (R3-2). Ne pas re-proposer.**
 
@@ -488,17 +568,20 @@ Quatre raisons :
    engagée**. Il ne consomme pas le chrono de mission : la scène est gelée. **C-5 (contrôle
    delta Rev.3) :** les formulations « avant la boucle » et « scène pré-niveau » sont
    **retirées** — elles étaient vraies à Stalingrad, elles sont fausses depuis la
-   relocalisation, et elles induiraient un dev en erreur. **L'ellipse de la montée sur le toit
-   (et de la redescente) est portée par la phase `BRIEFING`** (techplan D-G ; §4.1 ligne 8,
-   « Tu montes sur le toit ») : skippable pour le joueur, jamais absente de la machine.
+   relocalisation, et elles induiraient un dev en erreur. **Rev.5 : l'ellipse à couvrir n'est
+   plus une montée sur un toit mais une simple traversée de rue** — portée par la même phase
+   `BRIEFING` (techplan D-G ; §4.1 ligne 9, « Le passage en face, en bas de rue »), skippable
+   pour le joueur, jamais absente de la machine. **C'est une simplification sèche :** aller se
+   mettre dans un renfoncement à trente pas coûte moins d'ellipse que monter six étages et
+   redescendre.
    _Note : la borne « une mission = 3-5 minutes » face au **nombre de re-entrées** est
    l'objet de la condition D-1 du contrôle delta — arbitrage `game-designer` +
    `senior-architect` + `pm`, pas ma lane. Voir §9.0bis pour ce que j'y dois en copy._
-2. **Ça justifie la solitude — celle de Muf, pas celle de la rue.** _Réécrit Rev.4 :_ la rue est
-   pleine, la terrasse est pleine ; **c'est le toit qui est vide.** Muf est le seul de la rue à
-   ne pas être en bas, et c'est exactement pour ça qu'il voit. Le risque au déclenchement ne
-   vient plus du silence de la rue mais de la proximité du chauffeur, deux étages sous lui
-   (§2.3).
+2. **Ça justifie la solitude — celle de Muf, pas celle de la rue.** _Réécrit Rev.5 :_ la rue est
+   pleine, la terrasse est pleine, **et Muf est dedans.** Il n'est plus au-dessus du monde, il
+   est **le seul de la rue à ne pas y être pour la raison de tout le monde** — c'est une
+   solitude plus dure et plus juste que celle du toit. Le risque au déclenchement ne vient plus
+   du silence : il vient du fait que **n'importe qui peut le voir** (§2.1, §2.3).
 3. **Ça ne casse pas le premier gig.** La rue est la même, la **nuit** ne l'est pas : c'est un
    **retour** rue Belliard, pas la nuit du tutoriel. Le joueur a déjà appris à fuir cette rue ;
    il y revient pour la regarder. Le placement exact dans la progression reste `pm`.
@@ -527,7 +610,7 @@ levier. Aucune valeur de tuning ici — c'est `game-designer`.
 | **La patronne**            | **La femme qui possède la nuit légale** — un groupe qui tient une partie des boîtes du centre, celles qui déclarent leurs recettes et perdent leur clientèle au profit des free parties. Manteau clair, port de tête tranquille. **Le client, pas la proie** (§0bis.2). | **Non.** Jamais nommée. Elle n'est que « la femme d'en face », puis « la société ». |
 | **La berline**             | **Sa voiture de service à lui**, chauffeur au volant. Elle attend, **puis elle l'emmène et s'en va** sur la fin de scène (§3.2ter). C'est elle qui fait du dîner une **faute** (§3.2bis) — jamais un accessoire de la patronne.                                         | Identifiée par sa **plaque** seulement.                                             |
 | **Les autres couples**     | Le reste de la terrasse et du trottoir : d'autres tables, d'autres mains tenues, d'autres baisers. **Ils ne sont pas du décor, ils sont la difficulté** — le geste ne distingue personne (§3.2).                                                                        | Anonymes, muets, non interactifs.                                                   |
-| **Le chauffeur** _(Rev.4)_ | En bas, sous la lucarne : celui qui peut entendre le déclencheur entre deux vagues (§2.3).                                                                                                                                                                              | Non. Peut rester hors cadre.                                                        |
+| **Le chauffeur** _(Rev.5)_ | **Debout contre sa portière**, à trente mètres, dans le champ. Il attend en regardant la rue — comme Muf. C'est **lui qui repère** (§2.3), et c'est un des signaux visuels de la scène.                                                                                 | Non. **Dans le cadre**, plus optionnel.                                             |
 
 **Pourquoi la patronne reste anonyme** — trois bénéfices, dont un **nouveau en Rev.4** : (a)
 zéro cast nommé à faire apprendre au joueur ; (b) **le visage vaut le nom** — ce qu'on lui vole
@@ -702,7 +785,7 @@ le joueur la découvre dans la lunette.
 | 6   | DISPATCH | `Lui.`                                                                                   | `assets/boss/commander_shielded.png` | `Le Commandant, chef de la BAC de nuit` |
 | 7   | MUF      | `...le Commandant. En terrasse. Tranquille.`                                             | `assets/courier/rider.png`           | `Muf, le coursier à moto`               |
 | 8   | KENZA    | `Y aura du monde. Trente couverts, la rue pleine. Tu cherches un visage, pas une table.` | —                                    | —                                       |
-| 9   | DISPATCH | `Tu montes sur le toit, la lucarne au bout de la rue. Tu regardes. Tu comprendras.`      | —                                    | —                                       |
+| 9   | DISPATCH | `Le passage en face, en bas de rue. Tu te mets dedans, tu regardes. Tu comprendras.`     | —                                    | —                                       |
 | 10  | KENZA    | `Le feu lâche un paquet de bagnoles en haut de la rue. Quand ça roule, on t'entend pas.` | —                                    | —                                       |
 | 11  | KENZA    | `Quand ça roule pas, tu respires. Et t'attends le vert.`                                 | —                                    | —                                       |
 
@@ -724,8 +807,12 @@ le joueur la découvre dans la lunette.
 pas une table` enseigne diégétiquement la règle du niveau (le geste ne distingue rien, le
   visage si — §3.2) sans révéler qu'il y aura un geste. Registre KENZA de terrain, zéro
   tutoriel plaqué.
-- Ligne 9 : `Tu comprendras.` — DISPATCH **refuse** de dire ce qui va se passer. `Tu montes sur
-le toit` reste le rappel exact de la ligne shippée `« Reste sur les toits. »` (`belliard_pre`).
+- Ligne 9 : `Tu comprendras.` — DISPATCH **refuse** de dire ce qui va se passer ; le dossier
+  s'arrête là où l'œil commence. **Rev.5 : la ligne ne cite plus `« Reste sur les toits. »`** —
+  elle fait l'inverse, elle envoie Muf **dans la rue** (§2.1). C'est le beat le plus discret du
+  script : le joueur a passé tout le jeu à ne jamais être là. DISPATCH ne le souligne pas — on
+  ne commente pas ce qu'on veut faire ressentir. Et la réplique 2, `J'ai pas d'arme sur moi`,
+  écrite avant cette décision, la porte toute seule.
 - Lignes 10-11 : couverture sonore enseignée par KENZA. Elle nomme le _quand_, jamais le
   _comment_, et ne chiffre **jamais** le cycle (tuning = Sacha). Deux KENZA de suite : c'est
   volontaire, c'est elle qui tient le terrain, et la scène se ferme sur la patience — pas sur
@@ -959,15 +1046,15 @@ de gate. _On conçoit ensemble, on livre séparément._
 
 Le VISUEL appartient à `concept-artist` → `lead-art`. Voici ce qu'ils ont besoin de savoir.
 
-| Élément                   | Rôle dans la scène                                                                                                                                                                                                                                                                            | Poses / états demandés                                                                                                                                                   |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Le Commandant**         | La cible. Silhouette **déjà ratifiée** — tête nue, ni casque ni bouclier — mais ici **en civil de soirée** : c'est une information, pas une licence de redesign. Le visage reste le seul discriminant.                                                                                        | `se lève à son arrivée` · `attablé, mains jointes, visage relevé` (= la preuve maîtresse) · `assis, de trois quarts`.                                                    |
-| **La patronne**           | Le client (§0bis.2). Femme, manteau clair (contraste B&N : le read se fait au ton). Jamais nommée, visage lisible. **Cadrage à égalité avec lui** — jamais cadrée seule, jamais en objet : c'est elle qui a le pouvoir dans la scène.                                                         | `traverse la terrasse` · `attablée, mains jointes, visage relevé` · `monte en voiture`.                                                                                  |
-| **Les autres couples**    | La difficulté. Trois ou quatre couples/tables qui font des gestes **de même famille** — dont un **baiser**, faux positif assumé. Ils rendent le geste non discriminant et le visage décisif (§3.2).                                                                                           | Figuration, non interactive, jamais en amorce nette au point de voler la lecture.                                                                                        |
-| **La berline**            | **Sa voiture de service**, en double file, chauffeur au volant. Elle attend, **puis elle démarre et s'en va avec lui seul** sur les 3 dernières secondes (§3.2ter). C'est la pièce qui fait la faute (§3.2bis). Plaque lisible **sous les phares du paquet** (jamais « sous le feu » — C-4).  | `à l'arrêt, chauffeur au volant` · `il monte, elle reste à table` · `en départ, plaque lisible sous les phares`.                                                         |
-| **Le petit paquet**       | Texture de table. **Posé entre les verres, jamais en train de passer d'une main à l'autre** (§3.2) — un objet transféré redeviendrait un paiement et casserait le levier.                                                                                                                     | Statique. Aucune réplique ne le nomme.                                                                                                                                   |
-| **Backdrop du set-piece** | **Rev.4 —** la terrasse de la brasserie du carrefour, rue Belliard : marquise, une dizaine de tables allumées débordant sur le trottoir, la rue **peuplée**, les rideaux de fer taggés et la BOULANGERIE en amorce, le **feu tricolore**. Vue plongeante depuis la lucarne du bout de la rue. | Backdrop 2D dédié (ADR-0077 §9) — **pas** un zoom dans `street-wide.png`, mais la **même rue**, reconnaissable au premier coup d'œil (rideaux taggés, boulangerie, feu). |
-| **Planche contact**       | Le verdict. B&N photocopié, bords de perforation, croix au feutre gras sur ce qui compte.                                                                                                                                                                                                     | Surface UI — `ux-designer` + art flow.                                                                                                                                   |
+| Élément                   | Rôle dans la scène                                                                                                                                                                                                                                                                                                                                                                                             | Poses / états demandés                                                                                                                                                                                                                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Le Commandant**         | La cible. Silhouette **déjà ratifiée** — tête nue, ni casque ni bouclier — mais ici **en civil de soirée** : c'est une information, pas une licence de redesign. Le visage reste le seul discriminant.                                                                                                                                                                                                         | `se lève à son arrivée` · `attablé, mains jointes, visage relevé` (= la preuve maîtresse) · `assis, de trois quarts`.                                                                                                                                                                            |
+| **La patronne**           | Le client (§0bis.2). Femme, manteau clair (contraste B&N : le read se fait au ton). Jamais nommée, visage lisible. **Cadrage à égalité avec lui** — jamais cadrée seule, jamais en objet : c'est elle qui a le pouvoir dans la scène.                                                                                                                                                                          | `traverse la terrasse` · `attablée, mains jointes, visage relevé` · `monte en voiture`.                                                                                                                                                                                                          |
+| **Les autres couples**    | La difficulté. Trois ou quatre couples/tables qui font des gestes **de même famille** — dont un **baiser**, faux positif assumé. Ils rendent le geste non discriminant et le visage décisif (§3.2).                                                                                                                                                                                                            | Figuration, non interactive, jamais en amorce nette au point de voler la lecture.                                                                                                                                                                                                                |
+| **La berline**            | **Sa voiture de service**, en double file, chauffeur au volant. Elle attend, **puis elle démarre et s'en va avec lui seul** sur les 3 dernières secondes (§3.2ter). C'est la pièce qui fait la faute (§3.2bis). Plaque lisible **sous les phares du paquet** (jamais « sous le feu » — C-4).                                                                                                                   | `à l'arrêt, chauffeur au volant` · `il monte, elle reste à table` · `en départ, plaque lisible sous les phares`.                                                                                                                                                                                 |
+| **Le petit paquet**       | Texture de table. **Posé entre les verres, jamais en train de passer d'une main à l'autre** (§3.2) — un objet transféré redeviendrait un paiement et casserait le levier.                                                                                                                                                                                                                                      | Statique. Aucune réplique ne le nomme.                                                                                                                                                                                                                                                           |
+| **Backdrop du set-piece** | **Rev.5 —** la terrasse de la brasserie du carrefour, rue Belliard : marquise, une dizaine de tables allumées débordant sur le trottoir, la rue **peuplée**, les rideaux de fer taggés et la BOULANGERIE en amorce, le **feu tricolore**. **Vue de PLAIN-PIED, depuis la bouche du passage, trottoir opposé, bas de rue** — hauteur d'œil d'un homme debout, la foule dans l'axe entre l'objectif et la table. | Backdrop 2D dédié (ADR-0077 §9) — **pas** un zoom dans `street-wide.png`, mais la **même rue**, reconnaissable au premier coup d'œil (rideaux taggés, boulangerie, feu). **La hauteur de caméra est un livrable, pas un détail** : c'est elle qui donne visages / mains / serviette / chauffeur. |
+| **Planche contact**       | Le verdict. B&N photocopié, bords de perforation, croix au feutre gras sur ce qui compte.                                                                                                                                                                                                                                                                                                                      | Surface UI — `ux-designer` + art flow.                                                                                                                                                                                                                                                           |
 
 **Demande AUTORISÉE par le gate (F-4).** Elle s'ouvre auprès de `concept-artist` → `lead-art`
 avec **deux contraintes attachées par Karim**, transmises telles quelles — l'arbitrage

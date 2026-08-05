@@ -64,14 +64,14 @@ surface turns away, high-contrast, flat ambient lighting, hard crisp cut-out edg
 flat uniform bright magenta #FF3CDC field filling every gap and every space between the
 shapes, no text`
 
-| clause | ce qu'elle gagne |
-| --- | --- |
-| `black and white comic-book ink illustration` | medium positif ; remplace `photocopied … xerox` qui appelait la dégradation |
-| `confident black ink outlines of even weight` | remplace `rough black ink linework` — `rough` autorisait le tremblement/la dissolution ; `confident … even weight` est exactement ce que la référence montre |
-| `solid black shapes and clean flat pale grey areas` | remplace `coarse halftone toner dots` : c'est LA clause de remplacement. Les gris deviennent des **aplats**, pas une trame |
-| `bold ink hatching where a surface turns away` | c'est le « sketchy » de Bertrand — la valeur portée par la hachure, pas par le bruit. Sans elle on tombe dans le vectoriel plat |
-| `high-contrast` | conservé, sans `black and white` redondant avec l'ouverture de la clause |
-| `flat ambient lighting`, `hard crisp cut-out edges`, champ magenta `#FF3CDC`, `no text` | **inchangés, verbatim** — process de keying et anti-ombre, hors sujet du retour |
+| clause                                                                                  | ce qu'elle gagne                                                                                                                                             |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `black and white comic-book ink illustration`                                           | medium positif ; remplace `photocopied … xerox` qui appelait la dégradation                                                                                  |
+| `confident black ink outlines of even weight`                                           | remplace `rough black ink linework` — `rough` autorisait le tremblement/la dissolution ; `confident … even weight` est exactement ce que la référence montre |
+| `solid black shapes and clean flat pale grey areas`                                     | remplace `coarse halftone toner dots` : c'est LA clause de remplacement. Les gris deviennent des **aplats**, pas une trame                                   |
+| `bold ink hatching where a surface turns away`                                          | c'est le « sketchy » de Bertrand — la valeur portée par la hachure, pas par le bruit. Sans elle on tombe dans le vectoriel plat                              |
+| `high-contrast`                                                                         | conservé, sans `black and white` redondant avec l'ouverture de la clause                                                                                     |
+| `flat ambient lighting`, `hard crisp cut-out edges`, champ magenta `#FF3CDC`, `no text` | **inchangés, verbatim** — process de keying et anti-ombre, hors sujet du retour                                                                              |
 
 Net : 56 mots contre 44. Le budget assemblé reste dans la bande tolérée (§3.1 règle 3),
 chaque mot ajouté est une clause de trait justifiée ici.
@@ -93,11 +93,11 @@ Deux découpes portaient une clause de trame dans leur sujet, ce qui contredirai
 queue partagée :
 
 - `exchange_close` : `; toner dots large and sparse` → `; drawn with heavy black outlines
-  and broad flat greys` (même intention — tenir la lisibilité en gros plan — dans le
+and broad flat greys` (même intention — tenir la lisibilité en gros plan — dans le
   nouveau registre).
 - `berline_plate` : `smooth and free of toner; toner dots elsewhere large and sparse` →
   `smooth and unbroken; heavy black outlines and broad flat greys elsewhere`. `free of
-  toner` était en plus une formulation par soustraction, interdite §3.1.
+toner` était en plus une formulation par soustraction, interdite §3.1.
 
 ### `plateEditB` (prompt d'édition en `editChain`)
 
@@ -139,8 +139,8 @@ Mon avis, à charge pour `lead-art` de trancher :
 
 1. **La bible décrit mal ce que le jeu fait déjà.** Le décor que Bertrand cite en référence
    ne respecte pas ce vocabulaire — il n'en contient **aucun mot**. Le rendu maison shippé
-   est un trait encré, pas une photocopie. La règle 4 décrit une *intention de monde*
-   (fanzine 1998, tract photocopié) et la formule comme une *recette de prompt*. C'est la
+   est un trait encré, pas une photocopie. La règle 4 décrit une _intention de monde_
+   (fanzine 1998, tract photocopié) et la formule comme une _recette de prompt_. C'est la
    confusion qui nous a coûté cette plate.
 2. **La bible se contredit déjà elle-même**, et dans notre sens : §2 note 90 dit
    « **No** heavy halftone dot-screen on the sprite: it would eat the silhouette ». C'est
