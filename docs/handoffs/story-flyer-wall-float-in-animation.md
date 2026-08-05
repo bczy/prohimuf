@@ -73,6 +73,49 @@ re-vérification au merge, pas l'allocation à l'écriture.
 **PR :** [#145](https://github.com/bczy/prohimuf/pull/145) · **branche :** `claude/flyer-wall-float-in-animation`
 **Palier : 🚚 TOURNÉE COMPLÈTE** — escaladé depuis la course express, voir §Palier.
 
+## Merge — levée de gate assumée par Bertrand (2026-08-05)
+
+`panel-verdict` était **rouge au merge**, et la décision de merger malgré lui est humaine,
+explicite, et tracée ici plutôt que subie.
+
+**Ce qui était vert** : `bmad-review`, `edge-case-hunter`, `security-review` et le skeptic
+ont tous rendu sur le commit `eee85c1e`. Les cinq gates de design sont passés — `ux-designer`,
+`lead-art` (trois passages, deux réserves bloquantes levées en route), `narrative-designer`
+puis `lead-game-designer` en arbitrage. `Lint · Typecheck · Test`, E2E et la génération d'art
+sont verts.
+
+**Ce qui manquait** : le reviewer `code-review` n'a pas rendu. Diagnostiqué au niveau du job,
+et ce n'est ni un finding ni une panne d'infrastructure :
+
+```
+"subtype": "error_max_turns"
+##[error]--json-schema was provided but Claude did not return structured_output
+```
+
+Il a épuisé son plafond de `--max-turns 40` (`.github/actions/panel-reviewer/action.yml:91`)
+AVANT d'émettre ses findings — donc le job échoue sans rien dire de ce qu'il avait trouvé.
+Cause structurelle : ce diff fait 23 fichiers et ~2700 lignes ajoutées, dont une masse de
+documentation produite par les gates successifs, et `code-review` est celui qui lit le code
+en profondeur. **Plus la PR grossit, moins elle est relisible**, et le gabarit du verdict ne
+distingue pas « annulé », « échoué » et « épuisé » : il dit uniformément « did not complete »
+et propose deux remèdes (quota, token) dont aucun ne s'appliquait ici.
+
+**Non corrigé dans cette PR, volontairement** : `--max-turns` vit dans `.github/**`, le lane
+extrait vers la [PR #168](https://github.com/bczy/prohimuf/pull/168) précisément pour ne plus
+modifier le gate depuis une PR qu'il juge. Le relever ici aurait recréé le BLOQUANT qu'on
+venait de fermer. À porter dans #168.
+
+**Suites dues après merge** : amendement du `pregame-copy-deck.md` §2.2-§2.4 (motifs
+superseded), repli des lignes de canon dans la bible narrative, ligne « un luminaire dessiné
+n'est pas une source de lumière » au bible d'art (`tech-writer`), et les deux retouches
+optionnelles du lustre (R4-1).
+
+**Défaut de process à porter par `producer`** : cinq collisions de sessions parallèles sur
+cette branche — deux fois le workflow du panel, deux arbitrages de design opposés sur la même
+surface, une implémentation faite pendant qu'un arbitrage était en cours. Règle proposée par
+`lead-game-designer` (K-A4) : **une surface = un chemin de décision** ; un second avis
+s'ajoute en objection dans le document existant, jamais en fichier concurrent.
+
 ## Quoi
 
 Les flyers de NIVEAUX apparaissaient tous d'un coup. Ajout d'une entrée en cascade
