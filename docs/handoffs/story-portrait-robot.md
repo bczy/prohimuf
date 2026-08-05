@@ -354,6 +354,26 @@ scores that misprediction openly rather than hiding it in an estimate.
 
 ---
 
+## 5bis. ADR COLLISION & MERGE RESOLUTION — producer (Marion) — 2026-08-05
+
+**Process finding recorded for all long-running stories.**
+
+**Collision:** During parallel development, `main` merged PR #159 (ADR-0081: MCP level-editor server) while portrait-robot story was in-flight carrying ADR-0081 (input & presentation layer), allocated at story intake before PR #159 merged. Two ADRs with the same number existed post-merge.
+
+**Root cause:** ADR numbers are allocated at story opening by producer (§COLLABORATION.md rule #9). Recheck-at-merge is stated in ADR filing protocol but was not executed — once main moved ahead, portrait-robot branch did not re-verify numbering against origin/main before seeking merge.
+
+**Resolution:**
+1. Verified 0082 free across local, index, origin/main.
+2. Renamed file: `docs/adr/0081-portrait-robot-input-and-presentation-layer.md` → `0082-…`
+3. Updated ADR header: renumbering note + collision timestamp.
+4. Replaced ADR-0081 → ADR-0082 in 64 references (12 TS files, 8 Markdown docs, 2 adjacent ADRs).
+5. Merged origin/main; regenerated `docs/adr/README.md` and `public/adr/index.html` (conflicts on generated files resolved by script).
+6. Typecheck remains ✓ after merge.
+
+**Lesson for future long stories:** ADR numbering must be re-verified at **final merge cycle**, not just at opening, when the story has lived long enough for origin/main to move. Producer must block merge on stale ADR numbers, same as for stale branch. Cost of fix is O(references to ADR); cost of silent collision is undetectable until review — hence rule-level, not hope-level.
+
+---
+
 ## 6. CODE-REVIEW PANEL — *awaiting dev completion*
 
 *Placeholder: 4-reviewer triage (code-review high, bmad-code-review, bmad-review-edge-case-hunter, security-review), architect integration review.*
