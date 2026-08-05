@@ -3,3 +3,5 @@ Dispatch marker for .github/workflows/gen-photo-sprites.yml — touch and push w
 run: plate + berlines + table_apres — gate v5 PASS, kontext via POLLINATIONS_TOKEN
 run 2: v1 assets supprimés pour régénération (plate + poses), gate v5
 run 3: compte rechargé (7,01 pollen)
+run 4: plate seule — kontext img2img via gen.pollinations.ai (paid farm, résolution exacte
+  2048x1152 + conditionnement image= honoré, cf. gen-photo-sprites.mjs)
