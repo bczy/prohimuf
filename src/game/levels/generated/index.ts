@@ -1,4 +1,9 @@
-import { planToLevelArt, planToLevelConfig, type LevelPlan } from "@game/levels/levelPlan";
+import {
+  planToLevelArt,
+  planToLevelConfig,
+  validateCatalogue,
+  type LevelPlan,
+} from "@game/levels/levelPlan";
 import { registerGeneratedArchetypes } from "@game/types/enemyTypes";
 import type { LevelArt } from "@game/levels/levelArt";
 import type { LevelConfig } from "@game/levels/levels";
@@ -12,10 +17,10 @@ import { plan as fixture } from "./fixture";
 export const GENERATED_PLANS: readonly LevelPlan[] = [fixture];
 
 /**
- * Two plans sharing an id corrupt the level tables silently: `LEVEL_ART` is
- * last-wins while `ALL_LEVELS.find` is first-wins, so one level would be played
- * with the other's decor. Throwing at import turns that into an unmissable crash
- * on the first line of the app instead.
+ * The fail-fast on a duplicate id, as a throw. The RULE itself lives once, in
+ * `validateCatalogue` (levelPlan.ts): this is only the wrapper that turns its issues
+ * into the unmissable crash the runtime wants — two plans sharing an id would corrupt
+ * the level tables silently (`LEVEL_ART` last-wins vs `ALL_LEVELS.find` first-wins).
  *
  * Only the DUPLICATE-WITHIN-GENERATED half lives here: checking a collision with
  * a shipped id would need `LEVELS`, and `levels.ts` imports THIS module (cycle).
@@ -23,18 +28,28 @@ export const GENERATED_PLANS: readonly LevelPlan[] = [fixture];
  * unnoticed, so that half is a CI invariant in generatedLevels.test.ts.
  */
 export function assertDistinctPlanIds(plans: readonly LevelPlan[]): void {
-  const seen = new Set<string>();
-  for (const plan of plans) {
-    if (seen.has(plan.id)) {
-      throw new Error(`generated level "${plan.id}" is declared twice — ids must be unique`);
-    }
-    seen.add(plan.id);
-  }
+  const issues = validateCatalogue(plans);
+  if (issues.length > 0) throw new Error(issues.map((i) => i.message).join("; "));
 }
 
-assertDistinctPlanIds(GENERATED_PLANS);
+/**
+ * The bootstrap fail-fast — ADR-0081 D6, a NARROW amendment to ADR-0075 §6: the throw
+ * left the module body so an agent's MCP tool can import this catalogue mechanically
+ * and REPORT a collision instead of dying on it. It did not disappear: the composition
+ * root (`src/main.tsx`) calls this at module body, before the first render, so the app
+ * still crashes on its first frame rather than playing a split-brained level. Idempotent
+ * (a pure check), so React StrictMode's double-mount is harmless.
+ *
+ * Only the throw moved. The archetype registration below stays at import: it is
+ * idempotent, all-`weight: 0` and inobservable, and `validateLevel.ts` depends on it
+ * through a deliberate side-effect import so the standalone `validate` tool sees the
+ * generated kinds.
+ */
+export function registerGeneratedLevels(): void {
+  assertDistinctPlanIds(GENERATED_PLANS);
+}
 
-// The module's only other side effect, and it is idempotent: the archetypes must be
+// The module's only side effect, and it is idempotent: the archetypes must be
 // known before anything resolves a kind. They all carry `weight: 0`, so this
 // cannot change any default pool.
 for (const plan of GENERATED_PLANS) registerGeneratedArchetypes(plan.archetypes);

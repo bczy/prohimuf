@@ -1,0 +1,113 @@
+import { describe, expect, it } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+
+import { createServer } from "../mcp-level-editor/server.mjs";
+
+/**
+ * The server stays a thin facade (ADR-0081 D3): this suite drives it exactly
+ * like a real MCP client would (JSON-RPC over an in-memory transport pair, no
+ * stdio needed) and asserts only that `validate`/`inspect` DISPATCH to
+ * `core.mjs` correctly — the actual validation rules are `core.mjs`'s test
+ * suite (`mcpCore.test.mjs`), not duplicated here.
+ */
+async function connectedClient() {
+  const server = createServer();
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: "test-client", version: "0.0.0" });
+  await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
+  return client;
+}
+
+function jsonOf(result) {
+  return JSON.parse(result.content[0].text);
+}
+
+describe("level-editor MCP server", () => {
+  it("answers a null/primitive plan over the WIRE with plan/malformed, not a schema error (panel r7)", async () => {
+    // The library test proves core.validate never throws; this proves the TRANSPORT
+    // lets those values reach it. A z.record planShape used to reject them first, so
+    // an agent got an opaque JSON-RPC error instead of the documented issue shape.
+    const client = await connectedClient();
+    for (const plan of [null, 42, "plan", [], true]) {
+      const result = await client.callTool({ name: "validate", arguments: { plan } });
+      expect(result.isError).not.toBe(true);
+      expect(jsonOf(result).issues.map((i) => i.code)).toContain("plan/malformed");
+    }
+  });
+
+  it("lists ping, validate, inspect, scaffold, dryrun and preview among its tools", async () => {
+    const client = await connectedClient();
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toEqual(
+      expect.arrayContaining(["ping", "validate", "inspect", "scaffold", "dryrun", "preview"]),
+    );
+  });
+
+  it("validate({ levelId: 'fixture' }) round-trips through the wire to core.mjs", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({ name: "validate", arguments: { levelId: "fixture" } });
+    expect(jsonOf(result)).toEqual({ issues: [] });
+  });
+
+  it("validate reports an unknown levelId as an issue, not a JSON-RPC error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "validate",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).not.toBe(true);
+    expect(jsonOf(result).issues[0].code).toBe("plan/unknown-level-id");
+  });
+
+  it("inspect({ levelId: 'fixture' }) rends the plan/config/art/assets shape", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({ name: "inspect", arguments: { levelId: "fixture" } });
+    const parsed = jsonOf(result);
+    expect(parsed.plan.id).toBe("fixture");
+    expect(parsed.assets.missing.length).toBeGreaterThan(0);
+  });
+
+  it("inspect on an unknown levelId surfaces the thrown error as an MCP tool error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "inspect",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("scaffold refuses an unsafe id over the wire, before any disk access", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "scaffold",
+      arguments: { plan: { id: "../escape" } },
+    });
+    expect(result.isError).not.toBe(true);
+    const parsed = jsonOf(result);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.issues[0].code).toBe("scaffold/invalid-id");
+  });
+
+  // dryrun/preview resolve the plan and throw on an unknown id BEFORE touching a
+  // dev server or a browser (`resolvePlanOrThrow` runs first in core.mjs) — so
+  // this exercises the wire without needing Chromium or vite in this suite; the
+  // browser-driving path is `dryrun-fixture.mjs` (see its own header comment).
+  it("dryrun on an unknown levelId surfaces the thrown error as an MCP tool error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "dryrun",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("preview on an unknown levelId surfaces the thrown error as an MCP tool error", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "preview",
+      arguments: { levelId: "does-not-exist" },
+    });
+    expect(result.isError).toBe(true);
+  });
+});

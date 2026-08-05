@@ -1,0 +1,243 @@
+name: Generate plan backdrop (paid)
+
+# SP2 phase (a) — spec-level-harness-sp2 §3/§4.1, plan T3. Dispatches
+# gen-street-paid.mjs --plan <level_id> for ONE generated level
+# (src/game/levels/generated/<level_id>.ts) and commits the resulting
+# public/assets/levels/<level_id>/<file>.png back to the branch.
+#
+# Budget guard (spec §2.1, cap corrected by the code-review panel on PR #153/
+# #151 — see docs/game-design/plan-level-harness-sp2.md T3):
+#   - the cap counts PAID ATTEMPTS, not successful commits — a paid call whose
+#     asset commit-back later fails must still count, so a re-dispatch cannot
+#     spend past the cap;
+#   - a dedicated counter file, `public/assets/levels/<level_id>/.paid-attempts`,
+#     is appended to and PUSHED before the paid call ever runs (a push failure
+#     here aborts the job — no paid call without a trace);
+#   - the guard step counts commits touching that file on `origin/main..HEAD`
+#     with `--full-history` (default history simplification can prune a
+#     path-touching commit away across a merge — under-counting paid attempts
+#     is the one direction this guard must never err in) and fails at >= 3,
+#     BEFORE the increment step runs (so exactly 3 attempts are allowed,
+#     not 2);
+#   - a commit-back failure AFTER a successful paid call is a hard FAIL, never
+#     a warning — the spent attempt is never silently dropped from the count
+#     (its trace commit is already pushed), and the generated PNG is uploaded
+#     as a CI artifact so the paid-for art is never lost with the runner;
+#   - BEFORE any of that, a short-circuit step applies the script's own
+#     skip-if-exists idempotence (gen-street-paid.mjs runPlanMode) at workflow
+#     level: re-dispatching a level whose backdrop is already on the branch is
+#     a clean green no-op — no attempt recorded, nothing paid — unless
+#     force=true (panel run-2 on PR #156).
+#
+# Both pushes use the same 3-attempt `git pull --rebase --autostash` retry as
+# the sibling workflows (gen-plan-sprites.yml, gen-plan-verify.yml): phases
+# (a)/(c)/(d) are independently dispatchable against the SAME branch, so a
+# concurrent commit-back from another family must not hard-fail this one.
+# Cap semantics survive the retry: the rebase REPLAYS the one local trace
+# commit onto the fetched branch — it never creates a second trace commit for
+# the same attempt.
+#
+# One workflow run == one level == one paid attempt at most; the concurrency
+# group serializes concurrent dispatches for the SAME level_id (a second
+# in-flight run for the same level would otherwise read the guard's commit
+# count before the first run's trace commit lands, letting two runs both pass
+# the same "2 so far" check and spend a 4th attempt between them).
+on:
+  workflow_dispatch:
+    inputs:
+      level_id:
+        description: "Generated level id (src/game/levels/generated/<id>.ts)"
+        required: true
+        type: string
+      force:
+        description: "Regenerate even when the backdrop already exists on the branch (spends a paid attempt)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-plan-backdrop-${{ github.event.inputs.level_id }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    # Never on main — the same guard as gen-level-art.yml's; this workflow has
+    # no push trigger to reason about, only the manual dispatch.
+    if: github.ref_name != 'main'
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      LEVEL_ID: ${{ github.event.inputs.level_id }}
+      FORCE: ${{ inputs.force && '1' || '0' }}
+    steps:
+      # FIRST, before the id touches any path, git command or dynamic import:
+      # level_id is the one attacker-influenced input of this job (which holds
+      # `contents: write` and a paid-API secret), and loadPlan.mjs feeds it to
+      # a jiti import that EXECUTES the resolved module — an allowlist, not an
+      # escape (panel run-2 on PR #156; same defense-in-depth doctrine as the
+      # env-var indirection already used for run: interpolation).
+      - name: Validate level_id (allowlist)
+        id: validate
+        run: |
+          set -euo pipefail
+          if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
+            echo "::error::invalid level_id '${LEVEL_ID}' — a generated plan id must match ^[a-z0-9-]+$ (see src/game/levels/generated/); refusing to use it in paths or dynamic imports."
+            exit 1
+          fi
+          echo "level_id '${LEVEL_ID}' is well-formed"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Sync with origin (fetch main + pull the dispatched branch)
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git pull --ff-only origin "$GITHUB_REF_NAME"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      # gen-street-paid.mjs --plan resolves the LevelPlan through
+      # scripts/lib/loadPlan.mjs → jiti (a devDependency): without a real
+      # install the import throws before any paid call — AFTER the attempt
+      # trace is already pushed, silently burning one of the 3 capped tries.
+      # Runs AFTER the branch sync so the install matches the pulled lockfile.
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # The script's own idempotence ("skipped when the file exists, unless
+      # FORCE=1") applied at WORKFLOW level, BEFORE the guard and BEFORE the
+      # attempt trace: re-dispatching an already-generated level must be a
+      # clean no-op, never a burned capped attempt followed by a hard fail in
+      # the commit step (panel run-2 on PR #156). planRunTarget is the ONE
+      # place that knows the target path — resolved through the same code,
+      # never re-derived here.
+      - name: Short-circuit — backdrop already generated
+        id: precheck
+        run: |
+          set -euo pipefail
+          out=$(node --input-type=module -e '
+            import { loadPlan } from "./scripts/lib/loadPlan.mjs";
+            import { planRunTarget } from "./scripts/gen-street-paid.mjs";
+            const plan = await loadPlan(process.env.LEVEL_ID);
+            console.log(planRunTarget(plan).outFile);
+          ')
+          if [ "${FORCE:-0}" != "1" ] && [ -f "$out" ]; then
+            echo "backdrop for '${LEVEL_ID}' already generated ($(basename "$out")) — nothing to pay, skipping every paid step; re-dispatch with force=true to regenerate."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Guard — cap 3 PAID ATTEMPTS per level per PR
+        if: steps.precheck.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          counter="public/assets/levels/${LEVEL_ID}/.paid-attempts"
+          # A counter never committed on this branch counts as 0 attempts —
+          # `git log` on a path with no history simply returns nothing.
+          # --full-history: never let default history simplification prune a
+          # path-touching commit across a merge — a paid attempt whose change
+          # a merge resolution later discarded STILL counts against the cap.
+          attempts=$(git log --full-history --oneline origin/main..HEAD -- "$counter" | wc -l | tr -d ' ')
+          echo "paid attempts so far for '${LEVEL_ID}': ${attempts}"
+          if [ "$attempts" -ge 3 ]; then
+            echo "::error::level '${LEVEL_ID}' already has ${attempts} paid backdrop attempt(s) on this PR (hard cap: 3) — escalate to a human before dispatching this workflow again for this level."
+            exit 1
+          fi
+
+      - name: Record a paid attempt (commit + PUSH, before the paid call)
+        if: steps.precheck.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          counter="public/assets/levels/${LEVEL_ID}/.paid-attempts"
+          mkdir -p "$(dirname "$counter")"
+          # Content is informative only (timestamp + run id) — the cap counts
+          # COMMITS touching this path, never the file's own content.
+          echo "$(date -u +%FT%TZ) run=${GITHUB_RUN_ID}" >> "$counter"
+          git add -f "$counter"
+          git commit -m "chore(assets): record a paid backdrop attempt for ${LEVEL_ID}"
+          # Same 3-attempt rebase retry as the sibling workflows' commit-back.
+          # The rebase replays the ONE local trace commit on top of the fetched
+          # branch — it never re-commits it, so a retried push still records
+          # exactly one attempt against the cap.
+          pushed=0
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              pushed=1
+              break
+            fi
+            echo "push attempt $attempt rejected — rebasing and retrying"
+            git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::could not push the paid-attempt trace commit after 3 attempts — refusing to spend a paid call with no trace of it."
+            exit 1
+          fi
+
+      - name: Generate the backdrop (paid)
+        if: steps.precheck.outputs.skip != 'true'
+        run: node scripts/gen-street-paid.mjs --plan "$LEVEL_ID"
+
+      - name: Commit the generated backdrop
+        if: steps.precheck.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f "public/assets/levels/${LEVEL_ID}"
+          if git diff --cached --quiet; then
+            echo "::error::the paid call ran but produced no new committable file for '${LEVEL_ID}' — the attempt is already spent (its trace commit is pushed) but nothing else was committed."
+            exit 1
+          fi
+          git commit -m "chore(assets): generate paid backdrop for ${LEVEL_ID}"
+          # A push failure here is a hard FAIL, never a warning: the paid
+          # attempt already counts (the trace commit landed above), so
+          # swallowing this would silently lose committable art. Retried the
+          # same way as the sibling workflows first; if it STILL fails, the
+          # next step preserves the paid-for PNG as a CI artifact.
+          pushed=0
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              pushed=1
+              break
+            fi
+            echo "push attempt $attempt rejected — rebasing and retrying"
+            git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+          done
+          if [ "$pushed" != "1" ]; then
+            echo "::error::commit-back of the generated backdrop failed after 3 rebase retries — the attempt still counts against the cap (its trace commit is already pushed). The generated PNG is preserved as the 'plan-backdrop-unpushed' CI artifact: recover it from there and commit it by hand rather than spending another attempt."
+            exit 1
+          fi
+
+      # The recovery path the commit step's error message promises: a paid
+      # call's output must survive the runner even when every push failed —
+      # never regenerate (and re-pay) what this run already produced.
+      # `steps.validate.outcome == 'success'` is load-bearing, not belt-and-braces
+      # (panel run-4 on PR #156): this is the ONE step with `if: failure()`, so on a
+      # malformed level_id — the exact case the allowlist exists to refuse — it would
+      # otherwise be the only step to still run, feeding the raw unvalidated id into
+      # `path:` and packaging files from OUTSIDE public/assets/levels/<id>/ into a
+      # downloadable artifact. Gating on the validate step's own outcome keeps the
+      # allowlist a hard boundary for every step of the job, failure path included.
+      - name: Upload generated backdrop (push failed)
+        if: failure() && steps.validate.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-backdrop-unpushed
+          path: public/assets/levels/${{ env.LEVEL_ID }}
+          if-no-files-found: warn
+          retention-days: 14

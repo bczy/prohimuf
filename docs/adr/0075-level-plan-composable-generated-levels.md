@@ -86,6 +86,20 @@ footPadFrac}` triplet as `NEAR_KIND_SPECS`, resolved per kind at render time; a
   fail-fast, because a colliding id would silently corrupt `LEVEL_ART` (last-wins)
   while `ALL_LEVELS.find` returns the other entry (first-wins), a split-brain no test
   fixture can represent without triggering it.
+  - **Amendment 2026-07-31 (ADR-0081 D6, narrow version).** The `throw` no longer fires
+    at import but at the **bootstrap**: `registerGeneratedLevels()` (generated/index.ts)
+    is called at `src/main.tsx`'s module body, before the first render — the same
+    impossible-to-miss crash, one frame later. Why: story ③'s MCP `validate`/`scaffold`
+    tools must be able to import the catalogue mechanically and **report** a collision
+    instead of dying on it. In exchange, the uniqueness rule now lives ONCE, in
+    `validateCatalogue(plans): LevelIssue[]` (levelPlan.ts), run in CI against the REAL
+    `GENERATED_PLANS` and by the MCP tools before any write; `assertDistinctPlanIds` is
+    now only the wrapper that throws on its result. The call site itself is guarded by
+    `bootstrapRegistration.test.ts` (a source assertion on `main.tsx`, proven by
+    mutation), because no runtime test can prove that one line exists. **What does NOT
+    move**: archetype registration stays an import-time side effect (idempotent,
+    `weight: 0`, required by `validateLevel.ts`'s deliberate side-effect import). The
+    decision above is neither rewritten nor renumbered.
 - `WIDEST_ASPECT` (GameScene's window-fit harness box, reported for shipped levels
   too) now folds in every generated archetype's `aspect` alongside the core table's:
   the moment a future generated level (SP2/SP3) declares an archetype wider than the

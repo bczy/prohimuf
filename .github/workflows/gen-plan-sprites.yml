@@ -1,0 +1,216 @@
+name: Generate plan skins and props
+
+# SP2 phases (c)+(d) — spec-level-harness-sp2 §3, plan T5. Dispatches, for ONE
+# generated level (src/game/levels/generated/<level_id>.ts), both:
+#   - "skins"  — gen-enemy-types.mjs --plan (enemy archetype flipbook frames,
+#     public/assets/enemy_<spriteBase>*.png), through the SAME existing gates
+#     the hand-authored roster uses (cutout, fill-holes SOLIDIFY + --check) —
+#     they already match the enemy_*.png glob regardless of where the key
+#     came from;
+#   - "props"  — gen-nearfg-sprites.mjs --plan (near-foreground props,
+#     public/assets/nearfg/<level_id>/<name>.png), through check-nearfg-style.mjs
+#     (C1 grey + non-empty silhouette), one prop at a time via its own
+#     `--file`/`--kind` mode.
+#
+# Seeds for both families are FREE (spec §2.2) — unlike the pinned backdrop
+# seed, a failing gate is meant to be repaired by simply re-dispatching (a
+# fresh roll), not escalated. Matrix keeps the two families independent: a
+# props failure never blocks skins from landing, and vice versa.
+on:
+  workflow_dispatch:
+    inputs:
+      level_id:
+        description: "Generated level id (src/game/levels/generated/<id>.ts)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [skins, props]
+    runs-on: ubuntu-latest
+    # Never on main — same guard as every other gen-*.yml in this family.
+    if: github.ref_name != 'main'
+    # Per level_id AND per family: skins and props push independently and must
+    # never block each other, but two concurrent dispatches for the SAME level
+    # + family would race their own commit-back retries against each other.
+    concurrency:
+      group: gen-plan-sprites-${{ github.event.inputs.level_id }}-${{ matrix.family }}
+      cancel-in-progress: false
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      LEVEL_ID: ${{ github.event.inputs.level_id }}
+    steps:
+      # FIRST, before the id touches any path or dynamic import: level_id is
+      # the one attacker-influenced input of this job (contents: write + a
+      # paid-API secret), and loadPlan.mjs feeds it to a jiti import that
+      # EXECUTES the resolved module (panel run-2 on PR #156). Same step as
+      # gen-plan-backdrop.yml / gen-plan-verify.yml.
+      - name: Validate level_id (allowlist)
+        id: validate
+        run: |
+          set -euo pipefail
+          if [[ ! "$LEVEL_ID" =~ ^[a-z0-9-]+$ ]]; then
+            echo "::error::invalid level_id '${LEVEL_ID}' — a generated plan id must match ^[a-z0-9-]+$ (see src/game/levels/generated/); refusing to use it in paths or dynamic imports."
+            exit 1
+          fi
+          echo "level_id '${LEVEL_ID}' is well-formed"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      # Both --plan generators resolve the LevelPlan through
+      # scripts/lib/loadPlan.mjs → jiti (a devDependency): without a real
+      # install the import throws on every dispatch. The full install also
+      # provides @napi-rs/canvas (pinned 1.0.2 in package.json) for the
+      # chroma-key / style-gate steps — no separate npm one-off needed.
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # ── skins (phase (c)) ──────────────────────────────────────────────────
+      - name: "[skins] Generate enemy-type flipbook frames"
+        if: matrix.family == 'skins'
+        run: node scripts/gen-enemy-types.mjs --plan "$LEVEL_ID"
+
+      - name: "[skins] Chroma-key sprite backgrounds to transparency"
+        if: matrix.family == 'skins'
+        run: node scripts/cutout-enemies.mjs
+
+      - name: "[skins] Solidify enemy sprite figures"
+        if: matrix.family == 'skins'
+        run: node scripts/fill-sprite-holes.mjs
+
+      - name: "[skins] Gate — no enemy figure may ship porous"
+        if: matrix.family == 'skins'
+        run: node scripts/fill-sprite-holes.mjs --check
+
+      - name: "[skins] Commit sprites"
+        if: matrix.family == 'skins'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "public/assets/enemy_*.png" > /dev/null; then
+            git add -f public/assets/enemy_*.png
+          fi
+          if git diff --cached --quiet; then
+            echo "No new skins to commit."
+          else
+            git commit -m "chore(assets): generate enemy skins for ${LEVEL_ID} (plan T5)"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      # ── props (phase (d)) ───────────────────────────────────────────────────
+      - name: "[props] Generate near-foreground props"
+        if: matrix.family == 'props'
+        run: node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID"
+
+      - name: "[props] Style gate (grey/C1 + silhouette) — one per plan prop"
+        if: matrix.family == 'props'
+        run: |
+          set -euo pipefail
+          fail=0
+          # Capture the list FIRST, as a plain assignment: under `set -e` a
+          # failing --list aborts the step right here. Feeding the loop from a
+          # process-substitution redirect would hide the list command's exit
+          # status — a crashed --list would gate ZERO props and exit 0, a
+          # silent vacuous PASS.
+          list=$(node scripts/gen-nearfg-sprites.mjs --plan "$LEVEL_ID" --list)
+          # Here-string, NOT a pipe into `while read` — piping would run the
+          # loop in a subshell, where `fail=1` is invisible to the `exit`
+          # below (the classic bash pipe-subshell scoping trap).
+          # `IFS= read -r line` + parse from the RIGHT of the " → " separator:
+          # a prop kind MAY contain spaces (`GeneratedPropSpec.kind` is any
+          # `<id>:<name>` string), so whitespace field-splitting would shift
+          # the fields, miss the arrow and silently SKIP the prop — a vacuous
+          # pass for exactly that prop (panel run-2 on PR #156). The arrow and
+          # the trailing WxH size token are the only reliable anchors.
+          while IFS= read -r line; do
+            case "$line" in
+              *" → "*) ;;
+              *) continue ;;
+            esac
+            asset="${line##*" → "}"
+            asset="${asset%%"  ["*}"            # strip the [EMPTY PROMPT …] flag
+            head="${line%" → "*}"
+            head="${head%"${head##*[! ]}"}"     # rtrim before the arrow
+            kind="${head% *}"                   # drop the trailing WxH token
+            kind="${kind#"${kind%%[! ]*}"}"     # trim the indent…
+            kind="${kind%"${kind##*[! ]}"}"     # …and the padEnd padding
+            node scripts/check-nearfg-style.mjs --file "public/$asset" --kind "$kind" || fail=1
+          done <<< "$list"
+          exit "$fail"
+
+      - name: "[props] Commit sprites"
+        if: matrix.family == 'props'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Garde d'EXISTENCE, pas de glob (panel runs 12 puis 13). Le compgen
+          # d'origine avait un glob non récursif (*.png) : un asset plus profond
+          # n'était jamais commité et le job sortait EN VERT, l'art perdu avec le
+          # runner. Mais le remplacer par un `git add -f` nu plantait le job
+          # (exit 128, errexit) sur un plan à `props: []` — un dossier jamais créé,
+          # entrée parfaitement légitime. `-d` couvre les deux : tout le sous-arbre
+          # est ajouté quelle que soit sa profondeur, et l'absence de dossier retombe
+          # sur le no-op « rien à committer » — la forme exacte du step evidence.
+          if [ -d "public/assets/nearfg/${LEVEL_ID}" ]; then
+            git add -f "public/assets/nearfg/${LEVEL_ID}"
+          fi
+          if git diff --cached --quiet; then
+            echo "No new props to commit."
+          else
+            git commit -m "chore(assets): generate near-foreground props for ${LEVEL_ID} (plan T5)"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      # Gated on the validate step like gen-plan-backdrop's twin: this path uses
+      # fixed globs (no LEVEL_ID interpolation) so it carries no traversal risk of
+      # its own, but the rule stands for every step of the job — a run refused by
+      # the allowlist produces no artifact at all.
+      - name: Upload generated art (push failed)
+        if: failure() && steps.validate.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-sprites-unpushed-${{ matrix.family }}
+          path: |
+            public/assets/enemy_*.png
+            public/assets/nearfg/**
+          if-no-files-found: warn
+          retention-days: 14
