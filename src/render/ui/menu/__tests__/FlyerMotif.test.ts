@@ -6,7 +6,7 @@ import { FlyerMotif, FLYER_EMBLEMS } from "../FlyerMotif";
 import { LevelFlyer } from "../LevelFlyer";
 import type { MotifKind } from "../FlyerMotif";
 
-const ALL_KINDS: readonly MotifKind[] = ["spiral", "smiley", "rings", "plumb", "invader"];
+const ALL_KINDS: readonly MotifKind[] = ["spiral", "rings", "plumb", "chandelier"];
 
 function render(kind: MotifKind, tiltDeg = 0, instanceId = "t", wearSeed = 5): string {
   return renderToStaticMarkup(
@@ -71,6 +71,36 @@ describe("FlyerMotif", () => {
   it("applies the tilt only when asked, so an untilted motif carries no transform", () => {
     expect(render("spiral", 0)).not.toContain("rotate(");
     expect(render("spiral", 3)).toContain("rotate(3deg)");
+  });
+
+  it("attributes each mark to the sheet the fiction gate assigned it", () => {
+    // The gated map (docs/game-design/decision-flyer-crew-emblems-fiction.md): the mark a
+    // sheet carries is universe attribution, not decoration, so it is asserted per sheet
+    // rather than left to whatever the table happens to say.
+    expect(FLYER_EMBLEMS.belliard?.kind).toBe("spiral");
+    expect(FLYER_EMBLEMS.stalingrad?.kind).toBe("rings");
+    expect(FLYER_EMBLEMS.vitry?.kind).toBe("plumb");
+    expect(FLYER_EMBLEMS["niveau-final"]?.kind).toBe("chandelier");
+  });
+
+  it("leaves the tutorial sheet unsigned — no emblem at all", () => {
+    // `SANS SYSTÈME · AVANT LE SON`: the one flyer with no crew and no info-line carries
+    // no stamp either. Filling the slot to keep the table symmetrical would contradict the
+    // sheet's own gated copy.
+    expect(FLYER_EMBLEMS.tutorial).toBeUndefined();
+  });
+
+  it("keeps the finale's layout untouched by the emblem swap", () => {
+    // A5b (promoting the finale to `hero`) was DEFERRED by the design gate: only the shape
+    // changes, never the placement.
+    expect(FLYER_EMBLEMS["niveau-final"]).toEqual({
+      kind: "chandelier",
+      slot: "body",
+      offsetY: 18,
+      sizePx: 88,
+      tiltDeg: -3,
+      wearSeed: 3,
+    });
   });
 
   it("assigns a distinct motif to every level that has one", () => {

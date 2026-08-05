@@ -4,13 +4,9 @@ import type { JSX } from "react";
  * The single ink stamp printed on each flyer, code-drawn as SVG — no sprite, no asset
  * generation (GestureIcon doctrine, ADR-0020).
  *
- * NOT "each crew's stamp": two of the five sheets have no crew to sign them. The tutorial
- * is unsigned by design (`SANS SYSTÈME · AVANT LE SON`) and carries the smiley, which
- * belongs to everyone; the finale is signed by the three systems at once and carries the
- * invader, which is the CITY signing — L'Éden is a venue, and the narrative bible files it
- * as a Lieu, never a collectif (narrative gate, PR #145). The two sheets without a system
- * carry the two marks without an owner, which is the symmetry to preserve if this table
- * ever grows.
+ * Five sheets, four marks: the tutorial carries none. Its gated copy is
+ * `SANS SYSTÈME · AVANT LE SON` — an unsigned sheet takes no stamp, so it is simply absent
+ * from the table below.
  *
  * SVG rather than a canvas or a PNG for three reasons that all matter here: it stays
  * crisp at any device-pixel ratio and any flyer width, it inherits the sheet's ink
@@ -23,11 +19,11 @@ import type { JSX } from "react";
  * hand-work, never light (`zéro glow`), so these are inert décor and never signal
  * anything the player must read.
  *
- * Ported from the parked R3F spike (`claude/spike-r3f-flyers`), where the same five
- * motifs were rasterised onto canvas textures.
+ * Ported from the parked R3F spike (`claude/spike-r3f-flyers`), where the motifs were
+ * rasterised onto canvas textures.
  */
 
-export type MotifKind = "spiral" | "smiley" | "rings" | "plumb" | "invader";
+export type MotifKind = "spiral" | "rings" | "plumb" | "chandelier";
 
 /** WHERE the stamp landed on the sheet — vertically. `hero` prints it above the masthead
  *  (the sheet whose front IS the image, type pushed under it), `mid` between the difficulty
@@ -37,14 +33,13 @@ export type MotifKind = "spiral" | "smiley" | "rings" | "plumb" | "invader";
 export type MotifSlot = "hero" | "mid" | "body";
 
 export interface FlyerEmblem {
-  /** The sheet's mark — a crew's signature where a crew signs, an unowned motif where none
-   *  does (see the header). UNIQUE across the wall either way: repeating one turns a
-   *  signature into wallpaper, and the deck's earlier shared-motif doctrine is superseded. */
+  /** The sheet's mark. UNIQUE across the wall: repeating one turns a signature into
+   *  wallpaper, and the deck's earlier shared-motif doctrine is superseded. */
   kind: MotifKind;
   slot: MotifSlot;
   /** Per-sheet vertical nudge in px, so two sheets sharing a slot still don't line up. */
   offsetY: number;
-  /** Deliberately UNEVEN across sheets: five crews printing on five machines never land the
+  /** Deliberately UNEVEN across sheets: crews printing on different machines never land the
    *  same stamp at the same size, and a uniform size is the tell that gives away a template.
    *  Bounded by what the sheet hosts — punched detail inside a mark closes up below ~70px,
    *  and past ~100 it crowds the info block on a narrow column. */
@@ -68,14 +63,14 @@ export interface FlyerEmblem {
  * level into a broken slot.
  */
 export const FLYER_EMBLEMS: Readonly<Partial<Record<string, FlyerEmblem>>> = {
-  tutorial: { kind: "smiley", slot: "mid", offsetY: 14, sizePx: 76, tiltDeg: -4, wearSeed: 7 },
+  // `tutorial` is deliberately ABSENT: that sheet is unsigned (`SANS SYSTÈME · AVANT LE SON`).
   belliard: { kind: "spiral", slot: "body", offsetY: -6, sizePx: 96, tiltDeg: 3, wearSeed: 21 },
   stalingrad: { kind: "rings", slot: "mid", offsetY: -10, sizePx: 84, tiltDeg: -2, wearSeed: 13 },
   // The one sheet that leads with its image: NADIR 94's plumb bob hangs across the top and
   // the lettering starts below it.
   vitry: { kind: "plumb", slot: "hero", offsetY: 0, sizePx: 100, tiltDeg: 5, wearSeed: 34 },
   "niveau-final": {
-    kind: "invader",
+    kind: "chandelier",
     slot: "body",
     offsetY: 18,
     sizePx: 88,
@@ -105,26 +100,6 @@ function SpiralPath(): JSX.Element {
   );
 }
 
-/** Acid-house smiley: a disc, two eyes and an arc — the decade's cheapest icon. */
-function SmileyPath(): JSX.Element {
-  return (
-    <>
-      {/* The face is punched out of the disc via even-odd fill, so the eyes and mouth
-          are holes in the ink rather than a second colour painted on top. */}
-      <path
-        fillRule="evenodd"
-        fill="currentColor"
-        d={
-          "M50 4a46 46 0 1 0 .1 0z" +
-          "M34 34a5 9 0 1 1 .1 0z" +
-          "M66 34a5 9 0 1 1 .1 0z" +
-          "M26 56a1 1 0 0 0 48 0a1 1 0 0 0-9 0a1 1 0 0 1-30 0a1 1 0 0 0-9 0z"
-        }
-      />
-    </>
-  );
-}
-
 /**
  * Concentric rings — the canal's WAVE, not a psy target. KANAL SYSTEM carries the canal in
  * its name and in its shipped zoneLine (`BORDS DU CANAL · 19e`), so the mark points at the
@@ -142,20 +117,21 @@ function RingsPath(): JSX.Element {
   );
 }
 
-/** NADIR 94's plumb bob — see the reasoning in the body. */
+/**
+ * NADIR 94's plumb bob — a weight on a line that points, by gravity alone, at the lowest
+ * point, which is what a nadir is. Solid ink like the rest of the set (lead-art, PR #145).
+ * A builder's tool is also period-plain: a crew stencilling a squat announcement had one
+ * to hand.
+ */
 function PlumbPath(): JSX.Element {
-  // NADIR 94's mark: a plumb bob — the lowest point, literally, which is what a nadir is.
-  // Solid ink like the other four (lead-art, PR #145: the halftone field it replaces read as
-  // a texture, not a mark, and was the one tonal wash in a set of solid inks). A builder's
-  // tool is also period-plain: a crew stencilling a squat announcement had one to hand.
   return (
     <>
       {/* Suspension bar and line kept as their own paths: overlapping them with the
           even-odd bob below would punch notches where the shapes meet. */}
       <path fill="currentColor" d="M30 6h40v9H30z" />
       <path fill="currentColor" d="M46 15h8v21h-8z" />
-      {/* The bob, with its sighting hole PUNCHED rather than painted — same stencil logic
-          as the smiley's eyes, and it keeps the mass readable at reading distance. */}
+      {/* The bob, with its sighting hole PUNCHED rather than painted — a stencil cuts holes,
+          it does not paint them, and it keeps the mass readable at reading distance. */}
       <path
         fillRule="evenodd"
         fill="currentColor"
@@ -166,60 +142,70 @@ function PlumbPath(): JSX.Element {
 }
 
 /**
- * Space Invader — and the anchor is Paris, not the arcade. Invader was tiling the city's
- * walls from 1998: same city, same year, same gesture as the player's. Defending it as
- * "the sprite was already 20 years old" would justify the motif on any wall after 1978,
- * which is an absence of anachronism rather than a reason (lead-art, PR #145).
+ * L'Éden's chandelier, reduced to a mark. The hall's own fixture — parquet, balcony, "un
+ * seul lustre lourd" still hanging — is the venue's emblem in
+ * `docs/game-design/spec-niveau-final-fiction.md` §1.3: « le vieux monde suspendu
+ * au-dessus de la fête ». The sheet is signed by the room, not by a crew.
  *
- * It is also the ideal cheap-print motif: a grid of solid squares is the simplest thing a
- * stencil or a photocopier can hold.
+ * Reduced to a RADIATING PENDANT — a hub on a rod, its branches thrown out all round —
+ * rather than to a tier with candles: a bowl under two bulbs reads as a face, and the one
+ * face this set ever had was deliberately struck off it. Nothing here glows either (the
+ * menu's zéro-glow rule); the rays are branches, not light. Radial symmetry is also what
+ * survives a photocopier, where crystals would fill in.
  */
-const INVADER_ROWS: readonly string[] = [
-  "..X.....X..",
-  "...X...X...",
-  "..XXXXXXX..",
-  ".XX.XXX.XX.",
-  "XXXXXXXXXXX",
-  "X.XXXXXXX.X",
-  "X.X.....X.X",
-  "...XX.XX...",
-];
-
-function InvaderPath(): JSX.Element {
-  const cols = INVADER_ROWS[0]?.length ?? 11;
-  const rows = INVADER_ROWS.length;
-  const px = 100 / cols;
-  const py = (100 / rows) * 0.82;
-  const top = (100 - py * rows) / 2;
-  const cells: JSX.Element[] = [];
-  INVADER_ROWS.forEach((row, ry) => {
-    // Indexed rather than spread/split: the rows are pure ASCII, and the lint rule that
-    // forbids splitting a string is right in general — it just has nothing to protect here.
-    for (let rx = 0; rx < row.length; rx++) {
-      if (row[rx] !== "X") continue;
-      cells.push(
-        <rect
-          key={`${String(rx)}-${String(ry)}`}
-          x={rx * px}
-          y={top + ry * py}
-          // Overlap by a hair so the blocks weld into one silhouette instead of showing
-          // seams — the way ink spreads on cheap stock.
-          width={px + 0.4}
-          height={py + 0.4}
-          fill="currentColor"
-        />,
-      );
-    }
+function ChandelierPath(): JSX.Element {
+  // Five branches, thrown out and DOWN only: a fixture hangs, so nothing radiates upward
+  // into the rod. Angles are degrees from the horizontal-right, sweeping through the
+  // bottom — the same spread on both sides, which is what makes it read as one object.
+  const arms = [15, 52, 90, 128, 165].map((deg) => {
+    const a = (deg * Math.PI) / 180;
+    const cos = Math.cos(a);
+    const sin = Math.sin(a);
+    return {
+      deg,
+      x1: (50 + cos * 14).toFixed(2),
+      y1: (44 + sin * 14).toFixed(2),
+      x2: (50 + cos * 38).toFixed(2),
+      y2: (44 + sin * 38).toFixed(2),
+      bx: 50 + cos * 42,
+      by: 44 + sin * 42,
+    };
   });
-  return <>{cells}</>;
+  return (
+    <>
+      {/* The suspension rod: it hangs from a ceiling the sheet does not show. */}
+      <path fill="currentColor" d="M47 0h6v26h-6z" />
+      {arms.map((arm) => (
+        <g key={arm.deg}>
+          <line
+            x1={arm.x1}
+            y1={arm.y1}
+            x2={arm.x2}
+            y2={arm.y2}
+            stroke="currentColor"
+            strokeWidth={6}
+            strokeLinecap="round"
+          />
+          {/* Each branch ends in its bulb — a dot, never a halo: the menu forbids light. */}
+          <circle cx={arm.bx.toFixed(2)} cy={arm.by.toFixed(2)} r={6} fill="currentColor" />
+        </g>
+      ))}
+      {/* The hub, its centre PUNCHED with even-odd like the plumb bob's sighting hole —
+          a stencil cuts holes rather than painting them, and the mass stays open at 88px. */}
+      <path
+        fillRule="evenodd"
+        fill="currentColor"
+        d={"M32 44a18 18 0 1 0 36 0a18 18 0 1 0-36 0Z" + "M42 44a8 8 0 1 0 16 0a8 8 0 1 0-16 0Z"}
+      />
+    </>
+  );
 }
 
 const MOTIF_SHAPES: Record<MotifKind, () => JSX.Element> = {
   spiral: SpiralPath,
-  smiley: SmileyPath,
   rings: RingsPath,
   plumb: PlumbPath,
-  invader: InvaderPath,
+  chandelier: ChandelierPath,
 };
 
 interface FlyerMotifProps {
