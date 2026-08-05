@@ -22,3 +22,17 @@ run 8 RESULT: stage 2 (kontext, data-uri ref) 414'd — url too long for a 2048x
   conditioning fight, so re-dispatching stage 2 alone won't fix it — needs concept-artist
   to re-weight/front-load the framing tokens (or an explicit "bird's-eye view down onto"
   phrasing) before the next run.
+run 9: plate as a single kontext edit of plate-v2-reference.png (bertrand's validated
+  props/register, plain-pied route decided in spec-photo-qte-fiction.md Rev.5). Result
+  (a4f4f82e) preserved everything validated (night, trait, trame, facades — the real risk)
+  but applied none of the three requested changes (no terrace, pedestrians still centred,
+  signage still lettered) — kontext read "preserve", not "transform". No strength/guidance/
+  fidelity param exists on POST /v1/images/edits (checked APIDOCS.md, not assumed).
+run 10 (next, blocked): plateAsset.editChain — ONE VARIABLE PER EDIT. Stage 1
+  `plate_edit_a` (photoQte.plateEditA, TODO concept-artist): clear the pavement of the
+  eight pedestrians, blank the two signs. Stage 2 `plate` (photoQte.plateEditB, TODO
+  concept-artist): add the terrace on Stage 1's OWN committed output. Do not dispatch
+  either stage until its prompt key is written — loadPhotoQte() now throws per-stage if
+  it's missing. Also fixed since run 9: the plate is padded to a square before upload and
+  cropped back after (kontext's fixed 1024x1024 edit response was being stretched
+  anisotropically onto 16:9, warping every straight line — see gen-photo-sprites.mjs).

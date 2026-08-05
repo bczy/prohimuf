@@ -29,16 +29,26 @@
  *     framing clause first) — not a from-scratch generation prompt. `loadPhotoQte()` throws
  *     if `plateAsset.editReference` is wired but `block.plateEdit` isn't yet: half-wired is
  *     a setup error, not something to roll on a guess.
- *     HISTORY, because both earlier diagnoses were wrong and the record matters more than
+ *     HISTORY, because every earlier diagnosis was wrong and the record matters more than
  *     tidying it away: (1) v1-v6 conditioned on the FRONTAL street-wide.png elevation crop
  *     and shipped street-level despite a dormer-POV prompt — diagnosed as "conditioning
  *     beats text", fixed by a flux-then-kontext two-stage split (still in `generate()` as
  *     `twoStagePlate`, dormant, kept for a future full-regeneration need). (2) Stage 1 of
- *     that split — flux, dormer prompt, ZERO conditioning — ALSO shipped street-level
- *     (`.github/dispatch/gen-photo-sprites` run 8 log), disproving diagnosis (1): the
- *     framing clause simply isn't honoured by a from-scratch roll, at any conditioning
- *     level. Editing the already-validated v2 render sidesteps the question entirely — no
- *     angle is being requested from a blank canvas, only a change of already-plunging art.
+ *     that split — flux, dormer prompt, ZERO conditioning — ALSO shipped street-level,
+ *     disproving diagnosis (1): the framing clause simply isn't honoured by a from-scratch
+ *     roll. Bertrand then dropped the dormer angle for a plain-pied POV on FICTION grounds
+ *     (spec-photo-qte-fiction.md §2.1 Rev.5 — better signals for the mechanic, not an art
+ *     limitation), settling on editing the validated v2 render. (3) A single combined edit
+ *     asking for three things at once (clear the pavement, blank two signs, add a terrace)
+ *     applied NONE of them — too timid, kontext read "preserve" and not "transform"
+ *     (`a4f4f82e`). Route now: `editChain`, below — ONE VARIABLE PER EDIT, each stage
+ *     committed and reviewed before the next fires (no strength/guidance/fidelity knob
+ *     exists on this endpoint per APIDOCS.md — checked, not assumed — so the isolation
+ *     comes from the chain, not from a dial).
+ *     `editChain` (`plateAsset.editChain` in levelArt.json) replaces the single-edit route
+ *     above when present: `plate_edit_a` edits the v2 reference (clear the pavement, blank
+ *     the signage), then `plate` edits `plate_edit_a`'s OWN committed output (add the
+ *     terrace) — each stage its own `prompt*Key`, each throwing if that key isn't written.
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *
@@ -101,31 +111,61 @@ function loadPhotoQte() {
   if (plateAsset?.asset === undefined) {
     throw new Error("photoQte.plateAsset: no asset/size/seed wired yet (structure fields missing)");
   }
-  // editReference wired but the edit instruction not yet written is a SETUP error, not a
-  // silent fall-through to the dormant from-scratch route — concept-artist is authoring
-  // `plateEdit` (short, imperative, framing clause first); do not roll on a guess meanwhile.
-  if (plateAsset.editReference !== undefined && typeof block.plateEdit !== "string") {
-    throw new Error(
-      "photoQte.plateAsset.editReference is wired but photoQte.plateEdit (the concept-artist's " +
-        "edit instruction) is not written yet — do not dispatch the plate until it lands.",
-    );
+  if (plateAsset.editChain) {
+    // ONE VARIABLE PER EDIT (Bertrand-decided route, 2026-08, superseding the single
+    // combined edit): a single kontext pass asked for three things at once (clear the
+    // pavement, blank two signs, add a terrace) and applied none of them cleanly — too
+    // timid, it read "preserve" and not "transform" (a4f4f82e). Splitting into a CHAIN of
+    // single-variable edits, each one committed and reviewable before the next fires, so
+    // a failure is isolated to the one variable that moved. Each stage throws if its own
+    // prompt key isn't written yet — same discipline as the single-edit case below, just
+    // per stage instead of once.
+    for (const stage of plateAsset.editChain) {
+      if (typeof block[stage.promptKey] !== "string") {
+        throw new Error(
+          `photoQte.plateAsset.editChain references photoQte.${stage.promptKey}, which is not ` +
+            `written yet — do not dispatch this stage until it lands.`,
+        );
+      }
+      assets.push({
+        key: stage.key,
+        prompt: block[stage.promptKey],
+        width: plateAsset.size.width,
+        height: plateAsset.size.height,
+        seed: plateAsset.seed,
+        outFile: path.resolve(ROOT, "public", stage.asset),
+        editReference: path.resolve(ROOT, "public", stage.reference),
+        opaque: true,
+        mobile: false,
+      });
+    }
+  } else {
+    // editReference wired but the edit instruction not yet written is a SETUP error, not a
+    // silent fall-through to the dormant from-scratch route — concept-artist is authoring
+    // `plateEdit` (short, imperative, framing clause first); do not roll on a guess meanwhile.
+    if (plateAsset.editReference !== undefined && typeof block.plateEdit !== "string") {
+      throw new Error(
+        "photoQte.plateAsset.editReference is wired but photoQte.plateEdit (the concept-artist's " +
+          "edit instruction) is not written yet — do not dispatch the plate until it lands.",
+      );
+    }
+    assets.push({
+      key: "plate",
+      prompt: plateAsset.editReference ? block.plateEdit : block.plate,
+      width: plateAsset.size.width,
+      height: plateAsset.size.height,
+      seed: plateAsset.seed,
+      outFile: path.resolve(ROOT, "public", plateAsset.asset),
+      // editReference set → single kontext edit of the validated v2 render. Otherwise
+      // twoStagePlate (dormant fallback for a future full regeneration — see header).
+      editReference: plateAsset.editReference
+        ? path.resolve(ROOT, "public", plateAsset.editReference)
+        : undefined,
+      twoStagePlate: !plateAsset.editReference,
+      opaque: true, // no chroma-key, no mobile variant (ruling §1.1 — one asset, both viewports)
+      mobile: false,
+    });
   }
-  assets.push({
-    key: "plate",
-    prompt: plateAsset.editReference ? block.plateEdit : block.plate,
-    width: plateAsset.size.width,
-    height: plateAsset.size.height,
-    seed: plateAsset.seed,
-    outFile: path.resolve(ROOT, "public", plateAsset.asset),
-    // editReference set → single kontext edit of the validated v2 render (current route).
-    // Otherwise twoStagePlate (dormant fallback for a full regeneration — see header).
-    editReference: plateAsset.editReference
-      ? path.resolve(ROOT, "public", plateAsset.editReference)
-      : undefined,
-    twoStagePlate: !plateAsset.editReference,
-    opaque: true, // no chroma-key, no mobile variant (ruling §1.1 — one asset, both viewports)
-    mobile: false,
-  });
 
   const types = block.types ?? {};
   for (const [key, def] of Object.entries(types)) {
