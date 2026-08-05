@@ -897,3 +897,114 @@ DOM interactive, la loi du glow s'applique **à la lettre et rien qu'à la lettr
 se manipule (la bande visée), et **rien d'autre, y compris ce qui est urgent** (la jauge de chrono
 ne brille pas, §4bis.3). C'est le point où j'avais moi-même dérapé en rév. 1 en important le
 réflexe « alerte HUD » sur un écran qui n'a pas de HUD.
+
+---
+
+## 9. GATE DIMENSIONS — plafond de surface Pollinations (lead-art, Nico) — 2026-08-05
+
+Escalade `dev-tooling-assets` après ROLL 1 : la planche demandée en **864 × 1120** revient en
+**674 × 874**. Ratio identique à 0,03 % près, facteur linéaire ≈ 0,78 : le service plafonne la
+**surface** à ~590 000 px (précédent documenté sur `gen-level-art.mjs`, 1280×768 → 991×594, même
+service, même facteur). Le contenu utile que j'avais spécifié — 768 × 1024 = 786 432 px, **marges
+non comprises** — dépasse le plafond à lui seul. Il n'existe donc aucune demande qui reviendrait
+non réduite. Le fait est établi, je ne le rediscute pas.
+
+### 9.1 Décision : **VOIE B**, et pour une raison qui n'est pas de confort
+
+Je cadre le brief sur ce que le service sait rendre. **Voie A refusée**, pour deux motifs :
+
+1. **A institutionnalise une troncature silencieuse.** §8.4 critère 3 exige « 864 × 1120 exact » et
+   `runReal` jette sinon : sous A, toute planche est en échec de format permanent, et la seule
+   issue serait d'affaiblir le contrôle de format — c'est-à-dire de rendre l'écart demandé/livré
+   invisible. Un contrôle qu'on désarme parce qu'il a raison est pire que pas de contrôle.
+2. **Demander plus gros invite un rééchantillonnage.** Aujourd'hui le service génère nativement au
+   format plafonné ; rien ne garantit qu'il ne se mettra pas à downsampler une génération plus
+   grande. Un contour de fanzine passé au filtre bilinéaire perd exactement ce que je protège en
+   §8.3 Q6 : la continuité du trait. On ne demande pas une définition qu'on ne recevra pas.
+
+A et B donnent la même image ; B est la seule qui la **déclare**.
+
+### 9.2 Dimensions cibles et marges — exactes
+
+Le principe de répartition, et c'est lui la vraie décision artistique : **la marge ne se met pas à
+l'échelle, le portrait si.** Un anticrénelage fait 1-2 px quelle que soit la planche ; un repère
+doit rester détectable en px absolus (trait continu ≥ 6 px, pic ≥ 3× la médiane, exigence
+`dev-tooling-assets`). La marge et le bleed sont des grandeurs **absolues** ; le visage a du mou,
+la marge n'en a pas. Je prends donc les pixels manquants sur le portrait, pas sur les repères.
+
+| Grandeur                          | Valeur                          | Statut                                       |
+| --------------------------------- | ------------------------------- | -------------------------------------------- |
+| **Planche livrée**                | **676 × 871** (588 796 px)      | exact, `runReal` contrôle ; sous le plafond   |
+| **Marge sur les 4 côtés**         | **48 px**                       | **inchangée** — absolue, non mise à l'échelle |
+| **Cadre du portrait**             | **580 × 775**                   | 0,749 (l'ancien 0,750, écart non gaté)        |
+| **Bleed de couture**              | **12 px de chaque côté**        | **inchangé** — absolu (anticrénelage)         |
+| **Épaisseur du trait de contour** | **5 à 6 px** (0,65-0,78 % de H) | remplace « 6-8 px à 1024 »                    |
+
+Coutures, en ordonnées de planche (0,32 / 0,52 / 0,72 de 775, toutes entières — 775 est multiple
+de 25, c'est pour ça qu'il est retenu plutôt que 780) : **C1 y = 296**, **C2 y = 451**,
+**C3 y = 606**. Hauteur de portrait H = 775 px = le nouveau référentiel du § 1.2bis.
+
+### 9.3 Nouveau tableau de tolérances — l'invariant est le **pixel rendu**, pas le pixel de planche
+
+La question posée est la bonne et la réponse est : **ça durcit.** À 1024 px de portrait, la
+réduction vers une bande de 56 px (portrait rendu ≈ 224 px) valait ≈ 4,6. À 775 px elle vaut
+**≈ 3,46**. Un même défaut géométrique de planche se voit donc **33 % plus grand à l'écran**. Mes
+seuils n'ont jamais été des px de planche : ils étaient des px **rendus** (PASS ≤ 0,43 px rendu,
+rejet ≥ 0,87 px rendu = la moitié de l'épaisseur du trait à l'écran, §1.2bis). Je les reconduis
+tels quels et je reconvertis. La mise à l'échelle mécanique ×0,78 tombe au même endroit — non par
+coïncidence, mais parce que ×0,78 **est** la conversion render-invariante. Elle est donc juste, et
+elle est plus sévère en px de planche parce que la planche est moins réduite. C'est l'exigence qui
+est constante ; c'est le chiffre qui bouge.
+
+| Grandeur mesurée à la couture       | PASS                     | Zone d'alerte | Rejet de planche         |
+| ----------------------------------- | ------------------------ | ------------- | ------------------------ |
+| **Demi-largeur du crâne** (G et D)  | **≤ 1,5 px** (≤ 0,19 %)  | 1,5 – 3,0 px  | **≥ 3,0 px** (≥ 0,39 %)  |
+| **Position de l'axe médian**        | **≤ 0,75 px** (≤ 0,10 %) | 0,75 – 1,5 px | **≥ 1,5 px** (≥ 0,19 %)  |
+| **Écart de tangente du contour**    | **≤ 3°**                 | 3° – 6°       | **≥ 6°**                 |
+| **Épaisseur de trait entre bandes** | **≤ 10 % relatif**       | 10 – 15 %     | **> 15 %**               |
+
+Trois clauses de mesure, sans lesquelles ce tableau est décoratif :
+
+- **Mesure sous-pixel obligatoire.** À 0,75 px, le seuil est sous la quantification entière : la
+  demi-largeur et l'axe se mesurent au **centroïde pondéré par l'alpha** du trait de contour (5-6 px
+  d'épaisseur, l'estimation sous-pixel est légitime), pas au premier pixel non transparent. Un
+  script qui ne sait mesurer qu'en entiers ne mesure pas ce tableau — il faut le dire, pas arrondir.
+- **La tangente se fit sur une base proportionnelle** : arc de **5 % de H (≈ 39 px)** de part et
+  d'autre de la couture. Sur une planche plus petite, un fit à base fixe devient du bruit ; l'angle
+  est sans échelle, son estimateur ne l'est pas.
+- **Deux grandeurs simultanément en zone d'alerte sur la même couture = rejet** (inchangé), et la
+  portée du rejet reste la **planche entière** (§1.2bis, gabarit atomique, ADR-0080 D5).
+
+Le reste de §1.2bis est inchangé, y compris la clause qui compte : **le mécanique ne me lie pas.**
+
+### 9.4 Réponse à la question posée : 674 px de large, est-ce que ça suffit ?
+
+**Oui pour le visage. Non pour les marges — et c'est pour ça que je ne mets pas les marges à
+l'échelle.**
+
+- **Le visage : oui, largement.** 580 px de large pour une tête frontale en trame grossière, rendue
+  à ≈ 168 px, c'est une réduction de ×3,46 avec un contour de 5-6 px qui arrive à ≈ 1,6 px écran —
+  au-dessus du seuil de continuité que je défends en §8.3 Q6. Le courier a été livré en beaucoup
+  moins. La définition n'est pas le risque ici.
+- **Les marges à 37 px : non.** Un repère au trait de contour (5-6 px) dans 37 px de marge doit être
+  détecté avec un pic ≥ 3× la médiane : la fenêtre de bruit devient plus étroite que la tolérance de
+  placement de FLUX, et un tiret qui mord le cadre du portrait ou sort de planche n'est plus un
+  défaut de dessin, c'est un défaut de brief. **48 px conservés**, payés par le portrait (−6 % de
+  hauteur de visage, imperceptible). C'est l'arbitrage : je sacrifie du visage, jamais du repère.
+
+Donc **pas** de repli §5.2 aujourd'hui. Mais la condition est nommée à l'avance, pour qu'on ne la
+redécouvre pas à chaud : **si ROLL 2 rate les repères dans 48 px de marge, ce n'est plus un problème
+de dimensions — c'est FLUX qui ne sait pas dessiner un repère de recalage**, et aucune troisième
+géométrie ne le corrigera. Dans ce cas précis, on ne rebrûle pas : **repli §5.2** (gabarit héros
+fait main, FLUX réduit aux variations internes en img2img masqué), escaladé à Bertrand avec les
+deux options chiffrées.
+
+### 9.5 Portée et budget
+
+Ce gate couvre **les dimensions et les tolérances**. Il ne vaut ni PASS de prompt (§8 — il faut y
+reporter 676 × 871 au critère §8.4-3, seule modification requise du prompt : le format, pas les
+mots), ni PASS d'asset (G1-G6, sur planche de combinaisons), ni gate composite (G7). **Budget :
+ROLL 1 consommé, il reste UN tirage avant escalade Bertrand** (cap 2 batches, bible §6). Le
+prochain tirage part au nouveau format ou ne part pas.
+
+**Verdict : PASS conditionnel sur VOIE B**, aux dimensions et tolérances ci-dessus.
