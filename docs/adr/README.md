@@ -135,6 +135,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0077](./0077-couverture-tsc-eslint-scripts.md) | Couvrir scripts/ par tsc et ESLint via tsconfig.node.json et @types/node explicite | Accepted |
 | [0078](./0078-sp2-paid-generation-ci-surface.md) | La surface CI de génération SP2 : dispatch privilégié, exécution dynamique de plan, et comptabilité du cap payé | Proposed |
 | [0081](./0081-mcp-level-editor-server.md) | Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur | Proposed |
-| [0083](./0083-panel-subject-pinned-to-pr-head.md) | Le sujet du panel est épinglé sur la tête de PR, et un sujet vide échoue | Proposed |
+| [0083](./0083-panel-subject-pinned-to-pr-head.md) | Le sujet du panel est épinglé sur la tête de PR, et un sujet vide échoue | Accepted |
 
 <!-- ADR-INDEX:END -->
