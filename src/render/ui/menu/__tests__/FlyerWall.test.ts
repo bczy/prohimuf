@@ -209,6 +209,66 @@ describe("FlyerWall short-landscape rack — no entrance cascade", () => {
     expect(slotRule?.[1]).toMatch(/animation:\s*none/);
   });
 
+  it("does not replay the cascade when a rotation into the rack is undone mid-fall", () => {
+    // The rack's `animation: none` is a CSS RULE, not a decision: rotate into short-landscape
+    // mid-fall and it cuts the cascade, rotate back and the rule stops applying, so the
+    // animation is re-applied from the top and the whole entrance replays mid-visit. Same
+    // route the reduced-motion latch already closes, reached by the other live signal.
+    const listeners: (() => void)[] = [];
+    let rackMatches = false;
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query: string) =>
+        ({
+          get matches() {
+            return query === SHORT_LANDSCAPE_MEDIA ? rackMatches : false;
+          },
+          media: query,
+          addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+    sessionStorage.clear();
+    localStorage.clear();
+    markTutorialNudgeSeen();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        createElement(FlyerWall, {
+          reducedMotion: false,
+          unlockedLevels: NO_UNLOCKS,
+          onPlay: noop,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: noop,
+        }),
+      );
+    });
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    // Portrait at mount: the cascade is running.
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+
+    act(() => {
+      rackMatches = true; // rotated into the rack, mid-fall
+      listeners.forEach((fn) => {
+        fn();
+      });
+    });
+    act(() => {
+      rackMatches = false; // and rotated straight back
+      listeners.forEach((fn) => {
+        fn();
+      });
+    });
+    // Latched: the wall stays at rest for this mount instead of restarting the fall.
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
   it("renders the slots settled when the rack query matches at mount", () => {
     vi.spyOn(window, "matchMedia").mockImplementation(
       (query: string) =>
@@ -701,6 +761,28 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     });
     act(() => {
       el?.focus();
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+  });
+
+  it("keeps an ENDED marker when a stray move reports no buttons", () => {
+    // The buttons===0 repair is for a press whose release never reached us — an entry stuck
+    // at ended:false. An ended one is a different animal: it is waiting to swallow its own
+    // late focus, which on touch arrives after pointerup. A stray move between pointerup and
+    // click would otherwise throw it away just before it does its one job, and the wall would
+    // settle under the finger — the yank this whole guard exists to prevent.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, buttons: 1 }));
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, buttons: 0 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, buttons: 0 }));
+    });
+    act(() => {
+      el?.focus(); // the gesture's OWN late focus
     });
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
   });

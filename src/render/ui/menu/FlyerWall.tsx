@@ -347,6 +347,17 @@ export function FlyerWall({
   }, [playCascade]);
 
   useEffect(() => {
+    // Rotation is live too, and the rack's `animation: none` is a CSS rule, not a decision:
+    // turn the phone into short-landscape mid-fall and the rule cuts the cascade, turn it
+    // back and the rule stops applying — so the animation is re-applied from the top and the
+    // whole entrance replays mid-visit. That is the replay decision §1 forbids, reached by
+    // the exact route the reduced-motion latch below already closes. Same latch, same reason.
+    if (!playCascade || !shortLandscape) return;
+    if (!showingConsumed.current) clearCascadePlayed();
+    setInterrupted(true);
+  }, [playCascade, shortLandscape]);
+
+  useEffect(() => {
     // The OS half of `reducedMotion` is LIVE and can flip while the wall stays mounted,
     // and the flag was already set at mount — so a flip mid-fall would spend the session's
     // one showing on a cascade the player only half saw. Hand it back, but ONLY then: if
@@ -365,6 +376,12 @@ export function FlyerWall({
   }, [playCascade, reducedMotion]);
 
   useEffect(() => {
+    // Nothing to track when no cascade can play: `interrupted` and `showingConsumed` only
+    // ever decide whether to stop an animation that is not running. That is the COMMON case
+    // — every NIVEAUX visit after the first of a session — so eight window listeners would
+    // otherwise sit on pointerdown/up/cancel/move, blur, click, contextmenu and keydown for
+    // the whole mount, on every visit, to observe a state nothing reads.
+    if (!playCascade) return;
     // Release only the gestures that have ENDED, never the whole map. Wholesale clearing
     // was safe while a single marker was tracked; with one per pointer it is not, because
     // pointers overlap: a finger lifting fires the click that would wipe the marker of a
@@ -396,7 +413,15 @@ export function FlyerWall({
     // settle for the rest of the mount. The next move over the page repairs it, because a
     // move that reports no buttons is proof the press is over.
     const onMove = (e: PointerEvent) => {
-      if (e.buttons === 0) pointerPressed.current.delete(e.pointerId);
+      // ONLY a marker still believed live. An ended one is waiting to swallow its own late
+      // focus — on touch that focus arrives after pointerup — and a stray move between
+      // pointerup and click would otherwise throw it away just before it does its one job.
+      // This repair exists for the opposite case: a press whose release never reached us,
+      // which is precisely the entry stuck at `ended: false`.
+      const entry = pointerPressed.current.get(e.pointerId);
+      if (entry !== undefined && !entry.ended && e.buttons === 0) {
+        pointerPressed.current.delete(e.pointerId);
+      }
     };
     // Losing the window is the other half of that repair, and the one touch needs: a finger
     // does not emit a hover move on the way back. Whatever was in flight when the page went
@@ -431,7 +456,7 @@ export function FlyerWall({
       window.removeEventListener("contextmenu", releaseEnded, true);
       window.removeEventListener("keydown", releaseEnded, true);
     };
-  }, []);
+  }, [playCascade]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
