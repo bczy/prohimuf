@@ -54,5 +54,9 @@ BERTRAND DECISION (2026-08-05): pedestrians are KEPT (they stand mid-road, not o
   retired (kept in levelArt.json for the record, no longer wired). editChain is back to
   ONE stage: plate edits plate-signage-blanked.png with plateEditB (the terrace) — the
   only remaining transformation that needs a model.
-run 13 (next): dispatch `plate` alone (single remaining stage) once plateEditB is
-  reviewed against the new base image.
+run 13: dispatch `plate` alone (single remaining stage, editChain: plate edits
+  plate-signage-blanked.png with plateEditB — the terrace). Stale plate.png/plate_mobile.png
+  from run 9 (a4f4f82e, an unrelated failed edit of the old v2 reference) removed from disk
+  so this push-triggered run (no workflow_dispatch force input available) regenerates it
+  instead of skipping. plateAsset.editChain confirmed single-stage, pad-to-square/crop-back
+  and assertDimensions already wired (gen-photo-sprites.mjs).
