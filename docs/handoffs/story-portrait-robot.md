@@ -270,6 +270,47 @@ scores that misprediction openly rather than hiding it in an estimate.
 
 ---
 
+## 4bis. LANE `dev-r3f-render` — étape 1 (écran) — 2026-08-05 — EN COURS
+
+- **claim :** `src/render/ui/portrait/**` (écran + CSS Modules), puis
+  `src/hooks/usePortraitRobot.ts` / `usePortraitGestures.ts`, puis `App.tsx` (étape 2).
+- **release (commit `4686188`) :** l'écran DOM complet et testé —
+  `PortraitRobotScreen.tsx` (+ `.module.css`), `TelecarteGauge`, `EarlyExitButton`,
+  `copy.ts` (copie reprise au mot près de la spec fiction round 3), barrel `index.ts`,
+  14 tests dans `src/render/ui/__tests__/PortraitRobotScreen.test.ts`. Bandes jointives
+  (gap 0, aucun séparateur), aucun acte de validation, aucun feedback par trait, jauge
+  sans chiffre, sortie anticipée en deux appuis au pointeur / un au clavier.
+- **BLOQUÉ sur `dev-gameplay` — les deux hooks ne peuvent pas être écrits :**
+  `src/game/systems/portraitRobotSystem.ts` (`stepPortraitScene`, `createPortraitScene`,
+  `resolvePortraitScene`, `levelModifierFromPortrait`) et
+  `src/game/systems/swipeGestureSystem.ts` (`classifySwipe`, `accumulateDrag`,
+  `DRAG_CRAN_DISTANCE`) n'existent pas encore. Conformément à §3.3 étape 0bis, rien n'est
+  réimplémenté côté `src/hooks` : l'écran est construit contre les types de contrat seuls.
+- **BLOQUÉ sur `dev-tooling-assets` :** les 24 PNG placeholder + le portrait cible ne sont
+  pas là ; l'écran les référence par chemin (`assets/portrait/<band>-<nn>.png`) et rendra
+  des images cassées jusqu'à leur arrivée. Aucun contournement introduit.
+- **Écarts de spec constatés, non tranchés en silence :**
+  1. **`aria-valuetext`** — l'UX §5.5.3 écrit trois paliers qualitatifs, le gate A18 en a
+     ajouté un quatrième (`MID`). `MID` et `URGENT` partagent « ça presse » plutôt que
+     d'inventer une quatrième chaîne. → `ux-designer`.
+  2. **Échelle typographique** — le plancher « 14px effectif » (UX §5.3/§9.3) est
+     au-dessus des pas `xs`/`sm`/`md` de `print/tokens.ts` (9/11/12px) : les libellés de
+     bande, le compteur et la jauge utilisent `--font-size-base` (16px). → `lead-art`.
+  3. **Reptation de révélation à `PARTIAL`/`FAILED`** (UX §6) non implémentée : elle exige
+     l'asset de la variante JUSTE par bande après résolution, que ni `PortraitScene` ni le
+     view-model ne portent aujourd'hui. → à cadrer avec `dev-gameplay` (la vérité est dans
+     `puzzle.truth`, donc dérivable côté hook une fois `RESOLVED` — mais c'est un ajout de
+     surface à valider, pas une initiative de lane).
+  4. **Armement de la sortie anticipée** — ADR-0081/gate A17 le situent « dans le hook » ;
+     il vit dans `EarlyExitButton` (état local, `ARM_WINDOW_MS`), donc dans la couche
+     render et hors du modèle de jeu comme exigé, mais pas littéralement dans `src/hooks`.
+     Signalé plutôt que déguisé. → `senior-architect`.
+- **next :** `usePortraitGestures` + `usePortraitRobot` dès que les deux modules purs sont
+  mergés ; `App.tsx` (phase, graine, `pendingModifier`, gate de préchargement) en dernier,
+  après `levelModifierFromPortrait` (§3.3 étape 2).
+
+---
+
 ## 5. VERIFY — qa-lead (Inès) — *awaiting dev completion*
 
 *Placeholder: quality gate (desktop tsc/vitest/lint + e2e gesture flow), game-designer playtest vs. spec, ux-designer device gesture review (desktop 1280×800 + mobile touch), composite gate.*
