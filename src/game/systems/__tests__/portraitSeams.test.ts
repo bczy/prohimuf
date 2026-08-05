@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { manifestFor } from "@game/systems/assetManifest";
 import { PORTRAIT_ROBOT_NARRATIVE } from "@game/systems/narrativeSystem";
-import { FACE_CATALOGUE } from "@game/portraits/faceCatalogue.data";
+import { FACE_CATALOGUE } from "@game/portraits";
 import { PORTRAIT_ASSET_DIR } from "@game/types/portraitRobot";
 import { FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 

@@ -12,7 +12,7 @@ import {
 } from "@game/systems/narrativeSystem";
 import type { DiagramKind, GestureKind, NarrativeScene } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
-import { FACE_CATALOGUE } from "@game/portraits/faceCatalogue.data";
+import { FACE_CATALOGUE } from "@game/portraits";
 
 /**
  * Pure, deterministic asset manifest for the progressive loading screen. Builds

@@ -5,11 +5,3 @@
  */
 export { FACE_CATALOGUE } from "@game/portraits/faceCatalogue.data";
 export { validatePortrait, SEED_SWEEP } from "@game/portraits/validatePortrait";
-export type { PortraitPlateManifest } from "@game/portraits/validatePortrait";
-export type {
-  FaceCatalogue,
-  PortraitBand,
-  PortraitBandId,
-  PortraitVariant,
-  VariantDistance,
-} from "@game/types/portraitRobot";
