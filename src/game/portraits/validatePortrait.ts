@@ -56,14 +56,15 @@ export interface PortraitPlateManifest {
 }
 
 /**
- * Every asset path the plate claims to have written. Total on a hand-edited or
- * half-written manifest: an absent or malformed `bands` yields an empty list and the
- * `asset-in-plate` check reports the disagreement — it never throws (ADR-0080 D3).
+ * Every asset path the plate claims to have written, read band by canonical band.
+ *
+ * Total on a partial manifest: a band the script did not write yields nothing and the
+ * disagreement is REPORTED by `asset-in-plate` — it is never a throw (ADR-0080 D3). A
+ * band id outside the canonical four is likewise ignored rather than trusted, so a plate
+ * that invented a fifth band still fails the comparison instead of widening it.
  */
 export function plateAssets(plate: PortraitPlateManifest): readonly string[] {
-  return Object.values(plate.bands ?? {})
-    .flat()
-    .flatMap((entry) => (typeof entry?.asset === "string" ? [entry.asset] : []));
+  return PORTRAIT_BAND_ORDER.flatMap((id) => (plate.bands[id] ?? []).map((entry) => entry.asset));
 }
 
 const CANONICAL_BAND_IDS: readonly PortraitBandId[] = PORTRAIT_BAND_ORDER;
