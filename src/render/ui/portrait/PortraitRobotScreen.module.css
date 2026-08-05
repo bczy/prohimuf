@@ -1,0 +1,218 @@
+/*
+ * PORTRAIT-ROBOT screen (ADR-0046: no hex, no font stack, no breakpoint literal —
+ * every value comes from a print-token var, and the device fork arrives as
+ * `data-device`, decided once at boot per ADR-0003).
+ *
+ * THE LOAD-BEARING RULE OF THIS FILE: the four bands are ONE CONTINUOUS SURFACE.
+ * No `gap`, no `border` between rows, no `border-collapse` trick, no 1px hairline —
+ * two adjacent bands meet pixel to pixel whatever pair of variants is displayed.
+ * Anything that separates them breaks the read of the face and the scene with it.
+ */
+.root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--stock-newsprint);
+  color: var(--ink-black);
+  font-family: var(--font-mono);
+  user-select: none;
+  overflow: hidden;
+}
+
+/* HUD strip — 56px desktop, 32px mobile (UX §9.1/§9.2). */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: 56px;
+  padding: 0 var(--space-sm);
+  border-bottom: var(--keyline-width) solid var(--ink-black);
+}
+
+.root[data-device="mobile"] .hud {
+  height: 32px;
+  gap: var(--space-xs);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+/* The mobile strip yields the masthead first when space runs out (UX §9.1). */
+.root[data-device="mobile"] .title {
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-sm);
+  min-height: 0;
+}
+
+/* Reference portrait: full size beside the reconstruction on desktop, ≥28 % of the
+   width as a fixed left column on mobile landscape (UX §0.1, §1.2, gate A8). */
+.target {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 0 0 40%;
+}
+
+.root[data-device="mobile"] .target {
+  flex-basis: 28%;
+}
+
+.targetImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border: var(--keyline-width) solid var(--ink-black);
+}
+
+.supertitle {
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+/*
+ * The joined surface. `gap: 0` is not a default here, it is the decision — and the
+ * hairline below is on the STACK, never between the bands.
+ */
+.stack {
+  position: relative;
+  display: grid;
+  grid-auto-rows: var(--band-height);
+  gap: 0;
+  flex: 0 0 40%;
+  outline: var(--keyline-width) solid var(--ink-black);
+  outline-offset: 0;
+}
+
+.root[data-device="mobile"] .stack {
+  flex-basis: 72%;
+}
+
+/*
+ * Lock-in (UX §2.5) — the ONE feedback of the whole scene: the ambient hairline
+ * becomes a thick full frame around the ENTIRE surface, never band by band. Shape
+ * and thickness carry it, not hue, and it lands in a single cut so
+ * `prefers-reduced-motion` has nothing to strip.
+ */
+.stack[data-locked="true"] {
+  outline-width: calc(var(--keyline-width) * 4);
+  outline-offset: calc(var(--space-xs) * -1);
+}
+
+.band {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: var(--band-height);
+  padding: 0 var(--space-xs);
+  /* No border, no box-shadow, no divider: see the file header. */
+  border: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.band:active {
+  cursor: grabbing;
+}
+
+.stack[data-locked="true"] .band {
+  cursor: default;
+}
+
+.bandLabel {
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.bandImage {
+  flex: 1 1 auto;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Chevrons: real buttons, ≥44×44 hit area, drawn INSIDE the band in semi-transparency —
+   never a rule delimiting two bands (UX §2.3.3, §3). */
+.chevron {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  color: var(--ink-black);
+  opacity: 0.55;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.chevron:disabled {
+  cursor: default;
+  opacity: 0.25;
+}
+
+.counter {
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+/* The four simultaneous stamps of the lock-in — an ink mark, no text, no hue code. */
+.stamp {
+  position: absolute;
+  right: var(--space-sm);
+  width: 18px;
+  height: 18px;
+  border: calc(var(--keyline-width) * 2) solid var(--ink-black);
+  transform: rotate(-8deg);
+}
+
+.verdict {
+  position: absolute;
+  inset: auto 0 var(--space-md) 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.verdictStamp {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.1em;
+  border: calc(var(--keyline-width) * 2) solid var(--ink-black);
+  padding: var(--space-xs) var(--space-sm);
+  transform: rotate(-3deg);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
