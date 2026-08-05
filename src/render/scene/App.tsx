@@ -20,6 +20,7 @@ import {
 } from "./bossHarness";
 import { installDeliveryCaptureSeam, resolveDeliveryPreviewLevel } from "./deliveryHarness";
 import { resolveGeneratedPreviewLevel } from "./generatedHarness";
+import { resolvePortraitSeed } from "./portraitHarness";
 import { nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
@@ -81,7 +82,7 @@ interface PendingScore {
   readonly date: string;
 }
 
-// Preview harness hook: `?preview=title|menu|narrative|end|nameentry|tutorial` boots
+// Preview harness hook: `?preview=title|menu|narrative|end|nameentry|tutorial|portrait` boots
 // straight into a screen so the screenshot tool can capture the front-end screens
 // without playing.
 const PREVIEW_SCREEN =
@@ -140,18 +141,21 @@ const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 installBossCaptureSeam();
 installDeliveryCaptureSeam();
 
-// Portrait-robot seed (ADR-0079 D3): supplied BY THE SHELL and frozen for the session, so a
-// board is replayable with `?portraitSeed=<n>` — the determinism proof `qa-lead` runs in the
-// built app. The pure layer holds no `Math.random`; drawing the seed is the shell's job, and
-// this is the one place it happens.
-const PORTRAIT_SEED_PARAM =
-  typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("portraitSeed")
-    : null;
-const PORTRAIT_SEED =
-  PORTRAIT_SEED_PARAM !== null && Number.isFinite(Number(PORTRAIT_SEED_PARAM))
-    ? Number(PORTRAIT_SEED_PARAM)
-    : Math.floor(Math.random() * 0x7fffffff);
+// Portrait-robot capture seam — `?preview=portrait` (see `portraitHarness.ts`), the house
+// convention every other screen already has. It boots straight into the interstitial phase
+// so the screenshot tool, the screen reviews and the "entry board is 0/4" check do not cost
+// a full playthrough.
+const PORTRAIT_HARNESS_PREVIEW = PREVIEW_SCREEN === "portrait";
+// Seed (ADR-0079 D3): supplied BY THE SHELL and frozen for the session, so a board is
+// replayable with `?portraitSeed=<n>` — the determinism proof `qa-lead` runs in the built
+// app, and it composes with the preview (`?preview=portrait&portraitSeed=42`). The pure
+// layer holds no `Math.random`; drawing the seed is the shell's job, and this is the one
+// place it happens.
+const PORTRAIT_SEED = resolvePortraitSeed(
+  typeof window !== "undefined" ? window.location.search : "",
+  PORTRAIT_HARNESS_PREVIEW,
+  () => Math.floor(Math.random() * 0x7fffffff),
+);
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
@@ -253,18 +257,20 @@ export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
     BOSS_HARNESS_PREVIEW || DELIVERY_HARNESS_PREVIEW || GENERATED_HARNESS_PREVIEW
       ? "PLAYING"
-      : PREVIEW_SCREEN === "narrative"
-        ? "NARRATIVE_PRE"
-        : PREVIEW_SCREEN === "end"
-          ? "END"
-          : PREVIEW_SCREEN === "nameentry"
-            ? "NAME_ENTRY"
-            : PREVIEW_SCREEN === "tutorial"
-              ? "TUTORIAL"
-              : PREVIEW_SCREEN === "menu"
-                ? "MENU"
-                : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
-                  "TITLE",
+      : PORTRAIT_HARNESS_PREVIEW
+        ? "PORTRAIT_ROBOT"
+        : PREVIEW_SCREEN === "narrative"
+          ? "NARRATIVE_PRE"
+          : PREVIEW_SCREEN === "end"
+            ? "END"
+            : PREVIEW_SCREEN === "nameentry"
+              ? "NAME_ENTRY"
+              : PREVIEW_SCREEN === "tutorial"
+                ? "TUTORIAL"
+                : PREVIEW_SCREEN === "menu"
+                  ? "MENU"
+                  : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
+                    "TITLE",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -640,7 +646,10 @@ export function App(): JSX.Element {
           scene={scene}
           onDone={() => {
             // Interstitial insertion point (gate A2): LEVEL_COMPLETE → NARRATIVE_POST →
-            // PORTRAIT_ROBOT → the rest. Once per run, and never on a `?preview=` boot.
+            // PORTRAIT_ROBOT → the rest. Once per run, and never INSERTED on a `?preview=`
+            // boot — that guard stands: a `?preview=narrative` capture must not drift into
+            // another screen. `?preview=portrait` does not need it lifted, because it does
+            // not insert the phase, it BOOTS in it (see the initial `appPhase` above).
             if (PREVIEW_SCREEN === null && portraitPlayedRef.current !== gameKey) {
               portraitPlayedRef.current = gameKey;
               setAppPhase("PORTRAIT_ROBOT");
@@ -687,6 +696,13 @@ export function App(): JSX.Element {
         paused={rotateBlocked}
         onDone={(modifier) => {
           setPendingModifier(modifier);
+          // On a `?preview=portrait` boot there is no run behind the scene and no next
+          // level to spend the modifier on: we STAY on the resolved screen. Routing to
+          // END would show a run summary of a run nobody played, and re-entering the
+          // phase would loop the capture — a preview that loops is worse than none. The
+          // verdict tableau is also exactly what `lead-art` and `ux-designer` need to
+          // photograph, so staying is the useful behaviour, not just the safe one.
+          if (PORTRAIT_HARNESS_PREVIEW) return;
           setAppPhase(pendingScore !== null ? "NAME_ENTRY" : "END");
         }}
       />,
