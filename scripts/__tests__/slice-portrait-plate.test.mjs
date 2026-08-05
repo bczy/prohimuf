@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { PNG } from "pngjs";
 import {
   detectRegistration,
+  computeVerticalScale,
   PLATE_WIDTH,
   PLATE_HEIGHT,
   PLATE_MARGIN_PX,
@@ -112,5 +113,53 @@ describe("detectRegistration — confidence-gated tick detection (brief §8 C-B)
     });
     const { tiltPx } = detectRegistration(png);
     expect(tiltPx).toBe(20);
+  });
+
+  it("aborts with a diagnostic (not a crash) when the search window falls off an undersized plate", () => {
+    // A plate delivered shorter than nominal (wrong resolution) pushes the
+    // eye-line search window [nominalY-24, nominalY+24] entirely past
+    // png.height. Before the fix this produced `rows = []` and a TypeError
+    // from `best.run` inside findTick — a JS stack trace instead of the
+    // named-mark diagnostic every other rejection path produces.
+    const shortHeight = 100; // eyeNominalAbs() (458) - 24 > shortHeight - 1
+    const png = new PNG({ width: PLATE_WIDTH, height: shortHeight });
+    png.data.fill(255);
+    for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
+
+    let error;
+    try {
+      detectRegistration(png);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeDefined();
+    expect(error).not.toBeInstanceOf(TypeError);
+    expect(error.message).toMatch(/registration ABORTED/);
+    expect(error.message).toMatch(/falls entirely outside the plate/);
+  });
+});
+
+describe("computeVerticalScale — sign-guarded scale (art brief §8 C-B)", () => {
+  // `detectRegistration`'s own confidence windows never overlap (256px apart
+  // for ±24px windows — verified by the pass/tilt cases above), so a real
+  // plate can never make the two measured y's swap through noise alone. The
+  // guard's job is on the (eyeY, noseY) *values* regardless of how a
+  // corrupted/mirrored capture pipeline produced them, so it is exercised
+  // directly here rather than by contorting a synthetic plate to defeat the
+  // window search.
+  it("aborts — produces NOTHING — when nose-base measures at or above eye-line", () => {
+    // Both a franc inversion (mirrored plate) and an exact tie (degenerate
+    // zero-height plate) must be refused, not silently coerced into a
+    // plausible-looking mirrored or zero/degenerate scale.
+    expect(() => computeVerticalScale(700, 400)).toThrow(/registration ABORTED/);
+    expect(() => computeVerticalScale(700, 400)).toThrow(/not above nose-base/);
+    expect(() => computeVerticalScale(500, 500)).toThrow(/registration ABORTED/);
+  });
+
+  it("produces a positive scale for correctly-ordered marks", () => {
+    const eyeNominalAbs = PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
+    const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
+    const { scale } = computeVerticalScale(eyeNominalAbs, noseNominalAbs);
+    expect(scale).toBeGreaterThan(0);
   });
 });

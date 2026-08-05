@@ -383,6 +383,15 @@ function scanRow(png, xStart, xEnd, y) {
 function findTick(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
   const yFrom = Math.max(0, nominalYAbs - windowPx);
   const yTo = Math.min(png.height - 1, nominalYAbs + windowPx);
+  if (yFrom > yTo) {
+    return {
+      found: false,
+      reason:
+        `search window y∈[${nominalYAbs - windowPx},${nominalYAbs + windowPx}] falls entirely ` +
+        `outside the plate (height=${png.height}px) — the plate is undersized or wrongly ` +
+        `resolved, this is not a missing tick`,
+    };
+  }
   const rows = [];
   for (let y = yFrom; y <= yTo; y++) rows.push({ y, ...scanRow(png, xStart, xEnd, y) });
 
@@ -497,16 +506,40 @@ export function detectRegistration(png) {
   return { eyeY, noseY, tiltPx };
 }
 
+/** Order sanity + vertical scale factor from measured eye-line/nose-base
+ * absolute y's. Split out from `registerPortrait` so the sign guard is
+ * directly unit-testable against arbitrary (eyeY, noseY) pairs — the
+ * property under test ("a mirrored/inverted plate produces NOTHING, not a
+ * plausible-looking mirrored portrait") does not depend on how those y's
+ * were measured. Eye-line must sit strictly above nose-base (smaller y);
+ * without this check a flipped plate, or two confident ticks read in the
+ * wrong order, gives `noseLocal <= eyeLocal` ⇒ `scale <= 0` ⇒ a mirror or
+ * degenerate rescale accepted in silence — the same failure mode this
+ * file's confidence gates exist to close, just downstream of them. */
+export function computeVerticalScale(eyeY, noseY) {
+  const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
+  const noseNominalLocal = Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
+  const eyeLocal = eyeY - PLATE_MARGIN_PX;
+  const noseLocal = noseY - PLATE_MARGIN_PX;
+  if (noseY <= eyeY) {
+    throw new Error(
+      `registration ABORTED — eye-line (measured y=${eyeY}) is not above nose-base ` +
+        `(measured y=${noseY}); a valid portrait has eye-line strictly above nose-base. ` +
+        "This reads as a flipped/mirrored plate or a mismatched mark pair, not a tilt — " +
+        "refusing to rescale (art brief §8 C-B). The plate is rejected WHOLE and must be " +
+        "regenerated, not patched.",
+    );
+  }
+  return { scale: (noseNominalLocal - eyeNominalLocal) / (noseLocal - eyeLocal || 1), eyeLocal };
+}
+
 /** Nearest-neighbour vertical-only resample driven by the two registration
  * marks. Returns a NEW pngjs-shaped {width,height,data} for just the portrait
  * bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT), corrected. */
 export function registerPortrait(png) {
   const { eyeY, noseY } = detectRegistration(png);
   const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
-  const noseNominalLocal = Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
-  const eyeLocal = eyeY - PLATE_MARGIN_PX;
-  const noseLocal = noseY - PLATE_MARGIN_PX;
-  const scale = (noseNominalLocal - eyeNominalLocal) / (noseLocal - eyeLocal || 1);
+  const { scale, eyeLocal } = computeVerticalScale(eyeY, noseY);
 
   const out = {
     width: PORTRAIT_WIDTH,
