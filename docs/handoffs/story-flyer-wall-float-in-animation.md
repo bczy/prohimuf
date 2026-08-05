@@ -228,6 +228,31 @@ un attribut oublié retombait silencieusement sur un défaut. Relevé en PROPOS�
 `simplify`, tranché par le panel, appliqué à rendu inchangé (tailles d'emblèmes mesurées
 identiques avant/après sur une capture réelle).
 
+## Troisième lane, arrivé hors session — le workflow du panel
+
+Le commit `94b2db14` (`fix(ci): pin the panel's diff to the PR head, and refuse an empty
+subject`) modifie `.github/workflows/code-review-panel.yml`. **Il n'a pas été écrit par la
+session qui mène cette PR** : une autre session Claude a poussé sur cette branche pour
+corriger le BLOQUANT « `diff.patch` et `files.txt` vides », que la session courante avait
+explicitement refusé de traiter ici — au motif que toucher le workflow du panel depuis une
+PR que ce panel juge est une boucle à éviter, et que c'est un lane de plus.
+
+Le correctif est juste sur le fond : le job `prepare` ne pinnait aucune ref, donc sur
+`workflow_dispatch`/`workflow_call` le checkout retombait sur la branche par défaut, HEAD
+valait `main`, et `git diff origin/main...HEAD` était légitimement vide. Deux garde-fous
+sont ajoutés pour qu'un harness cassé ne puisse plus publier un PASS creux.
+
+**Ce qui reste dû** : `.github/workflows/**` appartient à `dev-tooling-assets`, et **aucune
+signature de lane ne le couvre**. Les deux signatures de cette story portent sur
+`src/render/ui/**` et `scripts/`. L'ancienne dérogation de palier — retirée depuis — nommait
+d'ailleurs l'arrivée d'un troisième lane parmi ses conditions de nullité.
+
+**Non résolu unilatéralement, et volontairement.** Retirer le commit d'une autre session
+rendrait le panel à nouveau aveugle sur un vrai défaut ; fabriquer la signature manquante
+produirait un artefact de gate sans gate derrière — le même refus que pour `lead-art`.
+Deux issues, décision Bertrand : faire signer `dev-tooling-assets`, ou sortir ce commit dans
+sa propre PR.
+
 ## Débordements de périmètre, déclarés
 
 Deux changements de ce diff sortent de « une animation d'entrée », et méritent d'être
