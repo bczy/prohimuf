@@ -1,9 +1,14 @@
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { describe, it, expect } from "vitest";
 import { PNG } from "pngjs";
 import {
   detectRegistration,
   computeVerticalScale,
   ensurePngBuffer,
+  isAspectPreservedScaleDown,
+  runReal,
   PLATE_WIDTH,
   PLATE_HEIGHT,
   PLATE_MARGIN_PX,
@@ -277,5 +282,62 @@ describe("ensurePngBuffer — content guard before the PNG decoder (RE-PANEL run
     const buf = withMeta(Buffer.alloc(0), { httpStatus: 200, contentType: "image/png" });
     await expect(ensurePngBuffer(buf)).rejects.toThrow(/not a recognisable PNG or JPEG/);
     await expect(ensurePngBuffer(buf)).rejects.toThrow(/body size: 0 bytes/);
+  });
+});
+
+describe("isAspectPreservedScaleDown", () => {
+  it("matches the exact measured case from run 5d5b5f51 (674x874 vs 864x1120)", () => {
+    expect(isAspectPreservedScaleDown(674, 874, PLATE_WIDTH, PLATE_HEIGHT)).toBe(true);
+  });
+
+  it("rejects a genuinely different aspect ratio", () => {
+    expect(
+      isAspectPreservedScaleDown(PLATE_WIDTH - 200, PLATE_HEIGHT, PLATE_WIDTH, PLATE_HEIGHT),
+    ).toBe(false);
+  });
+});
+
+describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () => {
+  // Drives the real function through its documented `--plate <file>` escape
+  // hatch (fetchPlate reads straight from disk, no network/prompt-gate
+  // involved) with genuine pngjs-encoded PNGs at the exact measured
+  // dimensions — not a mocked runReal, the real size-check branch.
+  function writeTempPlate(width, height) {
+    const png = new PNG({ width, height });
+    png.data.fill(255);
+    for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
+    const file = path.join(
+      os.tmpdir(),
+      `slice-portrait-plate-test-${width}x${height}-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
+    );
+    fs.writeFileSync(file, PNG.sync.write(png));
+    return file;
+  }
+
+  it("names an aspect-preserved scale-down as Pollinations' cap, not a framing drift", async () => {
+    const file = writeTempPlate(674, 874); // run 5d5b5f51's exact measured size
+    try {
+      await expect(runReal(file)).rejects.toThrow(
+        /aspect ratio is preserved \(not a framing drift\)/,
+      );
+      await expect(runReal(file)).rejects.toThrow(/ESCALATE to lead-art/);
+      await expect(runReal(file)).rejects.not.toThrow(
+        /framing drifted beyond what registration can fix/,
+      );
+    } finally {
+      fs.rmSync(file, { force: true });
+    }
+  });
+
+  it("still calls out a genuine framing drift (different aspect ratio) by its own message", async () => {
+    const file = writeTempPlate(PLATE_WIDTH - 200, PLATE_HEIGHT); // same height, much narrower
+    try {
+      await expect(runReal(file)).rejects.toThrow(
+        /framing drifted beyond what registration can fix/,
+      );
+      await expect(runReal(file)).rejects.not.toThrow(/aspect ratio is preserved/);
+    } finally {
+      fs.rmSync(file, { force: true });
+    }
   });
 });

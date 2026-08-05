@@ -770,11 +770,45 @@ export async function ensurePngBuffer(buf) {
   );
 }
 
-async function runReal(plateArg) {
+// A wrong-size plate is at least two DIFFERENT failure modes, and reporting
+// both as "framing drifted" sends the reader to the wrong place (RE-PANEL run
+// 5d5b5f51: 674x874 vs the requested 864x1120 is NOT a framing drift — the
+// aspect ratio is preserved to within 0.03%, i.e. the whole plate was
+// rendered at a uniform smaller scale). `gen-level-art.mjs`'s `normalizeSize`
+// already documented the same mechanism for the same service (a
+// max-pixel-area cap on the `flux` model — every requested 1280x768 level
+// texture there decodes to 991x594, aspect preserved, ~0.77x linear
+// scale-down, consistent with a cap around 768x768's ~590K px; this plate's
+// 864x1120 = 967,680px request → 674x874 = 588,876px response lands on
+// almost exactly that same cap). A genuine framing drift (different aspect
+// ratio) is a different bug with a different fix and keeps its own message.
+const ASPECT_RATIO_TOLERANCE = 0.01; // 1% — run 5d5b5f51 measured 0.03% drift
+
+export function isAspectPreservedScaleDown(actualW, actualH, expectedW, expectedH) {
+  const actualRatio = actualW / actualH;
+  const expectedRatio = expectedW / expectedH;
+  return Math.abs(actualRatio - expectedRatio) / expectedRatio < ASPECT_RATIO_TOLERANCE;
+}
+
+export async function runReal(plateArg) {
   const rawBuf = await fetchPlate(plateArg);
   const buf = await ensurePngBuffer(rawBuf);
   const plate = PNG.sync.read(buf);
   if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
+    if (isAspectPreservedScaleDown(plate.width, plate.height, PLATE_WIDTH, PLATE_HEIGHT)) {
+      throw new Error(
+        `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
+          "the aspect ratio is preserved (not a framing drift): this is Pollinations' flux " +
+          "model returning a uniformly smaller render, consistent with the same max-pixel-area " +
+          "cap gen-level-art.mjs's normalizeSize already documented (~590K px; this request's " +
+          `${PLATE_WIDTH * PLATE_HEIGHT}px area exceeds it, the response's ` +
+          `${plate.width * plate.height}px does not). Refusing to proceed: upscaling before ` +
+          "measuring would fabricate sub-pixel precision on tolerances lead-art pixel-calibrated " +
+          "on a 1024px-tall reference (art brief §1.2bis), and rescaling those tolerances to a " +
+          "smaller reference is lead-art's call, not this script's — ESCALATE to lead-art rather " +
+          "than retrying (a re-dispatch will hit the same cap).",
+      );
+    }
     throw new Error(
       `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
         "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
