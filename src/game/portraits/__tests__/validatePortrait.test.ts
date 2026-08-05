@@ -9,6 +9,7 @@ import {
   isEligibleTruth,
   PORTRAIT_BAND_ORDER,
 } from "@game/systems/portraitRobotSystem";
+import { at } from "@game/systems/__tests__/portraitFixtures";
 
 /** The plate the tooling lane will emit — synthesised here from the shipped catalogue. */
 function plateFor(catalogue: FaceCatalogue): PortraitPlateManifest {
@@ -191,8 +192,8 @@ describe("seed-sweep — the regression guard on the arithmetic (ADR-0080 D3)", 
     for (const seed of [0, 1, 17, 999, 2 ** 31]) {
       const puzzle = drawPortraitPuzzle(FACE_CATALOGUE, seed);
       FACE_CATALOGUE.bands.forEach((band, i) => {
-        const slot = puzzle.truth[i]!;
-        const variantIndex = (puzzle.order[i]!)[slot]!;
+        const slot = at(puzzle.truth, i);
+        const variantIndex = at(at(puzzle.order, i), slot);
         expect(isEligibleTruth(band.distances, variantIndex, band.variants.length)).toBe(true);
       });
     }

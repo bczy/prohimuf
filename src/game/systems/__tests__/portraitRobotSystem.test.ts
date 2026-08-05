@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { PortraitBandId, PortraitIntent } from "@game/types/portraitRobot";
+import type { PortraitIntent } from "@game/types/portraitRobot";
 import {
   applyPortraitIntent,
   correctCount,
@@ -22,7 +22,7 @@ import {
   REVEAL_SECONDS_UNRESOLVED,
   VARIANTS_PER_BAND,
 } from "@game/systems/portraitRobotSystem";
-import { TEST_CATALOGUE, cyclicDistances, testBand, testCatalogue } from "./portraitFixtures";
+import { TEST_CATALOGUE, at, cyclicDistances, testBand, testCatalogue } from "./portraitFixtures";
 
 const TIMER = PORTRAIT_TIMER_SECONDS.normal;
 
@@ -42,12 +42,15 @@ describe("gate §3 — the tuning table is written here and nowhere else", () =>
   });
 
   it("the payoff table: score, energy and wave hold per issue", () => {
-    expect(levelModifierFromPortrait({ outcome: "IDENTIFIED", correctCount: 4, scoreDelta: 1500 }))
-      .toEqual({ energyDelta: 0, firstWaveDelaySeconds: 20, narrativeBeat: "IDENTIFIED" });
-    expect(levelModifierFromPortrait({ outcome: "PARTIAL", correctCount: 3, scoreDelta: 400 }))
-      .toEqual({ energyDelta: 0, firstWaveDelaySeconds: 10, narrativeBeat: "PARTIAL" });
-    expect(levelModifierFromPortrait({ outcome: "FAILED", correctCount: 1, scoreDelta: 0 }))
-      .toEqual({ energyDelta: -20, firstWaveDelaySeconds: 0, narrativeBeat: "FAILED" });
+    expect(
+      levelModifierFromPortrait({ outcome: "IDENTIFIED", correctCount: 4, scoreDelta: 1500 }),
+    ).toEqual({ energyDelta: 0, firstWaveDelaySeconds: 20, narrativeBeat: "IDENTIFIED" });
+    expect(
+      levelModifierFromPortrait({ outcome: "PARTIAL", correctCount: 3, scoreDelta: 400 }),
+    ).toEqual({ energyDelta: 0, firstWaveDelaySeconds: 10, narrativeBeat: "PARTIAL" });
+    expect(
+      levelModifierFromPortrait({ outcome: "FAILED", correctCount: 1, scoreDelta: 0 }),
+    ).toEqual({ energyDelta: -20, firstWaveDelaySeconds: 0, narrativeBeat: "FAILED" });
   });
 
   it("no LevelModifier can express a life loss (gate A1, story AC5)", () => {
@@ -144,7 +147,7 @@ describe("the chrono is a dt accumulator, never a clock (ADR-0079 D2)", () => {
 describe("applyPortraitIntent is total (ADR-0082 D1)", () => {
   it("CYCLE wraps in both directions and carries its own band", () => {
     const scene = fresh();
-    const start = scene.selection[1]!;
+    const start = at(scene.selection, 1);
     let s = scene;
     for (let i = 0; i < VARIANTS_PER_BAND; i += 1) {
       s = applyPortraitIntent(s, { kind: "CYCLE", band: "eyes", delta: 1 });
@@ -194,20 +197,20 @@ describe("applyPortraitIntent is total (ADR-0082 D1)", () => {
 describe("resolvePortraitScene is the single exit (ADR-0079 D6/D8.1)", () => {
   it("derives the outcome from correctCount alone", () => {
     const scene = fresh();
-    const at = (n: number) => ({
+    const board = (n: number) => ({
       ...scene,
       selection: scene.puzzle.truth.map((slot, i) =>
-        i < n ? slot : (scene.puzzle.initialSelection[i]!),
+        i < n ? slot : at(scene.puzzle.initialSelection, i),
       ),
     });
-    expect(resolvePortraitScene(at(4)).result).toEqual({
+    expect(resolvePortraitScene(board(4)).result).toEqual({
       outcome: "IDENTIFIED",
       correctCount: 4,
       scoreDelta: 1500,
     });
-    expect(resolvePortraitScene(at(3)).result?.outcome).toBe("PARTIAL");
-    expect(resolvePortraitScene(at(2)).result?.outcome).toBe("FAILED");
-    expect(resolvePortraitScene(at(0)).result?.outcome).toBe("FAILED");
+    expect(resolvePortraitScene(board(3)).result?.outcome).toBe("PARTIAL");
+    expect(resolvePortraitScene(board(2)).result?.outcome).toBe("FAILED");
+    expect(resolvePortraitScene(board(0)).result?.outcome).toBe("FAILED");
   });
 
   it("revealSeconds is 1,4 s on IDENTIFIED and 2,6 s otherwise (gate A15)", () => {
@@ -246,7 +249,7 @@ describe("the early exit (gate A17)", () => {
     const at3 = {
       ...scene,
       selection: scene.puzzle.truth.map((slot, i) =>
-        i < 3 ? slot : (scene.puzzle.initialSelection[i]!),
+        i < 3 ? slot : at(scene.puzzle.initialSelection, i),
       ),
     };
     const abandoned = applyPortraitIntent(at3, { kind: "ABANDON" });
@@ -265,7 +268,7 @@ describe("the early exit (gate A17)", () => {
       scene = applyPortraitIntent(scene, {
         kind: "SET",
         band: band,
-        index: scene.puzzle.truth[i]!,
+        index: at(scene.puzzle.truth, i),
       });
     }
     expect(scene.result?.outcome).toBe("IDENTIFIED");
@@ -315,7 +318,7 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     for (let seed = 0; seed < 200; seed += 1) {
       const puzzle = drawPortraitPuzzle(TEST_CATALOGUE, seed);
       puzzle.truth.forEach((truthSlot, i) => {
-        offsets.add((((puzzle.initialSelection[i]!) - truthSlot + 6) % 6) - 1);
+        offsets.add(((at(puzzle.initialSelection, i) - truthSlot + 6) % 6) - 1);
       });
     }
     expect([...offsets].sort()).toEqual([0, 1, 2, 3, 4]);
@@ -327,7 +330,7 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
       puzzle.truth.forEach((truthSlot, i) => {
         const band = TEST_CATALOGUE.bands[i];
         if (band === undefined) throw new Error("fixture");
-        const variantIndex = (puzzle.order[i]!)[truthSlot]!;
+        const variantIndex = at(at(puzzle.order, i), truthSlot);
         expect(isEligibleTruth(band.distances, variantIndex, band.variants.length)).toBe(true);
       });
     }
@@ -338,11 +341,54 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     expect(() => drawPortraitPuzzle(empty, 3)).not.toThrow();
 
     const noEligible = testCatalogue({
-      bands: [testBand("hair", { distances: { ...cyclicDistances(), [distanceKey(0, 2)]: "fine" } })],
+      bands: [
+        testBand("hair", { distances: { ...cyclicDistances(), [distanceKey(0, 2)]: "fine" } }),
+      ],
     });
     const puzzle = drawPortraitPuzzle(noEligible, 3);
     expect(puzzle.truth[0]).toBeGreaterThanOrEqual(0);
     expect(correctCount(puzzle.initialSelection, puzzle.truth)).toBe(0);
+  });
+
+  // REGRESSION (panel B4b). A band with no variant used to draw `truth = 0` while the
+  // selection also started at `0`, so it counted as CORRECT forever: a catalogue with
+  // three bands emptied resolved itself to IDENTIFIED — a broken catalogue was a free
+  // 1500 points. The degradation of invalid data must be unfavourable, never a gift.
+  describe("a band with no variant is UNRESOLVED, never correct", () => {
+    const gutted = (emptyBands: number) =>
+      testCatalogue({
+        bands: PORTRAIT_BAND_ORDER.map((id, i) =>
+          i < emptyBands ? testBand(id, { variants: [], distances: {} }) : testBand(id),
+        ),
+      });
+
+    it("never credits an empty band, whatever the seed", () => {
+      for (let seed = 0; seed < 200; seed += 1) {
+        const puzzle = drawPortraitPuzzle(gutted(3), seed);
+        expect(correctCount(puzzle.initialSelection, puzzle.truth)).toBe(0);
+        // Even a selection that tries every slot cannot land on the empty band's truth.
+        for (let slot = 0; slot < VARIANTS_PER_BAND; slot += 1) {
+          expect(correctCount([slot, slot, slot, slot], puzzle.truth)).toBeLessThanOrEqual(1);
+        }
+      }
+    });
+
+    it("three empty bands cannot yield IDENTIFIED — the best reachable verdict is FAILED", () => {
+      const catalogue = gutted(3);
+      let scene = createPortraitScene(catalogue, 7, TIMER);
+      expect(scene.phase).toBe("ACTIVE");
+      // Play the ONE real band onto its truth: 1/4, and the scene stays open.
+      const truthSlot = at(scene.puzzle.truth, 3);
+      scene = applyPortraitIntent(scene, { kind: "SET", band: "mouth", index: truthSlot });
+      expect(scene.phase).toBe("ACTIVE");
+      expect(correctCount(scene.selection, scene.puzzle.truth)).toBe(1);
+      expect(resolvePortraitScene(scene).result?.outcome).toBe("FAILED");
+    });
+
+    it("an entirely empty catalogue expires to FAILED, not to a free IDENTIFIED", () => {
+      const scene = tickPortraitScene(createPortraitScene(gutted(4), 11, TIMER), TIMER + 1);
+      expect(scene.result).toEqual({ outcome: "FAILED", correctCount: 0, scoreDelta: 0 });
+    });
   });
 
   it("portraitHash is total and folds a non-finite seed to a finite value", () => {
@@ -368,8 +414,9 @@ describe("createPortraitScene", () => {
 
   it("cannot resolve on its first frame — no guard delay needed (ADR-0079 D8.4)", () => {
     for (let seed = 0; seed < 300; seed += 1) {
-      expect(stepPortraitScene(createPortraitScene(TEST_CATALOGUE, seed, TIMER), [], 1 / 60).phase)
-        .toBe("ACTIVE");
+      expect(
+        stepPortraitScene(createPortraitScene(TEST_CATALOGUE, seed, TIMER), [], 1 / 60).phase,
+      ).toBe("ACTIVE");
     }
   });
 });

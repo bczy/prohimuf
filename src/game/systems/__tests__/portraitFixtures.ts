@@ -4,7 +4,11 @@ import type {
   PortraitBandId,
   VariantDistance,
 } from "@game/types/portraitRobot";
-import { distanceKey, PORTRAIT_BAND_ORDER, VARIANTS_PER_BAND } from "@game/systems/portraitRobotSystem";
+import {
+  distanceKey,
+  PORTRAIT_BAND_ORDER,
+  VARIANTS_PER_BAND,
+} from "@game/systems/portraitRobotSystem";
 
 /**
  * Synthetic catalogues for the pure tests. NOT the shipped catalogue: the rules must be
@@ -35,7 +39,7 @@ export function testBand(id: PortraitBandId, overrides: Partial<PortraitBand> = 
     variants: Array.from({ length: VARIANTS_PER_BAND }, (_, i) => ({
       id: `${id}-${String(i + 1).padStart(2, "0")}`,
       asset: `assets/portrait/${id}-${String(i + 1).padStart(2, "0")}.png`,
-      trait: `trait ${i + 1}`,
+      trait: `trait ${String(i + 1)}`,
     })),
     distances: cyclicDistances(),
     ...overrides,
@@ -52,3 +56,19 @@ export function testCatalogue(overrides: Partial<FaceCatalogue> = {}): FaceCatal
 }
 
 export const TEST_CATALOGUE: FaceCatalogue = testCatalogue();
+
+/**
+ * Read an index that the test's own construction proves is present.
+ *
+ * `noUncheckedIndexedAccess` widens every array read to `| undefined`, and both
+ * `as number` and `!` are refused by lint (`non-nullable-type-assertion-style`
+ * and `no-non-null-assertion` are each other's fix). This helper is the third
+ * option, and the only honest one: an absent index FAILS the test loudly instead
+ * of being asserted away — which is exactly the assertion family that hid two of
+ * this story's blocking findings.
+ */
+export function at<T>(xs: readonly T[], i: number): T {
+  const v = xs[i];
+  if (v === undefined) throw new Error(`fixture: no element at index ${String(i)}`);
+  return v;
+}

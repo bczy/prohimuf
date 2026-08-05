@@ -41,7 +41,12 @@ import type { LevelModifier } from "@game/types/levelModifier";
  * for a length the literal already proves. It is also the single declaration of
  * that order — no lane re-types the four ids (panel run-1, `BAND_IDS`).
  */
-export const PORTRAIT_BAND_ORDER = ["hair", "eyes", "nose", "mouth"] as const satisfies readonly PortraitBandId[];
+export const PORTRAIT_BAND_ORDER = [
+  "hair",
+  "eyes",
+  "nose",
+  "mouth",
+] as const satisfies readonly PortraitBandId[];
 
 /** Hard ceiling, gate A5. Six variants per band, one gabarit, 24 assets. */
 export const VARIANTS_PER_BAND = 6;
@@ -141,7 +146,7 @@ export function portraitHash(seed: number, bandIndex: number, salt: number): num
   const s = Number.isFinite(seed) ? Math.trunc(seed) : 0;
   const magnitude = Math.abs(s);
   let h = 2166136261 >>> 0;
-  h = mix(h, magnitude % 4294967296 >>> 0);
+  h = mix(h, (magnitude % 4294967296) >>> 0);
   h = mix(h, Math.floor(magnitude / 4294967296) >>> 0);
   h = mix(h, s < 0 ? 1 : 0);
   h = mix(h, bandIndex >>> 0);
@@ -174,9 +179,16 @@ function seededShuffle(n: number, seed: number): number[] {
   return out;
 }
 
+/**
+ * The truth slot of a band that has no variant to be right about (panel B4b). Out of the
+ * slot space by construction, so `correctCount` can never credit it — the degradation of
+ * an invalid catalogue is UNFAVOURABLE, which is the only safe direction.
+ */
+export const NO_TRUTH_SLOT = -1;
+
 /** The `"i:j"` key (`i < j`) of a distance pair — the ONE place the convention is written. */
 export function distanceKey(a: number, b: number): string {
-  return a < b ? `${a}:${b}` : `${b}:${a}`;
+  return a < b ? `${String(a)}:${String(b)}` : `${String(b)}:${String(a)}`;
 }
 
 /**
@@ -233,8 +245,16 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
   catalogue.bands.forEach((band, bandIndex) => {
     const n = band.variants.length;
     if (n === 0) {
+      // A band with NO variant is UNRESOLVABLE, and `NO_TRUTH_SLOT` is how the board says
+      // so: no selection can ever equal it, so the band counts as wrong forever.
+      //
+      // It used to push `0` — and `selection` also started at `0`, so an empty band was
+      // permanently CORRECT: a catalogue with 3 bands emptied resolved itself to
+      // `IDENTIFIED` at t=0, and a broken catalogue was a gift (panel B4b). Degrading an
+      // invalid catalogue must never favour the player; the phase skip belongs to
+      // `validatePortrait`, and this is what happens if someone bypasses it.
       order.push([]);
-      truth.push(0);
+      truth.push(NO_TRUTH_SLOT);
       initialSelection.push(0);
       return;
     }
@@ -287,7 +307,7 @@ export function createPortraitScene(
     phase: "ACTIVE",
     puzzle,
     selection: puzzle.initialSelection,
-    focusedBand: PORTRAIT_BAND_ORDER[0]!,
+    focusedBand: PORTRAIT_BAND_ORDER[0],
     remainingSeconds: timerSeconds,
     timerSeconds,
     palier: palierFor(timerSeconds, timerSeconds),
@@ -317,8 +337,7 @@ export function resolvePortraitScene(scene: PortraitScene): PortraitScene {
     ...scene,
     phase: "RESOLVED",
     result,
-    revealSeconds:
-      outcome === "IDENTIFIED" ? REVEAL_SECONDS_IDENTIFIED : REVEAL_SECONDS_UNRESOLVED,
+    revealSeconds: outcome === "IDENTIFIED" ? REVEAL_SECONDS_IDENTIFIED : REVEAL_SECONDS_UNRESOLVED,
   };
 }
 
@@ -332,8 +351,12 @@ const BAND_INDEX: Readonly<Record<PortraitBandId, number>> = {
 /** Board mutation only — knows nothing about resolution (ADR-0079 D8.1). */
 function applySelection(scene: PortraitScene, intent: PortraitIntent): PortraitScene {
   if (intent.kind === "ABANDON") return scene;
+  // `BAND_INDEX` is TOTAL over `PortraitBandId`, so there is no "unknown band"
+  // case to guard here — the old `i === undefined` branch was unreachable, and an
+  // unreachable guard reads as a handled case that is not handled. The real
+  // degradations (an empty band, an out-of-range index) are below, where they can
+  // actually happen.
   const i = BAND_INDEX[intent.band];
-  if (i === undefined) return scene;
   if (intent.kind === "FOCUS") return { ...scene, focusedBand: intent.band };
 
   const n = scene.puzzle.order[i]?.length ?? 0;

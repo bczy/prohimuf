@@ -107,7 +107,7 @@ export function validatePortrait(
           "variant-count",
           "error",
           `bands.${band.id}.variants`,
-          `expected exactly ${VARIANTS_PER_BAND} variants, got ${band.variants.length}`,
+          `expected exactly ${String(VARIANTS_PER_BAND)} variants, got ${String(band.variants.length)}`,
         ),
       );
     }
@@ -146,7 +146,7 @@ export function validatePortrait(
           "distance-complete",
           "error",
           `bands.${band.id}.distances`,
-          `expected the ${expected.size} pairs "i:j" with i < j` +
+          `expected the ${String(expected.size)} pairs "i:j" with i < j` +
             (missing.length > 0 ? `; missing ${missing.join(", ")}` : "") +
             (unknown.length > 0 ? `; unknown or self-pair ${unknown.join(", ")}` : ""),
         ),
@@ -215,7 +215,7 @@ export function validatePortrait(
           issue(
             "asset-path",
             "error",
-            `bands.${band.id}.variants.${i}`,
+            `bands.${band.id}.variants.${String(i)}`,
             `expected id "${expectedId}" and asset "${expectedAsset}", got "${variant.id}" / "${variant.asset}"`,
           ),
         );
@@ -270,7 +270,7 @@ export function validatePortrait(
   for (const seed of SEED_SWEEP) {
     const puzzle = drawPortraitPuzzle(catalogue, seed);
     if (correctCount(puzzle.initialSelection, puzzle.truth) !== 0) {
-      offenders.push(`seed ${seed}: initial board is not 0/4`);
+      offenders.push(`seed ${String(seed)}: initial board is not 0/4`);
       break;
     }
     const badBand = bands.findIndex((band, i) => {
@@ -282,7 +282,9 @@ export function validatePortrait(
       return !isEligibleTruth(band.distances, variantIndex, band.variants.length);
     });
     if (badBand !== -1) {
-      offenders.push(`seed ${seed}: band ${bands[badBand]?.id ?? badBand} drew an ineligible truth`);
+      offenders.push(
+        `seed ${String(seed)}: band ${String(bands[badBand]?.id ?? badBand)} drew an ineligible truth`,
+      );
       break;
     }
   }
