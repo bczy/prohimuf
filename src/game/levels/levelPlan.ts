@@ -182,7 +182,12 @@ function planShapeIssues(plan: LevelPlan): readonly LevelIssue[] {
   // `backdrop.file` of "../../../etc/passwd" validates clean, gets scaffolded
   // verbatim, and turns the `inspect` tool's asset scan into an arbitrary-path
   // file-existence oracle (CI panel MAJEUR, security-review, on f867734b).
+  // `id` feeds the identical `assets/levels/<id>/...` shape (the new MCP `scanAssets`
+  // AND the pre-existing runtime `levelLayerPaths`/`enemyAssetPathsFor`) — it gets the
+  // same discipline as the two fields above, not just the MCP-only `scaffoldIdIssue`
+  // check that a hand-authored `generated/*.ts` module never goes through (panel r14).
   const pathFragments: (readonly [string, unknown])[] = [];
+  if (typeof p.id === "string") pathFragments.push(["id", p.id]);
   if (isRecord(p.backdrop)) pathFragments.push(["backdrop.file", p.backdrop.file]);
   if (Array.isArray(p.props)) {
     (p.props as readonly unknown[]).forEach((prop, i) => {

@@ -95,6 +95,8 @@ Intake : décision directe de Bertrand — « les deux en parallèle » (SP2 + s
       runs de la PR sont verts (panel-verdict, lint/typecheck/test, e2e, art, preview).
 - [x] **Panel CI — round 13 : CONDITIONAL** sur `c9735826` (1 MAJEUR, 4 MINEUR) — MAJEUR
       traité ; **et surtout : le verdict du panel n'est pas déterministe**, voir §8.
+- [x] **Panel CI — round 14 : FAIL** sur `74da5920` (1 BLOQUANT, 1 MAJEUR, 2 MINEUR) —
+      trace du fix round 13 mise à jour + garde de traversée ajoutée sur `plan.id`, voir §8.
 - [ ] Merge
 
 ## 8. Panel CI + review Copilot — PR #159 (2026-08-02)
@@ -780,6 +782,14 @@ existent encore de son côté, un coup d'œil avant de les considérer perdus, s
 Prêt pour merge dès que `producer`/l'architecte confirment le numéro ADR-0081 une dernière fois
 juste avant le push sur `main` (rituel déjà cadré au §6.7, pas une nouvelle condition).
 
+**Portée exacte de ce verdict (panel r14, MAJEUR)** : cette acceptation croise §5 (VERIFY
+qa-lead) et §6 (triage/re-vérification architecte), datés du même jour mais rendus AVANT
+l'ouverture du merge gate CI (§8, 13 rounds, ouvert après ce verdict). Elle ne re-couvre pas
+les findings trouvés puis corrigés par le panel CI a posteriori (dont deux étiquetés sécurité :
+round 4 traversée de chemin, round 8 `index.ts` écrasable) : `pm` ne les a jamais revus. La case
+Suivi « acceptation pm — ACCEPTED » ne vaut donc que pour §5/§6 ; c'est le panel CI (§8), autorité
+bloquante depuis ADR-0063, qui couvre tout ce qui a bougé après.
+
 — `pm` (John), 2026-08-02.
 
 ### Round 2 — `b3e96f5c` : CONDITIONAL (0 BLOQUANT, 1 MAJEUR, 3 MINEUR)
@@ -1196,3 +1206,33 @@ Non actionnés, et pourquoi :
 - **[MINEUR] le masque NIVEAU…VAGUE trompé par un nom contenant « vague »** — même classe
   que le cas « Armentières »/ARME déjà fermé, non atteignable aujourd'hui (seul level
   enregistré : `fixture`). Noté pour la première story qui nomme un level ainsi.
+
+### Round 14 — `74da5920` : **FAIL** (1 BLOQUANT, 1 MAJEUR, 2 MINEUR)
+
+Round exécuté sur `74da5920`, le commit qui apporte `scaffoldIdIssue()` (le correctif du
+MAJEUR round 13). Les quatre findings portent tous sur la TRACE, pas sur le fix lui-même
+(personne ne le remet en cause) :
+
+- **[BLOQUANT] la bannière PR affirmait un PASS figé (round 12) alors que le shard qu'elle
+  accompagne enregistre déjà le round 13 et son correctif** — juste. La bannière annonçait
+  « Il ne reste que le merge » en ne citant que `69d0f69e` (round 12), sans jamais mentionner
+  qu'un round CI ultérieur avait tourné sur le HEAD réellement livré (`74da5920`) ni que ce
+  fix n'avait alors jamais été revérifié par le panel. Fermé par CE round lui-même : c'est la
+  revérification que le finding réclamait. Bannière PR et présente entrée mises à jour dans
+  le même geste pour ne plus répéter le motif r6/r11 (code corrigé, trace pas encore).
+- **[MAJEUR] l'acceptation `pm` (§7.5) ne se recoupait qu'avec §5/§6, jamais avec le panel CI
+  (§8)** — juste, note de portée ajoutée en fin de §7.5 (ci-dessus) : l'ACCEPTED ne couvre que
+  ce qu'il a réellement revu, le panel CI reste l'autorité bloquante pour tout ce qui a bougé
+  après.
+- **[MINEUR] `plan.id` sans garde de traversée de chemin dans `validateLevelPlan`** — juste et
+  corrigé : `id` alimente le même gabarit `assets/levels/<id>/...` que `backdrop.file` et
+  `props[].asset`, qui ont déjà la garde depuis le round 4 ; `id` en était le seul champ
+  manquant, atteignable en dehors du couple `validate`/`scaffold` (un module `generated/*.ts`
+  écrit à la main). Ajouté à `pathFragments` (`levelPlan.ts`), 3 cas ajoutés au tableau `junk`
+  de `levelPlan.test.ts` (`../escape`, `/absolute`, `win\path`) — 71 tests toujours verts.
+- **[MINEUR] nouvelles devDependencies (SDK + arbre transitif)** — non actionné : le reviewer
+  lui-même note que l'audit ADR-0081 D2 (`yarn npm audit --all --recursive`, 2026-08-02, 0 avis
+  sur les 3 nouveaux paquets) suffit ; aucune des trois n'est atteignable depuis `src/**`.
+
+**État réel à ce round : le fix round 13 est solide, la trace est maintenant à jour, et CE
+round CI valide le HEAD qui le porte** — le point exact que le BLOQUANT réclamait.

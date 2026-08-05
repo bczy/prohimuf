@@ -667,6 +667,12 @@ describe("validateLevelPlan — structural precondition (plan/malformed)", () =>
     // Absolu, sans aucun ".." — la forme que la garde ratait (panel r7).
     { ...base, backdrop: { ...base.backdrop, file: "/etc/passwd" } },
     { ...base, props: [{ ...base.props[0], asset: "/etc/hostname" }] },
+    // `id` feeds the identical assets/levels/<id>/... path shape — same traversal
+    // discipline as backdrop.file/props[].asset, closed after being the only
+    // remaining gap between validate and scaffold's SAFE_ID (panel r14).
+    { ...base, id: "../escape" },
+    { ...base, id: "/absolute" },
+    { ...base, id: "win\\path" },
     // Mauvais TYPE sur une clé connue : passait jusqu'au round 10, se scaffoldait,
     // et faisait rougir tsc sur un module déclaré propre.
     { ...base, archetypes: [{ ...vigile, shoots: "yes" }] },
