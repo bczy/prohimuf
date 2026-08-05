@@ -210,7 +210,12 @@
         "seed": 4813,
         "prompt": "a menacing kidnapper in a dark jacket, one arm wrapped forward around empty space at chest height as if gripping a captive in front of him, the other hand pressing a pistol forward, threatening hunched posture, standing facing forward",
         "frames": [""],
-        "muzzle": [{ "x": 0.37, "y": 0.17 }]
+        "muzzle": [
+          {
+            "x": 0.37,
+            "y": 0.17
+          }
+        ]
       }
     }
   },
@@ -316,20 +321,29 @@
       "lustre": {
         "$comment": "Seed re-rolled 4877→4879 (Bertrand escalation + lead-art Nico's ASSET GATE FAIL, 2026-07-21, docs/handoffs/story-boss-niveau-final-live.md): batch-2 art (seed 4877, prompt UNCHANGED from the B3 armature-lock fix) showed two parasitic flanking column masses — a FLUX COMPOSITION defect, not a value/hole defect the prompt caused. Per Nico's §3.10 rule, a composition defect gets a NEW SEED with the prompt held verbatim (prompt surgery is reserved for value/text-attributable defects); only this seed field changed, nothing else in the entry.",
         "asset": "assets/boss/lustre.png",
-        "size": { "width": 320, "height": 512 },
+        "size": {
+          "width": 320,
+          "height": 512
+        },
         "seed": 4879,
         "prompt": "one ballroom chandelier on a single chain, a multi-tier cone-and-umbrella wrought-iron frame hung with rows of teardrop crystal drops, every drop attached to the frame, two adjacent drops missing in a wide notch"
       },
       "speaker_wall": {
         "asset": "assets/boss/speaker_wall.png",
-        "size": { "width": 512, "height": 320 },
+        "size": {
+          "width": 512,
+          "height": 320
+        },
         "seed": 4878,
         "prompt": "one hand-built teknival sound-system wall as a single isolated object, a wide pyramid of mismatched plywood bass-bins and horns stacked on a pallet rig, cables looping between the cabinets, a sprayed stencil spiral on one face"
       },
       "shield_cover_raised": {
         "$comment": "SHIELD COVER PROP, read 1/2 — RAISED/intact (docs/game-design/spec-boss-belliard-fiction.md §2, docs/game-design/spec-boss-shield-break-tempo-shot.md §6-A/6-C). Canon lead-art ruling: the Commandant is bare-headed with NOTHING shootable modelled on his body (block-level $comment RULING 2026-07-20) — the shield the player shoots is a SEPARATE cover-prop object he crouches behind at the porte-cochère, not armour on him. Two mutually-exclusive reads driven by the boss stance: this one renders while he is SHIELDED (behind cover, un-shootable, no hit point) — a riot shield stood/propped upright, or a porch door-leaf folded across as improvised cover. `shield_cover_lowered` is the companion read, live only during a phase-2+ normal EXPOSED window, presenting the fixed BOSS_SHIELD_POINT {x:0.4,y:-0.32} (anchor-relative) on its exposed low edge — same ANCHOR SCHEMA GAP as commander_weakpoint/commander_parry_windup (flagged block-level, needs senior-architect sign-off; no anchor field added here, only the requirement noted). STRUCTURE IS PROVISIONAL, owned by dev-tooling-assets, mirroring the lustre/speaker_wall precedent ([S13]): block sibling of the commander_* figures (not on his body, so not folded into any commander_* key), a portrait `size` override (a shield/door stood upright reads taller than wide, unlike the figures' square 256x256), a placeholder seed pending the prompt gate. `pending: true` + an EMPTY \"prompt\" are DELIBERATE: gen-boss-sprites.mjs skips any boss.types entry with no prompt rather than failing the whole block, so this scaffold does not block generating the 7 already-ratified commander_* poses. PROMPT AUTHORSHIP is concept-artist's lane (Maud), NOT dev-tooling's — see the brief this entry was scaffolded from (docs/handoffs/story-boss-belliard-live.md §2, dev-tooling-assets entry) for the read requirements to turn into a prompt. DO NOT GENERATE until: (1) concept-artist fills `prompt` (silhouette-first, positively described, FLUX-aware, house style verbatim per this block's `style`), (2) lead-art PROMPT GATE PASS, (3) `pending` flips to false or is removed.",
         "asset": "assets/boss/shield_cover_raised.png",
-        "size": { "width": 256, "height": 384 },
+        "size": {
+          "width": 256,
+          "height": 384
+        },
         "seed": 4879,
         "pending": true,
         "prompt": ""
@@ -337,7 +351,10 @@
       "shield_cover_lowered": {
         "$comment": "SHIELD COVER PROP, read 2/2 — LOWERED/vulnerable (companion of `shield_cover_raised`, same specs). Renders during the phase-2+ normal EXPOSED window while the Commandant has dropped his cover to fire; presents the fixed hit point (BOSS_SHIELD_POINT, anchor-relative, ANCHOR GAP as above) on its exposed low, street-side edge — the read must be a fixed, low, boss's-side affordance distinct from BOTH wandering rings (vital/limb) on his body (spec-boss-shield-break-tempo-shot.md AC5). Same PROVISIONAL-structure / prompt-pending contract as `shield_cover_raised`: `pending: true`, empty `prompt`, skipped by gen-boss-sprites.mjs, DO NOT GENERATE before concept-artist prompt + lead-art PROMPT GATE PASS.",
         "asset": "assets/boss/shield_cover_lowered.png",
-        "size": { "width": 256, "height": 384 },
+        "size": {
+          "width": 256,
+          "height": 384
+        },
         "seed": 4880,
         "pending": true,
         "prompt": ""
@@ -357,12 +374,15 @@
     "$structureComment": "STRUCTURE FIELDS BELOW (asset/size/seed/pxPerSu) added by dev-tooling-assets per the gate's write authorisation (§6: 'structure, ids, paths, sizes and seeds remain dev-tooling-assets'). Sizes are the DESKTOP GENERATION canvas from the resolution ruling (docs/art-direction/gates/photo-qte-resolution-and-sweep-ruling.md §1.1/§1.2) — the mobile 512-px variant is a PIPELINE DOWNSAMPLE of this same PNG, never a second generation (ruling §1.6, cap-2-batches applies once per asset). `pxPerSu` is the desktop generation's px-per-scene-unit on the pose's own box (ruling §1.3: 'write the per-asset px/su into levelArt.json alongside the box' so check-photo-subject-boxes.mjs's tolerance means the same thing on every asset) — the authored box itself lives in src/game/levels/photoQteBelliard.ts (subjectTrack), not duplicated here. `plate` carries no pxPerSu (it is décor, not a subject box; ruling §1.1: 2048x1152 = 20.48 px/su over the 100 su plate width, informational only). No `sheet` PNG: ruling §1.5 supersedes the draft's contact-sheet raster with a zero-asset two-layer DOM composite (plate crop + pose crop) — the `sheet` prompt string above is KEPT for the record/gate history but is DELIBERATELY NEVER DISPATCHED by gen-photo-sprites.mjs. Seeds 4900-4907, a fresh pinned range (no collision with boss 4870-4880, hostages 4812-4814, nearfg 6101-6108, vehicles/loot below 8128).",
     "plateAsset": {
       "asset": "assets/photoqte/plate.png",
-      "size": { "width": 2048, "height": 1152 },
+      "size": {
+        "width": 2048,
+        "height": 1152
+      },
       "seed": 4900,
       "sourceCrop": "assets/photoqte/plate-source-crop.png",
       "editReference": "assets/photoqte/plate-v2-reference.png",
       "signageRetouched": "assets/photoqte/plate-signage-blanked.png",
-      "editChain": [
+      "editChainDisabled": [
         {
           "key": "plate",
           "asset": "assets/photoqte/plate.png",
@@ -375,28 +395,40 @@
       "commandant_wait": {
         "prompt": "a tall bare-headed french police commander in a knee-length overcoat standing still, feet planted flat side by side on one baseline, both arms hanging settled against the body, shoulders square, coat straight and closed, head level: a narrow upright column well over twice as tall as wide",
         "asset": "assets/photoqte/commandant_wait.png",
-        "size": { "width": 456, "height": 1024 },
+        "size": {
+          "width": 456,
+          "height": 1024
+        },
         "seed": 4901,
         "pxPerSu": 75.85
       },
       "pair_facing": {
         "prompt": "two men in profile facing across a wide gap, feet flat on one baseline, arms settled against the body: left a tall bare-headed commander in a dark long overcoat, right a shorter civilian, pale overcoat; behind them a dark saloon's rear, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper, one front door open",
         "asset": "assets/photoqte/pair_facing.png",
-        "size": { "width": 1024, "height": 576 },
+        "size": {
+          "width": 1024,
+          "height": 576
+        },
         "seed": 4902,
         "pxPerSu": 42.67
       },
       "exchange_close": {
         "prompt": "two large dark head shapes in three-quarter view spanning the frame width, cropped at the collarbones, held apart by a clear gap of bare magenta: left short hair, right a pale overcoat collar; below them two hands meet at centre passing a stiff pale envelope with a visibly thick paper edge, wrists level; drawn with heavy black outlines and broad flat greys",
         "asset": "assets/photoqte/exchange_close.png",
-        "size": { "width": 1024, "height": 576 },
+        "size": {
+          "width": 1024,
+          "height": 576
+        },
         "seed": 4903,
         "pxPerSu": 60.24
       },
       "berline_plate": {
         "prompt": "a dark saloon's rear square-on, parallel to the picture plane, a low wide block filling the frame, flat boot lid, rectangular tail lamps at the corners, straight chrome bumper below, centred low a bright registration plate, crisp raised rim, its face one flat clean pale rectangle, smooth and unbroken; heavy black outlines and broad flat greys elsewhere",
         "asset": "assets/photoqte/berline_plate.png",
-        "size": { "width": 1024, "height": 576 },
+        "size": {
+          "width": 1024,
+          "height": 576
+        },
         "seed": 4904,
         "pxPerSu": 136.53
       },
@@ -436,19 +468,28 @@
       "stamp_master": {
         "prompt": "one closed hand-drawn oval loop of thick waxy black grease-pencil crayon, drawn large and hollow, with a blunt overshooting tail where the stroke closes",
         "asset": "assets/photoqte/stamp_master.png",
-        "size": { "width": 256, "height": 256 },
+        "size": {
+          "width": 256,
+          "height": 256
+        },
         "seed": 4905
       },
       "stamp_bonus": {
         "prompt": "one bold hand-drawn check stroke of thick waxy black grease-pencil crayon, a short down leg meeting a long rising leg, blunt ends",
         "asset": "assets/photoqte/stamp_bonus.png",
-        "size": { "width": 256, "height": 256 },
+        "size": {
+          "width": 256,
+          "height": 256
+        },
         "seed": 4906
       },
       "stamp_reject": {
         "prompt": "two bold hand-drawn strokes of thick waxy black grease-pencil crayon crossing near their middles into a wide X, blunt overshooting ends",
         "asset": "assets/photoqte/stamp_reject.png",
-        "size": { "width": 256, "height": 256 },
+        "size": {
+          "width": 256,
+          "height": 256
+        },
         "seed": 4907
       }
     }
@@ -595,7 +636,7 @@
       },
       "ironwork": "haussmann",
       "nearForeground": {
-        "$comment": "Near-foreground parallax props (ADR-0047), repositioned for the single-wide street-wide.png d\u00e9cor (ADR-0057) per docs/game-design/spec-belliard-street-wide-repositioning.md \u00a72 (13 props, gate lead-game-designer PASS 2026-07-21). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right). trafficLight (x=0.388, on the passage) is the ONLY prop exempt from the maxH clamp (TRAFFIC_LIGHT_H_FRAC, NearForeground.tsx) and thus the only one that can rise into the window band \u2014 deliberately placed over the passage exclusion zone so its mast never sweeps an active pop window; the other props are clamped to maxH so non-occlusion holds by construction regardless of x. 2026-07-25 amendment (Bertrand-directed, \"on ne voit plus le panneau Paris\", then \"ne garde qu'un seul panneau, celui de droite\"): the \u00a72.4 table left belliard with a SINGLE streetSign (x=0.46) and NearForeground.tsx halves each row on mobile by dropping every ODD entry of that row's list ORDER \u2014 that lone sign sat at near-row index 3 (odd), so belliard showed ZERO panneau PARIS on any mobile UA (verified in-browser). A first pass added two more signs (0.66, 0.885); Bertrand ruled three panneaux too many and kept only the RIGHTMOST, so the 0.46 and 0.66 signs are gone and the prop count is back to 13. The surviving streetSign x=0.885 is listed BEFORE the lamppost x=0.8 (x order DELIBERATELY broken there, and only there) so it takes near-row index 6 \u2014 EVEN, hence drawn on mobile; in x order it would fall on near-row index 7 (odd) and vanish again, reintroducing the exact original bug. The lamppost x=0.495 is back in plain x order (it had only been swapped to hand the now-deleted 0.46 sign an even index). ORDER IS LOAD-BEARING in this array: the mobile filter reads list order, not x. 2026-07-26 amendment (Bertrand-directed, \"sur mobile on voit pas le lampadaire\"): plain x order put BOTH lampposts (x=0.495, x=0.8) on odd near-row indices, so neither survived mobile \u2014 the streetSign fix above only ever guarded the sign. The lamppost x=0.495 is now listed BEFORE the bench x=0.6 (x order broken there, mirroring the streetSign trick) to take the EVEN index; that bench drops on mobile instead (the other bench, x=0.16, still shows). The x=0.8 lamppost is unchanged and still drops \u2014 one surviving lamppost is the fix, same bar as the streetSign. Drawn near row is now x=[0.16,0.34,0.388,0.6,0.495,0.72,0.885,0.8] on desktop and x=[0.16,0.388,0.495,0.885] on mobile; the sign's nearest same-row neighbour is 0.8 (clearance 0.085 \u2265 0.06) on desktop and 0.495 (clearance 0.39) on mobile. These invariants (a mobile-surviving sign + lamppost, \u22650.06 same-row x clearance on the row actually drawn in each mode) are pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts \u2014 re-run it before reordering or inserting props.",
+        "$comment": "Near-foreground parallax props (ADR-0047), repositioned for the single-wide street-wide.png décor (ADR-0057) per docs/game-design/spec-belliard-street-wide-repositioning.md §2 (13 props, gate lead-game-designer PASS 2026-07-21). factor is NEGATIVE (scrolls opposite/faster than the camera); clamped to [-0.5,-0.1] in getNearForeground. x is a full-street normalized anchor (0=left,1=right). trafficLight (x=0.388, on the passage) is the ONLY prop exempt from the maxH clamp (TRAFFIC_LIGHT_H_FRAC, NearForeground.tsx) and thus the only one that can rise into the window band — deliberately placed over the passage exclusion zone so its mast never sweeps an active pop window; the other props are clamped to maxH so non-occlusion holds by construction regardless of x. 2026-07-25 amendment (Bertrand-directed, \"on ne voit plus le panneau Paris\", then \"ne garde qu'un seul panneau, celui de droite\"): the §2.4 table left belliard with a SINGLE streetSign (x=0.46) and NearForeground.tsx halves each row on mobile by dropping every ODD entry of that row's list ORDER — that lone sign sat at near-row index 3 (odd), so belliard showed ZERO panneau PARIS on any mobile UA (verified in-browser). A first pass added two more signs (0.66, 0.885); Bertrand ruled three panneaux too many and kept only the RIGHTMOST, so the 0.46 and 0.66 signs are gone and the prop count is back to 13. The surviving streetSign x=0.885 is listed BEFORE the lamppost x=0.8 (x order DELIBERATELY broken there, and only there) so it takes near-row index 6 — EVEN, hence drawn on mobile; in x order it would fall on near-row index 7 (odd) and vanish again, reintroducing the exact original bug. The lamppost x=0.495 is back in plain x order (it had only been swapped to hand the now-deleted 0.46 sign an even index). ORDER IS LOAD-BEARING in this array: the mobile filter reads list order, not x. 2026-07-26 amendment (Bertrand-directed, \"sur mobile on voit pas le lampadaire\"): plain x order put BOTH lampposts (x=0.495, x=0.8) on odd near-row indices, so neither survived mobile — the streetSign fix above only ever guarded the sign. The lamppost x=0.495 is now listed BEFORE the bench x=0.6 (x order broken there, mirroring the streetSign trick) to take the EVEN index; that bench drops on mobile instead (the other bench, x=0.16, still shows). The x=0.8 lamppost is unchanged and still drops — one surviving lamppost is the fix, same bar as the streetSign. Drawn near row is now x=[0.16,0.34,0.388,0.6,0.495,0.72,0.885,0.8] on desktop and x=[0.16,0.388,0.495,0.885] on mobile; the sign's nearest same-row neighbour is 0.8 (clearance 0.085 ≥ 0.06) on desktop and 0.495 (clearance 0.39) on mobile. These invariants (a mobile-surviving sign + lamppost, ≥0.06 same-row x clearance on the row actually drawn in each mode) are pinned by src/game/levels/__tests__/nearForegroundDensity.test.ts — re-run it before reordering or inserting props.",
         "factor": -0.34,
         "objects": [
           {
@@ -861,7 +902,7 @@
       "$comment": "Niveau Final — l'Éden (ancien dancing), the boss-QTE venue (ADR-0053, story-boss-niveau-final-live). Single-facade mode (default, no `backdrop` field), same as stalingrad/vitry. INTERIOR venue: unlike the street levels this facade is a static hall interior held behind the whole boss tableau, so the exterior `sky`/`street` layers are DELIBERATELY DROPPED from `prompts` below (lead-art PROMPT GATE family PASS, 2026-07-20 — 'layer set with sky/street DROPPED for the interior') — the facade alone fills the frame ceiling-to-floor, which is exactly what satisfies the 'no dead sky-gap behind the boss {0,-5}' composition constraint. `gen-level-art.mjs` skips a layer cleanly when a level's `prompts` doesn't declare it, rather than sending FLUX a broken 'undefined' prompt (no hardcoded sky/street text ever reaches the generator for this level). `foreground`/`facade` prompt strings are copied VERBATIM from the gated draft `docs/art-direction/prompt-drafts/niveau-final-eden.md` (lead-art FAMILY PASS — Maud/concept-artist owns the prompt strings, this block's structure/ids/paths/sizes/windowGrid is dev-tooling-assets'). `size` uses the shared global `sizes.facade`/`sizes.foreground` (1280x768), no per-level override needed. A separate optional `ceiling` layer was drafted (bare-hook plaster detail) but is NOT included here per the draft's own default ('by default this layer drops' — the facade already carries the ceiling/cornice register); add it only if a future structural need requires a dedicated upper slot. Path `assets/levels/niveau-final/facade.png` (narrative wiring flag B, ADR-0023) generated via the existing `gen-level-art.mjs` → CI pipeline (ADR-0010), same as every other level — no new script/workflow needed for the backdrop itself.",
       "parallax": {
         "sky": 0.9,
-        "facade": 0.0,
+        "facade": 0,
         "street": 0.05
       },
       "ironwork": "haussmann",

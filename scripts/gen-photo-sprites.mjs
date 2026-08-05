@@ -232,6 +232,22 @@ async function makeCrop() {
 // against another paid image-editing model that also accepts `image=` (e.g. `nanobanana-2`,
 // `seedream-pro`) WITHOUT touching this file — a Bertrand-sanctioned re-roll, not a default.
 const PLATE_MODEL = process.env.PLATE_MODEL || "kontext";
+/**
+ * Text-to-image model for the plate when no `editReference` is wired.
+ *
+ * `ideogram-v4-quality` is THE model that drew the shipped `street-wide.png` — the decor
+ * Bertrand pointed at when he asked for "more sketchy, more comics, more like Belliard"
+ * (2026-08-05). Two independent causes made the kontext route miss that register: the
+ * halftone-xerox vocabulary (fixed in levelArt 451aa46f) and kontext's ~1024px edit
+ * resolution, which dissolves fine ink before the upscale to 2048. Generating on the
+ * reference's own model fixes both at once.
+ *
+ * Cost, stated rather than hidden: this drops the img2img conditioning on the
+ * street-wide crop, which was the mechanism behind gate criterion E-6(7) (street
+ * continuity). Same-model rendering identity is a DIFFERENT guarantee, not an equivalent
+ * one — `lead-art` rules on the substitution, this constant only implements it.
+ */
+const PLATE_T2I_MODEL = process.env.PLATE_T2I_MODEL || "ideogram-v4-quality";
 
 // img2img EDIT models on the paid farm (kontext, and nanobanana-2 tried as an A/B) do NOT
 // honour the requested width/height for an edit — both were observed returning a non-PNG at
@@ -387,6 +403,23 @@ async function generate(a) {
       );
       return stage1Resized;
     }
+  }
+  if (a.opaque) {
+    // The plate with no editReference wired: text-to-image on the reference decor's own
+    // model (see PLATE_T2I_MODEL). Exact dimensions are honoured on the paid farm, so no
+    // resize is needed — assertDimensions downstream still fails loud if that changes.
+    console.log(
+      `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_T2I_MODEL} text-to-image (paid)`,
+    );
+    return fetchWithRetry(
+      genPaidUrl({
+        prompt: a.prompt,
+        seed: a.seed,
+        width: a.width,
+        height: a.height,
+        model: PLATE_T2I_MODEL,
+      }),
+    );
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
   return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
