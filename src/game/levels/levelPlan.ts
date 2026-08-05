@@ -51,6 +51,14 @@ export interface LevelPlan {
     readonly enemySpeedMultiplier: number;
     readonly windowWeights: Partial<Record<EnemyKind, number>>;
   };
+  /** Point de départ de la calibration des fenêtres (spec SP2 §2.3, décision Bertrand) :
+   *  la bande verticale (normalisée y-down sur l'image) où chercher les ouvertures, et
+   *  le nombre de colonnes attendu. Optionnel : absent ⇒ la phase (b) refuse de tourner
+   *  pour ce level (pas de LEVEL_CFG manuel de repli pour un level généré). */
+  readonly calibration?: {
+    readonly windowBand: { readonly top: number; readonly bottom: number };
+    readonly expectedCols?: number;
+  };
 }
 
 /**
@@ -100,6 +108,42 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
     if (!a.kind.startsWith(ns) || a.kind.length <= ns.length) {
       errors.push(`archetype ${a.kind}: expected namespace "${ns}" plus a non-empty name`);
     }
+    // The spriteBase becomes a real filesystem WRITE target in the sprite
+    // pipeline (gen-enemy-types.mjs writes public/assets/<spriteBase>*.png for
+    // frame 1 AND every extra frame): a "/", ".." or absolute segment would
+    // silently escape public/assets on the CI runner — the same class of bug
+    // already closed for props[].asset below (panel run-4 on PR #156). The
+    // generator carries its own containment throw; this is the CI-time seat
+    // of the same law. The shape is the one every existing spriteBase has
+    // (enemy_sprite, enemy_fixture_vigile, …): a plain lowercase filename stem.
+    if (!/^[a-z0-9_]+$/.test(a.spriteBase)) {
+      errors.push(
+        `archetype ${a.kind}: spriteBase "${a.spriteBase}" must match ^[a-z0-9_]+$ ` +
+          `(a plain filename stem — it is joined into public/assets/<spriteBase>*.png)`,
+      );
+    }
+    // Unlike props — whose output is namespaced per level under
+    // assets/nearfg/<id>/ — a spriteBase resolves FLAT into public/assets/, so it
+    // shares one namespace with the shipped table and with every other generated
+    // level. A collision fails SILENTLY GREEN (panel run-8): gen-enemy-types only
+    // generates a frame when MISSING, so reusing e.g. "enemy_sprite" skips
+    // generation, commits nothing, exits 0 — and the level ships forever wearing
+    // another level's sprite. Requiring the plan's own id in the stem makes the
+    // flat namespace collision-free by construction.
+    // L'id est NORMALISÉ (tirets → underscores) avant de former le préfixe : un id de
+    // level admet les tirets (`porte-de-vanves`) alors que la forme d'un spriteBase les
+    // interdit — sans cette normalisation les deux règles seraient mutuellement
+    // exclusives et AUCUN level à tiret ne pourrait déclarer d'ennemi (panel run-9 ;
+    // tous les tests précédents utilisaient "fixture", sans tiret, d'où le trou).
+    const spritePrefix = `enemy_${plan.id.replace(/-/g, "_")}_`;
+    if (!a.spriteBase.startsWith(spritePrefix)) {
+      errors.push(
+        `archetype ${a.kind}: spriteBase "${a.spriteBase}" must start with ` +
+          `"${spritePrefix}" — the sprite namespace is FLAT (public/assets/), so a ` +
+          `stem that does not carry this level's id can silently collide with the ` +
+          `shipped table or a sibling generated level`,
+      );
+    }
     // Runtime divides by `variants` (EnemySprite keys the flipbook off
     // slotIndex % variants) and loops preload paths 1..variants: 0 or a
     // non-integer means NaN sprite keys and an EMPTY preload manifest. Capped as
@@ -143,6 +187,32 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
       // Same empty-name law as the archetype check above: getNearForeground's
       // isOwnedGeneratedPropKind requires a non-empty name at runtime.
       errors.push(`prop ${p.kind}: expected namespace "${ns}" plus a non-empty name`);
+    }
+    // The asset string becomes a real filesystem WRITE target in the sprite
+    // pipeline (gen-nearfg-sprites.mjs resolves it under public/): an absolute
+    // path or a ".." segment would silently escape public/ on the CI runner.
+    // The generator carries its own containment throw; this is the CI-time
+    // seat of the same law, next to the rest of the prop invariants.
+    if (p.asset.startsWith("/") || p.asset.split("/").includes("..")) {
+      errors.push(
+        `prop ${p.kind}: asset "${p.asset}" must be a relative path under public/ ` +
+          `with no ".." segment (documented shape: assets/nearfg/<id>/<name>.png)`,
+      );
+    }
+    // Le namespace par level des props était une hypothèse de commentaire, pas un
+    // invariant vérifié (panel run-12) : un asset pointant vers le dossier d'un AUTRE
+    // level passait la validation, et le générateur y aurait écrit — écrasant l'art
+    // commité d'un level frère. Même loi que le préfixe de `spriteBase` (run 8), à
+    // ceci près que les props ont, eux, un dossier propre : on l'exige. La forme est
+    // ancrée pour interdire aussi une profondeur supplémentaire, que le glob de
+    // présence du workflow ne verrait pas.
+    const assetDir = `assets/nearfg/${plan.id}/`;
+    if (!p.asset.startsWith(assetDir) || p.asset.slice(assetDir.length).includes("/")) {
+      errors.push(
+        `prop ${p.kind}: asset "${p.asset}" must be exactly "${assetDir}<name>.png" — ` +
+          `a foreign level's directory would be overwritten, and extra depth is not ` +
+          `committed by the workflow's presence check`,
+      );
     }
     // `x` included: getNearForeground silently DROPS a non-finite-x object at
     // runtime, which would desynchronize the mobile-halving parity this
@@ -195,6 +265,19 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // The travel allowance derives from backdrop.aspect, so the aspect must be sane
   // FIRST — a NaN/non-positive aspect would poison the runway arithmetic below
   // (and the runtime layout math it mirrors).
+  // `backdrop.file` is the THIRD plan field that becomes a filesystem write target
+  // (gen-street-paid resolves public/assets/levels/<id>/<file>.png, the output of the
+  // PAID job; align-windows reads the same path) — it was the one that received
+  // neither of the two guards its siblings got (panel run-8, two reviewers). Same
+  // law as spriteBase: a plain filename stem, so no ".." or absolute segment can
+  // reach the resolve. The generators carry the containment throw as the runtime
+  // half — see ADR-0078 §3 for why both halves exist.
+  if (!/^[a-z0-9_-]+$/.test(plan.backdrop.file)) {
+    errors.push(
+      `backdrop.file: "${plan.backdrop.file}" must match ^[a-z0-9_-]+$ (a plain ` +
+        `filename stem — it is joined into public/assets/levels/${plan.id}/<file>.png)`,
+    );
+  }
   if (!Number.isFinite(plan.backdrop.aspect) || plan.backdrop.aspect <= 0) {
     errors.push(`backdrop.aspect: must be a finite number > 0`);
   }
@@ -280,6 +363,26 @@ export function validateLevelPlan(plan: LevelPlan): string[] {
   // even indices OF THE ROW'S OWN ORDER, so a non-empty row always keeps its index-0
   // prop — an "emptied row" is unconstructible. The rule itself lives in
   // `mobileVisibleProps`, the ONE copy NearForeground.tsx also renders from.
+
+  // Calibration (SP2 §2.3): optional — a level with no `calibration` simply cannot
+  // run phase (b) yet (align-windows.mjs refuses, see planCalibration.mjs). When
+  // declared, the band must be a sane, normalized (y-down) [0,1] window with
+  // top < bottom, and expectedCols (if given) a positive integer — both feed the
+  // detection loop's config directly, with no manual LEVEL_CFG fallback.
+  if (plan.calibration !== undefined) {
+    const { windowBand, expectedCols } = plan.calibration;
+    const { top, bottom } = windowBand;
+    const finiteInUnit = (v: number) => Number.isFinite(v) && v >= 0 && v <= 1;
+    if (!finiteInUnit(top) || !finiteInUnit(bottom) || !(top < bottom)) {
+      errors.push(
+        `calibration.windowBand: top (${String(top)}) and bottom (${String(bottom)}) must ` +
+          `be finite numbers in [0, 1] with top < bottom`,
+      );
+    }
+    if (expectedCols !== undefined && (!Number.isInteger(expectedCols) || expectedCols < 1)) {
+      errors.push(`calibration.expectedCols: must be an integer >= 1`);
+    }
+  }
 
   return errors;
 }

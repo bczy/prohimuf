@@ -53,4 +53,8 @@ export const plan: LevelPlan = {
     enemySpeedMultiplier: 1,
     windowWeights: { "fixture:vigile": 20 },
   },
+  // Point de départ de calibration (SP2 §2.3) — valeurs plausibles pour un
+  // street-wide standard, jamais consommées par align-windows pour ce level
+  // sans asset (documenté ci-dessus : "Do not generate art for it").
+  calibration: { windowBand: { top: 0.12, bottom: 0.5 }, expectedCols: 7 },
 };

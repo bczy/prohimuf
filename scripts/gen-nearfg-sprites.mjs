@@ -38,6 +38,17 @@
  *   FORCE=1 node scripts/gen-nearfg-sprites.mjs         # regenerate all (network) [CI]
  *   node scripts/gen-nearfg-sprites.mjs --asset bollard # one kind only
  *   node scripts/gen-nearfg-sprites.mjs --list          # list defined kinds
+ *
+ * `--plan <id>` (SP2 phase (d), T5) — additive path: instead of levelArt.json's
+ * `nearForegroundArt.types`, iterates the plan's `props[]`
+ * (`src/game/levels/generated/<id>.ts`, `scripts/lib/loadPlan.mjs`) and writes
+ * each one to `public/assets/nearfg/<id>/<name>.png` — the exact path
+ * `GeneratedPropSpec.asset` declares (`assets/nearfg/<id>/<name>.png`, relative
+ * to `public/`), so the namespace lives in the OUTPUT PATH, not just the prop's
+ * `kind`. The shared `nearForegroundArt.opening`/`style` from levelArt.json are
+ * still reused (house décor look) — only the per-prop prompt is plan-derived
+ * (its kind's name segment, after the `<id>:` namespace). Every downstream gate
+ * (`check-nearfg-style.mjs`) reads the PNG on disk, so it applies unchanged.
  */
 import fs from "fs";
 import path from "path";
@@ -46,6 +57,8 @@ import { readToken, genUrl, withRetry, keyAndDown, cyanPreviewCanvas } from "./l
 import { sleep } from "./lib/pollinations.mjs";
 import { skip } from "./lib/idempotent.mjs";
 import { parseAssetArgs } from "./lib/cli.mjs";
+import { loadPlan, planIdFromArgs } from "./lib/loadPlan.mjs";
+import { promptDescriptor } from "./lib/planNamespace.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -83,6 +96,7 @@ export function loadNearForegroundArt() {
           `(got ${JSON.stringify(def.size)}); see levelArt.json`,
       );
     }
+    const asset = def.asset ?? `assets/nearfg/${kind}.png`;
     return {
       kind,
       prompt,
@@ -91,7 +105,54 @@ export function loadNearForegroundArt() {
       height,
       // Pinned seed → reproducible rolls, reviewable diffs (REROLL=1 ignores it).
       seed: Number.isInteger(def.seed) && process.env.REROLL !== "1" ? def.seed : null,
-      asset: def.asset ?? `assets/nearfg/${kind}.png`,
+      asset,
+      // Kept identical to today's byte-for-byte behaviour (`${OUT_DIR}/${kind}.png`)
+      // — `loadNearForegroundArtFromPlan` below is the one path whose `outFile`
+      // genuinely differs (a plan's kind contains a ":" namespace prefix, unusable
+      // as a filename), so main() always reads THIS field rather than
+      // recomputing a path from `kind` itself.
+      outFile: path.join(OUT_DIR, `${kind}.png`),
+    };
+  });
+}
+
+/**
+ * loadNearForegroundArtFromPlan(plan, { opening, style }) -> same shape as
+ * loadNearForegroundArt(), one entry per `plan.props[]` (SP2 phase (d), T5).
+ * `outFile` is resolved from the prop's OWN declared `asset` path
+ * (`assets/nearfg/<id>/<name>.png`, exactly what `GeneratedPropSpec.asset`
+ * says — namespace lives in the path, not just `kind`), never recomputed from
+ * `kind` (which contains a `<id>:` prefix unusable as a filename). Pure — no
+ * fs/network.
+ */
+export function loadNearForegroundArtFromPlan(plan, { opening = "", style = "" } = {}) {
+  const publicRoot = path.resolve(ROOT, "public");
+  return plan.props.map((p) => {
+    // Shared with gen-enemy-types.mjs — the ONE copy of the namespace-
+    // stripping rule (panel run-4 on PR #156).
+    const prompt = `a ${promptDescriptor(p.kind, plan.id)}`;
+    // This is the first code path that turns a plan's `asset` string into a
+    // real filesystem WRITE target: an absolute path makes path.resolve drop
+    // the public/ prefix entirely, and a ".."-laden one climbs out of it —
+    // either would let malformed plan data write anywhere on the runner
+    // (panel run-2 on PR #156). validateLevelPlan enforces the same law at
+    // CI time; this containment check is the generator's own last line.
+    const outFile = path.resolve(publicRoot, p.asset);
+    if (!outFile.startsWith(publicRoot + path.sep)) {
+      throw new Error(
+        `prop ${p.kind}: asset "${p.asset}" escapes public/ (absolute path or ".." traversal) — ` +
+          `expected the documented shape assets/nearfg/<id>/<name>.png`,
+      );
+    }
+    return {
+      kind: p.kind,
+      prompt,
+      assembled: `${opening}${prompt}${style}`,
+      width: Math.round(512 * p.aspect),
+      height: 512,
+      seed: null, // free seed (spec §2.2) — same as the hand-authored table's null path
+      asset: p.asset,
+      outFile,
     };
   });
 }
@@ -118,13 +179,24 @@ export async function generateOne(token, assembledPrompt, seed, width, height) {
   return { ...result, effectiveSeed };
 }
 
+/** Resolve the prop list: `--plan <id>` (T5) or the levelArt.json table (default). */
+async function resolveProps(args) {
+  const levelId = planIdFromArgs(args);
+  if (levelId === null) return loadNearForegroundArt();
+  const plan = await loadPlan(levelId);
+  const json = JSON.parse(fs.readFileSync(LEVEL_ART, "utf8"));
+  const opening = json.nearForegroundArt?.opening ?? "";
+  const style = json.nearForegroundArt?.style ?? "";
+  return loadNearForegroundArtFromPlan(plan, { opening, style });
+}
+
 async function main() {
   const args = process.argv.slice(2);
-  const props = loadNearForegroundArt();
+  const props = await resolveProps(args);
   const { list, target } = parseAssetArgs(args);
 
   if (list) {
-    console.log("Defined near-foreground props (from levelArt.json):");
+    console.log("Defined near-foreground props:");
     props.forEach((p) =>
       console.log(
         `  ${p.kind.padEnd(16)} ${p.width}x${p.height}  → ${p.asset}` +
@@ -152,16 +224,15 @@ async function main() {
   // regenerated). The per-kind try/catch still exists for transient network
   // failures only.
   const pending = todo.filter(
-    (p) =>
-      !skip(path.join(OUT_DIR, `${p.kind}.png`), { force: FORCE, existsSync: fs.existsSync }) &&
-      p.prompt.trim(),
+    (p) => !skip(p.outFile, { force: FORCE, existsSync: fs.existsSync }) && p.prompt.trim(),
   );
   const token = pending.length > 0 ? readToken() : null;
 
   console.log(`Near-foreground sprites → ${path.relative(ROOT, OUT_DIR)}\n`);
 
   for (const p of todo) {
-    const out = path.join(OUT_DIR, `${p.kind}.png`);
+    const out = p.outFile;
+    fs.mkdirSync(path.dirname(out), { recursive: true });
     if (skip(out, { force: FORCE, existsSync: fs.existsSync })) {
       console.log(`  [skip] ${p.kind} (exists)`);
       continue;
