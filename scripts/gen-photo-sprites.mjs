@@ -156,12 +156,46 @@ async function generate(a) {
       return await fetchWithRetry(kontextUrl(a.prompt, a.seed, a.width, a.height, imageUrl));
     } catch (e) {
       // Gate §4 C4 — pre-authorised fallback: flux on the SAME prompt/seed string.
-      console.log(`  [fallback] ${a.key} kontext failed (${e.message}) — retrying flux`);
+      // Loud on purpose (::warning:: GH Actions annotation, not just a console.log
+      // line): the fallback drops the street-continuity conditioning that IS the
+      // plate's ELIMINATORY gate criterion, so a silent fallback previously shipped
+      // a decor with no seam and nobody noticed until review.
+      const msg =
+        `${a.key}: kontext img2img FAILED (${e.message}) — falling back to flux ` +
+        `text-to-image. This is the pre-authorised fallback (gate §4 C4) but the ` +
+        `shipped asset then has NO street-continuity conditioning` +
+        (a.key === "plate" ? " (an ELIMINATORY criterion for the plate)" : "") +
+        ` — verify the result against the gate before merge.`;
+      console.warn(`::warning::${msg}`);
       return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
     }
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
   return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
+}
+
+// Read width/height straight out of the PNG IHDR chunk (bytes 16-23, big-endian) —
+// no image-decoding dependency needed just to police dimensions.
+function pngDimensions(buf) {
+  if (buf.length < 24 || buf.toString("ascii", 12, 16) !== "IHDR") return null;
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+// Pollinations' anonymous tier silently halves any request above ~1024px on a
+// side instead of erroring — that is how the plate shipped at 1024x576 instead
+// of the decided 2048x1152 without anyone noticing. Refuse to ship a mismatched
+// asset instead of writing it quietly; the caller lets this throw all the way
+// out so the whole run fails loudly (CI job red) rather than soft-skipping.
+function assertDimensions(a, buf) {
+  const dims = pngDimensions(buf);
+  if (!dims) return; // not a PNG we can introspect (e.g. non-image fallback) — let downstream fail
+  if (dims.width !== a.width || dims.height !== a.height) {
+    throw new Error(
+      `${a.key}: provider returned ${dims.width}x${dims.height}px but ${a.width}x${a.height}px ` +
+        `was requested — refusing to write a silently downscaled asset (Pollinations halves ` +
+        `oversized requests on the anonymous tier; set POLLINATIONS_TOKEN or investigate before retrying).`,
+    );
+  }
 }
 
 // ── Post-processing: chroma-key cutout (7 of 8 assets; plate stays opaque) ────
@@ -277,6 +311,11 @@ async function main() {
       console.log(`[fail] ${a.key} — ${e.message} (will be generated in CI)`);
       continue;
     }
+    // Deliberately NOT caught alongside the network fetch above: a dimension
+    // mismatch is not a transient network flake to soft-skip, it is a defect
+    // in what the provider sent back — it must fail the run, not be silently
+    // swallowed as "will be generated in CI".
+    assertDimensions(a, buf);
     fs.mkdirSync(path.dirname(a.outFile), { recursive: true });
     fs.writeFileSync(a.outFile, buf);
     console.log(`  [ok ] wrote ${path.relative(ROOT, a.outFile)} (${buf.length} bytes)`);
