@@ -12,3 +12,13 @@ run 8: plate seule — deux temps: flux angle plongeant (texte seul, sans condit
   PUIS kontext img2img sur ce rendu (data uri, pas de crop frontal en reference) — le
   conditionnement sur l'elevation frontale ecrasait le texte dormer, cf. gen-photo-sprites.mjs
 run 8b: touch to satisfy paths filter (empty commit above changed no path)
+run 8 RESULT: stage 2 (kontext, data-uri ref) 414'd — url too long for a 2048x1152 png
+  in a query string; shipped the pre-authorised stage-1 (flux, angle-only) fallback.
+  Fixed (this commit): stage 2 now uploads via multipart POST /v1/images/edits
+  (editImagePaid) instead of a GET data-uri. BUT stage 1 alone (flux, dormer-POV prompt,
+  NO conditioning at all) still shipped an EYE-LEVEL street, not the plunging rooftop
+  view the prompt asks for — visible in the committed plate.png at b9f49e5c. That is a
+  prompt-strength issue (flux not honouring the dormer/plunging framing clause), not a
+  conditioning fight, so re-dispatching stage 2 alone won't fix it — needs concept-artist
+  to re-weight/front-load the framing tokens (or an explicit "bird's-eye view down onto"
+  phrasing) before the next run.
