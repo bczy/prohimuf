@@ -8,3 +8,6 @@ run 4: plate seule — kontext img2img via gen.pollinations.ai (paid farm, réso
 run 5: fix rawUrl (public/ manquant, 404 sur le crop) — replate
 run 6: A/B modele plate — nanobanana-2 (kontext ignore width/height, sort JPEG 1024x1024)
 run 7: fix resize-to-target (kontext JPEG 1024x1024 -> stretch PNG 2048x1152), retour kontext
+run 8: plate seule — deux temps: flux angle plongeant (texte seul, sans conditionnement)
+  PUIS kontext img2img sur ce rendu (data uri, pas de crop frontal en reference) — le
+  conditionnement sur l'elevation frontale ecrasait le texte dormer, cf. gen-photo-sprites.mjs
