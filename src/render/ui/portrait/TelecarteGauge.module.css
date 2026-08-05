@@ -13,7 +13,16 @@
   min-width: 0;
 }
 
+/*
+ * The label yields before the rail does. Without `min-width: 0` a `nowrap` flex item
+ * cannot shrink past its text, so on the 390px mobile strip the label took the whole
+ * gauge and pushed the track OUT of its own box — a 4px rail rendered off the right
+ * edge of the viewport. The chrono is the rail; the word beside it is the caption.
+ */
 .label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: var(--font-mono);
   font-size: var(--font-size-base);
   letter-spacing: 0.24em;
@@ -25,7 +34,8 @@
 .track {
   position: relative;
   flex: 1 1 auto;
-  min-width: 0;
+  /* A rail shorter than this is not a gauge, it is a dot. */
+  min-width: 44px;
   height: var(--space-sm);
   border: var(--keyline-width) solid var(--ink-black);
   overflow: hidden;

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, createElement } from "react";
 
 // Opt into React's act() environment so client-render interaction tests don't warn.
@@ -312,5 +314,78 @@ describe("EarlyExitButton — arming", () => {
     });
     expect(onExit).toHaveBeenCalledTimes(1);
     expect(button.getAttribute("aria-pressed")).toBeNull();
+  });
+});
+
+/**
+ * The HUD corner, pinned as text.
+ *
+ * The exit target is out of flow (`position: absolute`) because it is LAST in the DOM
+ * for the tab order — so the HUD's flex row cannot see it, and the gauge stretched its
+ * rail straight through `ÇA PART COMME ÇA`: the screen's only permanent control came
+ * out struck through, which reads as disabled (panel run-2, captures). The fix is a
+ * reservation, and a reservation is only true while the two numbers stay ONE number.
+ *
+ * jsdom lays nothing out, so this asserts the mechanism rather than the pixels — the
+ * pixels are the `verify` captures. What it catches is the realistic regression: a
+ * later hand widening the button, or the padding, and not the other.
+ */
+describe("run-2 — the exit corner is reserved, not overlapped", () => {
+  const css = readFileSync(
+    resolve(process.cwd(), "src/render/ui/portrait/PortraitRobotScreen.module.css"),
+    "utf8",
+  );
+
+  it("pads the HUD by the SAME custom property the exit slot is wide", () => {
+    const hud = /\.hud \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    const slot = /\.exitSlot \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(hud).toMatch(/padding-right:[^;]*var\(--exit-reserve\)/);
+    expect(slot).toMatch(/width:[^;]*var\(--exit-reserve\)/);
+  });
+
+  it("declares the reserve on both device forks", () => {
+    expect(css).toMatch(/\.root \{\s*--exit-reserve:/);
+    expect(css).toMatch(/\.root\[data-device="mobile"\] \{\s*--exit-reserve:/);
+  });
+
+  it("keeps the desktop control strip clear of the fullscreen glyph's corner", () => {
+    // Same defect one corner down: `{n} sur {total}` of the last band sat under the
+    // fixed 40px glyph (ADR-0008), which is drawn over every screen at z-index 300.
+    const stack = /\.root\[data-device="desktop"\] \.stack \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(stack).toMatch(/margin:[^;]*var\(--chrome-corner\)/);
+  });
+});
+
+/**
+ * The masthead is what yields on the 32px strip (UX §9.1) — and it could not: `.title`
+ * ships `flex: 0 0 auto`, so the `text-overflow: ellipsis` declared for mobile was
+ * unreachable and the chrono's rail was pushed off the viewport instead.
+ */
+describe("run-2 — the mobile strip yields the masthead, not the chrono", () => {
+  const css = readFileSync(
+    resolve(process.cwd(), "src/render/ui/portrait/PortraitRobotScreen.module.css"),
+    "utf8",
+  );
+
+  it("makes the mobile masthead shrinkable, so its ellipsis is reachable", () => {
+    const title = /\.root\[data-device="mobile"\] \.title \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(title).toMatch(/flex:\s*0 1 auto/);
+    expect(title).toMatch(/min-width:\s*0/);
+    expect(title).toMatch(/text-overflow:\s*ellipsis/);
+  });
+
+  it("gives the gauge a floor so it is never the thing that gives", () => {
+    expect(/\.hud > div \{([^}]*)\}/.exec(css)?.[1] ?? "").toMatch(/min-width:\s*\d+px/);
+  });
+
+  it("keeps the gauge's own rail from being squeezed out by its caption", () => {
+    const gauge = readFileSync(
+      resolve(process.cwd(), "src/render/ui/portrait/TelecarteGauge.module.css"),
+      "utf8",
+    );
+    // `white-space: nowrap` without `min-width: 0` cannot shrink past its text: the
+    // caption took the whole gauge and the rail rendered outside the box.
+    expect(/\.label \{([^}]*)\}/.exec(gauge)?.[1] ?? "").toMatch(/min-width:\s*0/);
+    expect(/\.track \{([^}]*)\}/.exec(gauge)?.[1] ?? "").toMatch(/min-width:\s*\d+px/);
   });
 });

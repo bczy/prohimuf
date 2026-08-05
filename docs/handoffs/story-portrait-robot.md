@@ -1148,3 +1148,45 @@ vrai (rouge), `scoreSettledRef` retiré (rouge).
 - Captures `verify` de la révélation à sa vraie durée (2,6 s + 2,2 s) sur les deux classes
   d'appareil — la scène est visible, la barre l'exige avant la PR.
 - `game-designer` : playtest du rythme `IDENTIFIED` (voir §15.5).
+
+### 16.9 Tour 2 — régression visuelle du HUD (captures du coordinateur, corrigée)
+
+**Cause.** Le correctif M5-aggravant a mis la cible de sortie **en fin de DOM** (bon ordre de
+focus) et l'a repositionnée au coin en `position: absolute`. Une boîte hors flux n'occupe
+aucune place : la rangée flex du HUD ne la voyait plus et la jauge s'étirait **à travers** le
+libellé. Mesuré avant correctif, `?preview=portrait&portraitSeed=42` :
+
+|                  | rail de la jauge | bouton de sortie                      |
+| ---------------- | ---------------- | ------------------------------------- |
+| desktop 1440×900 | `x 464 → 1434`   | `x 1206 → 1434` (228 px sous le rail) |
+| mobile 844×390   | `x 404 → 708`    | `x 266 → 384`                         |
+
+**Correctif.** `--exit-reserve` déclarée **une fois** par fork d'appareil (236 px / 124 px,
+mesurées sur l'état le plus large de chaque libellé) et **dépensée deux fois** : en
+`padding-right` du HUD et en `width` de `.exitSlot`. La réserve et la chose réservée ne
+peuvent plus diverger d'un pixel.
+
+Mesuré après, mêmes URL et mêmes tailles : desktop rail `→ 1192`, sortie `1206 →` (gouttière
+de 14 px) ; mobile paysage rail `→ 708`, sortie `720 →`. Libellés entiers, aucun trait
+dessus. Vérifié aussi à **1280×720** (rail `→ 1032`, sortie `1046 →`). Zéro `pageerror`.
+
+**Coin bas-droit (desktop).** Même famille : `FullscreenButton` est `fixed`, 40 px à 10 px des
+bords, z-index 300. `--chrome-corner: 50px` ajoutée à la marge horizontale du bandeau de
+contrôle desktop, **des deux côtés** pour qu'il reste centré sous les deux visages. Le
+compteur de la dernière bande passe de `right 1424` (sous le glyphe, qui commence à `1390`) à
+`right 1374` — dégagé. À 1280×720 : `1214` contre `1230`.
+
+**Trouvé en vérifiant, pas dans le rapport.** Sur le bandeau mobile, `.title` portait
+`flex: 0 0 auto` : l'`ellipsis` déclarée pour mobile était **inatteignable**, le masthead ne
+cédait rien, et c'est le rail du chrono qui sortait de la fenêtre. Et dans la jauge, `.label`
+en `white-space: nowrap` sans `min-width: 0` ne peut pas rétrécir sous son texte : la légende
+prenait toute la jauge et poussait le rail **hors de sa propre boîte** (4 px de large, à
+`x 404` sur une fenêtre de 390). Corrigés tous les deux, avec un plancher explicite sur le
+rail (44 px) et sur la jauge (72 px, 128 px en mobile) — le masthead cède, jamais le chrono.
+
+**Tests.** jsdom ne calcule aucune mise en page, donc six tests texte-CSS pinnent le
+**mécanisme** (la réserve dépensée des deux côtés, déclarée sur les deux forks, la marge du
+coin, le masthead rétrécissable, les deux planchers) ; les pixels restent les captures.
+Sondes : `padding-right` retiré ⇒ rouge, `flex: 0 1 auto` du masthead retiré ⇒ rouge.
+
+- `vitest run` : **149 fichiers / 2076 tests, 0 échec.** `tsc`, `eslint`, `format:check` propres.

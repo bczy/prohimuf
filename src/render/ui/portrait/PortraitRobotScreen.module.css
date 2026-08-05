@@ -33,6 +33,39 @@
   box-sizing: border-box;
 }
 
+/*
+ * Width of the exit target's corner, declared ONCE and spent twice: as the HUD's
+ * right padding (so the gauge stops before it) and as the exit slot's own width (so
+ * the reserve and the thing reserved for can never disagree by a pixel).
+ *
+ * The exit slot is out of flow — it is last in the DOM for the tab order (M5-aggravant)
+ * and pinned to the corner by CSS — so the flex row cannot see it and stretched the
+ * gauge straight through the label: `ÇA PART COMME ÇA` came out struck through, which
+ * reads as a disabled control, on the screen's only permanent one (panel run-2 visual).
+ * A reservation is the only thing that makes an out-of-flow box occupy space.
+ *
+ * The numbers are the widest state of each fork, measured: `ÇA PART COMME ÇA` (228px)
+ * and `ÇA PART` (118px), plus the armed ring's border. `ENCORE UN COUP` / `ENCORE` are
+ * shorter, so the box never grows past the reserve and the label is never clipped.
+ */
+.root {
+  --exit-reserve: 236px;
+}
+
+.root[data-device="mobile"] {
+  --exit-reserve: 124px;
+}
+
+/*
+ * The bottom-right corner belongs to `FullscreenButton` (ADR-0008): 40px of glyph at
+ * 10px from both edges. It is fixed, z-index 300 and drawn over every screen, so the
+ * last band's `{n} sur {total}` was sitting under it — the same "two elements, one
+ * corner, no reservation" defect as the HUD, one corner down.
+ */
+.root {
+  --chrome-corner: 50px;
+}
+
 /* HUD strip — 56px desktop, 32px mobile (UX §9.1/§9.2). */
 .hud {
   display: flex;
@@ -41,6 +74,8 @@
   flex: 0 0 auto;
   height: 56px;
   padding: 0 var(--space-sm);
+  /* The gauge's rail stops here, one gutter short of the exit target. */
+  padding-right: calc(var(--exit-reserve) + var(--space-sm) * 2);
   border-bottom: var(--keyline-width) solid var(--ink-black);
 }
 
@@ -54,7 +89,15 @@
    the exit from a CTA, and what the anti-mistap argument rests on (UX §2.8/§9). */
 .hud > div {
   flex: 1 1 auto;
-  min-width: 0;
+  /* A floor, not a wish: the gauge is the chrono, and a chrono squeezed to nothing by
+     a long masthead is not a chrono. Below this the masthead ellipses instead. */
+  min-width: 72px;
+}
+
+/* The 390px strip has to hold masthead + gauge + a 124px exit corner, so the floor is
+   what forces the masthead — and not the chrono — to be the thing that gives. */
+.root[data-device="mobile"] .hud > div {
+  min-width: 128px;
 }
 
 /*
@@ -66,9 +109,12 @@
   position: absolute;
   top: 0;
   right: var(--space-sm);
+  /* THE reserve, drawn — the same custom property the HUD pads by. */
+  width: var(--exit-reserve);
   height: 56px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .root[data-device="mobile"] .exitSlot {
@@ -84,8 +130,16 @@
   white-space: nowrap;
 }
 
-/* The mobile strip yields the masthead first when space runs out (UX §9.1). */
+/*
+ * The mobile strip yields the masthead first when space runs out (UX §9.1) — and
+ * `flex: 0 0 auto` from `.title` above meant it yielded NOTHING: the ellipsis was
+ * declared and unreachable, so on a 390px strip the gauge was crushed to 109px and
+ * its rail pushed off the right edge of the viewport entirely. Shrinking is what
+ * makes the sentence above true.
+ */
 .root[data-device="mobile"] .title {
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: var(--font-size-base);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -168,9 +222,14 @@
   outline-offset: 0;
 }
 
+/*
+ * The control strip clears the fullscreen glyph's corner. Reserved on BOTH sides so
+ * the strip stays centred under the two faces — the alignment is the read, and buying
+ * the corner with an asymmetric margin would cost more than it saves.
+ */
 .root[data-device="desktop"] .stack {
   flex: 0 0 auto;
-  margin: 0 var(--space-lg) var(--space-lg);
+  margin: 0 calc(var(--space-lg) + var(--chrome-corner)) var(--space-lg);
 }
 
 .root[data-device="mobile"] .stack {
