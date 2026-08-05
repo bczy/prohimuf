@@ -1,8 +1,16 @@
 import type { JSX } from "react";
 
 /**
- * The single ink stamp each crew printed on its flyer, code-drawn as SVG — no sprite,
- * no asset generation (GestureIcon doctrine, ADR-0020).
+ * The single ink stamp printed on each flyer, code-drawn as SVG — no sprite, no asset
+ * generation (GestureIcon doctrine, ADR-0020).
+ *
+ * NOT "each crew's stamp": two of the five sheets have no crew to sign them. The tutorial
+ * is unsigned by design (`SANS SYSTÈME · AVANT LE SON`) and carries the smiley, which
+ * belongs to everyone; the finale is signed by the three systems at once and carries the
+ * invader, which is the CITY signing — L'Éden is a venue, and the narrative bible files it
+ * as a Lieu, never a collectif (narrative gate, PR #145). The two sheets without a system
+ * carry the two marks without an owner, which is the symmetry to preserve if this table
+ * ever grows.
  *
  * SVG rather than a canvas or a PNG for three reasons that all matter here: it stays
  * crisp at any device-pixel ratio and any flyer width, it inherits the sheet's ink
@@ -29,7 +37,9 @@ export type MotifKind = "spiral" | "smiley" | "rings" | "plumb" | "invader";
 export type MotifSlot = "hero" | "mid" | "body";
 
 export interface FlyerEmblem {
-  /** Which crew's mark. UNIQUE across the wall — repeating one turns a signature into wallpaper. */
+  /** The sheet's mark — a crew's signature where a crew signs, an unowned motif where none
+   *  does (see the header). UNIQUE across the wall either way: repeating one turns a
+   *  signature into wallpaper, and the deck's earlier shared-motif doctrine is superseded. */
   kind: MotifKind;
   slot: MotifSlot;
   /** Per-sheet vertical nudge in px, so two sheets sharing a slot still don't line up. */
@@ -115,7 +125,12 @@ function SmileyPath(): JSX.Element {
   );
 }
 
-/** Concentric rings — the hypnotic target of the period's psy flyers. */
+/**
+ * Concentric rings — the canal's WAVE, not a psy target. KANAL SYSTEM carries the canal in
+ * its name and in its shipped zoneLine (`BORDS DU CANAL · 19e`), so the mark points at the
+ * crew's own ground rather than at a generic period motif. Both gates landed on this anchor
+ * independently (lead-art and narrative, PR #145).
+ */
 function RingsPath(): JSX.Element {
   const rings = [8, 16, 24, 32, 40, 47];
   return (

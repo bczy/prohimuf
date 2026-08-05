@@ -204,15 +204,30 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
   même geste que le joueur. Refinement facultatif non appliqué, noté dans la note : abaisser
   le point le plus large de la masse d'un dixième de hauteur.
 
-- **Pas de spec `game-designer` / `narrative-designer` — SEUL POINT ENCORE OUVERT.**
-  L'attribution crew→emblème est un choix d'identité : la spirale de SPIRALE 23 découle du
-  nom, l'invader de L'Éden est une citation, le fil à plomb de NADIR 94 vient du sens du
-  mot. Aucune fiction n'a été inventée, mais aucune n'a été validée non plus.
-  `lead-art` s'est prononcé dessus au passage — « aucune anachronique, aucune paresseuse » —
-  et a relevé deux ancrages à réécrire (l'invader tient par **Invader carrelant Paris à
-  partir de 1998**, pas par l'âge du sprite d'arcade ; les anneaux gagnent à venir de l'onde
-  du canal pour KANAL SYSTEM). Cela ne remplace pas le gate `narrative-designer`, qui reste
-  à faire ou à exempter explicitement — décision Bertrand.
+- **Gate `narrative-designer` — PASSÉ. Verdict : PASS**, réserve bloquante levée dans le
+  même push. Verdict :
+  [`docs/game-design/narrative/decision-flyer-crew-emblems.md`](../game-design/narrative/decision-flyer-crew-emblems.md).
+
+  La question de fond est tranchée : **le symbole est une citation, l'attribution est un fait
+  de fiction**. Qu'une spirale ou un smiley acid existent en 1998 n'engage personne ; dire
+  « cette marque est celle de ce crew-là et d'aucun autre » énonce sur une entité canonique un
+  fait qu'aucune source gatée n'énonçait, et qui devient le seul ancrage visuel de trois
+  collectifs qui n'ont qu'un nom. Fiction nouvelle, donc — mais de faible amplitude.
+
+  **Réserve bloquante R-N1, corrigée** : la prose du code était fausse sur 2 feuilles sur 5 et
+  **canonisait L'Éden comme crew**, alors que `PLAYABLE_COPY["niveau-final"].crew` vaut
+  `SPIRALE 23 · KANAL SYSTEM · NADIR 94` et que la bible classe L'Éden en **Lieu**, avec
+  interdiction de fusionner les classes. L'invader n'appartient donc à personne : c'est **la
+  ville qui signe** la feuille des trois systèmes. Ce qui referme une symétrie que rien
+  n'avait écrite — les deux feuilles sans système portent les deux marques sans propriétaire.
+
+  Relevé non demandé, ratifié : le code avait remplacé **en silence** une doctrine gatée du
+  copy deck (motifs _partagés_ → marques _exclusives_). Le gate ratifie le changement — une
+  marque partout n'est la marque de personne — et le note comme amendement dû au deck (R-N3).
+
+- **Suites de ce gate, non bloquantes** : amendement du `pregame-copy-deck.md` §2.2-§2.4
+  (motifs superseded, re-gate court `lead-game-designer`), repli des cinq lignes de canon dans
+  la bible après merge, interdiction permanente de gloser les marques en jeu.
 
 **Défaut trouvé à la fusion, corrigé ici** — NADIR 94 n'affichait AUCUN emblème : placée en
 slot `hero`, la seule feuille conçue pour attaquer par son image, alors que la mise en page
