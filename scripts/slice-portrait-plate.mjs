@@ -343,41 +343,156 @@ function luminance(png, x, y) {
   return (png.data[idx] * 299 + png.data[idx + 1] * 587 + png.data[idx + 2] * 114) / 1000;
 }
 
-function findTickY(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
-  let bestY = nominalYAbs;
-  let bestDarkness = -1;
-  for (
-    let y = Math.max(0, nominalYAbs - windowPx);
-    y <= Math.min(png.height - 1, nominalYAbs + windowPx);
-    y++
-  ) {
-    let dark = 0;
-    for (let x = xStart; x < xEnd; x++) {
-      if (luminance(png, x, y) < 128) dark++;
-    }
-    if (dark > bestDarkness) {
-      bestDarkness = dark;
-      bestY = y;
+// A registration mark is a printed TICK — a short, continuous ink stroke —
+// not just "the darkest row in the window". Without these gates, a single
+// toner grain in an otherwise empty margin IS the darkest row (darkness=1 >
+// darkness=0 everywhere else) and gets silently promoted to a repère; the
+// rescale that follows would then be fitted to noise (art brief §8 C-B).
+// Two independent signals a grain cannot fake:
+//   - MIN_RUN_PX: a real tick is a continuous stroke, not an isolated pixel.
+//   - MIN_PEAK_RATIO: the winning row must stand out from the window's own
+//     background (a genuine ink mark against blank paper), not just edge out
+//     a field of equally-faint candidates.
+const MIN_TICK_RUN_PX = 6;
+const MIN_TICK_PEAK_RATIO = 3;
+
+/** Longest run of consecutive dark (`luminance < 128`) pixels in row `y`
+ * over `[xStart, xEnd)`, plus the total dark-pixel count for that row. */
+function scanRow(png, xStart, xEnd, y) {
+  let run = 0;
+  let bestRun = 0;
+  let dark = 0;
+  for (let x = xStart; x < xEnd; x++) {
+    if (luminance(png, x, y) < 128) {
+      dark++;
+      run++;
+      if (run > bestRun) bestRun = run;
+    } else {
+      run = 0;
     }
   }
-  return bestY;
+  return { run: bestRun, dark };
 }
 
+/** Confidence-gated tick search: scans `[nominalYAbs - windowPx, +windowPx]`
+ * for a row whose longest continuous dark run both (a) meets a minimum
+ * stroke length and (b) clears the window's own background by
+ * `MIN_TICK_PEAK_RATIO`. Returns `{ found: false, reason }` rather than a
+ * best-effort guess when neither is met — callers must treat `found: false`
+ * as "no mark here", never fall back to the guess. */
+function findTick(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
+  const yFrom = Math.max(0, nominalYAbs - windowPx);
+  const yTo = Math.min(png.height - 1, nominalYAbs + windowPx);
+  const rows = [];
+  for (let y = yFrom; y <= yTo; y++) rows.push({ y, ...scanRow(png, xStart, xEnd, y) });
+
+  let best = rows[0];
+  for (const r of rows)
+    if (r.run > best.run || (r.run === best.run && r.dark > best.dark)) best = r;
+
+  if (best.run < MIN_TICK_RUN_PX) {
+    return {
+      found: false,
+      reason:
+        `no continuous stroke ≥${MIN_TICK_RUN_PX}px found (longest run was ${best.run}px ` +
+        `at y=${best.y})`,
+    };
+  }
+
+  // Background = median run length of the OTHER rows in the window (best
+  // excluded). A genuine tick sits well above its own neighbourhood; grain
+  // sits in a field of comparably-noisy neighbours.
+  const otherRuns = rows
+    .filter((r) => r.y !== best.y)
+    .map((r) => r.run)
+    .sort((a, b) => a - b);
+  const backgroundRun = otherRuns.length > 0 ? otherRuns[Math.floor(otherRuns.length / 2)] : 0;
+  const peakRatio = best.run / Math.max(1, backgroundRun);
+  if (backgroundRun > 0 && peakRatio < MIN_TICK_PEAK_RATIO) {
+    return {
+      found: false,
+      reason:
+        `no row stands out from the margin's background (best run ${best.run}px at y=${best.y} ` +
+        `is only ${peakRatio.toFixed(1)}x the window median ${backgroundRun}px, need ` +
+        `${MIN_TICK_PEAK_RATIO}x) — reads as generalised noise, not a printed tick`,
+    };
+  }
+
+  return { found: true, y: best.y, run: best.run };
+}
+
+/** Runs `findTick` for the four registration marks (eye-line / nose-base ×
+ * left / right margin) and throws a single, actionable error the moment ANY
+ * is missing — naming which mark, which margin, and the y-window searched,
+ * so `lead-art` can act on the message at roll 1 without re-deriving it. A
+ * tick found on one side without its pair on the other is exactly the
+ * "suspect" case the brief calls out, and is reported by name, not folded
+ * into a generic failure. Per brief §1.2bis "portée du rejet", this throws
+ * for the WHOLE plate — there is no partial/best-effort registration. */
 export function detectRegistration(png) {
   const eyeNominalAbs = PLATE_MARGIN_PX + Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
   const noseNominalAbs = PLATE_MARGIN_PX + Math.round(NOSE_BASE_FRAC * PORTRAIT_HEIGHT);
   const rightXStart = PLATE_MARGIN_PX + PORTRAIT_WIDTH;
 
-  const eyeLeft = findTickY(png, 0, PLATE_MARGIN_PX, eyeNominalAbs);
-  const eyeRight = findTickY(png, rightXStart, png.width, eyeNominalAbs);
-  const noseLeft = findTickY(png, 0, PLATE_MARGIN_PX, noseNominalAbs);
-  const noseRight = findTickY(png, rightXStart, png.width, noseNominalAbs);
+  const marks = [
+    {
+      label: "eye-line",
+      side: "left",
+      xStart: 0,
+      xEnd: PLATE_MARGIN_PX,
+      nominalYAbs: eyeNominalAbs,
+    },
+    {
+      label: "eye-line",
+      side: "right",
+      xStart: rightXStart,
+      xEnd: png.width,
+      nominalYAbs: eyeNominalAbs,
+    },
+    {
+      label: "nose-base",
+      side: "left",
+      xStart: 0,
+      xEnd: PLATE_MARGIN_PX,
+      nominalYAbs: noseNominalAbs,
+    },
+    {
+      label: "nose-base",
+      side: "right",
+      xStart: rightXStart,
+      xEnd: png.width,
+      nominalYAbs: noseNominalAbs,
+    },
+  ];
 
-  const eyeY = (eyeLeft + eyeRight) / 2;
-  const noseY = (noseLeft + noseRight) / 2;
+  const results = marks.map((m) => ({ ...m, ...findTick(png, m.xStart, m.xEnd, m.nominalYAbs) }));
+  const missing = results.filter((r) => !r.found);
+  if (missing.length > 0) {
+    const lines = missing.map(
+      (m) =>
+        `  ✗ ${m.label} tick, ${m.side} margin — searched x∈[${m.xStart},${m.xEnd}) ` +
+        `y∈[${Math.max(0, m.nominalYAbs - 24)},${Math.min(png.height - 1, m.nominalYAbs + 24)}] ` +
+        `(nominal y=${m.nominalYAbs}): ${m.reason}`,
+    );
+    const found = results.filter((r) => r.found).map((m) => `${m.label}/${m.side}`);
+    throw new Error(
+      `registration ABORTED — ${missing.length}/4 mark(s) not found with confidence:\n` +
+        `${lines.join("\n")}\n` +
+        (found.length > 0 ? `  (found with confidence: ${found.join(", ")})\n` : "") +
+        "Refusing to rescale on an unconfirmed repère (art brief §8 C-B) — the plate is " +
+        "rejected WHOLE and must be regenerated, not patched.",
+    );
+  }
+
+  const [eyeLeft, eyeRight, noseLeft, noseRight] = results;
+  const eyeY = (eyeLeft.y + eyeRight.y) / 2;
+  const noseY = (noseLeft.y + noseRight.y) / 2;
   // Tilt estimate only (not corrected — see file header). Expressed as the
-  // vertical disagreement between the two margins at each mark, in px.
-  const tiltPx = Math.max(Math.abs(eyeLeft - eyeRight), Math.abs(noseLeft - noseRight));
+  // vertical disagreement between the two margins at each mark, in px. Both
+  // sides were independently confidence-gated above, so a large disagreement
+  // here is read as real tilt, not noise, and is left to the seam-tolerance
+  // gate downstream to accept or reject.
+  const tiltPx = Math.max(Math.abs(eyeLeft.y - eyeRight.y), Math.abs(noseLeft.y - noseRight.y));
 
   return { eyeY, noseY, tiltPx };
 }
