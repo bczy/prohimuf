@@ -83,6 +83,33 @@ describe("detectRegistration — confidence-gated tick detection (brief §8 C-B)
     expect(() => detectRegistration(png)).toThrow(/eye-line tick, left margin/);
   });
 
+  it("aborts on an isolated elongated artefact in an otherwise empty margin (blank-margin ratio bypass)", () => {
+    // 10px run: clears MIN_TICK_RUN_PX (6px) alone, so a 1px-grain-style test
+    // would not exercise this path. The margin is otherwise fully empty, so
+    // the window's own background median is 0 — before the fix this
+    // short-circuited the peak-ratio check entirely (`backgroundRun > 0 &&
+    // …`) and let ANY ≥6px artefact (scanner hair, fold, crop-line residue)
+    // through as a "confident" repère. This is the nominal shape of a FAILED
+    // plate (FLUX drew nothing), so it must abort, not fabricate a geometry.
+    const png = blankPlate();
+    drawTick(png, 0, PLATE_MARGIN_PX, eyeNominalAbs(), 10);
+    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
+    expect(() => detectRegistration(png)).toThrow(/isolated artefact/);
+  });
+
+  it("does not reject a franc 20px tick on an otherwise empty margin as an isolated artefact", () => {
+    // Same empty-margin shape as above, but the mark is long enough (matches
+    // the default `plateWithFourTicks` tick length exercised by the pass
+    // case). `findTick` isn't exported, so this asserts the negative through
+    // the public surface: the four-marks-missing plate still aborts overall
+    // (this is only one of four required marks), but never for the reason
+    // "isolated artefact" — that failure mode must be specific to short runs.
+    const png = blankPlate();
+    drawTick(png, 0, PLATE_MARGIN_PX, eyeNominalAbs(), 20);
+    expect(() => detectRegistration(png)).toThrow(/registration ABORTED/);
+    expect(() => detectRegistration(png)).not.toThrow(/isolated artefact/);
+  });
+
   it("names exactly the missing side when one tick is present without its pair", () => {
     const png = blankPlate();
     // Only the left eye-line tick is drawn; its right-margin pair is absent.

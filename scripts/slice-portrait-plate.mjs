@@ -355,6 +355,16 @@ function luminance(png, x, y) {
 //     a field of equally-faint candidates.
 const MIN_TICK_RUN_PX = 6;
 const MIN_TICK_PEAK_RATIO = 3;
+// On a genuinely blank margin (the nominal shape of a FAILED plate — FLUX
+// drew no marks at all) every other row has run=0, so the window's own
+// median (`backgroundRun`) is 0 too: there is no neighbourhood to stand out
+// from, and the ratio check below is meaningless (division floored to /1).
+// Without a floor here, ANY lone ≥MIN_TICK_RUN_PX artefact in empty space —
+// a scanner hair, a fold, a residual crop line, an elongated toner smear —
+// clears MIN_TICK_RUN_PX alone and is promoted to a confident repère. Require
+// the same margin of confidence the ratio check would demand against the
+// smallest possible real background (1px): MIN_TICK_RUN_PX * MIN_TICK_PEAK_RATIO.
+const MIN_TICK_ISOLATED_RUN_PX = MIN_TICK_RUN_PX * MIN_TICK_PEAK_RATIO;
 
 /** Longest run of consecutive dark (`luminance < 128`) pixels in row `y`
  * over `[xStart, xEnd)`, plus the total dark-pixel count for that row. */
@@ -416,8 +426,25 @@ function findTick(png, xStart, xEnd, nominalYAbs, windowPx = 24) {
     .map((r) => r.run)
     .sort((a, b) => a - b);
   const backgroundRun = otherRuns.length > 0 ? otherRuns[Math.floor(otherRuns.length / 2)] : 0;
-  const peakRatio = best.run / Math.max(1, backgroundRun);
-  if (backgroundRun > 0 && peakRatio < MIN_TICK_PEAK_RATIO) {
+
+  if (backgroundRun === 0) {
+    // Empty margin: no background to compute a ratio against. Fall back to
+    // the absolute floor above instead of short-circuiting to "confident".
+    if (best.run < MIN_TICK_ISOLATED_RUN_PX) {
+      return {
+        found: false,
+        reason:
+          `margin is otherwise empty (window median run = 0px) and the sole candidate ` +
+          `(${best.run}px at y=${best.y}) is below the ${MIN_TICK_ISOLATED_RUN_PX}px floor ` +
+          "required with no background to compare against — reads as an isolated artefact " +
+          "(scanner hair, fold, crop-line residue), not a printed tick",
+      };
+    }
+    return { found: true, y: best.y, run: best.run };
+  }
+
+  const peakRatio = best.run / backgroundRun;
+  if (peakRatio < MIN_TICK_PEAK_RATIO) {
     return {
       found: false,
       reason:
@@ -535,9 +562,16 @@ export function computeVerticalScale(eyeY, noseY) {
 
 /** Nearest-neighbour vertical-only resample driven by the two registration
  * marks. Returns a NEW pngjs-shaped {width,height,data} for just the portrait
- * bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT), corrected. */
-export function registerPortrait(png) {
-  const { eyeY, noseY } = detectRegistration(png);
+ * bbox (PORTRAIT_WIDTH × PORTRAIT_HEIGHT), corrected.
+ *
+ * Accepts an optional pre-computed `registration` ({eyeY, noseY, tiltPx}) so
+ * a caller that already ran `detectRegistration` for the tilt estimate (see
+ * `runReal`) doesn't pay for a second full margin scan — and, more
+ * importantly, so there is exactly one call site that can go stale if the
+ * detection logic is ever gated differently, not two. Defaults to running
+ * detection itself so existing single-argument callers are unaffected. */
+export function registerPortrait(png, registration = detectRegistration(png)) {
+  const { eyeY, noseY } = registration;
   const eyeNominalLocal = Math.round(EYE_LINE_FRAC * PORTRAIT_HEIGHT);
   const { scale, eyeLocal } = computeVerticalScale(eyeY, noseY);
 
@@ -664,8 +698,9 @@ async function runReal(plateArg) {
         "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
     );
   }
-  const { tiltPx } = detectRegistration(plate);
-  const portrait = registerPortrait(plate);
+  const registration = detectRegistration(plate);
+  const { tiltPx } = registration;
+  const portrait = registerPortrait(plate, registration);
 
   const seams = seamOrdinatesPx();
   const bandRGB = (top, bottom) => {
