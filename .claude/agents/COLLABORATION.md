@@ -225,7 +225,8 @@ surfaces (menus, HUD arrangement, flows, accessibility); on the seam they reconc
 directly and log it.
 Character/asset VISUALS stay in the art flow — a character sheet feeds `concept-artist`,
 it never bypasses `lead-art`'s gates. Every gate verdict is logged in
-the story's handoffs shard (index: `docs/agent-handoffs.md`).
+the story's handoffs shard (index: `docs/agent-handoffs.md`) — ONE gate document per
+surface, a second opinion lands as an objection inside it (rule #10).
 
 ## The code-review panel (MANDATORY gate before merging to main — pipeline stage 6)
 
@@ -255,6 +256,8 @@ DOCS-lane owner, so the architect stops absorbing them in his triage); then
 re-run, and the panel re-runs if the diff changed materially. The panel outcome
 (findings → verdict → action) is logged in the story's handoffs shard and summarized in
 the PR. A PR with an unresolved CONFIRMED BLOQUANT/MAJEUR finding must not be merged.
+A branch that also modifies the panel's own machinery gets no meaningful verdict from
+it — the gate change is extracted to its own PR first (rule #11).
 
 ## The art flow (any generated asset — vehicles, enemies, level art)
 
@@ -362,6 +365,7 @@ in the story's handoffs shard (index: `docs/agent-handoffs.md`).
    (render ↔ gameplay) and doc-comment/JSDoc WORDING inside `src/**` (`tech-writer` ↔
    the owning dev lane — wording only, never logic; a doc fix needing a logic change is
    a finding for the dev lane). Both: announce, serialise, don't both edit at once.
+   Paths are only ONE surface of contention; the other is DECISION surfaces — rule #10.
 4. **Log every hand-off** in the story's shard `docs/handoffs/story-<slug>.md`
    (`docs/agent-handoffs.md` is the index — template and the machine-parsable
    `VERDICT: PASS|FAIL — <gate> (<agent>)` line format live there; fix-lane cycles log
@@ -392,6 +396,37 @@ in the story's handoffs shard (index: `docs/agent-handoffs.md`).
    Marion hands out the next free `NNNN` at story opening (or on request mid-story) and
    records it in the story shard. Parallel lanes numbering their own ADRs is how the
    repo got two ADR-0020s and a 0026→0028 rebase renumber — never again.
+10. **One surface, one decision path** — « une surface = un chemin de décision ».
+    A SURFACE is whatever a gate judges: a spec, a prompt, a sprite, a screen, a
+    runtime composite, a copy deck. Once a gate has ruled on a surface, no lane opens
+    a SECOND gate document on it. **How you know it is already gated:** before opening
+    one, grep `docs/handoffs/` for the surface's slug and read every `VERDICT:` line
+    that names it — that is what the machine-parsable format exists for.
+    **If you disagree:** the objection goes INSIDE the existing gate document, quoting
+    the verdict it contests and saying why it doesn't hold — never in a concurrent
+    file. An objection that has not READ the gate it contests does not overturn it:
+    `producer` voids it and returns it to its author for that read.
+    **If two verdicts exist anyway:** the gate OWNER of that surface arbitrates —
+    design → `lead-game-designer`, visual → `lead-art`, audio → `sound-designer`,
+    perf → `gpu-specialist`, quality → `qa-lead`, architecture/boundaries →
+    `senior-architect`, scope → `pm`. When the two verdicts come from DIFFERENT
+    owners, `senior-architect` arbitrates as cross-cutting sign-off; when no owner
+    covers the surface, it escalates to Bertrand. `producer` records the arbitration
+    and marks the losing document SUPERSEDED — superseded, never deleted: a verdict
+    that was given is history, and overwriting it is how two lanes lose a gate.
+11. **A PR never modifies the gate that judges it.** A branch that changes the merge
+    gate's own machinery (`.github/workflows/code-review-panel.yml`,
+    `.github/actions/panel-reviewer/**`, any script a required check runs) *while also
+    carrying other work* has broken the loop: the verdict it receives was produced by
+    code that exists only on that branch. This is not a question of ownership — it
+    holds even with `dev-tooling-assets`'s signature and an ADR (that workflow has
+    demanded one three times: ADR-0063, 0067, 0070; those requirements STACK with this
+    rule, they never substitute for it). Declaring the change in the PR body does not
+    close it — « self-disclosure by the PR does not close the gate ». Route: the gate
+    change is EXTRACTED to its own branch/PR, judged by the gate as it stands on
+    `main`; the carrying branch rebases once it lands (`producer` tracks the
+    extraction). A gate-only PR is perfectly legitimate — what is forbidden is
+    shipping the gate change alongside the work that gate is judging.
 
 ## How to launch them
 From the main session, launch agents with the Task tool. Independent lanes go in **one
