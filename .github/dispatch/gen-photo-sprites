@@ -2,3 +2,4 @@ Dispatch marker for .github/workflows/gen-photo-sprites.yml — touch and push w
 `ci(dispatch):` head-commit message to trigger a run without workflow_dispatch access.
 run: plate + berlines + table_apres — gate v5 PASS, kontext via POLLINATIONS_TOKEN
 run 2: v1 assets supprimés pour régénération (plate + poses), gate v5
+run 3: compte rechargé (7,01 pollen)
