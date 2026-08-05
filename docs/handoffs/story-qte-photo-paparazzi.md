@@ -1023,3 +1023,44 @@ n'était jamais poussé, donc `HudPhotoQte` n'atteignait jamais le DOM. `photoHu
 **Preuve runtime.** Capture headless SwiftShader sur Belliard, `muf_progress` semé,
 `setPieces: true` : BRIEFING → ACTIVE → RAISED, monde masqué, plate en frame pleine, brackets
 `dashed` dessinés au bon endroit, dress présente, flèches parties.
+
+---
+
+## concept-artist (Maud) — v6, bascule de registre : xerox → trait encré (DRAFT, gate lead-art requis)
+
+Retour Bertrand sur la plate générée : « Do something more sketchy, more comics, more like
+Belliard. » Diagnostic transmis **vérifié et confirmé** en comparant les deux images à 1:1 :
+
+- `levels/belliard/street-wide.png` — trait net d'épaisseur constante, noirs francs, gris en
+  **aplats lisses**, zéro grain. Une planche.
+- `photoqte/plate-signage-blanked.png` — bruit couvrant, contours dissous, valeurs molles.
+  Une photo de nuit passée en N&B.
+
+Cause 1 (la mienne, corrigée ici) : **le prompt du décor shippé ne contient aucun mot de
+style** ; son trait vient du modèle (`ideogram-v4-quality`). Nos prompts `photoQte` ouvraient
+sur `coarse halftone toner dots` + registre xerox : on commandait le grain, on l'a eu, au prix
+du trait. Cause 2 (lane outillage) : la plate est éditée par `kontext` à ~1024 avant remontée
+à 2048 — le trait fin meurt avant même le vocabulaire.
+
+**Écrit dans `levelArt.json`** (strings de prompt uniquement, aucune structure touchée) :
+`photoQte.opening`, `photoQte.style`, l'ouverture de `photoQte.plate`, la clause de
+préservation de `plateEditB`, et les deux fuites de trame dans les sujets (`exchange_close`,
+`berline_plate` disaient « toner dots large and sparse »). Toute la famille bascule ensemble —
+les découpes n'étant pas générées, c'est le bon moment ; sinon on aurait des sujets tramés sur
+un décor encré. Sujets, silhouettes et rulings structurels R1/R8/R9/R10/F20 **inchangés**.
+`node scripts/check-art-prompts.mjs` PASSED (les 14 warnings sont préexistants, aucun photoQte).
+
+**Écart de bible posé explicitement** (pas en douce) : §3.1 règle 4 dit « xerox is the law ».
+Je demande l'écart pour `photoQte` seule, et je pense que c'est la bible qui décrit mal le jeu :
+le décor que Bertrand cite en référence n'en respecte pas non plus le vocabulaire, et §2 de la
+même bible dit déjà « no heavy halftone dot-screen: it would eat the silhouette ». Argumenté en
+§4 du draft. Si `lead-art` suit, il y a une entrée `tech-writer` à ouvrir : §3.1 règle 4 confond
+un registre-monde (fanzine N&B) avec une recette de prompt (`halftone`/`xerox`).
+
+**Question ouverte à `dev-tooling-assets`** : `POLLINATIONS_TOKEN` étant rafraîchi,
+`ideogram-v4-quality` est-il joignable ? Générer la plate sur le modèle de la référence est le
+chemin le plus direct vers « more like Belliard » — mais E-6(7) (continuité de rue) était la
+raison de l'img2img depuis un crop de `street-wide.png`. C'est un arbitrage de gate, pas le mien.
+
+Draft + rationale par clause + variantes rejetées :
+`docs/art-direction/prompt-drafts/photo-qte-setpiece-v6-ink-register.md`.
