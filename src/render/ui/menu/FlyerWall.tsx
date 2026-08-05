@@ -276,12 +276,24 @@ export function FlyerWall({
   // flag below never retroactively hides the nudge or drops the focus steal during this
   // same visit. Absent flag ⇒ first-timer: auto-focus the tutorial flyer + show the nudge.
   const [firstVisit] = useState(() => !hasSeenTutorialNudge());
+  // The short-landscape rack does not run the entrance at all: it is the one layout that
+  // clips, and the fall starts far above the headroom its padding reserves (see the rack
+  // media block below, which removes the animation there).
+  //
+  // Read HERE as well, and not only in CSS, for the same reason reduced motion is latched
+  // rather than left live: a media rule stops applying the moment the query stops matching,
+  // so a player who rotates a phone from landscape to portrait while on NIVEAUX would have
+  // the animation handed back and watch the whole cascade start in the middle of their
+  // visit — the replay decision §1 forbids. Measured, not deduced: with the CSS rule alone,
+  // rotating 844x390 -> 390x844 after the rack had settled restarted every slot.
+  // Declared before `playCascade` so it can be latched into it: hook order is positional.
+  const shortLandscape = useMediaQuery(SHORT_LANDSCAPE_MEDIA);
   // LATCHED at mount, reduced motion included — before the effect below marks the session,
   // so this mount still animates while every later one does not. The OS half of that signal is live and can
   // flip without unmounting us; recomputing would then start the cascade in the middle of a
   // visit, long after the entrance moment, and mark the session on an animation nobody
   // asked to see. Deciding once per mount keeps the flag and what was shown in agreement.
-  const [playCascade] = useState(() => !hasCascadePlayed() && !reducedMotion);
+  const [playCascade] = useState(() => !hasCascadePlayed() && !reducedMotion && !shortLandscape);
   // A keyboard user who reaches the wall mid-cascade settles it AT ONCE. Two reasons, and
   // the accessibility one is the binding one: the sideways drift (up to ±44px) exceeds the
   // wall's 16px padding, so during the entrance an edge flyer — and its focus ring — pokes
@@ -540,8 +552,22 @@ export function FlyerWall({
           // is a player arriving, and settles the wall so no focus ring gets clipped.
           // ANY live gesture, not just the newest: with two fingers down, the one that
           // produces this focus is not necessarily the one that pressed last.
-          for (const { target } of pointerPressed.current.values()) {
-            if (target instanceof Node && e.target.contains(target)) return;
+          for (const [id, entry] of pointerPressed.current) {
+            if (!(entry.target instanceof Node) || !e.target.contains(entry.target)) continue;
+            // An ENDED gesture exists for exactly ONE focus — its own, which on touch
+            // arrives after its pointerup — so swallowing that focus spends it. Dropping
+            // it HERE, at the moment of use, is what stops a marker from outliving its
+            // gesture: `click`/`contextmenu`/`keydown` are the only other things that
+            // collect it, and a gesture can end without any of the three ever firing (a
+            // tap whose click is suppressed, a press the page navigates away from). The
+            // entry would then sit there and deny the NEXT arrival — a keyboard or
+            // screen-reader one — the settle that is the whole accessibility point.
+            // Conditioned on `ended` to keep the blast radius at the stale case alone: a
+            // finger still DOWN keeps its marker for as long as it is down, exactly as
+            // before. Four earlier passes at this rule each reopened a case the previous
+            // one had closed, so this changes the ended branch and nothing else.
+            if (entry.ended) pointerPressed.current.delete(id);
+            return;
           }
           setInterrupted(true);
           showingConsumed.current = true;

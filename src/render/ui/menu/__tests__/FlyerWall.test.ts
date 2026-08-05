@@ -187,6 +187,69 @@ describe("FlyerWall short-landscape rack — pulled shadow does not get cropped 
   });
 });
 
+/**
+ * The rack does not run the ENTRANCE either — the finding above is about the pulled flyer,
+ * this is about the float-in, and the numbers are an order of magnitude apart. The fall
+ * starts up to 230px above the resting position while the rack reserves ~32px of headroom
+ * and clips, so measured on a 844x390 touch viewport the tutorial flyer spent its whole
+ * fall with 233px of itself — masthead and stamp included — cut off at the clip edge.
+ *
+ * Pinned on BOTH halves of the fix, because they close different holes and either one alone
+ * leaves a real regression:
+ *   - the CSS rule catches a fall already in flight when a phone is rotated INTO the rack;
+ *   - the TS latch stops the media rule from handing the animation back on the way OUT
+ *     (rotating rack -> portrait replayed the whole cascade mid-visit, decision §1).
+ */
+describe("FlyerWall short-landscape rack — no entrance cascade", () => {
+  it("removes the float-in animation inside the rack media block", () => {
+    const html = markup(DEFAULT_PREFS);
+    const rack = html.slice(html.indexOf(SHORT_LANDSCAPE_MEDIA));
+    const slotRule = /\.muf-flyerwall > \.muf-flyer-slot\{([^}]*)\}/.exec(rack);
+    expect(slotRule, "rack slot rule not found in the SHORT_LANDSCAPE_MEDIA block").not.toBeNull();
+    expect(slotRule?.[1]).toMatch(/animation:\s*none/);
+  });
+
+  it("renders the slots settled when the rack query matches at mount", () => {
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query: string) =>
+        ({
+          matches: query === SHORT_LANDSCAPE_MEDIA,
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
+    );
+    sessionStorage.clear();
+    localStorage.clear();
+    markTutorialNudgeSeen();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        createElement(FlyerWall, {
+          reducedMotion: false,
+          unlockedLevels: NO_UNLOCKS,
+          onPlay: noop,
+          prefs: DEFAULT_PREFS,
+          onSavePrefs: noop,
+        }),
+      );
+    });
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+    // ...and the session's one showing is NOT spent on a cascade nobody saw — same rule as
+    // reduced motion (decision §6), so rotating to portrait and coming back still plays it.
+    expect(hasCascadePlayed()).toBe(false);
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+    vi.restoreAllMocks();
+  });
+});
+
 describe("FlyerWall PRESSION header — single-pref write-through", () => {
   it("flags the current difficulty selected, the others not", () => {
     const choices = buildPressionChoices({ ...DEFAULT_PREFS, difficulty: "easy" }, noop);
@@ -701,6 +764,36 @@ describe("FlyerWall — ux-designer decisions, pinned in the markup", () => {
     expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
     act(() => {
       el?.focus(); // a virtual cursor arriving later, no key event in between
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
+  });
+
+  it("drops an ended gesture's marker once it has swallowed its own focus", () => {
+    // The marker of an ENDED gesture is kept for exactly one thing: the tap's own focus,
+    // which on touch arrives after its pointerup. Once that focus has been swallowed the
+    // marker has done its job — but click/contextmenu/keydown were the only things that
+    // collected it, and a gesture can end without any of the three ever firing (a tap whose
+    // click is suppressed, a press the page navigates away from). The marker then outlived
+    // its gesture and denied the NEXT arrival — keyboard or screen reader — its settle,
+    // which is the accessibility reason the whole rule exists.
+    markTutorialNudgeSeen();
+    const container = mountWall();
+    const el = container.querySelector<HTMLElement>(".muf-flyer-slot [role='button']");
+    const settled = wallStyles.slotSettled;
+    if (settled === undefined) throw new Error("styles.slotSettled missing from the stylesheet");
+    act(() => {
+      el?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
+      el?.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "touch" }));
+    });
+    act(() => {
+      el?.focus(); // the tap's OWN late focus — still correctly swallowed
+    });
+    expect(container.querySelector(".muf-flyer-slot")?.className).not.toContain(settled);
+    // No click, no contextmenu, no keydown ever follows. A later arrival on the same flyer
+    // must still settle the wall.
+    act(() => {
+      el?.blur();
+      el?.focus();
     });
     expect(container.querySelector(".muf-flyer-slot")?.className).toContain(settled);
   });

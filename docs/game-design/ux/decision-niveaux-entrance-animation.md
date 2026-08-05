@@ -96,6 +96,15 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    `pointerup` ne supprime pas, il marque « terminé » : sur tactile, le focus d'un tap
    arrive après que son doigt s'est levé, et supprimer là rouvrirait le bug d'origine.
 
+   **Une marque terminée ne survit pas à son usage.** Elle n'existe que pour UN focus —
+   le sien, celui du tap, qui arrive après son `pointerup` — donc elle est jetée dès
+   qu'elle l'a avalé, sans attendre le `click`. Ces trois collecteurs ne suffisaient pas :
+   un geste peut se terminer sans qu'aucun n'arrive (un tap dont le `click` est supprimé,
+   une pression dont la page s'en va). La marque restait alors à demeure et refusait sa
+   stabilisation à l'arrivée SUIVANTE — au clavier ou au lecteur d'écran —, c'est-à-dire
+   exactement à l'utilisateur pour qui la règle existe. La condition « terminée » est
+   gardée : un doigt encore posé conserve sa marque tant qu'il est posé, inchangé.
+
 6. **Le mouvement réduit ne consomme pas la cascade de la session.** L'animation étant
    supprimée, marquer la session comme « déjà jouée » dépenserait son unique passage pour
    rien : un joueur qui désactive ensuite la bascule in-app et revient sur NIVEAUX ne
@@ -126,6 +135,35 @@ résultat, pour qu'un contributeur ultérieur ait une référence au lieu de la 
    démontage, tandis que le drapeau rendu réserve la séance à un montage ULTÉRIEUR : soit
    encore réduit (rien ne joue, rien n'est marqué), soit revenu en mouvement normal — cas
    où rejouer est précisément ce que le joueur veut.
+
+7. **Le rack paysage-court ne joue pas la cascade du tout.** Il apparaît en place, comme
+   sous mouvement réduit. C'est la seule disposition qui **rogne** (`overflow-y: hidden`,
+   imposé par `overflow-x: auto`) et son rembourrage haut est dimensionné pour le TIRAGE de
+   la feuille, ~32 px. Or l'entrée démarre jusqu'à 230 px plus haut : mesuré sur un écran
+   tactile 844×390, la feuille du tutoriel passait toute sa chute avec 233 px d'elle-même
+   coupés au bord du clip — son bandeau et son tampon avec. Pendant ~2,5 s, NIVEAUX
+   n'affichait que des feuilles décapitées.
+
+   Gonfler le rembourrage à 240 px est l'autre issue, et la mauvaise : elle prendrait
+   l'essentiel d'une bande de contenu de ~300 px pour ménager du ciel à une chute
+   décorative, sur l'écran qui a le moins de hauteur à donner. Une chute verticale de
+   230 px n'a de toute façon pas de sens dans un défilement **horizontal** contraint : les
+   feuilles n'y tombent pas sur le mur, elles tombent depuis hors-mise-en-page. On retire
+   donc l'animation — même état final que le mouvement réduit, atteint de la même manière,
+   par retrait et non par ajout d'une seconde animation.
+
+   **En deux endroits, parce qu'ils bouchent deux trous différents.** La règle CSS, dans le
+   bloc `SHORT_LANDSCAPE_MEDIA`, rattrape une chute **déjà en vol** quand on fait pivoter le
+   téléphone VERS le paysage. Le verrou côté composant (`playCascade` tient compte de la
+   requête au montage, comme il tient déjà compte du mouvement réduit) empêche l'effet
+   inverse : une règle média cesse de s'appliquer dès qu'elle ne matche plus, et avec le
+   seul CSS, pivoter du rack vers le portrait **rejouait toute la cascade** en plein milieu
+   de la visite — le rejeu que §1 interdit. Mesuré, pas déduit : 844×390 → 390×844 après
+   stabilisation relançait les cinq feuilles.
+
+   Comme pour le mouvement réduit (§6), la séance n'est **pas** consommée sur le rack :
+   l'animation étant supprimée, la marquer « déjà jouée » dépenserait l'unique passage pour
+   rien.
 
 ## Suites, non bloquantes
 
