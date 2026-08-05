@@ -49,6 +49,39 @@ le harness ne l'empêchait de publier un verdict malgré tout.
    inchangé : `triage` tourne en `always()` et compte déjà `prepare`, donc la garantie « jamais
    de PASS creux » tient avant comme après.
 
+## Decision (2) — le plafond de tours d'un reviewer, et ce qu'il coûte quand il tombe
+
+Ajouté après un second incident sur la même PR #145, de nature différente mais de symptôme
+identique : un verdict DEGRADED sans finding.
+
+Le reviewer `code-review` a **épuisé son `--max-turns 40` avant d'émettre ses findings** :
+
+```
+"subtype": "error_max_turns"
+##[error]--json-schema was provided but Claude did not return structured_output
+```
+
+Le job échoue donc en ne disant **rien** de ce qu'il avait déjà trouvé. C'est le pire des
+échecs possibles : il coûte le run entier et ne rend aucun signal. Un reviewer qui ne trouve
+rien est informatif ; un reviewer épuisé ne l'est pas.
+
+**Décision : plafond porté à 80** pour les reviewers, à la fois dans l'action et dans le
+workflow qui la double.
+
+**C'est un budget, pas une cible.** Un reviewer qui a besoin de 80 tours relit quelque chose
+de trop gros, et la bonne réponse est alors une PR plus petite — pas un plafond encore plus
+haut. Le diff qui a fait tomber celui-ci pesait 23 fichiers et ~2700 lignes ajoutées, dont une
+masse de documentation que les gates successifs avaient eux-mêmes produite. Plus une PR
+grossit, moins elle est relisible, et la mécanique ne le signalait nulle part.
+
+**Défaut connexe, NON corrigé ici** : le gabarit du verdict ne distingue pas « annulé »
+(`cancel-in-progress` sur un push suivant), « échoué » (crash) et « épuisé » (`max_turns`).
+Il dit uniformément « did not complete » et propose deux remèdes — attendre la fenêtre de
+quota, faire tourner `claude setup-token` — dont **aucun** ne s'appliquait aux trois incidents
+observés sur #145. Le diagnostic a coûté plusieurs tours à chaque fois, toujours au même
+endroit : il fallait descendre au niveau des jobs, que le verdict n'expose pas. À traiter
+séparément, dans le job de triage.
+
 ## Alternatives écartées
 
 **`refs/pull/N/merge` comme sujet du panel.** C'est la fusion prévisionnelle : sémantiquement,
