@@ -13,7 +13,12 @@ import {
   useMediaQuery,
   SHORT_LANDSCAPE_MEDIA,
 } from "@render/ui/print";
-import { LevelFlyer } from "./LevelFlyer";
+import {
+  LevelFlyer,
+  FLYER_LIFT_PX,
+  FLYER_PULL_SCALE_HEADROOM_PX,
+  PULLED_SHADOW_DROP_PX,
+} from "./LevelFlyer";
 import styles from "./FlyerWall.module.css";
 import { BallotRow, cx } from "../controls";
 import type { BallotChoice } from "../controls";
@@ -138,6 +143,33 @@ const DIFFICULTIES: readonly { value: Prefs["difficulty"]; label: string }[] = [
   { value: "normal", label: "NORMAL" },
   { value: "hard", label: "DIFFICILE" },
 ];
+
+/**
+ * Vertical padding of the short-landscape rack, in px.
+ *
+ * The rack is the ONE flyer layout that clips (`overflow-y: hidden`, forced by
+ * `overflow-x: auto` — `visible` is not available alongside it), and a transform pushes
+ * content past the BORDER edge, so this padding IS the headroom budget for the pulled
+ * flyer. Derived from the pull rather than hand-tuned: at the old -4px pull the base 16px
+ * was enough, at -22px it was not, and nothing caught it. `FlyerWall.test.ts` pins the
+ * relation so the next change to `FLYER_LIFT_PX` fails loudly instead of cropping a sheet.
+ *
+ * Asymmetric on purpose: the top carries the pull plus the `scale(1.02)` growth and is the
+ * edge that was cropping; the bottom only has to clear the cast shadow of a sheet that has
+ * moved AWAY from it — `PULLED_SHADOW_DROP_PX`, the shadow's full reach less the distance
+ * the sheet travelled up.
+ *
+ * Both edges also carry `FLYER_PULL_SCALE_HEADROOM_PX`, and the bottom needs it for the
+ * same reason the top does: `transform-origin: center` means `scale(1.02)` grows the box
+ * on BOTH edges, so the pulled sheet pushes down as well as up. Leaving that out of the
+ * bottom was survivable only by the accident of a generous literal — the kind of accident
+ * a later tightening would quietly cash in.
+ *
+ * `FlyerWall.test.ts` pins both edges against their requirement, so a future growth of
+ * `FLYER_LIFT_PX` or `FLYER_PULLED_SHADOW` fails loudly instead of cropping a sheet.
+ */
+export const RACK_PAD_TOP_PX = Math.abs(FLYER_LIFT_PX.pulled) + FLYER_PULL_SCALE_HEADROOM_PX;
+export const RACK_PAD_BOTTOM_PX = PULLED_SHADOW_DROP_PX + FLYER_PULL_SCALE_HEADROOM_PX;
 
 /**
  * Map the single `Prefs.difficulty` field to the PRESSION ballot choices — `selected`
@@ -517,6 +549,21 @@ export function FlyerWall({
             /* A5 ratio waived in the rack (flyer-wall-format.md §4): the ~300px
                content band cannot fit a 397px-tall A5 sheet. */
             --muf-flyer-aspect: auto;
+            /* Vertical headroom for the pulled flyer. NOTE: no backticks in this block —
+               it lives inside a JSX template literal. Deliberately carries NO numbers: an
+               earlier copy of this comment quoted "28px top/bottom" and went stale the
+               moment the top padding was re-derived, contradicting the declarations three
+               lines below it. The values and their rationale live in ONE place, the JSDoc
+               on RACK_PAD_TOP_PX / RACK_PAD_BOTTOM_PX above; read them there.
+               Why the padding matters at all: this rack is the ONE layout that clips
+               (overflow-y: hidden, forced by overflow-x: auto — visible is not available
+               alongside it), and a transform pushes content past the BORDER edge, so the
+               container's own padding is the whole headroom budget for the pulled sheet.
+               Costs the rack some of its content band — the flyers are content-sized here
+               (--muf-flyer-aspect: auto, align-items: flex-start), not stretched, so this
+               shifts them down rather than shrinking them. */
+            padding-top: ${String(RACK_PAD_TOP_PX)}px;
+            padding-bottom: ${String(RACK_PAD_BOTTOM_PX)}px;
             gap: 16px;
             align-items: flex-start;
             overflow-x: auto;
