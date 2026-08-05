@@ -361,23 +361,12 @@
       "seed": 4900,
       "sourceCrop": "assets/photoqte/plate-source-crop.png",
       "editReference": "assets/photoqte/plate-v2-reference.png",
+      "signageRetouched": "assets/photoqte/plate-signage-blanked.png",
       "editChain": [
-        {
-          "key": "plate_edit_a",
-          "asset": "assets/photoqte/plate-edit-a.png",
-          "reference": "assets/photoqte/plate-v2-reference.png",
-          "promptKey": "plateEditA"
-        },
-        {
-          "key": "plate_edit_a2",
-          "asset": "assets/photoqte/plate-edit-a2.png",
-          "reference": "assets/photoqte/plate-edit-a.png",
-          "promptKey": "plateEditA2"
-        },
         {
           "key": "plate",
           "asset": "assets/photoqte/plate.png",
-          "reference": "assets/photoqte/plate-edit-a2.png",
+          "reference": "assets/photoqte/plate-signage-blanked.png",
           "promptKey": "plateEditB"
         }
       ]

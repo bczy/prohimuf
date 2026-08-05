@@ -48,15 +48,24 @@
  *     `editChain` (`plateAsset.editChain` in levelArt.json) replaces the single-edit route
  *     above when present: an ARRAY of stages, each editing the PREVIOUS stage's own
  *     committed output, each its own `prompt*Key` (throwing if that key isn't written).
- *     THREE stages as of `c95393e5`, not two — `plate_edit_a` (clear the pavement) was
- *     found, on review, to have also blanked every glazed surface (shop windows, upper-
- *     floor windows) and dropped the validated scooter/bicycle: one instruction ("clear
- *     the people out of the street") over-generalised from "the people" to "the street",
- *     wiping a whole CLASS of surfaces with no force/fidelity knob to hold it back. Split
- *     into `plate_edit_a` (pavement only, named props kept explicitly) then `plate_edit_a2`
- *     (sign bands only, same "keep by name" discipline), THEN `plate` (terrace, on `_a2`'s
- *     output). `plate-edit-a.png` from any prior single-edit-A run is a KNOWN-REGRESSED
- *     asset — never a reference for anything past this file's own `plate_edit_a2` stage.
+ *     ROUTE, FINAL (2026-08-05, after TWO opposite edit failures on the pavement+signage
+ *     instruction — over-application in `bc379886`, then a re-roll of the SAME instruction
+ *     doing nothing at all in `4083d6bc`): two tirages, two opposite failure modes on one
+ *     instruction means the edit endpoint is not controllable at this granularity, full
+ *     stop — no more dice on it. The pedestrians are KEPT (Bertrand: they stand in the
+ *     middle of the road, not on the pavement where the terrace's tables compose — the
+ *     gate rule they'd violate doesn't apply to them, and a lived-in street is wanted, not
+ *     an empty one). The two signage bands ("LAINDORETE", "GYTTEN"/"Coolam") are blanked by
+ *     `retouch-photoqte-signage.mjs` — a DETERMINISTIC pixel retouch (measure the
+ *     surrounding surface's own tone from a calibrated sample strip, repaint the sign's
+ *     rect with that tone plus the same seeded toner grain, feather the edge) run ONCE on
+ *     `plate-v2-reference.png` to produce the committed `plate-signage-blanked.png` — no
+ *     model, no re-roll, reproducible. `editChain` is now a SINGLE stage: `plate` edits
+ *     `plate-signage-blanked.png` (not the raw v2 reference) with `plateEditB` (the
+ *     terrace) — the only transformation left that genuinely needs a generative model,
+ *     because it has to sit inside the existing perspective. `plateEditA`/`plateEditA2`
+ *     (the superseded pavement/signage generative attempts) are kept in levelArt.json for
+ *     the record but are no longer wired to anything.
  *   - The 4 pose sprites + 3 stamps — plain `flux` text-to-image on the shared
  *     opening+prompt+style assembly (bible §3.9), chroma-keyed magenta after generation.
  *

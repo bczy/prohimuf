@@ -42,7 +42,17 @@ run 11: plate_edit_a alone (2-stage chain). RESULT (bc379886): people gone, sign
   the street" over-generalised from "the people" to "the street" — one instruction, one
   class of surfaces wiped, no force knob to contain it. plate-edit-a.png from this run is
   KNOWN-REGRESSED, dropped from disk, never a reference for anything downstream.
-run 12 (next, blocked on plate_edit_a2 review): chain is now THREE stages (c95393e5).
-  plate_edit_a (pavement only, props kept by name) → plate_edit_a2 (sign bands only,
-  same discipline) → plate (terrace, on _a2's output). Dispatch plate_edit_a alone first,
-  review, THEN plate_edit_a2 alone, review, THEN plate — no skipping ahead.
+run 12: plate_edit_a alone, 3-stage chain, keys/prompts unchanged from c95393e5. RESULT
+  (4083d6bc): the identical instruction that over-applied last time did NOTHING this time
+  — pedestrians still centred, both signs still lettered. Two rolls, two opposite failure
+  modes on the SAME instruction ⇒ not controllable at this granularity, stop rolling it.
+BERTRAND DECISION (2026-08-05): pedestrians are KEPT (they stand mid-road, not on the
+  terrace's pavement — the gate rule doesn't apply to them, and a lived-in street reads
+  better). Signage is blanked by a SCRIPTED retouch, not a generative edit —
+  scripts/retouch-photoqte-signage.mjs, deterministic, run once on plate-v2-reference.png
+  → committed assets/photoqte/plate-signage-blanked.png. plateEditA/plateEditA2 are
+  retired (kept in levelArt.json for the record, no longer wired). editChain is back to
+  ONE stage: plate edits plate-signage-blanked.png with plateEditB (the terrace) — the
+  only remaining transformation that needs a model.
+run 13 (next): dispatch `plate` alone (single remaining stage) once plateEditB is
+  reviewed against the new base image.
