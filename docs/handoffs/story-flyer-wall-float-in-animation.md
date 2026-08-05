@@ -227,6 +227,17 @@ Ce qu'il faut en retenir, et qui ne périme pas :
 - Trois affirmations d'état périmées (inventaire de fichiers ×3, verdict du panel ×3) ont
   toutes la même cause : une valeur recopiée à la main au lieu d'être générée ou pointée.
   L'inventaire est désormais généré par commande ; le verdict est pointé, plus recopié.
+- Le dernier verdict FAIL (check run `91549184645`) ne portait sur **aucun défaut du
+  diff** : le harness du panel avait livré `panel-input/diff.patch` et `files.txt` **vides**,
+  et le reviewer a refusé de rendre un PASS sur un sujet inexistant. Cause : le `checkout`
+  du job `prepare` n'épinglait aucune `ref`, donc sur `workflow_dispatch` /
+  `workflow_call` il atterrissait sur la **branche par défaut** et `git diff
+  origin/main...HEAD` ne rendait rien. Corrigé en amont (`refs/pull/N/head` sous les trois
+  déclencheurs), plus deux garde-fous : `prepare` échoue bruyamment sur une liste de
+  fichiers vide, et `triage` compte désormais `prepare` parmi les jobs dont l'échec vaut
+  DEGRADED — sans quoi un harness cassé continuait de publier un PASS creux. Le finding
+  disait exactement cela : « must not treat this run's empty findings list as a genuine
+  PASS ».
 
 ## Passe `simplify` (stage 5, avant le panel)
 

@@ -141,7 +141,16 @@
 
 /* Already played this session (ux-designer, PR #145): render in the resting position at
    once. Same end state as the reduced-motion kill switches, reached the same way — by
-   removing the animation, not by adding a second one. */
-.slotSettled {
+   removing the animation, not by adding a second one.
+
+   Written `.slot.slotSettled`, not `.slotSettled`: the component always applies BOTH
+   classes, so at equal specificity this rule would only win by sitting physically after
+   `.slot` in this file. Moving it up next to the reduced-motion kill switches — the
+   obvious readability edit — would hand `animation: mufFlyerFloatIn` back, replaying the
+   1400ms cascade for a session that already had it and for the keyboard/AT user who just
+   settled the wall. No test can catch that: jsdom applies no stylesheet, so the suite only
+   ever asserts the class is present. The doubled selector makes the win independent of
+   order, so the guarantee lives in the selector rather than in a line number. */
+.slot.slotSettled {
   animation: none;
 }
