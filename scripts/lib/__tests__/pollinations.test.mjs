@@ -141,15 +141,32 @@ describe("fetchImage redirect handling", () => {
 });
 
 describe("fetchWithRetry — non-retryable vs. transient failures", () => {
-  // The API is known to wrap a real error status INSIDE an HTTP 500 body
-  // rather than sending it as the literal HTTP status — this is the exact
-  // shape observed for an empty Pollinations balance.
+  // REGRESSION FIXTURE (CI run 4be9944c): the first version of this fix used
+  // a body where the nested JSON was NOT escaped — a shape convenient for the
+  // regex/parser under test, not the shape the API actually sends. That let a
+  // broken extractor pass. The real body is a JSON object whose top-level
+  // keys are error/message/debug/timingInfo/requestId — NO top-level
+  // `status` field — where `message` is a STRING that itself contains prose
+  // plus a second JSON object, escaped as JSON.stringify would produce it
+  // (`\"status\":402`, not `"status":402`). Built via JSON.stringify of the
+  // real nested structure (rather than a hand-typed literal) specifically so
+  // the escaping is authentic and not something a human accidentally got
+  // conveniently right.
   function wrapped402Response() {
     const res = fakeResponse(500);
-    const body =
-      'Gen Sana request failed with 402:\n {"message":"Insufficient balance. This request ' +
-      'costs ~0.0001 pollen, but your available balance is 0.0000","code":"PAYMENT_REQUIRED",' +
-      '"status":402}';
+    const innerPayload = {
+      success: false,
+      error: { code: "PAYMENT_REQUIRED", message: "Insufficient balance" },
+      status: 402,
+    };
+    const outerPayload = {
+      error: "Internal Server Error",
+      message: `Gen Sana request failed with 402: ${JSON.stringify(innerPayload)}`,
+      debug: null,
+      timingInfo: { elapsedMs: 42 },
+      requestId: "req_abc123",
+    };
+    const body = JSON.stringify(outerPayload);
     res.on.mockImplementation((ev, fn) => {
       if (ev === "data") fn(Buffer.from(body));
       if (ev === "end") fn();
@@ -199,6 +216,28 @@ describe("fetchWithRetry — non-retryable vs. transient failures", () => {
       expect(e.httpStatus).toBe(500);
       expect(e.realStatus).toBe(402);
       expect(e.retryable).toBe(false);
+    }
+  });
+
+  it("falls back to the literal HTTP status on a non-JSON / malformed body, without throwing", async () => {
+    const res = fakeResponse(503);
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "data") fn(Buffer.from("<html>upstream is down</html>"));
+      if (ev === "end") fn();
+      return res;
+    });
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(res);
+      return fakeRequest();
+    });
+
+    try {
+      await fetchImage("https://image.pollinations.ai/img");
+      expect.unreachable("fetchImage should have rejected");
+    } catch (e) {
+      expect(e).toBeInstanceOf(PollinationsFetchError);
+      expect(e.realStatus).toBe(503);
+      expect(e.retryable).toBe(true);
     }
   });
 

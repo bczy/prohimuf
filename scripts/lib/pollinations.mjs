@@ -71,16 +71,59 @@ export class PollinationsFetchError extends Error {
 }
 
 // The API has been observed wrapping a real error status INSIDE an HTTP 500
-// body rather than sending it as the HTTP status itself — e.g. a 402
-// insufficient-balance rejection arrives as `HTTP 500` with the body
-// `Gen Sana request failed with 402:\n {"message":"...","code":"PAYMENT_REQUIRED","status":402}`.
-// Checking `res.statusCode` alone (or a fragile `body.includes("402")`, which
-// would also false-positive on a 402 mentioned only in prose) never sees the
-// real status. Pull `"status":<digits>` out of the JSON envelope wherever it
-// appears in the body and prefer it over the literal HTTP status.
+// body — and NOT as a flat string. The actual observed shape (CI run
+// 4be9944c) is a JSON object whose `message` field is itself a string
+// containing prose plus a SECOND, JSON.stringify-escaped JSON object:
+//   {"error":"Internal Server Error",
+//    "message":"Gen Sana request failed with 402: {\"success\":false,\"error\":{...},\"status\":402}",
+//    "debug":null,...}
+// A single regex over the raw body (`"status":\d+`) never matches, because
+// the actual bytes are `\"status\":402` (escaped) — an unescaping regex
+// patch would work today and break at the next nesting level the service
+// decides to add. So this parses properly instead: JSON.parse the body, and
+// whenever a string VALUE looks like it contains embedded JSON, JSON.parse
+// that too, recursively, bounded, with try/catch collapsing to "not found"
+// at every level rather than throwing.
+const MAX_JSON_UNWRAP_DEPTH = 4;
+
+function parseEmbeddedJson(str) {
+  const start = str.indexOf("{");
+  const end = str.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return undefined;
+  try {
+    return JSON.parse(str.slice(start, end + 1));
+  } catch {
+    return undefined;
+  }
+}
+
+function findStatusField(node, depth) {
+  if (depth > MAX_JSON_UNWRAP_DEPTH || node == null) return undefined;
+  if (typeof node === "string") {
+    const embedded = parseEmbeddedJson(node);
+    return embedded === undefined ? undefined : findStatusField(embedded, depth + 1);
+  }
+  if (typeof node !== "object") return undefined;
+  if (!Array.isArray(node) && typeof node.status === "number") return node.status;
+  for (const value of Object.values(node)) {
+    const found = findStatusField(value, depth + 1);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
 function extractRealStatus(httpStatus, body) {
-  const match = /"status"\s*:\s*(\d{3})/.exec(body);
-  return match ? Number(match[1]) : httpStatus;
+  let root;
+  try {
+    root = JSON.parse(body);
+  } catch {
+    // Body isn't valid JSON on its own (e.g. truncated, or prose-prefixed
+    // like the inner `message` string) — fall back to hunting for an
+    // embedded object directly in the raw text.
+    root = parseEmbeddedJson(body);
+  }
+  const found = findStatusField(root, 0);
+  return found === undefined ? httpStatus : found;
 }
 
 export function fetchImage(url, redirects = 0) {
@@ -106,8 +149,12 @@ export function fetchImage(url, redirects = 0) {
           const errChunks = [];
           res.on("data", (c) => errChunks.push(c));
           res.on("end", () => {
-            const body = Buffer.concat(errChunks).toString("utf8").slice(0, 500);
-            const realStatus = extractRealStatus(res.statusCode, body);
+            // Extract from the FULL body — the embedded-JSON status can sit
+            // past the 500-char display cap — then truncate only what goes
+            // into the human-facing message.
+            const fullBody = Buffer.concat(errChunks).toString("utf8");
+            const body = fullBody.slice(0, 500);
+            const realStatus = extractRealStatus(res.statusCode, fullBody);
             const retryable = !NON_RETRYABLE_STATUSES.has(realStatus);
             const advice = NON_RETRYABLE_ADVICE[realStatus];
             const message = advice
