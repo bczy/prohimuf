@@ -270,44 +270,57 @@ scores that misprediction openly rather than hiding it in an estimate.
 
 ---
 
-## 4bis. LANE `dev-r3f-render` — étape 1 (écran) — 2026-08-05 — EN COURS
+## 4bis. LANE `dev-r3f-render` — étapes 1 et 2 — 2026-08-05 — LIVRÉE
 
-- **claim :** `src/render/ui/portrait/**` (écran + CSS Modules), puis
-  `src/hooks/usePortraitRobot.ts` / `usePortraitGestures.ts`, puis `App.tsx` (étape 2).
-- **release (commit `4686188`) :** l'écran DOM complet et testé —
-  `PortraitRobotScreen.tsx` (+ `.module.css`), `TelecarteGauge`, `EarlyExitButton`,
-  `copy.ts` (copie reprise au mot près de la spec fiction round 3), barrel `index.ts`,
-  14 tests dans `src/render/ui/__tests__/PortraitRobotScreen.test.ts`. Bandes jointives
-  (gap 0, aucun séparateur), aucun acte de validation, aucun feedback par trait, jauge
-  sans chiffre, sortie anticipée en deux appuis au pointeur / un au clavier.
-- **BLOQUÉ sur `dev-gameplay` — les deux hooks ne peuvent pas être écrits :**
-  `src/game/systems/portraitRobotSystem.ts` (`stepPortraitScene`, `createPortraitScene`,
-  `resolvePortraitScene`, `levelModifierFromPortrait`) et
-  `src/game/systems/swipeGestureSystem.ts` (`classifySwipe`, `accumulateDrag`,
-  `DRAG_CRAN_DISTANCE`) n'existent pas encore. Conformément à §3.3 étape 0bis, rien n'est
-  réimplémenté côté `src/hooks` : l'écran est construit contre les types de contrat seuls.
-- **BLOQUÉ sur `dev-tooling-assets` :** les 24 PNG placeholder + le portrait cible ne sont
-  pas là ; l'écran les référence par chemin (`assets/portrait/<band>-<nn>.png`) et rendra
-  des images cassées jusqu'à leur arrivée. Aucun contournement introduit.
+- **claim :** `src/render/ui/portrait/**`, `src/hooks/usePortraitRobot.ts`,
+  `src/hooks/usePortraitGestures.ts`, `src/render/scene/App.tsx` (phase, graine,
+  `pendingModifier`, gate de préchargement). Aucun fichier hors §3.2 touché.
+- **release :** trois commits — `4686188` (écran), `e3c649f` (hooks + App), plus le
+  présent journal.
+  - **Écran DOM pur** : `PortraitRobotScreen` + `TelecarteGauge` + `EarlyExitButton` +
+    `PortraitRobotPhase`, `copy.ts` (copie reprise au mot près de la spec fiction round 3
+    — la lane render n'écrit aucun texte), CSS Modules sur les tokens print (zéro hex,
+    zéro font, zéro breakpoint ; fork d'appareil en `data-device`).
+  - **Bandes jointives** : `gap: 0`, aucune bordure ni séparateur entre les rangées, et
+    le portrait cible est rendu par la MÊME pile au même gabarit, pour que les deux
+    visages se comparent trait pour trait.
+  - **Aucun acte de validation**, **aucun feedback par trait**, **aucun chiffre de
+    chrono** — chacun couvert par un test.
+  - **`usePortraitRobot`** : un seul site d'appel, `stepPortraitScene`. Boîte d'entrée
+    vidée en pause ET intentions jetées à l'arrivée pendant la pause (le simple vidage à
+    l'entrée en pause laissait la file se remplir puis atterrir d'un coup à la reprise —
+    trouvé par le test, corrigé).
+  - **`usePortraitGestures`** : binding seul ; bande gelée au `pointerdown`, hystérésis
+    en deux phases, N crans ⇒ UN `SET` ; clavier complet, aucune liaison `Enter`.
+  - **`App.tsx`** : phase intercalée après `NARRATIVE_POST`, une occurrence par run,
+    graine gelée et rejouable (`?portraitSeed=`), gate de préchargement sur la cible
+    `portrait-robot`, `pendingModifier` dépensé exactement une fois. Le verdict passe par
+    `levelModifierFromPortrait` — aucune table de payoff côté render.
+- **Vérification :** `tsc` clean, `eslint` clean, suite complète verte
+  (138 fichiers / 1916 tests, dont 24 neufs sur cette lane). **Pas encore de captures
+  `verify`** : les 24 PNG sont des placeholders, une capture ne prouverait pas encore la
+  jointure au trait (G7a/G7b/G7c du gate art restent à faire sur la vraie planche).
 - **Écarts de spec constatés, non tranchés en silence :**
   1. **`aria-valuetext`** — l'UX §5.5.3 écrit trois paliers qualitatifs, le gate A18 en a
      ajouté un quatrième (`MID`). `MID` et `URGENT` partagent « ça presse » plutôt que
      d'inventer une quatrième chaîne. → `ux-designer`.
-  2. **Échelle typographique** — le plancher « 14px effectif » (UX §5.3/§9.3) est
-     au-dessus des pas `xs`/`sm`/`md` de `print/tokens.ts` (9/11/12px) : les libellés de
-     bande, le compteur et la jauge utilisent `--font-size-base` (16px). → `lead-art`.
+  2. **Échelle typographique** — le plancher « 14px effectif » (UX §5.3/§9.3) est au-dessus
+     des pas `xs`/`sm`/`md` de `print/tokens.ts` (9/11/12px) : les libellés de bande, le
+     compteur et la jauge utilisent `--font-size-base` (16px). → `lead-art`.
   3. **Reptation de révélation à `PARTIAL`/`FAILED`** (UX §6) non implémentée : elle exige
-     l'asset de la variante JUSTE par bande après résolution, que ni `PortraitScene` ni le
-     view-model ne portent aujourd'hui. → à cadrer avec `dev-gameplay` (la vérité est dans
-     `puzzle.truth`, donc dérivable côté hook une fois `RESOLVED` — mais c'est un ajout de
-     surface à valider, pas une initiative de lane).
+     l'asset de la variante JUSTE par bande après résolution. Dérivable de `puzzle.truth`
+     côté hook, mais c'est une surface neuve à valider, pas une initiative de lane.
+     → `senior-architect` / `ux-designer`.
   4. **Armement de la sortie anticipée** — ADR-0081/gate A17 le situent « dans le hook » ;
-     il vit dans `EarlyExitButton` (état local, `ARM_WINDOW_MS`), donc dans la couche
-     render et hors du modèle de jeu comme exigé, mais pas littéralement dans `src/hooks`.
-     Signalé plutôt que déguisé. → `senior-architect`.
-- **next :** `usePortraitGestures` + `usePortraitRobot` dès que les deux modules purs sont
-  mergés ; `App.tsx` (phase, graine, `pendingModifier`, gate de préchargement) en dernier,
-  après `levelModifierFromPortrait` (§3.3 étape 2).
+     il vit dans `EarlyExitButton` (état local, `ARM_WINDOW_MS`), donc dans la couche render
+     et hors du modèle de jeu comme exigé, mais pas littéralement dans `src/hooks`.
+     → `senior-architect`.
+  5. **Beats narratifs de niveau suivant** (`LevelModifier.narrativeBeat`) portés mais pas
+     encore joués : le pré-niveau ne branche pas sur le beat. À câbler une fois les trois
+     scènes de `narrativeSystem` disponibles. → coordination `dev-gameplay`.
+- **next :** `qa-lead` (stage 5) — dont les trois vérifications Rév. 1 : course du buzzer
+  sur seed épinglée à 60 Hz et en frame-rate bridé, entrée 0/4 observée dans l'app buildée,
+  et les trois paliers déclenchés exactement une fois chacun.
 
 ---
 
