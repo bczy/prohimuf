@@ -10,7 +10,8 @@
   (a global property cannot be obtained by repeating it in N local prompts — the reason for
   slicing, not per-band generation), ADR-0068 (lazy chunking), asset-preload story
   (`assetManifest.ts` / `useAssetPreloader`).
-- **Inputs (canonical):** `docs/game-design/design-gate-portrait-robot.md` §3 and A5;
+- **Inputs (canonical):** `docs/game-design/design-gate-portrait-robot.md` §3, A5 and **§8
+  A14** (`initialStateAllWrong`, Bertrand 2026-08-05);
   `docs/art-direction/brief-portrait-robot.md` §1, §5, §6, §7.3 (the three blocking questions
   answered in D6).
 
@@ -36,6 +37,14 @@ Three facts make this a decision rather than a JSON file:
    medium + 0 fine". The gate's composition rule would degrade into a review promise.
 3. **`levelArt.json` is keyed by level.** This catalogue is run-scoped and level-independent;
    it has no level to be keyed by.
+4. **Since B1, the draw is load-bearing for safety, not only for difficulty.** With no
+   validation button, the scene resolves the moment the board reads 4/4 — so a seed that
+   *starts* at 4/4 would resolve a scene the player never touched, and one that starts at 3/4
+   would hand `IDENTIFIED` to a single blind swipe. Gate A14 answers with a new canonical
+   invariant, **`initialStateAllWrong = true`**: at entry into `ACTIVE`, all four bands show a
+   wrong variant, `correctCount === 0` guaranteed. That is a constraint on **the draw**, i.e.
+   on this ADR — and, like the decoy composition, it is worthless as a promise and worth
+   something as an enforced property (D4.4, D3 `seed-sweep`).
 
 ## Decision
 
@@ -146,6 +155,24 @@ Per band, in fixed band order:
    composition true *for every seed*, not on average.
 3. **Presentation order** = a Fisher–Yates shuffle of the 6, seeded from `hash(seed, bandId, 1)`.
    The truth's position is therefore not the same slot every run, and the shuffle is replayable.
+4. **Initial selection** = an index drawn from the **five non-truth slots**, by construction:
+
+   ```ts
+   const truthSlot = order.indexOf(truthId);              // 0..5
+   const initialSlot = (truthSlot + 1 + (hash(seed, bandId, 2) % 5)) % 6;
+   // initialSlot !== truthSlot for every seed — arithmetic, not luck
+   ```
+
+   `PortraitPuzzle` therefore carries `initialSelection: readonly number[]` (4 slots), and
+   `correctCount(initialSelection) === 0` **for every seed** (gate A14, ADR-0079 D8.4).
+
+**Why arithmetic exclusion rather than rejection sampling.** The obvious implementation is
+"draw an initial state, redraw if it matches the truth". It is also the wrong one here: a
+retry loop on a seeded hash has no bounded-termination proof a reader can check at a glance,
+it makes the number of hash consumptions depend on the seed (so an innocent change to the hash
+shifts every puzzle), and it turns an invariant into a *procedure that usually succeeds*. The
+modular offset above makes the bad state **unrepresentable** — the same posture as
+`LevelModifier` having no life field (ADR-0079 D10). Cheaper, and provable in one line.
 
 Same seed ⇒ same puzzle, on every device, forever. The function is total: it never throws on a
 catalogue that passed `validatePortrait`, and its behaviour on an invalid one is the caller's

@@ -3,13 +3,39 @@
 **Feature :** nouvelle scène intercalaire « portrait-robot » — recomposer un visage à partir de
 **4 bandes** (cheveux, yeux, nez, bouche). Référence assumée : la phase photofit de RoboCop
 (Ocean, 1988), version Atari ST.
-**Author:** `game-designer` (Sacha) · **Date:** 2026-08-05 · **Révision :** round 2 (post-gate)
-**Status:** RÉVISÉE round 2 — alignée sur `docs/game-design/design-gate-portrait-robot.md` §3
-(valeurs canoniques). Prête pour `senior-architect` (TECH PLAN).
+**Author:** `game-designer` (Sacha) · **Date:** 2026-08-05 · **Révision :** round 3 (post-amendements Bertrand)
+**Status:** RÉVISÉE round 3 — alignée sur `docs/game-design/design-gate-portrait-robot.md` §3
+(valeurs canoniques, mise à jour en place par la **§8 Amendements post-gate**). Prête pour
+`senior-architect` (TECH PLAN).
 
 > **Autorité de tuning.** La §3 du design gate fait foi. Cette spec ne fait qu'en porter les
 > valeurs avec leur rationale. En cas de divergence résiduelle constatée, **le gate gagne** et
 > c'est un bug de cette spec.
+
+---
+
+## Journal de révision — round 3 (2026-08-05, amendements Bertrand B1/B2/B3)
+
+| #   | Ce qui change                                                                                                                                                                                                                                                                                     | Où                                        | Arbitrage                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ------------------------ |
+| R10 | **Le CTA `SORTIR LA TÊTE` n'existe plus.** Plus d'acte de soumission volontaire : la scène se **verrouille automatiquement** dès que l'état courant est 4/4. R5 réécrite, `confirmGuardSeconds` supprimée, `Entrée` retirée du socle clavier, AC14 nettoyé.                                          | §2.2 (R5), §2.3, §4.1, §4.3, §5, AC2, AC14 | **B1** · gate A12bis     |
+| R11 | **Deux moments d'évaluation, plus un.** `IDENTIFIED` = verrouillage **en cours de phase** (sur événement d'entrée) ; `PARTIAL`/`FAILED` = état courant **au buzzer** ou à l'abandon. Le 3/4 devient un palier **subi**, plus un palier soumettable. Règle d'ordre du 4/4-pile-au-buzzer transcrite.  | §2.2, §2.3, §4.2                          | **B1** · gate A12bis     |
+| R12 | **`confirmGuardSeconds` 1,0 s supprimée**, remplacée par l'invariant de seed **`initialStateAllWrong = true`** (les 4 bandes démarrent fausses ⇒ ≥ 4 gestes délibérés avant tout verrouillage). Mon ancien invariant A5 (§3) en devient un cas particulier, il est **renforcé** au niveau du set.     | §3 D2/A5, §4.1, AC9                       | **B1** · gate A14        |
+| R13 | **La discrétisation télécarte saute.** Plus d'unité de 2,5 s, plus de 14 unités, plus de paliers 7/4/2, plus de libellé `TÉLÉCARTE · {n} UNITÉS`. Chrono **continu**, affichage **jauge qui se vide sans nombre**. La télécarte survit comme **objet** diégétique, pas comme compteur.                | §4.1, §5, §6, AC13, AC14, §9              | **B2** · gate A13        |
+| R14 | **Paliers de tension refaits en secondes** — règle mixte : mi-parcours **proportionnel** (50 %), urgence **10,0 s restants** et dernier **5,0 s restants** en **absolu**, identiques dans les trois difficultés. Rationale complète + **un trou trouvé en `hard`** (D5, escaladé).                    | §4.1, §6, AC13, §9                        | **B2** · gate A13 · D5   |
+| R15 | **`revealSeconds` devient conditionnelle à l'issue** : **1,4 s** à `IDENTIFIED` (flash + 4 tampons **simultanés**, zéro reptation — rien à apprendre après un 4/4), **2,6 s** inchangée à `PARTIAL`/`FAILED` (la reptation porte les corrections, c'est la « raison affichée »).                      | §4.1, §5, §6, AC4                         | **B1** · gate A15        |
+| R16 | **Desktop tranché : option B**, drag horizontal à la souris sur la bande visée = variante ±1 sur CETTE bande. Même modèle mental que le swipe tactile. La §2.2 continue de ne prescrire **aucun** geste ; c'est noté comme fait acquis, pas comme exigence de cette spec.                             | §2.2 (encadré), §9                        | **B3**                   |
+| R17 | **Reformulation de la §5 (D4).** « Zéro feedback » était devenu factuellement faux : le verrouillage **est** un feedback. Nouvelle formulation — **aucun feedback par trait, sous aucune forme ; UN seul signal global, binaire et terminal : le verrouillage. Il ne commente pas, il termine.**      | §5 (D4), AC3                              | **B1** · gate A16        |
+| R18 | **Analyse du brute-force intégrée** (le CTA la rendait impossible, son retrait l'ouvre) : 6⁴ = 1 296 états, ~140 couverts en 35 s au clavier (10,8 %), 1 295 crans ≈ 9,3× le chrono, et le balayeur qui échoue échoue en `FAILED` (P(≥3 bons) = 1,5 %). **Aucune contre-mesure ajoutée.**             | §5 (nouveau D6), §7, AC15                 | gate A16                 |
+
+**Ce que ces amendements NE changent PAS** (vérifié ligne à ligne contre la §8 du gate) : A1
+(énergie seule, zéro vie), A1c, A2 (interstitiel), A3 (1/run), A5 (4 bandes · 6 variantes ·
+1 gabarit · composition des leurres), A6 (vocabulaire, hors CTA), A8 (mini-crop et verrouillage
+**indicatif** de bande restent CUT — le verrouillage **automatique** de R10/R11 n'a rien à voir),
+A10 (payoff +20/+10/0 s), A11 (le couperet), A12 (gel du twist). `timerSeconds`, les seuils
+4/4 · 3/4 · ≤ 2/4, `resultHoldSeconds` et les trois barèmes d'issue **n'ont pas bougé d'une unité**.
+
+**Désaccords maintenus : voir la section dédiée en fin de journal.**
 
 ---
 
@@ -28,14 +54,38 @@
 | R9 | **La spec ne prescrit plus de geste.** Elle prescrit la **règle** (« la bande *i* passe à la variante *j* », les 4 bandes indépendantes, ordre libre, cycle bouclé). Le mapping geste↔règle appartient à `ux-designer`. | §2.2, AC2, §9 | A4-bis (Bertrand 2026-08-05) |
 
 **Ratifié par le gate et conservé intact :** D1 (sélection libre), D2 (règle du trait nommé + test
-de recevabilité verbal), D4 (zéro feedback pendant / verdict complet à la révélation),
-`confirmGuardSeconds` 1,0 · `revealSeconds` 2,6 · `resultHoldSeconds` 2,2, seuils 4/4 · 3/4 · ≤ 2/4,
-timeout évalué normalement.
+de recevabilité verbal), D4 (verdict complet à la révélation — ~~zéro feedback pendant~~ **reformulé
+au round 3, R17**), ~~`confirmGuardSeconds` 1,0~~ (**supprimée, R12**) · ~~`revealSeconds` 2,6~~
+(**conditionnelle à l'issue, R15**) · `resultHoldSeconds` 2,2, seuils 4/4 · 3/4 · ≤ 2/4, timeout
+évalué normalement (**et devenu le chemin normal de `PARTIAL`/`FAILED`, R11**).
 
-**Désaccords maintenus :** aucun. Les cinq points renvoyés étaient des contradictions avec des
-décisions amont, pas des désaccords de fond — je les exécute. (Le seul point sur lequel j'aurais
+**Désaccords maintenus (round 2) :** aucun. Les cinq points renvoyés étaient des contradictions avec
+des décisions amont, pas des désaccords de fond — je les exécute. (Le seul point sur lequel j'aurais
 argumenté, la valeur `+20 s` du payoff A10, me paraît bonne : voir §2.5, je la reprends telle
 quelle.)
+### Désaccords maintenus — round 3
+
+Aucun sur les trois arbitrages : B1, B2 et B3 sont des décisions de Bertrand, je les exécute, et
+sur le fond je pense que B1 et B2 rendent la scène **meilleure** (voir §6, « ce que la convergence
+fait au game feel »). Restent **deux réserves** que je maintiens et que je remonte à
+`lead-game-designer` plutôt que de les enterrer :
+
+1. **Le temps mort du joueur qui se croit fini (conséquence directe de B1, non couverte par le
+   gate).** Avec un CTA, le joueur qui pensait avoir fini sortait de la scène. Sans CTA, un joueur à
+   3/4 **convaincu** d'être à 4/4 n'a plus aucun geste disponible : il attend le buzzer en regardant
+   une jauge se vider, sans comprendre pourquoi rien ne se passe. C'est le seul état vraiment
+   dégradé que B1 introduit, et il est fréquent (c'est **l'état modal** de l'échec honnête).
+   Je ne propose **pas** de réintroduire un bouton : le chemin existe déjà, c'est la sortie
+   `Escape` / retour Android (§2.1), qui résout à l'état courant **exactement** comme le buzzer.
+   **Demande ferme, non négociable côté design :** cette sortie ne peut plus être libellée comme un
+   **abandon**. Elle est devenue le geste « j'ai fini, imprime ». Livrable dû par
+   `narrative-designer` (copie) et `ux-designer` (affordance permanente, pas un `Escape` caché) —
+   §9. Sans elle, B1 crée jusqu'à 20 s de vide subi par run.
+2. **Le palier de mi-parcours est inutilisable en `hard` (trou révélé par le recalcul en secondes).**
+   Voir **D5, §4.1** : trois cues dans les 15 dernières secondes. Je propose une règle de
+   distance minimale entre paliers ; c'est un ajout au canon §3 du gate, donc `lead-game-designer`
+   tranche, pas moi.
+
 **Entrées (lues, non re-dérivées) :** `docs/research/research-photofit-robocop-atari-st.md`
 (recon sourcée, `tech-scout`, 2026-08-05) ; `docs/game-design/spec-boss-qte-encounter.md` et
 `docs/game-design/spec-hostage-qte-static-duel.md` (format maison + prior art des scènes figées) ;
@@ -187,7 +237,7 @@ pourquoi elle ne dilue pas la boucle.
 | Écran | **Plein écran dédié.** Le portrait cible et le portrait en construction sont **comparables sans scroll ni bascule** (la disposition CONFIRMÉE de l'original est cible à gauche / construction à droite ; l'adaptation mobile est la juridiction d'`ux-designer`). Bandeau **`TÊTE À CONNAÎTRE`**. |
 | Transition d'entrée | Répliques d'entrée **skippables en un geste** (guidelines §5.3). La **phase interactive n'est pas skippable** : elle a une issue et un coût. Copie : `narrative-designer`. |
 | Input pendant l'entrée | **Neutralisé.** Pas d'équivalent du `QTE_PANIC_SHOT` : on ne punit pas un joueur qui appuie pendant une transition qu'il ne contrôle pas. Le chrono ne démarre qu'à l'entrée en `ACTIVE`. |
-| Abandon | `Escape` / retour Android ⇒ **confirmation légère**, puis la scène **se résout à l'état courant**, exactement comme l'expiration du chrono. Aucun chemin de sortie ne produit un résultat non évalué, et **aucun ne coûte de vie** (il n'y en a pas à coûter). |
+| Sortie anticipée (ex-« abandon ») | `Escape` / retour Android ⇒ **confirmation légère**, puis la scène **se résout à l'état courant**, exactement comme l'expiration du chrono. Aucun chemin de sortie ne produit un résultat non évalué, et **aucun ne coûte de vie** (il n'y en a pas à coûter). **Depuis B1, c'est le SEUL geste terminal volontaire du joueur** — il ne peut plus valider, il ne peut que s'arrêter. Elle ne peut donc plus être présentée comme un abandon : voir « Désaccords maintenus » 1 et §9. Elle ne peut **jamais** produire `IDENTIFIED` (un 4/4 se serait déjà verrouillé). |
 
 ### 2.2 BOUCLE D'INTERACTION (seconde par seconde)
 
@@ -197,54 +247,84 @@ Phase `ACTIVE`. Le chrono tourne (§4).
 d'autre. Il n'y a **pas** d'état « bande active » dans le modèle de jeu — s'il en existe un, c'est
 une notion d'IHM (curseur clavier), pas de mécanique.
 
-> **Périmètre.** Cette section prescrit la **règle**, pas le geste. Depuis l'arbitrage Bertrand du
-> 2026-08-05 (gate A4-bis), le geste tactile primaire est le **swipe horizontal sur la bande visée**
-> et le mapping desktop se décide sur maquette Figma : **c'est la juridiction d'`ux-designer`**.
-> Cette spec ne nomme donc aucune touche, aucun chevron, aucun swipe comme exigence. Ce qu'elle
-> impose à tout mapping, c'est la conformité aux règles R1-R5 ci-dessous.
+> **Périmètre.** Cette section prescrit la **règle**, pas le geste. Les gestes sont tranchés ailleurs
+> et rappelés ici comme **faits acquis**, pas comme exigences de cette spec : tactile = **swipe
+> horizontal sur la bande visée** (gate A4-bis) ; desktop = **option B, drag horizontal à la souris
+> sur la bande visée** (gate B3) — même modèle mental, un seul geste à documenter pour les deux
+> classes d'appareil ; socle clavier ↑↓ bande / ←→ variante. Le détail (seuils, cibles a11y,
+> affordances) est la juridiction d'`ux-designer`. Ce que cette spec impose à tout mapping, c'est la
+> conformité aux règles R1-R5 ci-dessous.
 
 **Règles d'interaction (normatives, indépendantes du geste) :**
 
 - **R1 — Adressage direct.** Le joueur doit pouvoir faire passer **la bande *i* à la variante *j***
   sans effet de bord sur les trois autres bandes. Les 4 bandes sont **indépendantes**.
-- **R2 — Ordre libre et réversible.** N'importe quelle bande, dans n'importe quel ordre, autant de
-  fois qu'on veut. Revenir sur une bande déjà changée est toujours possible (recon §3, PROBABLE,
-  corroboré par « don't spend too long on one feature »). Aucune bande ne se verrouille (§4.3).
+- **R2 — Ordre libre et réversible, sauf au point fixe.** N'importe quelle bande, dans n'importe
+  quel ordre, autant de fois qu'on veut, sans limite d'essais (**B2**). Revenir sur une bande déjà
+  changée est toujours possible (recon §3, PROBABLE, corroboré par « don't spend too long on one
+  feature »). Aucune bande ne se verrouille individuellement (§4.3 · le verrouillage **indicatif**
+  de bande reste coupé, gate A8). **Une seule exception, et elle est structurelle depuis B1 :
+  l'état 4/4 est absorbant** — on ne peut pas le traverser, on y termine (R5). Il n'existe donc pas
+  de « retour en arrière depuis la bonne réponse ».
 - **R3 — Cycle bouclé.** Le parcours des variantes d'une bande est **cyclique** dans les deux sens :
   après la 6ᵉ on revient à la 1ʳᵉ. Pas de cul-de-sac, pas de butée.
 - **R4 — Changement instantané.** Un pas de variante s'applique en < 1 frame de latence logique,
   avec un `snap` sonore court. Un pas = **exactement une** variante (pas de saut, pas d'inertie
-  qui dépasse) : la prévisibilité sous chrono prime.
-- **R5 — Un seul acte de validation, global et terminal.** Le CTA **`SORTIR LA TÊTE`** gèle les 4
-  index simultanément et lance la révélation. Confirmation **explicite en un geste**, pas de
-  double-tap, pas de maintien. Garde anti-validation accidentelle : §4.1
-  (`confirmGuardSeconds`).
+  qui dépasse) : la prévisibilité sous chrono prime. Un drag/swipe continu ne s'arrête **jamais**
+  entre deux crans.
+- **R5 — Aucun acte de validation. La fin est produite, pas déclarée.** Il n'existe plus de CTA, ni
+  de touche, ni de geste de soumission (**B1**). Deux fins seulement, de natures différentes :
+  1. **Verrouillage automatique** — dès que l'état courant des 4 bandes est **4/4**, la phase se
+     termine sur-le-champ et la révélation part. Le joueur ne décide pas de la fin ; il la **cause**.
+  2. **Fin subie** — expiration du chrono, ou sortie anticipée confirmée (§2.1) : l'**état courant**
+     est évalué tel quel (`PARTIAL` ou `FAILED`, jamais `IDENTIFIED`).
+
+**Conséquence normative de R5 — le verrouillage est évalué sur ENTRÉE, pas sur tick.** Le test 4/4
+se fait **à chaque changement d'index de bande**, avant tout tick de chrono ; le test d'expiration
+ne s'évalue **que si aucun verrouillage n'a eu lieu**. Un 4/4 posé dans la même frame que
+l'expiration ⇒ **`IDENTIFIED` gagne**. Le joueur a produit la combinaison, la scène ne peut pas la
+lui refuser sur un départage de frame — c'est le même garde-fou anti-« mort bullshit » qu'en §4.3.
+**Cet ordre est une propriété du réducteur, pas de l'ordre d'arrivée des events du navigateur**
+(ADR-0034) : deux replays du même `portraitSeed` et de la même trace d'entrées donnent la même
+issue, quel que soit le navigateur. Vérifié en test pur (AC7).
+
+**Aucune règle ci-dessus ne présuppose une soumission** — relu ligne à ligne : R1/R3/R4 sont des
+règles d'adressage et de pas, R2 pose la liberté d'essais que B2 rend illimitée, R5 est la seule
+règle terminale et elle est passive côté joueur.
 
 **Déroulé type :**
 
 | t | Ce que le joueur voit / fait |
 | - | ---------------------------- |
-| 0,0 s | Les 4 bandes du portrait en construction sont **pré-remplies** à une variante quelconque (jamais la bonne — invariant A5, §3). Le portrait cible est **visible en permanence jusqu'à la fin** (jamais masqué : test d'observation, pas de mémoire). |
+| 0,0 s | Les 4 bandes du portrait en construction sont **pré-remplies sur une variante FAUSSE — les quatre** (`initialStateAllWrong`, §4.1). L'état de départ est donc **0/4 garanti** : il faut au minimum **4 gestes délibérés** avant qu'un verrouillage soit possible. Le portrait cible est **visible en permanence jusqu'à la fin** (jamais masqué : test d'observation, pas de mémoire). |
 | 0–2 s | Lecture. Le joueur compare une bande à la même zone du cible. |
-| ~2 s → | Il fait défiler les variantes de la bande qu'il regarde (R1/R3/R4), passe à une autre, revient (R2). Le compteur `{n} sur {total}` lui dit s'il a tout vu. |
-| n'importe quand | **`SORTIR LA TÊTE`** (R5). Le rôle du bouton feu est INCERTAIN dans l'original (recon §3) ; on le tranche ici : **il valide**. |
-| chrono → 0 | Validation **forcée** de l'état courant. On ne « perd » pas sans être évalué : la composition telle qu'elle est au buzzer est **jugée normalement** (§4.2). C'est plus juste que l'échec sec de l'original et ça ne coûte rien en lisibilité. |
+| ~2 s → | Il fait défiler les variantes de la bande qu'il regarde (R1/R3/R4), passe à une autre, revient (R2), autant de fois qu'il veut. Le compteur `{n} sur {total}` lui dit s'il a tout vu. La jauge de télécarte se vide en continu. |
+| **à l'instant du 4/4** | **La scène se verrouille d'elle-même** (R5) : le geste qui pose la 4ᵉ bonne bande **est** la fin. Pas de bouton, pas de confirmation, pas de délai de grâce. Le rôle du bouton feu, INCERTAIN dans l'original (recon §3), devient **sans objet** : il n'y a pas de bouton feu dans cette scène. |
+| à tout moment | Sortie anticipée confirmée (§2.1) — évaluée à l'état courant, `PARTIAL` ou `FAILED`. C'est le seul geste terminal volontaire restant. |
+| chrono → 0 | **Chemin normal de `PARTIAL`/`FAILED`** (et non plus une variante) : l'état courant est jugé tel quel (§4.2). On ne « perd » pas sans être évalué. C'est plus juste que l'échec sec de l'original et ça ne coûte rien en lisibilité. |
 
-**Aucun feedback par trait pendant la phase** — voir §5.
+**Aucun feedback par trait pendant la phase. Un seul signal, global et terminal : le verrouillage
+lui-même** — voir §5.
 
 ### 2.3 SORTIE
 
 Machine à phases forward-only, comme les QTE :
 `ENTERING → ACTIVE → RESOLVING → (IDENTIFIED | PARTIAL | FAILED) → DONE`.
 
-| Issue | Condition | Effet |
-| ----- | --------- | ----- |
-| `IDENTIFIED` | **4/4** bandes correctes | Réussite pleine. §4 récompense. |
-| `PARTIAL` | **3/4** bandes correctes | Réussite dégradée : l'info tombe, incomplète. §4. |
-| `FAILED` | **≤ 2/4**, ou validation forcée par le chrono avec ≤ 2/4 | Échec. §4 sanction. |
+| Issue | Moment d'évaluation | Condition | Effet |
+| ----- | ------------------- | --------- | ----- |
+| `IDENTIFIED` | **En cours de phase**, sur événement d'entrée | l'état courant devient **4/4** | Verrouillage immédiat. Réussite pleine, §4. |
+| `PARTIAL` | **Au buzzer** (ou sortie anticipée) | état courant = **3/4** | Réussite dégradée : l'info tombe, incomplète. §4. **N'est plus soumettable** (R11). |
+| `FAILED` | **Au buzzer** (ou sortie anticipée) | état courant **≤ 2/4** | Échec. §4 sanction. |
 
-`RESOLVING` = la **révélation** (§5/§6), durée **2.6 s** avant le hold de résultat. Puis
-`resultHoldSeconds 2.2 s`, puis `DONE`, puis enchaînement sur le niveau suivant. La scène ne se
+**Il n'existe plus d'issue produite par un acte du joueur autre que le 4/4 lui-même.** Corollaire
+vérifiable : `IDENTIFIED` **ne peut jamais** sortir d'une évaluation au buzzer — si l'état était
+4/4, il se serait déjà verrouillé (AC7).
+
+`RESOLVING` = la **révélation** (§5/§6), de durée **conditionnelle à l'issue** (gate A15) :
+**1,4 s** à `IDENTIFIED`, **2,6 s** à `PARTIAL`/`FAILED`. Puis `resultHoldSeconds 2,2 s` dans tous
+les cas, puis `DONE`, puis enchaînement sur le niveau suivant. Budget total de la scène :
+35 + 1,4 + 2,2 = **38,6 s** à `IDENTIFIED`, 35 + 2,6 + 2,2 = **39,8 s** ailleurs. La scène ne se
 rejoue jamais dans le même run (A3).
 
 ### 2.4 CE QUE LA SCÈNE REND AU RESTE DU JEU
@@ -355,8 +435,13 @@ différence en **une phrase courte sans coordonnées de pixels**, le leurre est 
 - **A4 — La bonne réponse ne se déduit pas du contexte.** Les 4 zones sont **indépendantes** : une
   bande juste n'indique rien sur les autres. Pas de cohérence anatomique exploitable comme
   raccourci.
-- **A5 — La bonne variante n'est jamais l'index 0.** L'état initial n'est jamais une bonne réponse
-  gratuite (sinon un joueur qui valide immédiatement peut marquer par hasard).
+- **A5 — `initialStateAllWrong`. Les QUATRE bandes démarrent sur une variante fausse.** Renforcé au
+  round 3 (R12) : ce n'était qu'« la bonne variante n'est jamais l'index de départ » bande par
+  bande ; c'est désormais un invariant **du set**, `correctCount(état initial) === 0`, opposable au
+  seed. Motif : sans CTA, la garde temporelle `confirmGuardSeconds` n'a plus d'objet, et le risque
+  qu'elle couvrait de fait — **une issue produite sans geste** — devient un risque de *seed*, pas de
+  *doigt*. L'invariant garantit **≥ 4 gestes délibérés** avant tout verrouillage, ce que la garde
+  d'une seconde ne garantissait même pas. C'est un durcissement, pas un report.
 - **A6 — Position aléatoire mais déterministe.** L'index de la bonne variante dans le cycle est
   une fonction pure hachée de la graine du niveau et de l'index de bande. Pas de « c'est toujours
   la 3e ».
@@ -413,13 +498,65 @@ canonique serait une porte de sortie déguisée.
 | `faceTemplates` | **1** gabarit ⇒ 24 assets de bande | Budget `lead-art` §5.1. Atomicité du gabarit demandée côté art. |
 | `occurrences` | **1 par RUN**, sur déclencheur narratif | A3 / `pm`. Pas une par niveau. |
 | `timerSeconds` | **35 s** · `easy` **56 s** · `hard` **30 s** | 35 s = milieu exact de la fourchette CONFIRMÉE (ACE 40 s / C&VG 30 s, recon §4). Budget : ~5 s de balayage + ~22 s de comparaison + ~8 s de marge. Le chrono **n'est pas** le levier de difficulté (§3). La modulation passe par `Prefs.difficulty`, qui **existe déjà** — on la câble au lieu d'inventer un mode. `easy` sort de la fourchette historique : assumé, l'accessibilité prime sur la fidélité sur une tâche de comparaison fine. |
-| Unité de chrono | **1 unité = 2,5 s ⇒ 14 unités** au départ | Habillage diégétique **télécarte** (`TÉLÉCARTE · {n} UNITÉS`, jamais « temps restant »). La conversion est choisie pour faire tomber les paliers de son et de copie au même endroit (§6). |
-| Paliers de chrono | **7 / 4 / 2 unités** = 17,5 s / 10,0 s / 5,0 s | Mi-parcours (copie seule) · urgence (copie + 1ᵉʳ resserrement musical) · dernier (bip + 2ᵉ resserrement + annonce `aria-live`). |
+| Écoulement du chrono | **Continu.** Aucune discrétisation, aucun compte d'essais, aucun plafond de crans | **B2** : « autant d'essais que l'on veut, mais dans un temps imparti ». L'unité de 2,5 s et les 14 unités sont **supprimées** (elles ne survivaient d'ailleurs pas à `Prefs.difficulty` : 56 s = 22,4 unités, 30 s = 12 — la conversion était incompatible avec l'échappatoire d'accessibilité qui la côtoyait dans la même table). |
+| Affichage du chrono | **Jauge continue qui se vide, SANS nombre** — ni unités, ni secondes | La télécarte survit comme **objet**, pas comme compteur : c'est la carte qui se vide. « temps restant » reste interdit (A6), et un nombre serait exactement ce mot avec une autre police. Bénéfice de design : une jauge se lit **en périphérie**, sans quitter des yeux la comparaison — c'est ce que la scène demande. |
+| Paliers de tension | **Mi-parcours : 50 % de `timerSeconds` écoulés** · **Urgence : 10,0 s restants** · **Dernier : 5,0 s restants** | Règle **mixte, assumée** — voir D5 ci-dessous pour le rationale complet et le trou trouvé en `hard`. |
 | Chrono sous `RotateOverlay` | **PAUSE** | Le joueur ne peut pas jouer derrière l'overlay ; laisser tourner serait une perte non imputable au joueur. |
-| `revealSeconds` | **2,6 s** | Révélation trait par trait : 4 verdicts à ~0,45 s + 0,8 s de tenue du visage complet (§6). < 2,2 s illisible ; > 3,2 s on attend. |
-| `resultHoldSeconds` | **2,2 s** | Aligné sur `QTE_RESULT_HOLD`. Cohérence inter-scènes. |
-| `confirmGuardSeconds` | **1,0 s** | Le CTA `SORTIR LA TÊTE` est **inerte** pendant la première seconde de `ACTIVE` : garde anti-validation accidentelle. On **désarme** au lieu de punir (pas d'équivalent `QTE_PANIC_SHOT`). |
-| `initialVariantRule` | **jamais la bonne** (A5, §3) | Invariant asserté en code contre les données autorisées, jamais présumé (discipline ADR-0035). |
+| `revealSeconds` | **1,4 s** à `IDENTIFIED` · **2,6 s** à `PARTIAL`/`FAILED` | **Conditionnelle à l'issue (R15).** À `PARTIAL`/`FAILED` la reptation trait-par-trait (4 verdicts à ~0,45 s + 0,8 s de tenue) **porte une information** : il reste 1 à 4 bandes à corriger sous les yeux du joueur, c'est le beat payant et la « raison affichée » exigée par la non-négociable §5 règle 4. À `IDENTIFIED` cette information est **nulle** — quatre tampons « juste » qui défilent pour annoncer ce que le verrouillage vient d'annoncer, soit du temps mort sur le meilleur moment du jeu : flash de verrouillage + **4 tampons simultanés**, pas de reptation. |
+| `resultHoldSeconds` | **2,2 s**, toutes issues | Aligné sur `QTE_RESULT_HOLD`. C'est le temps de lire le tampon et la ligne KENZA : il ne dépend pas de l'issue. Cohérence inter-scènes. |
+| ~~`confirmGuardSeconds`~~ | **SUPPRIMÉE** | Elle existait pour **une seule raison** : désarmer un CTA pendant la première seconde. Le CTA disparaît (B1), la raison disparaît — **la valeur saute, elle ne se transforme pas.** Un délai de grâce sur l'auto-verrouillage serait absurde (il retarderait une bonne réponse) ; un délai avant d'accepter les entrées serait une perte de temps non imputable au joueur. Remplacée par ↓. |
+| `initialStateAllWrong` | **`true`** — les 4 bandes démarrent fausses, `correctCount(initial) === 0` | Remplace `confirmGuardSeconds` (R12, §3 A5). Garantit ≥ 4 gestes délibérés avant tout verrouillage et ferme le fantôme « le seed produit un 4/4 à l'entrée en `ACTIVE` ». Invariant asserté en code contre les données autorisées, jamais présumé (discipline ADR-0035), vérifiable par test pur sur `portraitSeed`. |
+
+### D5 — Les paliers de tension, refaits en secondes (et pas convertis mécaniquement)
+
+Les paliers étaient exprimés en unités de télécarte (7 / 4 / 2). B2 supprime l'unité : il faut les
+**re-poser**, pas les diviser par 0,4. Deux natures de palier coexistent, et c'est ce qui décide de
+leur règle :
+
+- **Le mi-parcours est un palier de RYTHME.** Il dit « tu es à la moitié », il structure la scène en
+  deux temps. Sa place correcte dépend donc de la **durée de la scène** ⇒ **proportionnel**.
+- **L'urgence et le dernier palier sont des paliers de PANIQUE.** Ce qui les rend efficaces, c'est
+  qu'il reste peu de temps **en secondes réelles** — le joueur n'estime pas des pourcentages, il
+  estime « ai-je le temps de corriger une bande de plus ? ». En `easy`, une urgence proportionnelle
+  tomberait à 16 s restants : largement de quoi tout corriger, donc une **fausse alarme**, et une
+  fausse alarme apprend au joueur à ignorer la musique. ⇒ **absolus, identiques partout**.
+
+**Trou trouvé en recalculant (il n'existait pas dans la table du gate) :** un mi-parcours strictement
+à 50 % tombe à **15,0 s restants en `hard`**, soit **5,0 s** avant l'urgence. Trois cues dans les
+15 dernières secondes, dont deux collés : ils ne se perçoivent plus comme deux paliers, ils
+fusionnent en une rampe — exactement ce que le choix « paliers, pas crescendo » (§6) cherche à
+éviter. **Correctif proposé, une seule constante, aucune branche conditionnelle :**
+
+> **Le palier de mi-parcours se déclenche à `max(timerSeconds / 2 ; 17,0)` secondes restantes.**
+
+Le plancher de 17,0 s = 10,0 s (urgence) + **7,0 s de distance minimale**. Pourquoi 7,0 s : c'est le
+temps de **corriger réellement une bande** (balayage des 6 variantes ≈ 1,5 s à 0,25 s/pas, plus la
+comparaison), donc le palier de mi-parcours reste **actionnable** au lieu d'être un constat. En deçà
+de ~5 s, deux cues audio se lisent comme un seul événement (même argument qu'au §6 : un palier se
+perçoit, une rampe s'ignore).
+
+| Palier | Déclencheur | `easy` (56 s) | `normal` (35 s) | `hard` (30 s) | Ce qui se passe |
+| ------ | ----------- | ------------- | --------------- | ------------- | --------------- |
+| Mi-parcours | `max(timerSeconds/2 ; 17,0)` s restants | **28,0 s** (50 %) | **17,5 s** (50 %) | **17,0 s** (plancher, 43 %) | `KENZA — « Ma carte descend. »` — **copie seule, pas de son** |
+| Urgence | **10,0 s restants** (absolu) | 10,0 s | 10,0 s | 10,0 s | copie KENZA + **1ᵉʳ resserrement musical** |
+| Dernier | **5,0 s restants** (absolu) | 5,0 s | 5,0 s | 5,0 s | **`bip`** + 2ᵉ resserrement + annonce `aria-live` |
+
+Écarts obtenus, mi-parcours → urgence : **18,0 s** (`easy`) · **7,5 s** (`normal`) · **7,0 s**
+(`hard`). Plus aucun palier collé.
+
+**Trois bénéfices, et je les nomme parce qu'ils sont la raison du choix :** (1) la table
+audio/`aria-live` des **deux paliers critiques est identique dans les trois difficultés** — un seul
+jeu de cues à produire pour `sound-designer`, une seule règle a11y pour `ux-designer` ; (2) le
+palier d'urgence garde le même **sens** quelle que soit la difficulté (« il te reste dix
+secondes »), au lieu de vouloir dire trois choses ; (3) `easy` reste une échappatoire
+d'accessibilité, pas un mode « moins tendu à la fin » — la fin d'une scène `easy` doit piquer autant,
+c'est la marge de **travail** qu'on allonge, pas la marge de panique.
+
+> **Statut de D5 :** le plancher `17,0 s` est un **ajout au canon §3 du gate** (qui dit
+> « 50 % de `timerSeconds` », sans plancher). Il ne change ni `timerSeconds`, ni les deux paliers
+> absolus, ni aucune valeur d'issue — il ne déplace qu'un palier de copie, et seulement en `hard`
+> (15,0 → 17,0 s restants). **`lead-game-designer` tranche** ; s'il refuse, la table du gate
+> s'applique telle quelle et le défaut de `hard` est acté comme connu.
 
 *Il n'y a plus d'`enterSeconds` :* la transition de 2,0 s reposait sur `QTE_ZOOM_SECONDS` et le gel
 du monde, tous deux supprimés par A2. Le rythme d'entrée est porté par les répliques skippables
@@ -429,10 +566,11 @@ du monde, tous deux supprimés par A2. Le rythme d'entrée est porté par les r�
 
 | Clé | Valeur canonique | Justification |
 | --- | ---------------- | ------------- |
-| `identifiedThreshold` | **4/4** | Un portrait-robot **juste** est juste. Baisser le seuil plein à 3/4 viderait de son sens la révélation (« c'est presque lui » n'identifie personne). |
-| `partialThreshold` | **3/4** | **On ne joue pas en tout-ou-rien.** 3/4 après 35 s de comparaison honnête mérite un retour ; le tout-ou-rien sur une scène d'observation produit de la frustration sourde. Ratifié au gate (A9) : sans ce palier, un joueur à 3/4 subit le même verdict qu'un joueur à 0/4, ce qui contredit frontalement la non-négociable §5 règle 4 (« chaque échec, raison affichée »). Le presque-juste doit être **lisible, faiblement récompensé, jamais indolore**. |
-| `failedThreshold` | **≤ 2/4** | Deux bandes justes sur 4 avec 6 variantes, c'est au niveau du bruit. |
-| Timeout / abandon | **évalué normalement** à l'état courant, pas d'échec sec | **Divergence assumée avec l'original** (où l'expiration = −1 vie, CONFIRMÉ, recon §4). On supprime la double peine « le chrono expire ⇒ tout ce que tu as trouvé est annulé ». Un joueur à 3/4 au buzzer a **réellement** fait 3/4. L'abandon confirmé (§2.1) suit exactement la même route. |
+| `identifiedThreshold` | **4/4 — évalué EN CONTINU, verrouillage automatique et immédiat** | Un portrait-robot **juste** est juste. Baisser le seuil plein à 3/4 viderait de son sens la révélation (« c'est presque lui » n'identifie personne). Depuis B1, le seuil n'est plus un barème appliqué à une soumission : c'est une **condition de terminaison** testée à chaque changement d'index (R5). |
+| Ordre de résolution (anti-issue-fantôme) | Test 4/4 **sur événement d'entrée**, avant tout tick ; expiration évaluée **uniquement si aucun verrouillage n'a eu lieu** ; à égalité dans la même frame, **`IDENTIFIED` gagne** | Sans règle d'ordre, le 4/4 posé pile au buzzer ouvre deux évaluations concurrentes et l'issue dépend de l'ordonnancement des events du navigateur. Le joueur a produit la combinaison : on ne la lui refuse pas sur un départage de frame. **Propriété du réducteur**, pas de l'ordre d'arrivée des events (ADR-0034). |
+| `partialThreshold` | **3/4 — atteignable UNIQUEMENT au buzzer ou en sortie anticipée** | **Il n'existe plus d'acte de soumission** (B1), donc plus de 3/4 volontaire. Le palier devient **subi**, et il en sort **plus honnête** : le joueur ne peut plus « se contenter » d'un 3/4 pour empocher 400 points, il ne peut que **ne pas avoir fini**. `PARTIAL` est ainsi strictement **moins farmable** qu'au round 2, à barème inchangé. Le motif d'origine tient mot pour mot : **On ne joue pas en tout-ou-rien.** 3/4 après 35 s de comparaison honnête mérite un retour ; le tout-ou-rien sur une scène d'observation produit de la frustration sourde. Ratifié au gate (A9) : sans ce palier, un joueur à 3/4 subit le même verdict qu'un joueur à 0/4, ce qui contredit frontalement la non-négociable §5 règle 4 (« chaque échec, raison affichée »). Le presque-juste doit être **lisible, faiblement récompensé, jamais indolore**. |
+| `failedThreshold` | **≤ 2/4** au buzzer ou en sortie anticipée | Deux bandes justes sur 4 avec 6 variantes, c'est au niveau du bruit. |
+| Timeout / sortie anticipée | **évalué normalement** à l'état courant, pas d'échec sec · **ne peut JAMAIS produire `IDENTIFIED`** | **Divergence assumée avec l'original** (où l'expiration = −1 vie, CONFIRMÉ, recon §4). On supprime la double peine « le chrono expire ⇒ tout ce que tu as trouvé est annulé ». Un joueur à 3/4 au buzzer a **réellement** fait 3/4. La sortie anticipée confirmée (§2.1) suit exactement la même route. Depuis B1 ce n'est plus une variante mais **le chemin normal** de `PARTIAL`/`FAILED` : un 4/4 se serait verrouillé avant. |
 
 ### 4.3 Coût de l'échec, récompense
 
@@ -464,11 +602,14 @@ mécanisme « plafonner à 0,25 cœur » disparaît avec la perte de vie. À ass
 **absence** : aucune issue ne produit de `livesDelta`.
 
 **Validation partielle — comportement (question explicite du brief) :** il n'existe **pas** de
-validation par bande. On ne « verrouille » pas une bande. Le seul acte de validation est **global**
-et **terminal** (R5, §2.2) : il gèle les 4 index simultanément et lance la révélation. Rationale
-KISS : un verrouillage par bande créerait un état supplémentaire (verrouillé/libre), un risque de
-blocage (verrouiller une erreur sans recours), et il faudrait alors trancher s'il donne un feedback
-— ce que §5 refuse. Le gate a coupé le verrouillage indicatif proposé côté UX pour la même raison,
+validation par bande. On ne « verrouille » pas une bande à la main. Depuis B1 il n'existe même plus
+de validation **du tout** : la seule terminaison volontaire est le 4/4 lui-même, et elle est
+**globale, automatique et terminale** (R5, §2.2). Rationale KISS, inchangée : un verrouillage par
+bande créerait un état supplémentaire (verrouillé/libre), un risque de blocage (verrouiller une
+erreur sans recours), et il faudrait alors trancher s'il donne un feedback — ce que §5 refuse.
+**À ne pas confondre :** le verrouillage **automatique** de R5 (global, terminal, sans information)
+n'a rien à voir avec le verrouillage **indicatif de bande** proposé côté UX, qui reste **coupé**
+(gate A8) et le reste. Le gate a coupé le verrouillage indicatif proposé côté UX pour la même raison,
 en ajoutant l'argument qui manquait : les 4 bandes étant **toutes visibles simultanément**, il n'y
 a rien à mémoriser. **La « validation partielle » de muf, c'est le palier `PARTIAL` à 3/4, pas un
 verrou.**
@@ -480,8 +621,9 @@ verrou.**
   *Plus de « palier de difficulté » autorisé* : avec une occurrence unique (A3) et une composition
   de leurres figée (§3 D3), il n'y a pas de palier à choisir.
 - **Constantes système** (Belliard-first, promues plus tard si une courbe le demande) :
-  `timerSeconds` et ses facteurs `Prefs.difficulty`, `revealSeconds`, `resultHoldSeconds`,
-  `confirmGuardSeconds`, `variantsPerStrip`, les seuils 4/4-3/4, et tous les deltas
+  `timerSeconds` et ses facteurs `Prefs.difficulty`, les **deux** `revealSeconds` (1,4 / 2,6 —
+  asymétrie assumée, R15), `resultHoldSeconds`, les trois seuils de palier de tension (dont le
+  plancher 17,0 s de D5), `variantsPerStrip`, les seuils 4/4-3/4, et tous les deltas
   énergie/score/`waveDelaySeconds`. Même couture de promotion additive qu'ADR-0034/0035.
 - **Contrat de sortie attendu par `senior-architect` :**
   `outcome · correctCount · energyDelta (appliqué au niveau+1) · scoreDelta · waveDelaySeconds`.
@@ -496,10 +638,22 @@ l'évaluation est globale, en fin de phase.
 
 **Est-ce tenable en 2026, sur mobile ? Oui pendant la phase. Non après.**
 
-### D4 — **Zéro feedback pendant `ACTIVE`. Verdict trait par trait à la révélation.**
+### D4 — **Aucun feedback PAR TRAIT pendant `ACTIVE`. Un seul signal, global et terminal. Verdict trait par trait à la révélation.**
 
-**Pendant la phase — rien.** Aucune coche, aucune couleur, aucun son de justesse, aucun compteur
-« 2/4 ». Non par archéologie, mais parce que **le moindre feedback par trait détruit la mécanique** :
+> **Reformulé au round 3 (R17).** « Zéro feedback, sous toute forme » est devenu **factuellement
+> faux** avec B1 : le verrouillage automatique **est** un feedback, et c'est le seul. Prétendre le
+> contraire serait une spec qui ment. Formulation canonique : *aucun feedback par trait, sous aucune
+> forme ; **UN** seul signal, global, binaire et terminal — le verrouillage. **Il ne commente pas,
+> il termine.*** La distinction est nette et opposable au dev comme à l'UX : un signal qui **met fin
+> à la phase** n'oriente pas la suite du jeu du joueur, il n'y a pas de suite ; un signal par trait,
+> lui, oriente les trois gestes suivants — c'est ce qui reste interdit, et c'est tout ce que D4
+> protégeait vraiment. L'installation diégétique de Yasmine (« Personne te dira si c'est bon. C'est
+> ton œil. ») reste **exacte au mot près** : personne ne te dit si c'est bon, la scène s'arrête
+> quand ça l'est.
+
+**Pendant la phase — rien par trait.** Aucune coche, aucune couleur, aucun son de justesse, aucun
+compteur « 2/4 ». Non par archéologie, mais parce que **le moindre feedback par trait détruit la
+mécanique** :
 avec un signal « juste/faux », le joueur cesse de comparer et **balaye** les 6 variantes jusqu'au
 vert. Le test d'observation devient un test de patience, et tout le §3 (la distance de leurre) ne
 sert plus à rien. C'est l'unique raison, et elle suffit.
@@ -514,14 +668,22 @@ Ce qui est affiché en permanence pendant `ACTIVE` (ce n'est pas du feedback, c'
   pas par une aide ;
 - la position dans le cycle de variantes (« `{n}` sur `{total}` ») — pour savoir si on a tout vu.
   C'est de la lisibilité d'état, pas du feedback : ça ne dit rien de la justesse ;
-- le chrono, en **unités de télécarte** (`TÉLÉCARTE · {n} UNITÉS`).
+- le chrono, sous forme de **jauge de télécarte qui se vide, sans nombre** (R13). Une jauge se lit
+  en périphérie ; un nombre force un aller-retour du regard, hors de la comparaison.
 
 *(Le surlignage de bande, s'il existe, est une affordance d'IHM — `ux-designer`. Le modèle de jeu
 n'a pas de « bande active », §2.2.)*
 
-**À la révélation — tout, trait par trait.** `RESOLVING` (2.6 s) déroule les 4 verdicts **en
-séquence, de haut en bas**, ~0.45 s chacun : pour chaque bande, la variante choisie et, si elle
-est fausse, **la bonne**, en substitution visible. Puis le visage correct se tient 0.8 s.
+**À la révélation — tout, trait par trait, MAIS seulement s'il y a quelque chose à dire.**
+
+- **`PARTIAL` / `FAILED` — `RESOLVING` = 2,6 s.** Les 4 verdicts déroulent **en séquence, de haut en
+  bas**, ~0,45 s chacun : pour chaque bande, la variante choisie et, si elle est fausse, **la
+  bonne**, en substitution visible. Puis le visage correct se tient 0,8 s. C'est la reptation qui
+  **porte les corrections** — sans elle, l'échec n'a pas de « raison affichée ».
+- **`IDENTIFIED` — `RESOLVING` = 1,4 s.** Flash de verrouillage + les **4 tampons simultanés**.
+  Zéro reptation : il n'y a aucune correction à montrer, et faire défiler quatre « juste » l'un
+  après l'autre pour annoncer ce que le verrouillage vient d'annoncer serait du temps mort **sur le
+  meilleur moment du jeu**. Le beat d'`IDENTIFIED` n'est pas une leçon, c'est un claquement.
 
 Rationale game feel : c'est **exactement** là que le feedback est gratuit sur le plan mécanique
 (la manche est finie, il n'exploite rien) et maximal sur le plan pédagogique — le joueur apprend
@@ -533,6 +695,40 @@ moment où elle enseigne au lieu d'assister.
 **Ordre de la séquence :** de haut en bas, toujours (cheveux → yeux → nez → bouche), **jamais**
 les erreurs en dernier pour ménager le suspense. Un ordre stable est lisible ; un ordre
 dramatisé serait perçu comme une manipulation dès la deuxième occurrence.
+
+### D6 — Le brute-force ouvert par B1 : chiffré, puis classé sans suite
+
+Le CTA rendait le balayage impossible : on ne soumettait qu'une fois, donc balayer ne servait à
+rien. Sans lui, le joueur peut **balayer les variantes en attendant que ça se verrouille**. C'est
+l'effet de bord réel de B1 sur la mécanique ; je le chiffre au lieu de le supposer.
+
+| Grandeur | Valeur | Détail |
+| -------- | ------ | ------ |
+| Espace de recherche | **1 296** états | 6⁴ |
+| Balayage exhaustif | **1 295 crans** | compteur base 6 à 4 chiffres, 1 cran = 1 nouvel état |
+| Cadence d'entrée | **≈ 4 /s** au clavier · **≈ 2 /s** au swipe/drag discret | cohérent avec le budget d'input §3 D3 (20 pressions ≈ 5 s) |
+| Couverture en 35 s | **140 états (10,8 %)** clavier · **70 (5,4 %)** au doigt | en `easy` (56 s) : 224 états, **17,3 %** ; même à 8 /s — irréaliste sous chrono — on plafonne à **21,6 %** |
+| Durée d'un balayage complet | **≈ 324 s**, soit **9,3 × le chrono** | 1 295 / 4 |
+| Et s'il échoue | **P(≥ 3 bons) = 4·(1/6)³·(5/6) = 20/1296 = 1,5 %** | le balayeur ne rate pas en `PARTIAL`, il rate en **`FAILED`** |
+
+**Verdict : le brute-force n'est pas une menace, c'est une stratégie strictement dominée.** ~11 % de
+réussite contre ~1,5 % de lot de consolation, face à un joueur qui **regarde** et vise 4/4 sur une
+comparaison à 6 variantes dont **2 leurres forts seulement** (§3 D3). Anti-synergie en prime :
+balayer au doigt, c'est ne pas regarder la cible — la stratégie dégradée **s'auto-punit** en
+consommant précisément l'attention qu'il faudrait dépenser ailleurs.
+
+**Aucune contre-mesure n'est ajoutée** : pas de cooldown d'input, pas de pénalité au nombre de
+crans, pas de plafond d'essais (ce serait d'ailleurs contraire à B2). Ce serait de la complexité
+contre un exploit qui n'existe pas, et **ça punirait le joueur qui hésite légitimement** — lequel
+est indistinguable d'un balayeur, vu de la machine. Position réévaluable au stage 5 **sur une
+observation de playtest**, jamais sur une intuition : si des joueurs balayent **au lieu** de
+regarder, ce n'est pas le balayage qu'il faudra punir, c'est le signe que les leurres sont trop durs
+(levier §3 D3, classe de variation). Je traiterai par là.
+
+**Coût accepté et nommé :** un joueur peut gagner **par accident**, en tombant sur le 4/4 en
+balayant. Il gagne alors sans avoir rien appris, et la révélation courte d'`IDENTIFIED` (1,4 s, sans
+reptation) ne le lui enseignera pas non plus. À ~11 % d'occurrence sur **une seule scène par run**,
+c'est un prix acceptable pour ne pas fabriquer une police d'input.
 
 ---
 
@@ -546,21 +742,83 @@ dramatisé serait perçu comme une manipulation dès la deuxième occurrence.
    est précisément ce qui empêche la scène d'être une digression.
 2. **Le silence de travail (les 35 s).** C'est un **temps calme sous horloge**. Rien ne bouge sauf
    ce que le joueur bouge. La tension vient de trois sources et de rien d'autre :
-   - le **chrono visible** qui décompte en **unités de télécarte** (14 → 0, 1 unité = 2,5 s) ; la
-     recon note « tense music as the seconds tick down » — c'est la seule chose que l'original fait
-     pour tenir cette phase, et elle marche ;
-   - une **musique qui se resserre** aux paliers **4 unités (10,0 s)** puis **2 unités (5,0 s)**
-     (hand-off `sound-designer` : deux paliers, pas un crescendo continu — un palier se perçoit,
-     une rampe s'ignore). Le palier **7 unités (17,5 s)** est de la copie seule. Les trois paliers
-     de copie, les deux paliers musicaux et les annonces `aria-live` tombent désormais **au même
-     endroit** : c'est le seul rôle de la conversion 2,5 s/unité ;
+   - la **jauge de télécarte qui se vide en continu**, sans nombre (R13) ; la recon note « tense
+     music as the seconds tick down » — c'est la seule chose que l'original fait pour tenir cette
+     phase, et elle marche. Une jauge continue tient mieux qu'un décompte d'unités : elle ne donne
+     pas de **prise arithmétique** (« il me reste 4 unités, soit 10 s, soit 2 bandes »), elle donne
+     une **sensation de fuite**. La scène n'est pas un budget à optimiser, c'est une carte qui se
+     vide pendant qu'on cherche ;
+   - une **musique qui se resserre** aux paliers **10,0 s** puis **5,0 s restants** (hand-off
+     `sound-designer` : deux paliers, pas un crescendo continu — un palier se perçoit, une rampe
+     s'ignore). Le palier de mi-parcours est de la **copie seule**, sans son. Les deux paliers
+     critiques tombent **aux mêmes secondes dans les trois difficultés** (§4.1 D5) : un seul jeu de
+     cues, et le même sens partout ;
    - le **portrait cible qui vous regarde**. C'est le seul « personnage » à l'écran ;
      `lead-art` doit lui donner un regard qui soutient 35 s de face-à-face.
-3. **La révélation (2.6 s).** Le beat payant. Séquence descendante, un verdict à la fois,
-   **rythmée comme une machine à écrire** : chaque bande claque, la fausse est corrigée sous les
-   yeux du joueur. À `IDENTIFIED`, les quatre claquent juste et le visage se **fige d'un coup**,
-   entier — c'est là qu'on gagne. À `FAILED`, on voit exactement **quelles** bandes se corrigent :
-   la sanction est mise en scène comme une **leçon**, pas comme un buzzer.
+3. **La révélation — deux durées, deux fonctions.** À `PARTIAL`/`FAILED` (**2,6 s**) : séquence
+   descendante, un verdict à la fois, **rythmée comme une machine à écrire** ; chaque bande claque,
+   la fausse est corrigée sous les yeux du joueur. On voit exactement **quelles** bandes se
+   corrigent : la sanction est mise en scène comme une **leçon**, pas comme un buzzer. À
+   `IDENTIFIED` (**1,4 s**) : le visage se **fige d'un coup**, entier, les quatre tampons tombent
+   **ensemble**. Ce n'est plus une séquence, c'est un **claquement** — et c'est mieux ainsi : le
+   verrouillage a déjà dit « c'est lui », la révélation ne fait que le confirmer plus fort. Étaler
+   une bonne nouvelle sur 2,6 s l'aurait diluée.
+
+### La convergence — ce que B1 fait vraiment au game feel (verdict franc)
+
+**La nature du jeu change, et je le dis sans enrobage.** Au round 2, le joueur **composait puis
+soumettait** : il assemblait un objet, il le déclarait fini, une autorité le jugeait. C'est la
+boucle d'un **formulaire** — remplir, envoyer, recevoir un accusé. Sans CTA, il ne compose plus, il
+**converge** : il tâtonne vers un état, et l'état correct **se manifeste tout seul**. C'est la
+boucle d'un **cadenas** — on tourne les molettes, et à un moment ça s'ouvre. Il n'y a personne au
+bout qui juge ; il y a un mécanisme qui cède.
+
+**Est-ce que ça sert la scène ? Oui, et davantage que je ne l'aurais parié.** Quatre raisons, par
+ordre de poids :
+
+1. **Ça supprime le pire moment de la version round 2 : le doigt au-dessus du bouton.** Le CTA
+   créait une **décision méta** — « est-ce que je valide maintenant ou est-ce que je vérifie
+   encore ? » — qui n'a **rien à voir** avec le verbe de la scène (regarder et déduire). Le joueur
+   passait ses dernières secondes à arbitrer un risque, pas à comparer un nez. Le cadenas rend
+   toute la durée de la scène homogène : il n'y a **qu'une** chose à faire, du début au buzzer, et
+   c'est regarder.
+2. **La récompense arrive à l'instant exact où elle est méritée.** Dans le formulaire, il y avait un
+   délai — trouver, puis déclarer, puis attendre le verdict. Le cadenas colle la cause à l'effet :
+   le geste qui pose la bonne bande **est** la victoire, dans la même frame. C'est le meilleur
+   feedback du jeu et il ne coûte rien, parce que ce n'est pas une récompense ajoutée, c'est la
+   **fin de la résistance**. Aucun QTE de muf n'a ce moment-là.
+3. **Ça durcit `PARTIAL` sans toucher un chiffre.** Le 3/4 devient un état **subi** au lieu d'un lot
+   qu'on encaisse volontairement. On ne peut plus « prendre ses 400 points et partir » : on ne peut
+   que **ne pas avoir fini**. Le presque-juste reste lisible et faiblement récompensé — mais il
+   cesse d'être une stratégie.
+4. **C'est plus fidèle à la fiction que le bouton ne l'était.** « Sors-moi une tête, une seule » : la
+   scène s'arrête quand la tête est sortie, pas quand le joueur estime qu'elle l'est. KENZA ne
+   valide pas un formulaire, elle **reconnaît quelqu'un**. Que la réplique source du CTA supprimé
+   soit précisément l'argument de sa suppression est la meilleure preuve que le bouton était de
+   trop.
+
+**Ce que ça coûte, honnêtement — trois points, dont un que je n'accepte pas en l'état :**
+
+- **Le joueur perd le contrôle de la fin.** C'est réel, mais c'est le prix du cadenas et il est
+  bien payé : il perd le contrôle **d'une seule** issue, la meilleure, et seulement en la
+  produisant. On ne lui retire jamais une fin qu'il voulait.
+- **Le joueur qui se croit fini n'a plus rien à faire** et attend le buzzer devant une jauge qui se
+  vide — jusqu'à 20 s de vide subi, et c'est **l'état modal de l'échec honnête**, pas un cas rare.
+  **C'est le seul vrai dégât de B1, et il n'est pas acceptable tel quel.** Il ne se répare pas par
+  un bouton (ce serait le CTA par la fenêtre) mais par la **requalification de la sortie
+  anticipée** : le geste existe déjà, il est juste libellé « abandon » au lieu de « j'ai fini,
+  imprime ». Voir « Désaccords maintenus » 1 et §9 — livrable dû par `narrative-designer` et
+  `ux-designer`, **bloquant pour l'acceptation design au stage 5**.
+- **Le balayage devient possible.** Chiffré et classé sans suite en §5 D6 : stratégie dominée,
+  aucune contre-mesure.
+
+**Le risque de lecture, à surveiller au playtest.** Un cadenas mal mis en scène ressemble à un
+distributeur en panne : on tripote et il ne se passe rien. Le garde-fou tient dans le `snap` de R4
+(chaque cran doit **répondre**, sinon la scène paraît morte) et dans le fait que la jauge, elle,
+bouge toujours. **Question à poser au stage 5, exactement :** « as-tu compris, sans qu'on te le
+dise, que ça s'arrêterait tout seul quand tu aurais raison ? » Si la réponse est non chez plus d'un
+joueur sur deux, le défaut est dans l'**enseignement d'entrée** (une ligne de KENZA, §9), pas dans
+la mécanique — et surtout pas dans le retour d'un bouton.
 
 **Ce qui donne envie de recommencer.** Trois moteurs, dans l'ordre :
 
@@ -575,7 +833,8 @@ dramatisé serait perçu comme une manipulation dès la deuxième occurrence.
    scène d'une curiosité : sans le payoff, c'est du remplissage par définition (A11).
 
 **Le piège à éviter (à surveiller au playtest) :** la scène ne doit **jamais** ressembler à un
-formulaire. Si au stage-5 elle lit comme un menu d'options, le défaut est dans la mise en scène
+formulaire — B1 vient de lui retirer son bouton « envoyer », ce qui aide beaucoup, mais un
+formulaire sans bouton reste un formulaire si la mise en scène le laisse faire. Si au stage-5 elle lit comme un menu d'options, le défaut est dans la mise en scène
 (cadrage, son, présence du portrait cible), **pas** dans la mécanique — ne pas répondre en
 rajoutant du timing.
 
@@ -585,9 +844,19 @@ rajoutant du timing.
 
 1. **Bandes qui défilent / à figer** — rejeté en D1. Ne pas ré-introduire par la porte de service
    (« et si juste les cheveux défilaient ? » : non).
-2. **Verrouillage / validation bande par bande.** §4.3.
+2. **Verrouillage / validation bande par bande** (et le verrouillage **indicatif** de bande, coupé
+   au gate A8). §4.3 — à ne pas confondre avec le verrouillage **automatique global** de R5, qui
+   est, lui, la mécanique.
 3. **Feedback par trait pendant la phase**, sous quelque forme que ce soit (couleur, son, « chaud/
-   froid », compteur de justesse). §5.
+   froid », compteur de justesse). §5. Le verrouillage n'est pas une exception : il est **global et
+   terminal**, il ne commente aucun trait.
+3-bis. **Tout CTA, bouton, touche ou geste de soumission** (B1), et toute garde temporelle
+   associée (`confirmGuardSeconds`, R12). Ne pas les réintroduire sous un autre nom (« bouton
+   J'AI FINI », « double-tap pour imprimer ») : la sortie anticipée de §2.1 couvre ce besoin et
+   c'est la seule porte.
+3-ter. **Toute contre-mesure anti-balayage** — cooldown d'input, pénalité au nombre de crans,
+   plafond d'essais. Chiffré comme inutile en §5 D6, et un plafond d'essais contredirait
+   frontalement B2.
 4. **Bonus de score au temps restant.** §4.3 — il combat le verbe de la scène.
 5. **Plus de 4 bandes** (menton, oreilles) et **plus de 6 variantes** par bande, **plus d'un
    gabarit** de visage. §3/§4.1 — plafonds durs, budget art.
@@ -619,16 +888,23 @@ rajoutant du timing.
 - **AC2 — Règle d'interaction conforme à D1 (R1-R5, §2.2).** Sur les deux classes d'appareils
   (ADR-0015) et **quel que soit le geste retenu par `ux-designer`** : la bande *i* peut être portée
   à la variante *j* **sans effet de bord** sur les trois autres ; les 4 bandes sont adressables dans
-  n'importe quel ordre et autant de fois qu'on veut ; le cycle boucle dans les deux sens ; un pas =
-  exactement une variante ; la validation est unique, globale et terminale. **Cet AC ne teste aucun
-  geste** — le mapping (swipe horizontal sur la bande en tactile, proposition Figma en desktop) est
-  vérifié par l'AC d'`ux-designer`, pas ici.
-- **AC3 — Zéro feedback pendant.** Aucun signal de justesse, par bande ou global, entre le début du
-  chrono et `RESOLVING`. Vérifié par capture. Le compteur `n / N` de position dans le cycle et le
-  chrono sont présents (lisibilité d'état, pas feedback).
-- **AC4 — Révélation.** `RESOLVING` déroule 4 verdicts de haut en bas en ~0.45 s chacun, corrige
-  visiblement chaque bande fausse, puis tient le visage complet 0.8 s. Total 2.6 s ± 0.2 s, suivi
-  du hold 2.2 s.
+  n'importe quel ordre et autant de fois qu'on veut, **sans limite d'essais** ; le cycle boucle dans
+  les deux sens ; un pas = exactement une variante ; **il n'existe aucun geste de validation** et
+  l'écran ne contient **aucun CTA**. **Cet AC ne teste aucun geste** — le mapping (swipe horizontal
+  sur la bande en tactile, drag horizontal en desktop) est vérifié par l'AC d'`ux-designer`, pas ici.
+- **AC2-bis — Verrouillage automatique.** Porter les 4 bandes sur la bonne combinaison **termine la
+  phase immédiatement**, sans aucun geste supplémentaire, depuis n'importe quel ordre de pose et à
+  n'importe quel instant du chrono. Vérifié en jeu réel **et** par test pur.
+- **AC3 — Aucun feedback par trait pendant.** Aucun signal de justesse **par bande**, entre le début
+  du chrono et `RESOLVING` : ni couleur, ni coche, ni son de justesse, ni compteur « n/4 ». Vérifié
+  par capture. Le compteur `{n} sur {total}` de position dans le cycle et la jauge de chrono sont
+  présents (lisibilité d'état, pas feedback). **Le verrouillage automatique est le seul signal
+  admis, et il est terminal** — s'il existe un état où la scène signale « c'est bon » **sans**
+  s'arrêter, l'AC échoue.
+- **AC4 — Révélation, deux durées.** À `PARTIAL`/`FAILED` : `RESOLVING` déroule 4 verdicts de haut en
+  bas en ~0,45 s chacun, corrige visiblement chaque bande fausse, puis tient le visage complet
+  0,8 s — total **2,6 s ± 0,2 s**. À `IDENTIFIED` : flash + **4 tampons simultanés**, **aucune**
+  reptation, total **1,4 s ± 0,15 s**. Hold 2,2 s dans les deux cas.
 - **AC5 — Barème.** 4/4 ⇒ `IDENTIFIED` (0 énergie, +1500 score) ; 3/4 ⇒ `PARTIAL` (0 énergie,
   +400 score) ; ≤ 2/4 ⇒ `FAILED` (**−20 sur le capital d'énergie INITIAL du niveau suivant**,
   0 score). Vérifié par test unitaire sur les trois issues. Le `FAILED` est vérifié **là où il
@@ -638,13 +914,19 @@ rajoutant du timing.
   confirmé, `lives` est **strictement inchangé** — y compris à `lives` bas (0,5 puis `FAILED` ⇒
   toujours 0,5). Asserté comme une **absence** : le contrat de sortie de la scène ne contient aucun
   `livesDelta`. Test unitaire sur les cinq chemins.
-- **AC7 — Timeout évalué.** L'expiration du chrono valide l'état courant et le juge par le même
-  barème (un 3/4 au buzzer donne `PARTIAL`). Aucun chemin d'échec sec.
+- **AC7 — Timeout évalué, et ordre de résolution.** Trois assertions : (a) l'expiration du chrono
+  évalue l'état courant et le juge par le même barème (un 3/4 au buzzer donne `PARTIAL`) — aucun
+  chemin d'échec sec ; (b) **aucune** évaluation au buzzer ni en sortie anticipée ne peut produire
+  `IDENTIFIED` ; (c) **le 4/4 posé dans la frame de l'expiration donne `IDENTIFIED`**, et cette
+  issue est **identique sur deux replays de la même trace d'entrées** — c'est une propriété du
+  réducteur, pas de l'ordonnancement des events. Test pur sur les trois.
 - **AC8 — Déterminisme.** Même `portraitSeed` ⇒ même bonne variante et mêmes leurres, aux mêmes
   index, sur deux runs. Aucun `Math.random`/`Date.now` dans la scène (grep/lint assertés). Les
   niveaux sans spec portrait sont byte-for-byte inchangés.
-- **AC9 — Invariants du jeu de variantes.** L'état initial d'aucune bande n'est la bonne réponse
-  (A5) ; la bonne variante n'est pas toujours au même index (A6) ; `variantsPerStrip === 6`,
+- **AC9 — Invariants du jeu de variantes.** `correctCount(état initial) === 0` — **les quatre**
+  bandes démarrent sur une variante fausse (`initialStateAllWrong`, A5), sur **tout** `portraitSeed`
+  testé, donc aucune scène ne peut se verrouiller avant 4 gestes ; la bonne variante n'est pas
+  toujours au même index (A6) ; `variantsPerStrip === 6`,
   `faceTemplates === 1` et `stripCount === 4`, assertés en code contre les données autorisées,
   jamais présumés.
 - **AC10 — Équité de la ressemblance (playtest, pas test unitaire).** Sur un device mobile réel,
@@ -662,13 +944,30 @@ rajoutant du timing.
      **perçoit** le répit du démarrage. La question du playtest n'est pas « est-ce que ça marche »
      mais **« est-ce que le payoff se sent »**. S'il ne se sent pas, la feature échoue son gate de
      justification (A11) et `pm` + `lead-game-designer` la coupent.
-- **AC13 — Chrono, unités et accessibilité.** Le chrono s'affiche en **unités de télécarte**
-  (14 → 0, 1 unité = 2,5 s), les paliers tombent à **7 / 4 / 2 unités**, `Prefs.difficulty` donne
-  **56 / 35 / 30 s**, et le chrono est **en pause** tant que `RotateOverlay` est affiché.
+- **AC13 — Chrono continu, paliers et accessibilité.** Le chrono s'affiche en **jauge continue qui
+  se vide, sans aucun nombre** (ni unités, ni secondes) ; il n'existe **aucun compte d'essais ni
+  plafond de crans** ; `Prefs.difficulty` donne **56 / 35 / 30 s** ; le chrono est **en pause** tant
+  que `RotateOverlay` est affiché. Paliers vérifiés au chronomètre dans les **trois** difficultés :
+  urgence à **10,0 s restants** et dernier à **5,0 s restants** dans les trois, mi-parcours à
+  `max(timerSeconds/2 ; 17,0)` s restants — soit 28,0 / 17,5 / 17,0 s (D5 ; si `lead-game-designer`
+  refuse le plancher, la valeur `hard` attendue redevient 15,0 s).
 - **AC14 — Vocabulaire de surface (A6).** Aucune capture d'écran de la scène ne contient
-  `PORTRAIT-ROBOT`, `CHEVEUX`, `YEUX`, `dossier suspect`, `VALIDER LE PORTRAIT` ni « temps
-  restant ». On y lit **`TÊTE À CONNAÎTRE`**, **`LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`**,
-  **`SORTIR LA TÊTE`**, **`TÉLÉCARTE · {n} UNITÉS`**. Vérifié par capture au composite gate.
+  `PORTRAIT-ROBOT`, `CHEVEUX`, `YEUX`, `dossier suspect`, `VALIDER LE PORTRAIT`, `SORTIR LA TÊTE`,
+  `TÉLÉCARTE · {n} UNITÉS`, ni « temps restant », **ni aucun nombre de chrono**. On y lit
+  **`TÊTE À CONNAÎTRE`** et **`LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`**. La copie de la jauge
+  sans nombre et celle de la sortie anticipée sont dues par `narrative-designer` (§9). Vérifié par
+  capture au composite gate.
+- **AC15 — Balayage : aucune contre-mesure, et le coût est celui qui a été chiffré.** Deux volets :
+  1. *Mesurable :* aucun cooldown d'input, aucune pénalité au nombre de crans, aucun plafond
+     d'essais n'existe dans le code de la scène. Un joueur peut enchaîner les crans à la cadence
+     maximale que le geste permet, du début au buzzer.
+  2. *Playtest :* si des joueurs **balayent au lieu de regarder**, le rapport de stage 5 le
+     signale comme un signal sur la **difficulté des leurres** (§3 D3), jamais comme une demande de
+     pénalité (§5 D6).
+- **AC16 — La sortie anticipée est une sortie, pas un abandon.** Elle est **visible en permanence**
+  (pas seulement `Escape` / retour Android), elle résout à l'état courant, et sa copie ne lit pas
+  comme un renoncement. **Bloquant** : sans elle, le joueur qui se croit fini subit jusqu'à 20 s de
+  vide (§6, « Désaccords maintenus » 1). Vérifié par capture + playtest.
 
 ---
 
@@ -677,7 +976,9 @@ rajoutant du timing.
 **Refermées par le gate, ne pas rouvrir :** D1 (ratifiée, option B close définitivement) · le coût
 de l'échec (énergie seule, A1) · le palier 3/4 (maintenu, A9) · la fréquence (1 par run, A3) ·
 le nombre de variantes (6, A5) · le placement (interstitiel, A2) · le mapping tactile (swipe sur la
-bande, arbitrage Bertrand A4-bis) · le twist « ton propre portrait-robot » (gelé, A12).
+bande, arbitrage Bertrand A4-bis) · **le mapping desktop (drag horizontal, option B, B3)** ·
+**l'existence d'un CTA (supprimé, B1)** · **la discrétisation du chrono (supprimée, B2)** ·
+le twist « ton propre portrait-robot » (gelé, A12).
 
 **Pour `ux-designer` (Tony) — ouvert par l'arbitrage A4-bis, non bloquant pour le TECH PLAN :**
 

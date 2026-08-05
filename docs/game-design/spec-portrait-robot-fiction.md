@@ -1,7 +1,32 @@
 # PORTRAIT-ROBOT — fiction spec (« TÊTE À CONNAÎTRE »)
 
 **Author:** `narrative-designer` (Yasmine) · **Gate:** `lead-game-designer` (Karim) —
-status **DRAFT, awaiting PASS** · **Date:** 2026-08-05
+status **ROUND 2 — conditions du gate appliquées** · **Date:** 2026-08-05
+
+---
+
+## 0. Journal de révision
+
+**Round 2 (2026-08-05)** — entrée : `docs/game-design/design-gate-portrait-robot.md` §7 (4 conditions),
+§8 (amendements B1/B2/B3, A12bis→A16), §3 (valeurs canoniques). La §3 du gate prime sur toute valeur
+de cette spec.
+
+| #   | Origine                    | Ce que j'ai fait                                                                                                                                                                            |
+| --- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Condition 1 (annulée par B2) | La conversion 14 unités est **morte** avant que je l'écrive. §4.5 refaite : jauge continue, plus un seul nombre à l'écran, paliers **nommés** (MI-PARCOURS / URGENCE / DERNIER) au lieu de chiffrés par moi. |
+| R2  | Condition 2               | **`PARTIAL` écrit** — nouveau §4.7, tampon `PRESQUE LUI` + KENZA/DISPATCH/MUF. Cadré comme palier **subi** (A12bis) : on ne se contente pas d'un 3/4, on n'a pas fini. |
+| R3  | Condition 3               | **Rappels du niveau suivant écrits** — nouveau §5.3, deux scènes courtes, `IDENTIFIED` et `FAILED`. Obligatoires, pas décoratifs (A1b/A10). Un troisième cas `PARTIAL` ajouté par nécessité (il existe, il ne peut pas être muet). |
+| R4  | Condition 4               | **Passe de conformité IHM** — nouveau §6.1 : chaque chaîne d'écran de l'UX passée contre ma liste d'interdits. Message d'abandon réécrit. |
+| R5  | **B1** (CTA supprimé)     | `SORTIR LA TÊTE` **abandonné comme libellé**, recyclé nulle part de force. **Balayage de toute la spec fait** (§4.2, §4.4, §4.9, §5) : plus une seule ligne ne présuppose un geste de validation. Détail du balayage en §4.11. |
+| R6  | **B1 / A16**              | **Nouveau beat : LE VERROUILLAGE** — §4.6. C'est le seul feedback de la scène, il lui fallait sa ligne. |
+| R7  | **A14** (`initialStateAllWrong`) | La tête absurde du premier écran est **mise en scène**, pas subie — §4.0. |
+| R8  | **A15**                   | Les textes de révélation sont désormais **calés sur deux durées** (1,4 s à `IDENTIFIED`, 2,6 s ailleurs) : contrainte de lecture inscrite en §4.6/§4.7/§4.8. |
+| R9  | A12 · Q1→Q4               | Questions fermées par le gate — §7 réécrite en « ce qui est tranché » + les seules questions encore ouvertes.                                                                                |
+
+**Ce que j'abandonne officiellement :** `SORTIR LA TÊTE` comme chaîne d'IHM. Elle ne devient pas un
+autre bouton, pas un titre, pas une ligne de verrouillage. Elle survit **là où elle est née** — dans
+la bouche de KENZA au §4.1, réplique 4. C'était une réplique avant d'être un bouton ; elle redevient
+ce qu'elle était. Une scène qui n'a plus de bouton n'a pas besoin qu'on lui en écrive le fantôme.
 **Entrées :** `docs/research/research-photofit-robocop-atari-st.md` (recon, §5 rôle narratif),
 `docs/game-design/spec-boss-encounter-fiction.md`, `spec-boss-belliard-fiction.md`,
 `spec-niveau-final-fiction.md`, `pregame-copy-deck.md`, `tutorial-script-visual-gestures.md`,
@@ -103,21 +128,52 @@ Toutes les longueurs sont des **plafonds** pensés pour un écran lisible en **p
 **Sur-titre / rubrique zine :** `UNDERGROUND PARIS · PAGE 23` — **28 car.**
 **Accroche sous le titre :** `trois versions, une seule gueule` — **34 car.**
 
+### 4.0 Le premier écran — la tête qui ne ressemble à personne (A14)
+
+**Fait de mise en scène, pas accident technique.** L'invariant `initialStateAllWrong` garantit que la
+scène s'ouvre sur **quatre traits faux** : une gueule assemblée au hasard, qui ne ressemble à rien ni
+à personne. C'est le meilleur cadeau que la mécanique fait à la fiction, et je le prends.
+
+**Ce que ça dit, et que je veux qu'on entende :** un portrait-robot vide ressemble à **tout le
+monde**. C'est exactement la thèse morale de la scène (§6) — une tête approximative met un innocent
+dehors. Le joueur voit le danger avant de jouer, sur son propre écran, sans qu'on le lui explique.
+
+**Une ligne, KENZA, à l'apparition du montage (avant la consigne §4.2) :**
+
+| Slot                     | Copy (FR)                                | Max     |
+| ------------------------ | ---------------------------------------- | ------- |
+| Ligne d'ouverture montage | `Ça, c'est personne. Commence par la coupe.` | **44 car.** |
+
+_Elle commente la tête absurde **et** amorce le geste dans la même respiration — pas de ligne
+gratuite. `la coupe` reprend le libellé canon `LA COUPE` (§4.3) : la première bande est nommée par
+KENZA avant d'être lue dans l'IHM._
+
+**Repli (slot étroit) :** `Ça, c'est personne.` — **20 car.**
+**Interdit ici :** toute formulation qui note l'état (« 0 sur 4 », « rien de juste ») — ce serait du
+feedback par trait déguisé, interdit par A16.
+
 ### 4.2 La consigne (apprend la mécanique sans tuto plaqué)
 
 Une seule ligne, dans la voix de KENZA, placée sous le titre au premier affichage :
 
-- `Change de bande, fais défiler, arrête-toi quand ça te parle.` — **58 car.**
+- `Fais glisser les bandes. Arrête-toi quand ça te parle.` — **54 car.**
 
-Elle nomme les deux gestes de la recon (haut/bas = bande, gauche/droite = variante) **sans nommer un
-seul verbe d'interface**. Repli si le slot est court : `Change de bande. Fais défiler. Arrête-toi.`
-(**42 car.**)
+Elle nomme le geste canonique — **swipe/drag horizontal sur la bande** (A4-bis, B3), les quatre
+indépendamment — **sans nommer un seul verbe d'interface**. Repli si le slot est court :
+`Fais glisser les bandes. Arrête-toi.` (**37 car.**)
+
+> **R5 — réécrite pour B1.** L'ancienne version disait « Change de bande, fais défiler, arrête-toi
+> quand ça te parle » : elle décrivait la sélection-puis-action que A4-bis supprime. Et surtout,
+> « arrête-toi » y sonnait comme **l'annonce d'un dernier geste à poser** — un pas de plus vers un
+> bouton. Ici, « arrête-toi quand ça te parle » est la **fin de l'effort**, pas un envoi : le joueur
+> pose la bonne bande, la scène fait le reste.
 
 **Ligne d'ambiance, affichée une fois au démarrage (facultative) :**
 
 - `Personne te dira si c'est bon. C'est ton œil.` — **46 car.**
-  _Elle installe diégétiquement « pas de feedback par trait » (recon §3) : ce n'est pas une lacune du
-  jeu, c'est la condition du souvenir._
+  _Elle installe diégétiquement « aucun feedback par trait » (A16) : ce n'est pas une lacune du jeu,
+  c'est la condition du souvenir. **Elle reste exacte après B1** — personne ne te dit si c'est bon ;
+  la scène s'arrête quand ça l'est. Karim le note lui-même en A16. Zéro retouche._
 
 ### 4.3 Les 4 bandes — libellés
 
@@ -136,35 +192,140 @@ reste nu exprès : c'est la bande sur laquelle les témoins se contredisent, son
 
 ### 4.4 Micro-copie de manipulation (si un slot d'aide existe)
 
-- Aide bande active : `bande {n}/4` — **12 car.**
-- Aide variante : `{n} sur {total}` — **12 car.**
-  _Chiffres seulement. Aucun libellé de touche : la lane contrôles/UX possède ça._
+- Aide variante, par bande : `{n} sur {total}` — **12 car.**
+  _Chiffres seulement, **lisibilité d'état, pas feedback** (A8) : il dit « tu as tout vu », jamais
+  « c'est bon ». Aucun libellé de touche : la lane contrôles/UX possède ça._
 
-### 4.5 Le chrono qui presse — la télécarte
+> **R5 — supprimé :** `bande {n}/4`. Il n'y a plus de « bande active » au doigt (A4-bis) ; les quatre
+> bandes se manipulent directement et indépendamment. Le compteur d'accessibilité au clavier, lui,
+> appartient à l'UX (`aria`), pas au copy-deck joueur.
 
-Le chrono **est** un objet de 1998 : les unités de la télécarte dans la cabine. Il ne dit pas
-« temps restant », il dit ce qu'il coûte.
+### 4.5 Le chrono qui presse — la télécarte (refonte B2/A13)
 
-| Palier                     | Copy (FR)                             | Max     |
-| -------------------------- | ------------------------------------- | ------- |
-| Libellé permanent          | `TÉLÉCARTE · {n} UNITÉS`              | 24 car. |
-| Relance à mi-parcours      | `KENZA — « Ma carte descend. »`       | 28 car. |
-| Dernier tiers (urgence)    | `KENZA — « Grouille, il me reste rien. »` | 42 car. |
-| Deux unités                | `bip`                                 | 6 car.  |
+**L'habillage télécarte survit — comme objet, pas comme compteur.** C'est même plus juste qu'avant :
+une télécarte de cabine ne s'égrène pas par bips comptables sous tes yeux, **elle se vide**. Tu ne
+sais jamais combien il te reste, tu sais que ça descend. La jauge continue d'A13 est littéralement la
+carte magnétique qui fond dans l'appareil pendant que tu parles — et le joueur de 1998 le sait dans
+son corps.
+
+**Nouvelle chaîne permanente — remplace `TÉLÉCARTE · {n} UNITÉS` (mort, B2) :**
+
+| Slot                        | Copy (FR)     | Max         | Note                                                       |
+| --------------------------- | ------------- | ----------- | ---------------------------------------------------------- |
+| Libellé de jauge, permanent | `TÉLÉCARTE`   | **9 car.**  | Le mot seul, collé à la jauge qui se vide. **Aucun nombre.** |
+| Repli (slot très étroit)    | `CARTE`       | **5 car.**  | Ne jamais tomber sur un pictogramme muet : le mot porte l'époque. |
+
+**Contrainte de longueur :** plafond dur **9 car.** — c'est un mot d'étiquette, pas une phrase. Il
+n'est **jamais** suivi d'un séparateur ni d'une valeur : `TÉLÉCARTE · …` est interdit sous toutes ses
+formes, c'est ce qui a tué l'ancienne chaîne. Interdits reconduits : `temps restant`, `{n} s`,
+`{n} unités`, tout chiffre décroissant à l'écran (A6, A13).
+
+**Les répliques de palier — recalées sur les paliers NOMMÉS, pas sur mes chiffres.**
+Les valeurs (50 % de `timerSeconds` · 10,0 s · 5,0 s) appartiennent à `game-designer` et au gate §3 :
+je n'en écris aucune. J'écris **pour trois paliers nommés**, et si Sacha en déplace la valeur, ma
+copie ne bouge pas d'une lettre.
+
+| Palier (nom canonique) | Copy (FR)                                 | Max     | Registre                                       |
+| ---------------------- | ----------------------------------------- | ------- | ---------------------------------------------- |
+| **MI-PARCOURS**        | `KENZA — « Ma carte descend. »`            | 28 car. | Constat. Elle informe, elle ne presse pas encore. |
+| **URGENCE**            | `KENZA — « Grouille, il me reste rien. »`  | 42 car. | Elle presse. C'est **elle** qui paie l'appel.  |
+| **DERNIER**            | `bip`                                     | 6 car.  | Plus de mots. L'appareil parle à sa place.     |
+
+_Pourquoi ces trois-là tiennent après B2 :_ aucune ne mentionnait un nombre d'unités — elles disaient
+déjà **la descente**, pas le décompte. « Ma carte descend » est exactement une jauge continue en
+français parlé. C'est le seul endroit de la spec que l'arbitrage n'a pas entamé.
 
 _Le mot `bip` en bas de casse est un son imprimé, pas un message système : le zine écrit ce qu'on
 entend. Si la lane audio préfère un vrai bip, le texte disparaît sans rien casser._
 
-### 4.6 Verdict de réussite
+**Coordination `game-designer` :** je consomme trois paliers nommés, dans cet ordre, une seule fois
+chacun, non répétés. Si la table de paliers en gagne un quatrième, il me revient — je ne laisse pas
+un palier muet.
+
+### 4.6 LE VERROUILLAGE — la tête se fige toute seule
+
+**C'est le beat de la scène.** Il n'y a plus de bouton : quand les quatre bandes tombent juste, le
+montage **se verrouille de lui-même**, immédiatement (A12bis). Le joueur ne décide pas de la fin — il
+la déclenche sans le savoir, en posant la bonne bande. Une fraction de seconde plus tôt il cherchait
+encore ; maintenant il regarde une gueule qui le regarde.
+
+**Ce que je refuse d'en faire :** un « CORRECT », un « VALIDÉ », un jingle, un compteur qui saute à
+4/4. Ce serait la machine qui félicite. Ici ce n'est pas le jeu qui reconnaît le type — **c'est
+KENZA**. Le verrouillage est un moment de **reconnaissance humaine**, pas de validation système. Et
+il tombe **sans** qu'on ait eu à dire « c'est lui » : les trois souvenirs contradictoires viennent de
+se refermer sur une seule tête.
+
+**La ligne de verrouillage — elle joue AU moment du gel, avant le tampon `C'EST LUI` (§4.7) :**
+
+| Slot                       | Copy (FR)                | Max         |
+| -------------------------- | ------------------------ | ----------- |
+| **Ligne de verrouillage**  | `Là. Bouge plus.`        | **16 car.** |
+
+**Speaker : KENZA.** Sans image (comme le monologue Vitry shippé).
+
+_Pourquoi celle-là._ Deux mots, deux temps. `Là.` — c'est le doigt qui se pose, la reconnaissance qui
+tombe d'un coup, l'interjection de quelqu'un qui vient de revoir un visage, pas de quelqu'un qui
+valide un formulaire. `Bouge plus.` — c'est **l'ordre à Muf** (arrête, n'y touche plus) **et la
+description de ce qui vient de se passer à l'écran** (le montage s'est figé) dans les mêmes deux
+mots. La ligne **est** le verrouillage ; elle ne le commente pas. Aucun mot de la liste noire §6 :
+pas de « c'est lui » (le tampon le dira, 1,4 s plus tard, et c'est son travail à lui), pas de
+certitude — KENZA reconnaît, elle ne prouve pas.
+
+**Contraintes d'implémentation (A15) :** la ligne doit être **lue en moins de 1,4 s** — d'où les
+16 car. C'est le plafond le plus dur de la spec et il n'est pas négociable à la hausse : au-delà,
+elle empiète sur `revealSeconds` à `IDENTIFIED` (flash + 4 tampons simultanés, pas de reptation) et
+le meilleur moment du jeu devient un mur de texte.
+
+**Repli (aucun slot dédié disponible) :** la ligne est **fusionnable en tête de la ligne KENZA de
+§4.7** — `Là. Bouge plus. C'est cette gueule-là.` (**39 car.**) — mais c'est un repli, pas
+l'intention : séparée, elle porte le gel ; fusionnée, elle n'est qu'un début de phrase.
+
+**Interdit :** rejouer cette ligne à `PARTIAL`/`FAILED`. Il n'y a pas de verrouillage sans 4/4 — le
+buzzer n'est pas un verrouillage, c'est une carte morte (§4.8).
+
+### 4.7 `IDENTIFIED` — la tête est sortie (4/4)
+
+Joué **après** la ligne de verrouillage §4.6, sur `revealSeconds` **1,4 s** (flash + 4 tampons
+simultanés) puis `resultHoldSeconds` 2,2 s.
 
 | Slot              | Copy (FR)                                                | Max     |
 | ----------------- | -------------------------------------------------------- | ------- |
 | Tampon d'écran    | `C'EST LUI`                                              | 12 car. |
-| Ligne KENZA       | `Voilà. C'est cette gueule-là. Je la sortirai plus.`     | 52 car. |
+| Ligne KENZA       | `C'est cette gueule-là. Je la sortirai plus.`            | 44 car. |
 | Ligne DISPATCH    | `Page 23 du prochain numéro. Toutes les portes l'auront.` | 56 car. |
 | Ligne MUF (clôture) | `Il rentrera nulle part.`                                | 26 car. |
 
-### 4.7 Verdict d'échec
+> **R5/R8 — retouche :** l'ancienne ligne KENZA commençait par `Voilà.` — un mot de **validation
+> accomplie**, écrit du temps où le joueur appuyait sur un bouton. Coupé : `Là.` est passé au
+> verrouillage (§4.6), où il fait un vrai travail, et le doubler ici l'userait. 52 → 44 car., ce qui
+> soulage aussi la lecture sur 2,2 s de hold.
+
+### 4.8 `PARTIAL` — trois sur quatre, au buzzer (condition 2 du gate)
+
+**Ce palier ne se choisit pas, il se subit** (A12bis) : sans acte de soumission, on ne « se contente »
+plus d'un 3/4 pour empocher 400 points — **on n'a pas eu le temps de finir**. La copie doit donc
+sonner comme une **interruption**, jamais comme un demi-succès accepté.
+
+Et la non-négociable §5 règle 4 (« chaque échec, raison affichée ») est tenue **deux fois** : la
+reptation de révélation (2,6 s) corrige la bande fausse sous les yeux du joueur, et KENZA nomme le
+manque en toutes lettres.
+
+| Slot              | Copy (FR)                                              | Max     |
+| ----------------- | ------------------------------------------------------ | ------- |
+| Tampon d'écran    | `PRESQUE LUI`                                          | 14 car. |
+| Ligne KENZA       | `Trois sur quatre. C'est presque une gueule.`          | 44 car. |
+| Ligne DISPATCH    | `Page 23 quand même. Les portes hésiteront, c'est tout.` | 56 car. |
+| Ligne MUF         | `Presque, ça laisse entrer.`                           | 28 car. |
+
+_Notes de fabrication._ `PRESQUE LUI` est un tampon **honnête et amer** : il dit le résultat sans le
+récompenser, et il se lit d'un coup à côté de `C'EST LUI` et de `TIRÉ QUAND MÊME` (même famille
+typographique, trois longueurs distinctes — un joueur reconnaît lequel il a eu avant d'avoir lu).
+`Trois sur quatre` est le **seul chiffre autorisé de toute la scène** : il arrive après la fin, donc
+il n'oriente aucun geste (A16 intact). `Les portes hésiteront` est le payoff `+10 s` traduit en
+fiction — un renseignement à moitié aveugle, pas aveugle. Et la clôture MUF referme la morale de la
+scène : le presque-juste n'est pas neutre, il a un coût pour quelqu'un.
+
+### 4.9 `FAILED` — le zine est parti avec la mauvaise tête (≤ 2/4)
 
 Pas de « ÉCHEC ». Le fanzine est parti à l'impression avec la mauvaise tête — c'est ça, l'échec.
 
@@ -175,24 +336,63 @@ Pas de « ÉCHEC ». Le fanzine est parti à l'impression avec la mauvaise tête
 | Ligne DISPATCH    | `Trop tard, c'est photocopié. 23 exemplaires dehors.`  | 52 car. |
 | Ligne MUF         | `On a mis un innocent à la porte.`                     | 34 car. |
 
-_Variante si le chrono expire avant toute validation (mêmes plafonds) :_
+**La ligne de carte morte — cadrage réécrit (B1, §8).** Elle était écrite comme la *variante* du cas
+« le chrono expire avant toute validation ». Cette formulation est caduque : **l'expiration est
+désormais le chemin normal** de `PARTIAL` et de `FAILED`. La ligne est donc **promue** — elle n'est
+plus une variante, elle est la **ligne d'ouverture des deux verdicts non verrouillés**, jouée avant
+le tampon, en miroir exact de la ligne de verrouillage §4.6 :
 
-- KENZA : `Ma carte est morte. On imprime ce qu'on a.` — **44 car.**
+| Slot                              | Copy (FR)                                | Max     | Joué à                |
+| --------------------------------- | ---------------------------------------- | ------- | --------------------- |
+| Ligne de buzzer (KENZA, sans image) | `Ma carte est morte. On imprime ce qu'on a.` | 44 car. | `PARTIAL` **et** `FAILED` |
 
-### 4.8 La ligne qui relance vers la suite
+_La symétrie est le squelette de la scène : **`Là. Bouge plus.`** d'un côté (la carte a tenu, la tête
+est sortie), **`Ma carte est morte.`** de l'autre (le temps a gagné). Deux fins, deux causes, jamais
+un « tu as perdu »._
 
-Une seule, en sortie de scène, quel que soit le verdict — elle rend la main à la boucle :
+**À l'abandon confirmé** (Échap / retour Android, garde UX conservée) : **même ligne**. Le gate
+traite l'abandon comme une expiration anticipée (A2/A12bis) et la fiction n'a aucune raison d'en
+faire un cas à part — on ne moralise pas le joueur qui raccroche.
 
-- Réussite : `DISPATCH — « Bouge. La prochaine sono t'attend. »` — **46 car.**
-- Échec : `DISPATCH — « On corrigera au numéro d'après. Bouge. »` — **48 car.**
+### 4.10 La ligne qui relance vers la suite
 
-### 4.9 Replis si les slots sont plus étroits
+Une seule, en sortie de scène — elle rend la main à la boucle :
 
-`TÊTE À CONNAÎTRE` → `TÊTE À CONNAÎTRE` (ne pas raccourcir, c'est le nom de la scène) ·
-sur-titre → `PAGE 23` · consigne → §4.2 repli · libellés de bande → `COUPE / REGARD / NEZ / BOUCHE`
-(sans article, **8 car.**) · télécarte → `{n} UNITÉS` (**12 car.**).
+- `IDENTIFIED` : `DISPATCH — « Bouge. La prochaine sono t'attend. »` — **46 car.**
+- `PARTIAL` : `DISPATCH — « On repassera dessus. Bouge. »` — **38 car.**
+- `FAILED` : `DISPATCH — « On corrigera au numéro d'après. Bouge. »` — **48 car.**
 
-### 4.10 Illustrations
+_Les trois finissent sur `Bouge.` : c'est le mot de sortie shippé de DISPATCH (`« Compris ? Bouge.
+Rue Belliard t'attend. »`, tutoriel). La boucle reprend, quoi qu'il se soit passé dans la cabine._
+
+### 4.11 Balayage anti-« geste de validation » (R5 — exigé par B1)
+
+Passe faite sur l'intégralité du copy-deck. **Toute formulation qui présuppose un envoi, une
+soumission ou une confirmation est éliminée.** Résultat :
+
+| Ligne / slot                                    | Statut | Traitement                                                              |
+| ----------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| CTA `SORTIR LA TÊTE` (§4.9 replis, round 1)     | **MORT** | Supprimé de l'IHM. Abandonné, non recyclé (voir §0).                    |
+| KENZA `Sors-moi une tête, une seule` (§4.1 #4)  | **VIT** | C'est un **dialogue**, pas un libellé — une commande passée à Muf au téléphone, pas un ordre d'interface. Aucune retouche. |
+| Consigne `…, arrête-toi quand ça te parle` (§4.2) | **RÉÉCRITE** | Ancienne version décrivait sélection→action. Nouvelle version = geste de glissement seul. |
+| `Voilà.` en tête du verdict `IDENTIFIED` (§4.7) | **COUPÉ** | Mot de validation accomplie. |
+| Variante « avant toute validation » (§4.9)      | **RECADRÉE** | Le mot *validation* disparaît ; l'expiration devient le chemin normal.  |
+| Aide `bande {n}/4` (§4.4)                       | **COUPÉE** | Plus de bande active au doigt (A4-bis).                                 |
+| §5 « la réussite ouvre un numéro »              | **OK**  | Décrit une conséquence, pas un geste. Aucun « quand tu es sûr », aucun « envoie », aucun « confirme » ailleurs dans la spec — **vérifié ligne à ligne**. |
+
+**Règle opposable, valable pour toute copie future de cette scène :** aucun texte joueur ne peut
+contenir un impératif d'envoi (`envoie`, `valide`, `confirme`, `sors la tête`, `quand tu es sûr`,
+`t'es prêt ?`). La scène n'a pas de moment où le joueur dit « c'est lui » — **c'est le montage qui le
+dit à sa place**. Un seul verbe est autorisé pour décrire l'action du joueur : **faire glisser**.
+
+### 4.12 Replis si les slots sont plus étroits
+
+`TÊTE À CONNAÎTRE` → **ne pas raccourcir**, c'est le nom de la scène · sur-titre → `PAGE 23` ·
+consigne → §4.2 repli · ouverture montage → §4.0 repli (`Ça, c'est personne.`) · libellés de bande →
+`COUPE / REGARD / NEZ / BOUCHE` (sans article, **8 car.**) · jauge → `CARTE` (**5 car.**) ·
+verrouillage → fusion en tête de §4.7 (**39 car.**, repli assumé, voir §4.6).
+
+### 4.13 Illustrations
 
 Règle de fer respectée : **aucun sprite nouveau n'est présumé**. Les répliques d'encadrement
 réutilisent `assets/courier/rider.png` (MUF) ; les répliques KENZA/DISPATCH restent **sans image**,
@@ -222,13 +422,69 @@ une façade shippée (`assets/levels/{level}/facade.png`) — cabine dans la rue
      le jeu montre ce que ça coûte de se tromper de tête.
   2. **L'autre, lui, est entré.** Il a vu la salle, il a compté. La soirée suivante est plus
      surveillée.
-- **Pas de game over, pas de vie perdue.** La recon dit −1 vie chez Ocean (§4/§7) ; je **déconseille
-  la transposition littérale** : ici le chrono est une télécarte, pas une bombe, et le prix d'un
-  raté est social. Un échec doit produire un **beat**, pas un écran de mort. Décision finale :
-  `game-designer` + gate (§7 Q1).
-- **Rejouable sans se contredire.** Chaque teuf peut produire sa tête : un autre visage aperçu, un
-  autre numéro du zine. La scène ne s'épuise pas, et elle ne gate jamais la mission
-  (« une mission = 3-5 minutes » — elle encadre, elle n'interrompt pas).
+- **Pas de game over, pas de vie perdue.** ~~Décision finale : `game-designer` + gate.~~ →
+  **TRANCHÉ, A1 : aucune vie retirée, ni entière ni fractionnaire.** Le coût est l'énergie
+  (−20 sur le capital de départ du niveau suivant) **plus le beat obligatoire** (A1b). Ma
+  recommandation a été retenue et **durcie** : le beat n'est pas décoratif, il est dû.
+- **Rejouable sans se contredire.** ~~Chaque teuf peut produire sa tête.~~ → **A3 : une seule
+  occurrence par run en V1.** La fiction n'en souffre pas — au contraire, une tête par run fait de
+  cette page 23 **un événement** plutôt qu'une rubrique. La note de rejouabilité est conservée pour
+  le post-V1, pas pour la V1. La scène ne gate jamais la mission et vit **hors** d'elle (A2) : le
+  budget 3-5 min n'est pas entamé d'une seconde.
+
+### 5.3 Les rappels du niveau suivant (condition 3 du gate — OBLIGATOIRES)
+
+Trois scènes courtes, **une par issue**, jouées dans le **pré-niveau suivant** (A10.1). Elles sont la
+preuve jouable que la scène a servi à quelque chose : sans elles, A11 coupe la feature. Elles
+s'insèrent dans la scène narrative pré-niveau existante, **avant** le briefing DISPATCH habituel, et
+ne dépassent pas 3 répliques — elles rappellent, elles ne rejouent pas.
+
+**a) `IDENTIFIED` — la porte le refuse** _(payoff : première vague de pression retardée de +20 s)_
+
+| #   | speaker  | text (FR)                                          | image                      | Max     |
+| --- | -------- | -------------------------------------------------- | -------------------------- | ------- |
+| 1   | KENZA    | `Le type de l'autre fois s'est pointé à la porte.` | —                          | 48 car. |
+| 2   | KENZA    | `Le gars avait la page 23 dans la poche. Il l'a pas fait entrer.` | —          | 62 car. |
+| 3   | DISPATCH | `Ils sont sourds ce soir. Profite, ça durera pas.` | —                          | 50 car. |
+
+_Note : personne ne triomphe (§6, cliché n°1). KENZA raconte, DISPATCH chiffre l'avantage en durée
+sans jamais dire « +20 secondes ». `Ils sont sourds` = le renseignement adverse a perdu un œil pour
+un moment — la traduction exacte du payoff._
+
+**b) `PARTIAL` — la porte hésite** _(payoff : +10 s)_
+
+| #   | speaker  | text (FR)                                             | image | Max     |
+| --- | -------- | ----------------------------------------------------- | ----- | ------- |
+| 1   | KENZA    | `La page 23 est sortie. La tête est à moitié bonne.`  | —     | 50 car. |
+| 2   | DISPATCH | `Les portes regardent deux fois. C'est déjà ça.`      | —     | 46 car. |
+
+_Deux répliques, pas trois : un demi-résultat n'a pas droit à une histoire complète. Le gate ne
+demandait que deux rappels (a et c) — j'ajoute celui-ci parce que `PARTIAL` **existe** et qu'un
+palier muet au niveau suivant contredirait la non-négociable « chaque échec, raison affichée »._
+
+**c) `FAILED` — un habitué se fait refuser à sa propre porte** _(beat OBLIGATOIRE, A1b · payoff 0 s
+· −20 énergie initiale)_
+
+| #   | speaker  | text (FR)                                              | image                      | Max     |
+| --- | -------- | ------------------------------------------------------ | -------------------------- | ------- |
+| 1   | KENZA    | `Ils ont refusé Sam hier. À sa propre porte.`          | —                          | 44 car. |
+| 2   | KENZA    | `Il vient depuis trois ans. Il avait juste la gueule de la page 23.` | —            | 66 car. |
+| 3   | MUF      | `Et l'autre ?`                                         | `assets/courier/rider.png` | 14 car. |
+| 4   | KENZA    | `L'autre est entré. Il est resté jusqu'au jour.`       | —                          | 48 car. |
+
+_Notes de fabrication, et c'est le beat le plus important de la spec._ **Le réseau s'est blessé
+lui-même** : c'est le garde-fou moral ratifié comme obligatoire par A6/§5, celui qui empêche cette
+scène de devenir un jeu de flic. Il fallait un **prénom** — `Sam`, un habitué, jamais revu ailleurs,
+pas un contact §7 : un nom qui coûte, sans ouvrir le roster (contrairement au type de la porte, qui
+reste anonyme, Q4). La question de MUF (`Et l'autre ?`) est la seule ligne qu'il puisse dire ici, et
+la réponse est la vraie sanction : **l'homme, lui, est entré, et il est resté jusqu'au bout de la
+nuit.** Aucune ligne ne gronde le joueur. On lui raconte les dégâts, il fait le calcul tout seul.
+
+**Interdits sur les trois :** pas de récapitulatif de score, pas de « tu as échoué », pas de rappel
+de l'énergie perdue en mots (le HUD le montre, c'est son travail), aucun mot de la liste §6.
+
+**Contrainte de boucle :** 4 répliques max, skippables en un geste comme toute cutscene (guidelines
+§5.3). Elles s'ajoutent au pré-niveau **une seule fois**, jamais répétées.
 
 ---
 
@@ -256,10 +512,76 @@ recherche` · `traquer` / `retrouver le type` · `justice` · `interroger`.
   fanzine, pas une machine à sous.
 - L'**anachronisme** : aucune image de « scan », « base de données », « reconnaissance faciale »,
   « pixel », « logiciel ». On découpe du papier dans une cabine.
+- **Le vocabulaire de la validation** (nouveau, R5/B1) : `valider`, `confirmer`, `envoyer`,
+  `soumettre`, `terminer`, `es-tu sûr ?`. La scène n'a plus d'acte de validation — aucun mot ne doit
+  en inventer le fantôme. Seul verbe d'action joueur autorisé : **faire glisser**.
+
+### 6.1 Passe de conformité sur les libellés d'IHM (condition 4 du gate)
+
+Chaque chaîne d'écran ajoutée par l'UX, passée contre la liste ci-dessus. **Verdict par ligne :**
+
+| Chaîne d'IHM (source UX)          | Verdict     | Chaîne canonique / traitement                                                     |
+| --------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| Bandeau d'écran                   | **CONFORME** | `TÊTE À CONNAÎTRE` — jamais « PORTRAIT-ROBOT » (nom interne, §6). Ratifié A6.      |
+| Libellés de bande `CHEVEUX/YEUX/…` | **REJETÉ**  | → `LA COUPE / LE REGARD / LE NEZ / LA BOUCHE` (A6). Repli sans article, 8 car.     |
+| CTA `SORTIR LA TÊTE`              | **CADUC**   | Le bouton n'existe plus (B1). Rien ne le remplace — pas de libellé de substitution. |
+| « dossier suspect » (UX §6/§7)    | **REJETÉ**  | Deux mots de la liste noire en trois syllabes. → **`la page 23`**, partout.        |
+| `TÉLÉCARTE · {n} UNITÉS`          | **CADUC**   | → `TÉLÉCARTE` seul, 9 car., jauge sans nombre (§4.5). Repli `CARTE`.               |
+| « temps restant » / `{n} s`       | **REJETÉ**  | Interdit reconduit (A6/A13). Aucun chiffre décroissant à l'écran.                  |
+| Compteur `{n} sur {total}`        | **CONFORME** | Lisibilité d'état, pas feedback (A8). Chiffres nus, aucun libellé.                 |
+| Message de confirmation d'abandon | **RÉÉCRIT** | voir ci-dessous.                                                                   |
+
+**Le message d'abandon — réécrit.** La garde `Escape` est conservée (A2), mais son motif n'est plus
+« tu risques de perdre une vie » (supprimé, A1) : c'est **« la scène se résout à l'état courant »**.
+Aucun texte joueur ne doit dire ça dans ces termes — c'est du vocabulaire de spec.
+
+| Slot            | Copy (FR)                                  | Max     |
+| --------------- | ------------------------------------------ | ------- |
+| Question        | `Tu raccroches ?`                           | 16 car. |
+| Sous-ligne      | `Ce qui est sur la planche part comme ça.`  | 42 car. |
+| Bouton rester   | `NON`                                       | 4 car.  |
+| Bouton quitter  | `JE RACCROCHE`                              | 14 car. |
+
+_`Tu raccroches ?` est la seule métaphore juste : on est dans une cabine, l'abandon est un combiné
+qu'on repose. `Ce qui est sur la planche part comme ça` dit l'évaluation à l'état courant **sans un
+mot de système**, et rappelle au passage que le zine part de toute façon. `JE RACCROCHE` à la
+première personne, comme le joueur qui l'assume — jamais `QUITTER`, jamais `ABANDONNER` (registre de
+défaite, et la scène ne connaît pas la défaite sèche)._
 
 ---
 
-## 7. Questions ouvertes
+## 7. Questions — état après le gate
+
+### 7.0 Ce qui est TRANCHÉ (round 2 — plus rien à me demander là-dessus)
+
+| Q  | Tranché par | Décision                                                                                 |
+| -- | ----------- | ------------------------------------------------------------------------------------------ |
+| Q1 | **A1 · A1b** | Zéro vie. −20 énergie sur le capital initial du niveau suivant **+ beat obligatoire** (§5.3c). |
+| Q2 | **A2**      | **Interstitiel post-niveau**, `AppPhase` dédié. Répliques skippables, **phase interactive non**. Abandon = expiration anticipée. |
+| Q3 | **A12 · gate §7 F** | Les trois points de canon net-new **ratifiés** : page 23, télécarte, gel du twist. |
+| Q4 | **gate §4** | Le type de la porte **reste anonyme**. Ratifié. (Seul prénom neuf de la spec : `Sam`, §5.3c — un habitué, pas un personnage.) |
+| Q5 | **B2 · A13** | Chrono 35 s (56/30), **jauge continue sans nombre**, trois paliers nommés (§4.5).       |
+| Q6 | **A5**      | 6 variantes, 1 gabarit, 1 bonne + 2 leurres forts + 3 moyens.                            |
+| Q7 | **A16**     | Aucun feedback par trait. **UN** signal global et terminal : le verrouillage (§4.6).      |
+| Q8 | **A10**     | Payoff = vague retardée (+20 / +10 / 0 s) + rappel narratif obligatoire (§5.3).           |
+
+### 7.1 Ce qui reste ouvert (round 2)
+
+**Pour `game-designer` (Sacha) — coordination directe, non bloquante :**
+
+- **Q9 — les trois paliers.** Je consomme `MI-PARCOURS` / `URGENCE` / `DERNIER` **par leur nom**
+  (§4.5). Confirme que ta table n'en produit ni plus ni moins, et qu'aucun n'est répétable. S'il en
+  apparaît un quatrième, il me revient — pas de palier muet.
+- **Q10 — le slot de la ligne de verrouillage.** §4.6 demande un slot **dédié**, joué au gel, avant
+  le tampon, sous 1,4 s. S'il n'existe pas, c'est le repli fusionné — dis-le-moi, je ne veux pas
+  l'apprendre à l'implémentation.
+
+**Pour `ux-designer` (Tony) :** les chaînes de §6.1 sont les définitives. Le message d'abandon y est
+écrit en entier ; ne le paraphrase pas.
+
+---
+
+## 7.2 Archive round 1 — questions telles que posées avant le gate
 
 **Pour `lead-game-designer` (Karim) :**
 
@@ -301,8 +623,11 @@ shippé — la scène est jouable en texte seul si l'art n'atterrit pas.
 - **Cahier des charges :** Prohibition (Atari ST) n'a pas de portrait-robot ⇒ **extension
   consciente et documentée**, même standard qu'ADR-0012 (tutoriel) et ADR-0030 (otage). La scène
   **encadre** `Récupérer → Livrer → Éviter` ; elle n'ajoute aucune règle à `Éviter`.
-- **`une mission = 3-5 min` :** scène courte (4 répliques d'entrée + le montage + 3 de sortie),
-  skippable en un bouton comme toute cutscene (guidelines §5.3).
+- **`une mission = 3-5 min` :** la scène est **hors mission** (A2) — le budget n'est pas entamé.
+  Budget propre : 4 répliques d'entrée + le montage (35 s) + verrouillage/révélation + 1 ligne de
+  sortie, soit **38,6 s** à `IDENTIFIED`. Les **répliques** sont skippables en un geste
+  (guidelines §5.3) ; la **phase interactive ne l'est pas** — elle a une issue et un coût (A2).
+  Les rappels §5.3 ajoutent ≤ 4 répliques au pré-niveau suivant, une seule fois.
 - **Roster :** aucune 4e faction. On branche sur **RG en civil** (§7), déjà scopé, déjà relié au
   Commandant. Aucun contact §7 (Masta Klem, Faïza, Seb, Oxane, Karim) n'est convoqué ici.
 - **Période :** cabine, télécarte, photocopieuse, tirage à 23. Zéro anachronisme. Grounding
@@ -311,8 +636,11 @@ shippé — la scène est jouable en texte seul si l'art n'atterrit pas.
 ## 9. Hand-off
 
 **De :** `narrative-designer` (Yasmine) · **À :** `lead-game-designer` (Karim)
-**Livré :** angle retenu + démolition des alternatives (§2), porteuse de scène (§3), **tous** les
-textes joueur avec plafonds (§4), récompense/coût (§5), interdits (§6).
-**Non décidé :** Q1→Q8 (§7). **Demandé :** `VERDICT:` PASS / PASS-WITH-CORRECTIONS / FAIL +
-ratification des trois points de canon net-new (Q3).
+**Livré (round 2) :** les **4 conditions du gate** appliquées (§0 journal), les **3 amendements
+Bertrand** absorbés — CTA mort et balayage anti-validation complet (§4.11), chrono ré-habillé en jauge
+continue avec paliers nommés (§4.5), desktop/mobile alignés sur un seul verbe (§4.2) — plus **deux
+livrables neufs non demandés mais dus** : la **ligne de verrouillage** (§4.6) et la **mise en scène du
+premier écran tout-faux** (§4.0).
+**Non décidé :** Q9, Q10 (§7.1) — coordination `game-designer`, non bloquantes.
+**Demandé :** `VERDICT:` PASS / PASS-WITH-CORRECTIONS / FAIL sur le round 2.
 **À loguer :** hand-off dans `docs/handoffs/`, indexé dans `docs/agent-handoffs.md`.

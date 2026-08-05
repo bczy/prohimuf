@@ -200,3 +200,71 @@ to `dev-r3f-render` alone. `portraitPlate.generated.json` is **written only by t
 ## 8. MERGE — Bertrand (owner) — *awaiting acceptance*
 
 *Placeholder: CI panel-verdict check, then merge to main.*
+
+---
+
+## 9. AMENDEMENT DU GATE — lead-game-designer (Karim) — 2026-08-05 — DONE
+
+Trois arbitrages directs de Bertrand, **postérieurs au gate**, inscrits en
+`docs/game-design/design-gate-portrait-robot.md` **§8** ; §3 (valeurs canoniques) et §4 (ce qui est
+coupé) mises à jour **en place**, retraits barrés et non effacés. Maquette Figma `muf — Design
+System` / `Écrans · Portrait-robot` à jour.
+
+- **B1** — CTA `SORTIR LA TÊTE` **supprimé**, validation **automatique** dès 4/4.
+- **B2** — télécarte 14 unités **virée** : essais illimités dans un temps imparti.
+- **B3** — desktop = **option B**, drag horizontal sur la bande (mobile inchangé, A4-bis).
+
+**6 arbitrages dérivés rendus** — A12bis (régime des issues : `IDENTIFIED` = verrouillage en cours
+de phase, `PARTIAL`/`FAILED` = évaluation au buzzer ; ordre de résolution `IDENTIFIED`-gagne fermant
+l'issue fantôme du 4/4 au buzzer) · A13 (paliers refaits en secondes : 50 % / 10,0 s / 5,0 s
+restants) · A14 (`confirmGuardSeconds` **supprimé**, remplacé par l'invariant de seed
+`initialStateAllWrong`) · A15 (`revealSeconds` 2,6 s à `PARTIAL`/`FAILED`, **1,4 s** à `IDENTIFIED`)
+· A16 (A9 reformulé : aucun feedback **par trait**, un seul signal terminal ; **brute-force chiffré
+à ~10,8 % de couverture en 35 s ⇒ stratégie dominée, aucune contre-mesure ajoutée**) · B3 en valeur
+canonique.
+
+**Inchangés :** A1/A1c/A2/A3/A5/A6/A8/A10/A11/A12, `timerSeconds` 35/56/30, seuils 4/4 · 3/4 · ≤2/4,
+les trois barèmes d'issue.
+
+**2 escalades neuves** (§6 points 7-8 du gate) : refus assumé d'une contre-mesure anti-balayage ;
+asymétrie des deux `revealSeconds`.
+
+**Specs de lane désormais fausses ⇒ à corriger** (dispatch Bertrand) : `spec-portrait-robot.md`
+(R5/R7/R8, §4.1 `confirmGuardSeconds`+unités, §4.2 seuils, §6 paliers, AC13/AC14/§7),
+`spec-portrait-robot-fiction.md` (§4.5 libellé télécarte, §4.7 cadrage expiration, §4.9 replis),
+`ux/portrait-robot-ux.md` (CTA dans les 2 wireframes + tables de layout, budgets verticaux, §"ENTRÉE",
+clavier `Entrée`, chrono, geste desktop). **ADR-0081** cite la copie canon et le compte d'unités ⇒
+`tech-writer` / `senior-architect`.
+
+---
+
+## 10. FICTION ROUND 2 — narrative-designer (Yasmine) — 2026-08-05 — DONE
+
+- **claim :** appliquer les 4 conditions du gate §7 F + absorber les amendements §8 (B1/B2/B3,
+  A12bis→A16) dans `docs/game-design/spec-portrait-robot-fiction.md`.
+- **release :** spec **round 2** livrée, journal de révision en §0 (R1→R9).
+  - **Condition 1 (caduque via B2)** — `TÉLÉCARTE · {n} UNITÉS` mort. Nouvelle chaîne permanente
+    **`TÉLÉCARTE`** (plafond dur **9 car.**, repli `CARTE` 5 car.), **aucun nombre, aucun
+    séparateur**. Répliques recalées sur **paliers nommés** `MI-PARCOURS` / `URGENCE` / `DERNIER` —
+    aucune seconde inventée côté fiction, les valeurs restent à `game-designer`/§3.
+  - **Condition 2** — `PARTIAL` écrit (§4.8) : tampon **`PRESQUE LUI`** + KENZA/DISPATCH/MUF, cadré
+    comme palier **subi** (A12bis), pas comme demi-succès.
+  - **Condition 3** — rappels du niveau suivant écrits (§5.3) : `IDENTIFIED` (la porte le refuse),
+    `FAILED` (**le beat obligatoire A1b** — `Sam`, habitué refusé à sa propre porte, « l'autre est
+    entré »), **+ un troisième pour `PARTIAL`** que le gate n'avait pas commandé mais que l'issue
+    rend dû.
+  - **Condition 4** — passe de conformité IHM (§6.1), verdict par chaîne + **message d'abandon
+    réécrit** (`Tu raccroches ?` / `JE RACCROCHE`), motif « perte de vie » éliminé.
+  - **B1** — `SORTIR LA TÊTE` **abandonné**, non recyclé ; la réplique-source KENZA reste au
+    dialogue. **Balayage anti-geste-de-validation complet** en §4.11 (7 lignes auditées, 4 modifiées)
+    + interdit lexical neuf en §6 (`valide`/`confirme`/`envoie`/`quand tu es sûr`).
+  - **A14** — le premier écran tout-faux est **mis en scène** (§4.0, KENZA : `Ça, c'est personne.`).
+  - **A15** — plafonds de copie calés sur les deux `revealSeconds`.
+- **Livrable neuf non commandé : LE VERROUILLAGE** (§4.6) — le seul feedback de la scène a
+  désormais sa ligne, slot dédié, ≤ 1,4 s.
+- **next :**
+  - `lead-game-designer` (Karim) : verdict round 2.
+  - `game-designer` (Sacha) : **Q9** (confirmer 3 paliers nommés, non répétables) · **Q10** (slot
+    dédié pour la ligne de verrouillage, sinon repli fusionné).
+  - `ux-designer` (Tony) : les chaînes de §6.1 sont définitives, ne pas paraphraser.
+  - `dev-gameplay` : ne rien transcrire avant le PASS.

@@ -9,6 +9,41 @@
   direction artistique très BD comics actuelle ».
   → **La ST donne la mise en scène. La bible donne le trait.** Rien d'autre n'est emprunté à 1988.
 
+---
+
+## Note de révision — 2026-08-05 (rév. 2, post-gate design + amendements Bertrand §8)
+
+Trois faits sont redescendus du `design-gate-portrait-robot.md` (§3 valeurs canoniques + §8
+amendements post-gate) et d'ADR-0080/0081. Ils touchent la composition de l'écran, pas seulement
+la production. Ce qui a changé dans ce brief :
+
+| # | Ce qui a bougé | Où c'est traité ici |
+| --- | --- | --- |
+| 1 | **CTA `SORTIR LA TÊTE` supprimé** (Bertrand B1). Plus de bouton, plus de zone d'écran, plus de focus. La scène se valide seule à 4/4 (A12bis). Un **moment visuel neuf** apparaît : **le VERROUILLAGE**, seul signal de toute la scène (A16). | **§3bis (neuf)** — le verrouillage, proposition DA. Le CTA disparaît de §3 et §6. |
+| 2 | **Chrono en jauge continue**, sans nombre ni unité (B2 / A13). `TÉLÉCARTE · {n} UNITÉS` est mort. | **§4bis (neuf)** — comment se dessine une jauge qui se vide en DA fanzine. |
+| 3 | **Bandes JOINTIVES** (maquette Figma `muf — Design System`, page `Écrans · Portrait-robot`, corrigée en direct par Bertrand) : aucune couture, aucun écart, aucun trait de séparation. Une seule surface continue, au gabarit **exact** de la cible. | **§1.0 (neuf)** — la règle de raccord passe de bonne pratique à condition d'existence ; **§1.2bis** — bleed, repères, tolérance chiffrée. |
+
+Deux corrections que le gate me fait redescendre, et que j'accepte sans réserve :
+
+- **Mon §4 était faux.** Il justifiait l'hypothèse « monde de jeu » par « un chrono **qui coûte une
+  vie** ». La scène **ne peut retirer aucune vie**, toutes issues confondues (gate A1, story AC5) ;
+  la sanction est **−20 d'énergie sur le capital initial du niveau suivant** (A1c). L'argument est
+  retiré, la conclusion aussi.
+- **Ma question ouverte 7.3.5 est close par ADR-0080/0081** : la scène n'est **ni monde de jeu ni
+  surface pré-jeu**, c'est une **surface DOM interactive**. Conséquences DA, appliquées ci-dessous :
+  le **liseré néon de sélection est légitime** (la bande est manipulée, donc elle brille — loi du
+  glow, §2 loi 1), la **cible reste sans glow**, et le **CRT §8 de la bible ne s'applique pas**
+  (ADR-0081 D4 : `CrtPass` vit dans `GameScene`, la scène vit hors `GameScene`). Tout mon
+  vocabulaire « CRT allumé » comme condition de test est donc **caduc sur cette scène** : les tests
+  de lisibilité se font **sans CRT, avec le grain xerox de post-composition**, qui est le seul
+  mangeur de détail de cet écran.
+
+Le reste du brief (gabarit, coutures, épaisseur de trait, plancher de discernabilité, planche +
+tranchage) est **inchangé et confirmé** par le gate (§5.1 de mon brief ratifié en A5 : 4 bandes,
+6 variantes, 1 gabarit = 24 assets).
+
+---
+
 Ce que ça signifie, opérationnellement, en une phrase : on reprend de RoboCop ST le **gros portrait
 qui occupe l'écran**, la **cible à gauche / construction à droite**, le **compte à rebours qui
 serre** ; on jette la numérisation, le dithering photo, le grain de scan et la palette 16 couleurs.
@@ -27,6 +62,44 @@ information de gameplay (« ça ne colle pas, donc c'est faux »). C'est un bug 
 défaut cosmétique.
 
 D'où la loi suivante, qui prime sur toute considération de style dans cette scène.
+
+### 1.0 Les bandes sont JOINTIVES — c'est la condition d'existence de l'écran
+
+**Fait de production établi sur maquette (Figma `muf — Design System` → `Écrans · Portrait-robot`),
+corrigé en direct par Bertrand :** les 4 bandes sont **jointives**. Aucune couture, aucun écart,
+aucun trait de séparation, aucun cadre par bande, aucune ombre entre bandes, aucun arrondi. Les
+quatre morceaux forment **une seule surface continue** — un visage, pas quatre tuiles empilées —
+et cette surface est au **gabarit exact** de la cible affichée à côté, pour que les deux visages se
+comparent **trait pour trait**.
+
+Ça change le statut de tout le §1. La règle de raccord n'était, jusqu'ici, qu'une exigence de
+qualité : « si ça raccorde mal, ça se voit ». Elle devient **la condition d'existence de l'écran**,
+et voici pourquoi, en trois conséquences opposables :
+
+1. **Il n'y a plus de trait de séparation pour absorber l'erreur.** Un liseré, un filet noir, un
+   décalage de 1 px entre bandes auraient été lus comme « voilà la découpe » et auraient masqué
+   toute imprécision de dessin. Sans eux, **chaque défaut de raccord devient une fracture du
+   visage**, c'est-à-dire une information fausse envoyée au joueur au moment précis où on lui
+   demande de comparer des différences fines. Le bruit de raccord et le signal de gameplay ont la
+   même amplitude : c'est intenable.
+2. **Le gabarit exact cible ↔ construction devient une contrainte géométrique, pas une intention de
+   layout.** Même largeur de crâne, même hauteur totale, même axe médian, même échelle, au pixel.
+   Si la cible est rendue à une taille et la construction à une autre, la comparaison trait pour
+   trait est **impossible** et la scène ne fonctionne plus, quelle que soit la qualité des dessins.
+   Un ratio d'échelle ≠ 1:1 entre les deux portraits est un **FAIL de composition**, pas un réglage.
+   (Le médaillon cible ≥ 28 % de largeur du gate A8 fixe la place ; il ne fixe pas le droit de
+   changer d'échelle. Si l'écran ne peut pas loger deux portraits à la même échelle, c'est le
+   layout qui plie, pas le gabarit.)
+3. **La sélection ne peut plus être signalée par la géométrie.** Pas de bande qui s'écarte, pas de
+   bande qui grossit, pas de cadre qui apparaît, pas de séparateur qui s'allume : toute affordance
+   qui *déplace* de la matière casse la surface continue. La sélection est **exclusivement** le
+   liseré néon à falloff de §3, posé **sur** la bande sans rien décoller. C'est aussi ce qui rend
+   ce liseré indispensable : il est le seul marqueur d'état qui ne coûte pas la jointure.
+
+**Corollaire pour `ux-designer` et `dev-r3f-render` :** le gap CSS entre bandes est **0**, y compris
+en `gap`, `border`, `margin`, `outline` et `box-shadow` interne. Le grain xerox est appliqué en
+**une seule couche de post-composition sur le visage assemblé** (confirmé techniquement, ADR-0080
+D6.3) : un grain par bande dessinerait les coutures que la jointure vient d'effacer.
 
 ### 1.1 Gabarit commun (le squelette invariant)
 
@@ -68,6 +141,74 @@ comme une variante de la bande « yeux » qui l'inclut, pas comme un débordemen
 pixels** au-delà de sa couture, en trait continu, pour absorber le liseré de compositing. Le
 découpage réel se fait à l'intérieur de cette marge. Sans elle, l'anticrénelage du bord crée une
 ligne claire d'un pixel à chaque couture — un liseré horizontal qui traverse le visage = FAIL.
+
+### 1.2bis Ce que la jointure impose au tranchage de la planche — bleed, repères, tolérance
+
+Chiffré ici parce que §1.0 transforme une bonne pratique en critère de rejet, et parce que
+`scripts/slice-portrait-plate.mjs` (ADR-0080 D5, seul écrivain des 24 PNG) a besoin de nombres,
+pas d'adjectifs. **Espace de référence : la planche livrée, portrait cadré à 1024 px de hauteur**
+(hauteur du visage du sommet du crâne à la base du cou, hors marges). Toutes les valeurs ci-dessous
+sont exprimées en px de planche **et** en % de cette hauteur, pour survivre à un changement de
+résolution de livraison.
+
+**Bleed — 12 px de planche de chaque côté de chaque couture** (≈ 1,2 % de la hauteur, soit une
+bande de recouvrement de 24 px). Le dessin est continu à l'intérieur du bleed ; la découpe tombe
+sur l'ordonnée de couture, au **milieu** du bleed. Le bleed n'est pas une marge vide : c'est du
+trait dessiné deux fois, une fois dans chaque bande. Motif du chiffre : il faut au moins 4 × la
+demi-épaisseur du trait de contour pour qu'un anticrénelage de bord n'atteigne jamais un trait
+porteur, et 12 px couvre confortablement un contour de 6-8 px à cette résolution. **Le bleed n'est
+pas composé au rendu** — les bandes sont posées bord à bord sur l'ordonnée de couture, le
+recouvrement sert uniquement à ce que le keying/cutout n'ait pas de bord franc à ronger.
+
+**Repères d'alignement — dans la marge de la planche, jamais dans le portrait.** La normalisation
+d'ADR-0080 D5 (recalage sur ligne des yeux / base du nez) a besoin de cibles mesurables. La planche
+porte donc, **hors du cadre du portrait** (donc jamais livrées dans un PNG de bande) :
+
+| Repère | Emplacement | Sert à |
+| --- | --- | --- |
+| Deux tirets de **ligne des yeux** | marges gauche et droite, à l'ordonnée de la ligne pupillaire | fixer l'échelle verticale et la rotation |
+| Deux tirets de **base du nez** | marges gauche et droite, sous les narines | deuxième point de la normalisation verticale |
+| Un tiret d'**axe médian**, haut et bas | marges supérieure et inférieure, sur l'axe | fixer le centrage horizontal et détecter toute inclinaison |
+| **Traits de coupe** aux 4 coins | marges | cadrer la bbox du portrait, et rien d'autre |
+
+Ces repères sont dessinés au **même trait que le reste** (c'est une planche d'imprimeur, pas une
+overlay technique) — c'est cohérent avec le vocabulaire de dessin technique de la bible §3.6, et
+ça aide FLUX à tenir le cadrage au lieu de le combattre.
+
+**Tolérance de raccord — la valeur que je retiens.** Mesurée par le script au moment du tranchage,
+sur chacune des 3 coutures, entre la bande du dessus et la bande du dessous, pour **toutes** les
+variantes :
+
+| Grandeur mesurée à la couture | Tolérance (PASS) | Rejet de la variante |
+| --- | --- | --- |
+| **Demi-largeur du crâne** de part et d'autre (gauche et droite mesurées séparément) | **≤ 2 px de planche** (≤ 0,2 % de la hauteur) | **≥ 4 px** (≥ 0,4 %) |
+| **Position de l'axe médian** | **≤ 1 px** | **≥ 2 px** |
+| **Écart de tangente du contour** (rupture d'angle du bord du crâne) | **≤ 3°** | **≥ 6°** |
+| **Épaisseur du trait de contour** entre deux bandes | **≤ 10 % d'écart relatif** | **> 15 %** |
+
+**Pourquoi 2 px / 4 px, et pas un chiffre rond de confort.** À la taille de rendu réelle (bande de
+56 px de haut en mobile paysage, UX §2.3.1 ratifié au gate — soit un portrait d'environ 224 px de
+haut), la planche est réduite d'un facteur ≈ 4,6. Donc **2 px de planche ≈ 0,43 px rendu** :
+strictement sub-pixel, invisible, absorbé par le filtrage. **4 px de planche ≈ 0,87 px rendu**,
+c'est-à-dire une marche d'un pixel entier sur un contour dont le trait fait 2 px à l'écran : la
+moitié de l'épaisseur du trait, exactement le seuil où l'œil lit « fracture » et non « bord ». La
+zone 2-4 px est la **zone d'alerte** : elle ne rejette pas seule, mais deux grandeurs simultanément
+en zone d'alerte sur la même couture = rejet. Le trait de contour est le référentiel, pas la
+résolution : si la hauteur de livraison change, on convertit en % et les seuils suivent (0,2 % /
+0,4 %).
+
+**Portée du rejet — c'est le point dur, et il ne bouge pas.** Le gabarit est **atomique**
+(ADR-0080 D5, mon §7.3 Q3 accordé). Une variante hors tolérance ne se re-génère donc pas seule :
+**une variante rejetée rejette la planche**, et la planche se refait entière. C'est le prix de la
+jointure et c'est délibéré — c'est exactement ce qui empêche quelqu'un de rattraper un raccord au
+cas par cas et de fabriquer, variante après variante, les 4 dessinateurs que la loi de cohérence de
+famille interdit (bible §2 loi 2). Le seuil de rejet s'applique donc à la **planche**, pas à
+l'asset.
+
+**Et le mécanique ne me lie pas.** Ces chiffres sont un plancher automatisable, pas un verdict :
+une planche qui passe les quatre mesures et dont un raccord se voit quand même à l'œil, à taille
+réelle, sur la planche de combinaisons G1, est **FAIL** quand même. La mesure attrape le décalage
+géométrique ; elle n'attrape pas un menton qui ne veut pas de ce nez.
 
 ### 1.3 Épaisseur de trait et hachures
 
@@ -160,7 +301,109 @@ rupture de famille, bible §2 loi 2). Ils sont **le même dessin, deux états d'
   de flou, ou par un halo sur la cible.
 
 **Ce point relève du gate composite (Gate 4)** : le liseré de sélection est composé au runtime, il
-sera jugé sur des captures in-game réelles, pas sur les PNG.
+sera jugé sur des captures in-game réelles, pas sur les PNG. Rappel de §1.0 : le liseré est le
+**seul** marqueur de sélection autorisé, parce qu'il est le seul qui ne décolle pas la jointure.
+Depuis A4-bis (swipe direct sur la bande visée, pas de tap de sélection), il n'y a plus de « bande
+active » persistante au doigt : le liseré est un **écho transitoire du geste**, pas un état
+(ADR-0081 D4). Au clavier, où la notion de bande focalisée existe toujours, il est un état.
+Les deux cas passent par le même dégradé, jamais par un aplat.
+
+---
+
+## 3bis. LE VERROUILLAGE — le seul signal de la scène
+
+**Neuf. Rév. 2.** Le CTA `SORTIR LA TÊTE` est supprimé (Bertrand B1) : la scène se termine d'elle-
+même dès que les 4 bandes sont justes (A12bis). Le gate m'impose la nature du signal — **global,
+binaire, terminal, jamais un feedback par trait** (A16) — et me laisse sa forme. Voici la forme.
+
+**Le cahier des charges DA, que je m'impose avant de proposer quoi que ce soit :**
+
+1. **Global** : il porte sur la surface entière, jamais sur une bande. Un signal qui naît sur la
+   4ᵉ bande dirait au joueur *quelle* bande a fermé la combinaison — feedback par trait, interdit.
+2. **Binaire et terminal** : un état, pas une montée. Pas de « ça chauffe », pas d'intensité qui
+   croît avec le nombre de bonnes bandes. La scène ne commente pas, elle s'arrête.
+3. **Jamais la couleur seule** (accessibilité, et loi de la maison : notre identité est le noir et
+   blanc — un signal qui n'existe qu'en couleur n'existe pas sur une photocopie).
+4. **Compatible `prefers-reduced-motion`** : le signal doit survivre entier quand on lui retire
+   tout mouvement. Corollaire : **le mouvement ne peut pas être le porteur d'information.**
+5. **Compatible §1.0** : il ne déplace pas de matière, il ne décolle pas les bandes.
+
+### 3bis.1 La proposition : RECALAGE → NÉGATIF → TAMPON, un seul événement en trois couches
+
+Le vocabulaire est celui de l'imprimerie ratée, qui est notre vocabulaire depuis la première page
+de la bible. Le portrait en construction est un tirage **mal calé**. Le verrouillage, c'est le
+moment où la presse tombe juste.
+
+**Couche 1 — LE RECALAGE (le porteur principal, et il est positionnel, pas coloré).**
+Pendant toute la phase `ACTIVE`, le portrait en construction est imprimé **hors repérage** : le
+**plateau d'accent néon** (et lui seul) est décalé de **2 à 3 px rendus, en diagonale constante**,
+par rapport au plateau d'encre noire. Le trait noir du visage reste **parfaitement net** — c'est
+non négociable, c'est lui qu'on compare à la cible. Seul le plateau de couleur bave à côté, comme
+une sérigraphie ratée. Au verrouillage, **le décalage tombe à zéro, d'un coup** : le tirage se cale.
+
+Pourquoi ça marche : c'est **global par construction** (le décalage est une propriété du tirage
+entier, il ne peut pas désigner une bande) ; c'est **binaire** (calé / pas calé, il n'y a pas de
+demi-repérage) ; c'est **lisible sans la couleur** (c'est une position, pas une teinte — un
+daltonien voit le décalage, un écran monochrome aussi) ; et ça **raconte** exactement la fiction —
+la planche de gueules qui, enfin, coïncide.
+
+Dosage, parce que c'est le risque réel : **le décalage ne doit jamais toucher le trait du visage.**
+S'il gênait la comparaison trait pour trait, il attaquerait le verbe de la scène et je le
+refuserais moi-même. Il vit sur le **plateau d'accent** — cartouche, filets du cadre de la
+construction, libellés de bande — pas sur la peau du dessin. À vérifier au gate composite sur
+capture réelle : **si le hors-repérage dégrade la lisibilité du visage, il saute**, et la couche 2
+suffit.
+
+**Couche 2 — LE NÉGATIF (le coup de poing, une seule fois).**
+Au même instant, le visage assemblé passe **en négatif — encre inversée — une fois, ~120 ms**,
+puis revient. Dans un monde en noir et blanc pur, l'inversion d'encre est le signal le plus violent
+disponible et il ne coûte pas un gramme de couleur : c'est le flash du photocopieur. Il est
+**global par nature** (on n'inverse pas un tiers de visage) et **terminal** (il ne se répète
+jamais — une seule inversion, jamais de clignotement, bible §8 P6 : pas de stroboscope).
+
+**Couche 3 — LE TAMPON (l'état stable, ce qui reste à l'écran).**
+Le négatif retombe sur un **tampon encreur** posé en travers de la surface assemblée : Rubik Mono
+One, `ink-full` `#000000`, léger dévers, distress `feTurbulence` + `feDisplacementMap` (bible
+§2bis.1 — c'est le même outillage que les tampons OTAGE / LIVRAISON, donc la même famille de
+tirage). Il est le seul élément qui **persiste** pendant `revealSeconds` et `resultHoldSeconds`.
+**Le libellé du tampon appartient à `narrative-designer`**, pas à moi (vocabulaire canon, A6) — je
+ne fournis que la forme et le poids. Le tampon est **posé, jamais animé en rotation ou en échelle**.
+
+### 3bis.2 Ce que ça donne en `prefers-reduced-motion`
+
+Le signal **survit à 100 %**, et c'est le test qui valide la proposition : les trois couches sont
+des **changements d'état**, pas des animations.
+
+- Recalage : le décalage passe de 3 px à 0 **instantanément** au lieu de 120 ms de transition. Le
+  hors-repérage lui-même est **statique** pendant `ACTIVE` (il ne vibre pas, il ne dérive pas) —
+  il n'y a donc rien à désactiver du côté de l'état d'attente.
+- Négatif : inversion instantanée, maintenue ~120 ms, retour instantané. Une inversion unique n'est
+  pas du mouvement ; si l'accessibilité exige de la supprimer aussi (photosensibilité), **le
+  recalage et le tampon portent seuls le signal** et il reste complet.
+- Tampon : il apparaît, point. Aucune trajectoire.
+
+**Aucune couche ne dépend de la couleur, aucune ne dépend du mouvement, aucune ne désigne une
+bande.** C'est ce qui me fait la retenir.
+
+### 3bis.3 Les deux formes que j'écarte, et pourquoi
+
+- **Le liseré néon qui fait le tour de la surface assemblée.** Tentant, et c'est la première idée
+  de tout le monde. Refusé : il **collide avec le liseré de sélection** — même vocabulaire, même
+  teinte, deux sens différents sur le même écran. La loi du glow dit « ce qui brille est
+  interactif » ; au moment du verrouillage, plus rien ne l'est. Un glow terminal est un
+  contresens de la loi.
+- **Le remplissage progressif / la montée d'intensité** (le cadre qui se charge à mesure que les
+  bonnes bandes tombent). Refusé frontalement : c'est un **feedback par trait déguisé en signal
+  global**, interdit par A16. Trois quarts de cadre allumés disent « il t'en manque une », et le
+  joueur balaie au lieu de regarder.
+
+### 3bis.4 Le verrouillage est un objet de Gate 4, pas de Gate 2
+
+Rien de tout ça n'est dans un PNG : c'est composé au runtime. **Je ne PASSerai le verrouillage que
+sur des captures in-game réelles** montrant les trois états (hors repérage pendant `ACTIVE` /
+l'instant du négatif / le tampon en tenue), et **une quatrième capture en `prefers-reduced-motion`**.
+Sans ces captures, pas de PASS — c'est exactement le trou qu'ADR-0011 a laissé sur le liseré des
+véhicules, et il ne se rouvre pas ici.
 
 ---
 
@@ -174,15 +417,29 @@ pas :
 
 - Noir et blanc pur : encre noire sur blanc de photocopie. Trait BD/comics franc, contrasté.
 - Texture toner xerox, trame de demi-teinte grossière, hachures et aplats noirs.
-- **Une seule** couleur néon dans la scène, exclusivement sur le liseré de sélection (§3) et,
-  le cas échéant, sur le chrono quand il devient critique — parce qu'un chrono critique est une
-  alerte HUD, et les alertes HUD brillent (bible §2 loi 1). Rien d'autre.
-- Le cadre / le fond de la scène traité comme une **surface imprimée** si elle est jugée pré-jeu,
-  ou comme monde de jeu si elle est dans la boucle. **À trancher** : si la scène est un écran
-  intercalaire de type briefing, §2bis s'applique (papier, zéro glow) et le liseré de sélection
-  devient une exception à motiver explicitement devant moi. Si c'est une phase de jeu dans le monde
-  (mon hypothèse de travail, et ma préférence : elle a un chrono qui coûte une vie), §2 loi 1
-  s'applique telle quelle et le CRT §8 la couvre. **Question ouverte 7.3.**
+- **Une seule** couleur néon dans la scène, **exclusivement sur le liseré de sélection** (§3) et
+  sur le plateau d'accent hors repérage du verrouillage (§3bis.1). ~~et, le cas échéant, sur le
+  chrono quand il devient critique — parce qu'un chrono critique est une alerte HUD, et les alertes
+  HUD brillent~~ → **RETIRÉ, rév. 2.** Le chrono de cette scène **n'est pas un HUD de jeu** : la
+  scène est une surface DOM interactive (ADR-0080 D6.3), pas le monde. Et la jauge **n'est pas
+  interactive** — elle ne se manipule pas. La loi du glow tranche donc dans l'autre sens : **la
+  jauge ne brille jamais**, y compris à 5 s. Son escalade se fait à l'encre (§4bis.3).
+- **Statut de la scène — TRANCHÉ, ma question ouverte 7.3.5 est close** (ADR-0079 D1 / ADR-0080
+  D6.3, gate §5.2) : **ni monde de jeu, ni surface pré-jeu — une surface DOM interactive.**
+  Conséquences, appliquées partout dans ce brief :
+  - **Le liseré néon de sélection est légitime**, sans exception à motiver : la bande est
+    manipulée, donc elle brille (§2 loi 1). ~~Mon hypothèse « monde de jeu » reposait sur un chrono
+    « qui coûte une vie » : c'est FAUX~~ — la scène **ne retire aucune vie, toutes issues
+    confondues** (gate A1, story AC5) ; la sanction est **−20 d'énergie sur le capital initial du
+    niveau suivant** (A1c). L'argument est retiré ; la conclusion tenait pour une autre raison que
+    la mienne.
+  - **La cible reste à zéro glow** (elle n'est pas manipulée) — inchangé.
+  - **Le §2bis « zéro glow » ne s'applique pas** : ce n'est pas un menu, elle a une issue et un coût.
+  - **Le CRT §8 ne s'applique pas** : `CrtPass` vit dans `GameScene`, cette scène vit dehors
+    (ADR-0081 D4). **Partout où ce brief écrit « CRT allumé » comme condition de test — §2, §6 G4,
+    §6 G7, §7.2 — lire « grain xerox de post-composition appliqué ».** C'est ce grain, unique et
+    posé sur le visage assemblé, qui est le mangeur de détail de cet écran ; c'est donc lui, et lui
+    seul, qui conditionne le plancher de discernabilité.
 
 **INTERDIT — automatique FAIL**
 
@@ -202,6 +459,75 @@ frontal plat, peu de modelé, beaucoup de caractère dans le contour et dans un 
 signature. Pas de belle gueule lissée. Le casting doit refléter la faune d'une soirée clandestine
 parisienne de 1998 ; le cadrage culturel et les références sont du ressort d'`art-advisor`
 (`docs/references/art-culture.md`) — je veux sa passe avant les prompts.
+
+---
+
+## 4bis. LA JAUGE — un chrono continu qui ne ressemble pas à une barre de vie
+
+**Neuf. Rév. 2.** Le compte d'unités saute (Bertrand B2) : plus de `TÉLÉCARTE · {n} UNITÉS`, plus
+de 14 unités, plus de nombre à l'écran — ni unités ni secondes. **Jauge continue qui se vide**
+(A13). L'habillage télécarte survit **comme objet, pas comme compteur** : c'est la carte qui se
+vide.
+
+Le piège est nommé dans la demande et il est réel : une jauge continue, c'est le geste le plus
+générique du jeu vidéo moderne. Une barre arrondie, un dégradé vert→rouge, une lueur, et l'écran
+cesse d'appartenir à muf. Trois principes le tiennent à distance.
+
+### 4bis.1 Le principe : l'encre s'en va, la forme reste
+
+Une barre de vie moderne **se raccourcit** : un rectangle plein qui rétrécit, sur une glissière
+vide. **Notre jauge ne rétrécit pas — elle se dépeuple.** La télécarte est imprimée en entier,
+son **contour reste intégralement là du début à la fin**, et c'est **l'encre à l'intérieur qui
+disparaît**, de gauche à droite. On ne regarde pas une barre se vider, on regarde **une carte
+s'épuiser** : la matière imprimée s'en va, l'objet reste.
+
+C'est la différence entre un widget et un objet, et c'est toute la DA de la maison.
+
+### 4bis.2 Comment ça se dessine, concrètement
+
+- **Le front n'est jamais net.** Le bord entre l'encrée et la vidée est un **bord rongé au toner** :
+  irrégulier, granuleux, dentelé à l'échelle du grain — le photocopieur qui manque d'encre en fin
+  de course. Techniquement, c'est un masque à bord bruité (`feTurbulence` +
+  `feDisplacementMap`, exactement l'outillage des tampons, bible §2bis.1), pas un `clip-path`
+  rectiligne. **Un front droit et propre = FAIL** : c'est le tell numéro un de la barre de vie.
+- **Zéro dégradé de remplissage.** Encre noire pleine (`ink-black`) ou papier. Pas de fondu, pas de
+  lueur intérieure, pas de reflet, pas de biseau. La valeur intermédiaire, s'il en faut, s'obtient
+  par **trame**, comme partout ailleurs dans le jeu (§4).
+- **Zéro arrondi, zéro ombre portée.** Coins vifs, filet noir, comme un cartouche imprimé. La carte
+  garde son ratio **télécarte (~1,6:1)** et se lit comme une carte, pas comme un rail.
+- **Aucun changement de teinte avec le niveau.** Pas de vert→orange→rouge : c'est le second tell de
+  la barre de vie, et c'est de la couleur seule. La jauge est **noir et blanc du début à la fin**.
+- **Elle ne touche pas les portraits.** Interdit formel : la jauge ne passe **jamais** sous le
+  visage assemblé ni sous la cible, et n'est jamais accolée à la surface jointive (§1.0) — une
+  barre horizontale sous une tête, c'est littéralement l'image d'une barre de vie, et ça abîme la
+  jointure. Elle vit sur son propre objet, dans sa propre zone.
+- **Elle ne pulse pas, elle ne clignote pas.** Le seul « pulse » toléré dans la maison est le
+  curseur de machine à écrire (§2bis).
+
+### 4bis.3 L'escalade des paliers, en encre et jamais en lumière
+
+Les paliers du gate (50 % · 10 s · 5 s restants, A13) doivent se voir. Ils se voient **sans
+couleur, sans glow, sans nombre** :
+
+| Palier | Ce que fait la jauge |
+| --- | --- |
+| Mi-parcours (50 %) | **rien de visuel** — c'est un palier de copie (réplique KENZA), pas d'IHM. Ne rien ajouter est une décision, pas un oubli. |
+| Urgence (10 s restants) | l'encre restante **passe de l'aplat plein à une trame grossière** — la carte « s'éclaircit », elle rend l'âme. Changement de **texture**, pas de teinte. |
+| Dernier (5 s restants) | le **filet du contour de la carte s'épaissit d'un cran** (une seconde impression, plus grasse) + le bip + l'annonce `aria-live`. Un seul cran, tenu, sans clignotement. |
+
+Les trois sont perceptibles en niveaux de gris, en `prefers-reduced-motion`, et sans son.
+
+### 4bis.4 Ce que je n'accepterai pas sur la jauge
+
+Rectangle à coins arrondis · dégradé de remplissage · dégradé de teinte selon le niveau · lueur ou
+`box-shadow` coloré · clignotement · segments discrets (ce serait ré-introduire les unités que B2
+vient de supprimer) · un chiffre, quel qu'il soit, y compris un pourcentage · un pictogramme
+d'horloge ou de sablier · un placement sous les portraits. **Chacun est un FAIL isolé.**
+
+**Livrable dû par `narrative-designer`** (le gate le note en B1) : un libellé de jauge **sans
+nombre** pour remplacer `TÉLÉCARTE · {n} UNITÉS`. Contrainte DA de ma part, courte : **Courier
+Prime, capitales, une ligne, ≤ 12 caractères**, posé sur la carte comme une mention imprimée — et
+l'interdit « temps restant » d'A6 tient.
 
 ---
 
@@ -278,7 +604,11 @@ composé au runtime.
 **G1 — Raccord.** Sur un échantillon d'au moins 8 combinaisons tirées au hasard, dont les 4
 combinaisons extrêmes : aucune discontinuité visible du contour du crâne ni de la ligne de mâchoire
 aux 3 coutures, aucun liseré clair d'un pixel, aucun décalage d'axe médian. **Une seule combinaison
-fracturée fait échouer tout l'ensemble** (§1, bible §2 loi 2).
+fracturée fait échouer tout l'ensemble** (§1, bible §2 loi 2). **Rév. 2 — durci par la jointure
+(§1.0) :** les quatre tolérances chiffrées de §1.2bis sont mesurées par le script de tranchage sur
+les 3 coutures × toutes les variantes ; hors tolérance ⇒ **rejet de la planche entière**, pas de la
+variante. Vérifier en plus, à l'œil, **gap zéro** (aucun filet, aucun écart, aucune ombre entre
+bandes) et **échelle 1:1 exacte entre la cible et la construction**.
 
 **G2 — Épaisseur et trame.** Épaisseur de contour identique sur toutes les bandes ; angle et pas de
 hachure identiques ; aucune ombre traversant une couture. Vérifiable par superposition.

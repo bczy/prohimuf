@@ -1,10 +1,51 @@
 # UX spec — scène TÊTE À CONNAÎTRE (ex. "portrait-robot")
 
 **Surface :** scène interstitielle post-niveau — recomposer un visage suspect à partir de 4 bandes
-(`LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`) sous chrono (`TÉLÉCARTE · {n} UNITÉS`).
-**Auteur :** `ux-designer` (Tony) · **Date création :** 2026-08-05 · **Round 2 :** 2026-08-05
-**Statut :** RÉVISÉ round 2 — applique le DESIGN GATE (`docs/game-design/design-gate-portrait-robot.md`,
-PASS AVEC CONDITIONS) et l'arbitrage direct Bertrand du même jour sur le geste tactile (A4-bis).
+**jointives** (`LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`) sous chrono continu (jauge télécarte,
+sans unité affichée). **Validation automatique** dès 4/4, aucun CTA.
+**Auteur :** `ux-designer` (Tony) · **Date création :** 2026-08-05 · **Round 2 :** 2026-08-05 ·
+**Round 3 :** 2026-08-05
+**Statut :** RÉVISÉ round 3 — applique trois arbitrages directs de Bertrand (suppression du CTA,
+chrono continu, drag desktop tranché en Option B) instruits par
+`docs/game-design/design-gate-portrait-robot.md` §8 « Amendements post-gate » et sa §3 mise à jour,
+et fait droit à la maquette Figma `muf — Design System` › `Écrans · Portrait-robot` (mobile
+844×390, desktop 1440×900) qui **fait référence**.
+
+## Journal de révision (round 3)
+
+**Ce qui a changé et sur ordre de qui — trois arbitrages directs, tous postérieurs au round 2 :**
+
+1. **CTA `SORTIR LA TÊTE` supprimé (B1/A12bis).** Validation automatique et immédiate dès que les
+   4 bandes affichent 4/4 (« verrouillage »). Tout le document est purgé des mentions de CTA,
+   `confirmGuardSeconds`, Entrée-valide, focus CTA. Nouvel invariant de seed
+   (`initialStateAllWrong`) remplace la garde temporelle — §1, §2.1, §3, §6, §7, §9.
+2. **Chrono continu, plus d'unités (B2/A13).** `TÉLÉCARTE · {n} UNITÉS` disparaît. La jauge se vide
+   en continu (habillage télécarte conservé comme objet, pas comme compteur), essais illimités.
+   Paliers refaits en secondes (50 % écoulé · 10,0 s restantes · 5,0 s restantes). Accessibilité du
+   chrono continu réécrite en §5.5 — l'annonce `aria-live` ne peut plus dire « n unités », elle
+   réutilise les répliques KENZA déjà écrites comme texte du live-region, à 3 occurrences fixes,
+   jamais une par seconde.
+3. **Desktop tranché — Option B (drag horizontal), §8 B3 du gate.** §2.2 n'est plus une liste de
+   3 propositions : c'est une décision documentée avec son motif (§2.2). Nouvelle §2.6 : seuils,
+   comportement du curseur, relâchement à mi-chemin, cohabitation avec les chevrons et le clavier.
+4. **Bandes jointives — correction directe Bertrand sur le layout.** Le gap inter-bandes de 8px
+   (justifié en round 2 comme garde anti-dérive de swipe) est retiré : les 4 bandes forment une
+   **seule surface continue**, au gabarit exact de la cible, sans aucune couture. La garde
+   anti-dérive est retrouvée **autrement** — verrouillage de la bande d'origine au `pointerdown` +
+   hystérésis en deux phases (pré-engagement / post-engagement), voir §2.3.4 réécrite. S'applique
+   identiquement au drag desktop (§2.6).
+5. **Nouvel état « verrouillé » spécifié en propre (§2.5)** — c'est le seul feedback de toute la
+   scène (A16) : signal global, terminal, non ambigu avec un simple changement de variante, sans
+   dépendre de la couleur, compatible reduced-motion.
+6. **§9 réécrite** pour décrire ce qui est réellement dessiné dans le Figma (bandes jointives 68px,
+   pas de CTA, hauteur libérée redistribuée entre la taille des bandes et la marge de cadrage
+   assurant la parité de taille des deux visages).
+
+**Entrée ajoutée pour ce round :** `docs/game-design/design-gate-portrait-robot.md` §8
+« Amendements post-gate » et §3 mise à jour (fait foi) ; maquette Figma `muf — Design System` ›
+`Écrans · Portrait-robot` (référence de fait, mobile 844×390 / desktop 1440×900).
+
+---
 
 ## Journal de révision (round 2)
 
@@ -14,7 +55,7 @@ PASS AVEC CONDITIONS) et l'arbitrage direct Bertrand du même jour sur le geste 
    mobiles : un swipe gauche/droite sur chaque bande, on oublie ta sélection et tes flèches. » Le
    §2.3 est réécrit intégralement : swipe horizontal sur la bande visée = geste primaire, plus de
    tap de sélection, plus de notion de bande active au doigt, chevrons rétrogradés en affordance +
-   cible d'accessibilité (§2.3, §2.4).
+   cible d'accessibilité (§2.3, §2.7).
 2. **Deux extensions coupées par le gate (A8).** Le mini-crop de comparaison locale (ex-D4.2/D4.3)
    et le verrouillage indicatif de bande (ex-§0/D0, ex-D5.2 partiel, ex-D5.4 `aria-pressed`) sont
    retirés. Repli acté : médaillon cible ≥ **28 % de largeur** en mobile paysage, rapproché des
@@ -86,7 +127,7 @@ tâche active. Le desktop landscape, lui, a la largeur pour les deux gros portra
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  TÊTE À CONNAÎTRE          TÉLÉCARTE · 14 UNITÉS         [ ✕ Échap ]      │ ← HUD strip, 56px
+│  TÊTE À CONNAÎTRE                    [jauge télécarte, sans nombre]  [✕]  │ ← HUD strip, 56px
 ├───────────────────────────┬────────────────────────────────────────────-─┤
 │                           │                                              │
 │   PAGE 23 (référence)    │   RECONSTRUCTION (en cours)                  │
@@ -96,62 +137,71 @@ tâche active. Le desktop landscape, lui, a la largeur pour les deux gros portra
 │   │   fixe, grand    │    │   │   en construction │                      │
 │   │                 │    │   │                 │                        │
 │   └─────────────────┘    │   └─────────────────┘                        │
-│   ~40% largeur           │   ~40% largeur                               │
+│   ~40% largeur           │   ~40% largeur, même taille que la cible     │
 │                           │                                              │
 ├───────────────────────────┴────────────────────────────────────────────-─┤
-│  LA COUPE   ◀ [ variante 3/6 ]●●●○○○ ▶        (compteur, pas de coche)  │ ← bande 1, 60px
-│  LE REGARD  ◀ [ variante 1/6 ]●○○○○○ ▶                                  │ ← bande 2
-│  LE NEZ     ◀ [ variante 4/6 ]●●●●○○ ▶                                  │ ← bande 3
-│  LA BOUCHE  ◀ [ variante 2/6 ]●●○○○○ ▶                                  │ ← bande 4 (courante, surlignée)
-├──────────────────────────────────────────────────────────────────────────┤
-│                          [ SORTIR LA TÊTE ]                               │ ← CTA, 56px, actif après confirmGuard 1,0s
-└──────────────────────────────────────────────────────────────────────────┘
+│ LA COUPE   ◁[ variante 3/6 ]●●●○○○▷ ‖LE REGARD ◁[1/6]●○○○○○▷‖LE NEZ...   │ ← surface UNIQUE
+│ ‖LA BOUCHE ◁[ variante 2/6 ]●●○○○○▷ (bande courante, surlignée)          │   jointive, 4 bandes
+└──────────────────────────────────────────────────────────────────────────┘   sans trait ni gap
 ```
 
-Note : l'état « verrouillé » (coche `✓`) du round 1 est **retiré** (gate A8) — seul le compteur
-`{n} sur {total}` subsiste comme lisibilité d'état, il n'affirme rien sur la justesse du choix.
+Le bloc du bas est **une seule surface continue** (§0 bis) : les quatre bandes empilées ne sont
+séparées par aucun trait, aucune couture, aucun gap — `‖` ci-dessus indique seulement la limite de
+lecture ASCII, elle n'existe pas à l'écran. Il n'y a **plus de CTA** : la scène valide seule.
 
-- Les 2 portraits restent CÔTE À CÔTE (assez de largeur en desktop, c'est la mise en scène ST
-  qu'on garde le plus fidèlement). Chacun ~40% de largeur, hauteur bornée pour laisser les 4
-  bandes + CTA visibles sans scroll.
-- Les 4 bandes sont empilées, hauteur fixe (§3), la bande **courante** (celle que le clavier
-  contrôle) est visuellement distincte (pas par couleur seule — voir §5.2).
-- CTA "VALIDER" toujours visible, jamais en bas d'un scroll — leçon directe de
-  `pregame-landscape-ux.md` §0 (CTA sous la ligne de flottaison = bug caractérisé).
+Note : l'état « verrouillé » (§2.5) est le seul feedback de toute la scène — il n'apparaît qu'au
+moment où les 4 bandes sont justes, jamais avant. Le compteur `{n} sur {total}` subsiste comme
+lisibilité d'état permanente, il n'affirme rien sur la justesse du choix.
+
+- Les 2 portraits restent CÔTE À CÔTE, **de même taille**, chacun ~40 % de largeur — mise en scène
+  ST conservée, confirmée par le Figma. Hauteur bornée pour laisser la surface de 4 bandes visible
+  sans scroll.
+- Les 4 bandes forment une surface jointive unique, hauteur fixe par bande (§3), la bande
+  **courante** (celle que le clavier ou le drag contrôlent) est visuellement distincte par une
+  bordure/forme, jamais par la couleur seule (§5.2).
+- Plus de CTA à garder au-dessus de la ligne de flottaison : la leçon de `pregame-landscape-ux.md`
+  §0 s'applique désormais à la **surface de bandes** elle-même, qui reste entièrement visible.
 
 ### 1.2 Mobile landscape (le cas contraignant — cible de référence 844×390)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ TÉLÉCARTE · 14 UNITÉS                                          [✕]     │ ← HUD, 32px
+│ [jauge télécarte, sans nombre]                                  [✕]    │ ← HUD, 32px
 ├─────────────────────┬────────────────────────────────────────────────-─┤
-│                     │  LA COUPE     ◁           [variante img]     ▷   │ ← bande 1, 72px
-│    médaillon        ├────────────────────────────────────────────────-─┤
-│    cible (page 23)  │  LE REGARD    ◁           [variante img]     ▷   │ ← bande 2, 72px
-│    28% largeur      ├────────────────────────────────────────────────-─┤
-│    tap/long-press    │  LE NEZ       ◁           [variante img]     ▷   │ ← bande 3, 72px
-│    = overlay plein   ├────────────────────────────────────────────────-─┤
-│                     │  LA BOUCHE    ◁           [variante img]     ▷   │ ← bande 4, 72px
-├─────────────────────┴────────────────────────────────────────────────-─┤
-│                          [ SORTIR LA TÊTE ]                             │ ← CTA, 44px min, pleine largeur
-└────────────────────────────────────────────────────────────────────────┘
+│                     │  LA COUPE     ◁           [variante img]     ▷   │
+│    médaillon        │  LE REGARD    ◁           [variante img]     ▷   │ ← surface UNIQUE
+│    cible (page 23)  │  LE NEZ       ◁           [variante img]     ▷   │   jointive, 4×68px,
+│    28% largeur      │  LA BOUCHE    ◁           [variante img]     ▷   │   sans trait ni gap
+│    tap/long-press    │                                                  │
+│    = overlay plein   │                                                  │
+└─────────────────────┴────────────────────────────────────────────────-─┘
 ```
+
+Plus de CTA : la surface de bandes va jusqu'au bas de l'écran, la hauteur qu'occupait le CTA est
+rendue aux visages. Les 4 bandes n'ont **aucune séparation visuelle entre elles** — elles forment
+un unique bloc au gabarit exact de la cible, pour que les deux visages se comparent trait pour
+trait sans que l'œil ait à recomposer une image coupée.
 
 - Le médaillon cible occupe une **colonne fixe à gauche, ≥ 28 % de la largeur d'écran** (repli du
   gate A8 après le CUT du mini-crop de comparaison locale — voir §4) : à 844px, 236px de large,
-  toute la hauteur de la zone de contenu (HUD exclu, CTA exclu). Il est **rapproché des bandes**
-  (colonne adjacente, pas un médaillon isolé en coin), toujours visible en l'état "cible fixe" ;
-  tap ou pression maintenue l'agrandit en overlay plein-cadre TEMPORAIRE pour un examen fin.
-- Les 4 bandes occupent la colonne de droite (≥ 72 % de largeur), empilées pleine hauteur restante,
-  avec l'image de variante au centre. Les chevrons `◁ ▷` sont dessinés en semi-transparence aux
-  bords — ce ne sont plus une cible tactile primaire, voir §2.3/§2.4 pour ce qu'ils deviennent.
+  même hauteur que le bloc de bandes en face (parité de taille des deux visages, mise en scène ST).
+  Toujours visible en l'état "cible fixe" ; tap ou pression maintenue l'agrandit en overlay
+  plein-cadre TEMPORAIRE pour un examen fin.
+- Les 4 bandes occupent la colonne de droite (≥ 72 % de largeur), empilées **jointives**, avec
+  l'image de variante au centre de chacune. Les chevrons `◁ ▷` sont dessinés **dans** la bande, en
+  semi-transparence, jamais comme trait de séparation — ce sont une affordance + une cible
+  d'accessibilité, pas la limite visuelle entre deux bandes (§2.3.3).
 - Le geste primaire sur mobile est le **swipe horizontal sur la bande visée** (§2.3) — pas un tap
   de sélection préalable.
-- Budget vertical calculé à 390px de hauteur (cible 844×390) : HUD 32px + CTA 44px = 76px fixes,
-  reste 314px pour les 4 bandes. Avec 3 séparations de 8px (élargies vs round 1, voir §2.3.4 —
-  la marge inter-bandes est désormais aussi une garde anti-dérive de swipe, pas seulement
-  visuelle) : `(314 − 3×8) / 4 = 72,5px` → **72px/bande**, arrondi à l'entier inférieur, largement
-  au-dessus du plancher 44px de cible tactile.
+- **Budget vertical, recalculé après suppression du CTA** : à 390px de hauteur, HUD 32px fixe,
+  reste **358px** pour le bloc de 4 bandes jointives (plus de CTA à soustraire, plus de gaps à
+  soustraire — 3×8px de round 2 disparaissent avec le gap). La maquette Figma fixe **68px/bande**
+  (272px pour les 4, contre 58px dans une itération intermédiaire encore munie d'un CTA) : la
+  hauteur des bandes n'est **pas** dimensionnée pour remplir mécaniquement les 358px disponibles,
+  elle est dimensionnée pour **égaler la hauteur du médaillon en face** (parité de taille des deux
+  visages, §0.1/§1.1) — les 86px restants (358 − 272) sont de la marge de cadrage haut/bas autour
+  du bloc jointif, pas du contenu perdu. La hauteur de bande utile pour le calcul de cible tactile
+  (§3) reste **68px**, largement au-dessus du plancher 44px.
 - Rotation écran → couvert par `RotateOverlay` existant si portrait ; en paysage court, PAS de
   layout alternatif supplémentaire nécessaire car ce layout EST déjà le layout court. Chrono en
   **pause** sous `RotateOverlay` (A7).
@@ -169,61 +219,30 @@ doigt — le traduire nécessite un choix, pas une translittération.
 - **↑ / ↓** (ou **W/S**) : change la bande courante (`LA COUPE`→`LE REGARD`→`LE NEZ`→`LA BOUCHE`,
   cyclique).
 - **← / →** (ou **A/D**) : fait défiler les variantes de la bande courante, ±1 par pression.
-- **Entrée / Espace** : valide le portrait si le focus est sur le CTA (le verrouillage indicatif
-  du round 1 est retiré, gate A8 — Entrée n'a plus d'effet sur une bande).
+- **Entrée / Espace : n'a plus d'effet de validation** (plus de CTA à cibler, B1). Sur le focus
+  d'un chevron `<button>`, Entrée/Espace agit comme un clic normal (§2.3.3) — c'est son seul rôle
+  résiduel.
 - **Échap** : ouvre la confirmation d'abandon (§7), jamais une sortie directe.
 - Reste la traduction la plus fidèle du mapping ST d'origine (4 directions discrètes) — c'est le
   socle sur lequel toute proposition souris ci-dessous s'appuie sans le remplacer.
 
-### 2.2 Propositions desktop — À TRANCHER SUR MAQUETTE (non figé ici)
+### 2.2 Desktop — DÉCISION : Option B, drag horizontal à la souris (§8 B3 du gate)
 
-Bertrand tranche sur Figma, pas ici. Ce qui suit sont **3 options distinctes**, présentées pour
-que la maquette puisse les montrer côte à côte. Le clavier §2.1 est acquis dans les trois cas ; il
-ne s'agit que du canal souris/pointeur additionnel.
+**Tranché par Bertrand sur maquette Figma, prime sur tout ce qui suit.** Le round 2 proposait trois
+options (clic zone gauche/droite, drag, molette+chevrons) pour arbitrage ; l'arbitrage a retenu
+**Option B — drag horizontal directement sur la bande visée**, en écartant explicitement les deux
+autres. Le mécanisme complet (seuils, curseur, relâchement à mi-chemin, cohabitation clavier/
+chevrons) est spécifié en §2.6, sur le même modèle que le swipe tactile.
 
-**Option A — Clic sur zones gauche/droite de la bande** (zone cliquable = moitié gauche/droite de
-la ligne de bande, pas seulement les chevrons).
-- *Avantage* : traduction directe de "toucher LA bande qu'on veut" — cohérent avec le pointeur
-  direct, gros hit-target (toute la moitié de bande), pas de fine motricité requise.
-- *Coût* : demande une affordance visuelle claire (zone gauche = ◁, zone droite = ▷ en fond léger)
-  sinon le joueur ne découvre pas qu'il peut cliquer ailleurs que sur les chevrons — c'est
-  `lead-art` qui rend ça lisible.
-- *Cohérence avec le tactile* : **faible** — le mobile n'a plus de notion de zone cliquable
-  gauche/droite (A4-bis), donc cette option crée un modèle mental différent par appareil. Assumé
-  si retenu (le brief accepte déjà une réponse par appareil), mais à nommer comme tel au gate si
-  choisi.
-
-**Option B — Drag horizontal de la bande** (cliquer-glisser directement l'image de variante,
-relâcher déclenche le changement).
-- *Avantage* : **seule option qui mime le geste tactile** — un utilisateur qui bascule entre
-  souris et tactile (trackpad tactile, écran tactile desktop) retrouve le même geste. Cohérent
-  avec la métaphore "bande de papier qu'on fait coulisser" (fiction).
-- *Coût* : le drag à la souris est moins naturel que le clic pour un geste discret court (bruit de
-  micro-mouvements, risque de déclenchement accidentel en survolant) ; demande le même seuil de
-  distance/angle que le mobile (§2.3.1) adapté à la souris, donc une implémentation dupliquée du
-  moteur de geste plutôt qu'un simple `onClick`.
-- *Cohérence avec le tactile* : **forte** — un seul mental model "on fait glisser la bande" pour
-  les deux appareils, au prix d'une IHM souris moins idiomatique.
-
-**Option C — Molette sur la bande survolée = variante ±1, chevrons cliquables en repli**
-(reprend le round 1, chevrons désormais visibles et cliquables comme option de référence, molette
-en raccourci).
-- *Avantage* : le plus rapide à l'usage pour un joueur qui connaît déjà le geste "scroller pour
-  changer une valeur" (carrousels, sélecteurs) ; ne demande aucun hit-target large ; les chevrons
-  cliquables restent l'input de référence testable et accessible au clic simple, donc le geste
-  souris additionnel (molette) ne retire jamais de fonctionnalité s'il est ignoré.
-- *Coût* : la molette n'est pas découvrable sans indice visuel (curseur qui change au survol,
-  micro-légende) — sans ce soin, une partie des joueurs ne la trouvera jamais et se rabattra sur
-  les chevrons, ce qui est acceptable (repli fonctionnel) mais moins rapide.
-- *Cohérence avec le tactile* : **nulle par construction** (la molette n'a pas d'équivalent
-  tactile) — assumé, c'est une réponse par appareil comme le brief le demande, pas une
-  incohérence à corriger.
-
-**Recommandation Tony, pour arbitrage, pas une décision :** Option C, chevrons cliquables comme
-socle **+** molette comme accélérateur, parce que c'est la seule des trois qui ne force aucun
-joueur desktop à apprendre un nouveau geste pour agir (le clic sur chevron est déjà universellement
-compris) tout en offrant une voie rapide à qui la découvre. Option B est la plus "cohérente" mais
-au prix d'une IHM souris dégradée — à soupeser sur maquette avant de trancher.
+**Motif du choix, tel qu'il ressort de l'arbitrage :** c'est la seule des trois options qui donne
+**un seul modèle mental pour les deux classes d'appareil** — « on fait glisser la bande » — au lieu
+d'une réponse par appareil qui aurait fonctionné (le brief l'acceptait) mais aurait demandé deux
+descriptions de geste distinctes dans chaque doc aval (spec mécanique, script de test e2e, copie
+ADR-0015). Le coût identifié en round 2 (le drag à la souris est moins idiomatique que le clic,
+implémentation de geste dupliquée plutôt qu'un simple `onClick`) est assumé : il est compensé par
+le fait que le moteur de geste (seuil de distance, résolution sur bande d'origine, hystérésis) est
+**déjà nécessaire** pour le tactile — le desktop en hérite plutôt que d'ouvrir un second système
+d'input. Les Options A (clic zone gauche/droite) et C (molette) sont closes, non réouvertes ici.
 
 ### 2.3 Tactile (mobile) — swipe horizontal sur la bande visée (A4-bis, arbitrage Bertrand)
 
@@ -248,8 +267,9 @@ résoudre, ci-dessous, chiffré.
   autre geste (pas de scroll de page — la scène n'a pas de scroll vertical, §1.2). 30° est le
   compromis standard tactile (entre la tolérance stricte 15-20° des carrousels précis et la
   tolérance large 45° qui accepterait des swipes quasi-diagonaux) — retenu strict côté bas de la
-  fourchette parce qu'on est sous chrono et que les 4 bandes sont proches verticalement (72px,
-  §1.2), donc le risque de contamination inter-bande prime sur la permissivité du geste.
+  fourchette parce qu'on est sous chrono et que les 4 bandes sont jointives, sans aucun gap entre
+  elles (68px chacune, §1.2), donc le risque de contamination inter-bande prime sur la
+  permissivité du geste — c'est l'angle qui protège désormais, plus le gap.
 - **Distance minimale de déclenchement : 40px horizontaux** depuis le point de contact initial
   (avant application de l'angle ci-dessus). En dessous de 40px, le relâchement est traité comme un
   tap manqué (aucun effet) — ni cran de variante, ni erreur affichée. 40px est choisi pour être
@@ -294,63 +314,190 @@ Les chevrons **ne disparaissent pas**. Ils changent de rôle :
   chevrons tapables sont les deux chemins d'accessibilité de cette scène sur mobile ; le swipe est
   la voie rapide, jamais la voie unique.
 
-#### 2.3.4 Doigt qui part d'une bande et finit sur une autre
+#### 2.3.4 Doigt qui part d'une bande et finit sur une autre — anti-dérive SANS gap (round 3)
 
-Le geste est **résolu sur la bande d'origine** (celle sous le point de contact initial
-`pointerdown`), pas sur la bande où le doigt termine sa course. Règle précise :
+**Contexte du changement.** Le round 2 tenait la garde anti-dérive dans un gap physique de 8px
+entre les bandes : au-delà de 12px de dérive verticale, le geste sortait de la zone morte et
+s'annulait. Bertrand a supprimé le gap — les 4 bandes sont **jointives** (§0 bis, §1.2), parce qu'un
+trait de séparation casse la lecture du visage. **Cela retire le dispositif physique qui portait la
+garde, pas le besoin de la garde** : sans lui, un doigt qui dérive verticalement pendant un swipe
+traverserait directement la bande voisine, avec un risque réel de cran appliqué à la mauvaise
+bande. La garde est donc reconstruite par la **logique du geste**, pas par l'espace à l'écran.
 
-- Si le point de contact **sort des bornes verticales de la bande d'origine de plus de 12px**
-  pendant le mouvement (dérive verticale au-delà d'une petite tolérance de tremblement), le geste
-  est **annulé sans effet** — pas transféré à la bande voisine, pas appliqué à la bande d'origine
-  non plus. Le joueur doit relâcher et recommencer. C'est délibérément strict : appliquer le cran
-  à une bande que le doigt ne "vise" plus au moment du relâchement serait une action fantôme, pire
-  qu'une absence d'action.
-- Cette règle est la raison pour laquelle **l'espacement inter-bandes passe de 2px (round 1) à
-  8px** (§1.2, §3) — c'est désormais une garde anti-dérive de geste, pas seulement une séparation
-  visuelle : 8px de zone morte entre deux bandes de 72px absorbe une dérive de doigt raisonnable
-  avant de franchir la tolérance de 12px dans la bande voisine.
-- **Retour visuel/haptique du cran** : au franchissement du seuil de déclenchement, (a) l'image de
-  variante affiche un cut instantané vers la variante suivante (pas de slide/fade en continu — la
-  transition EST le geste, cohérent avec "discret" §2.3.2 ; en `reduced-motion` la règle D5.1
-  s'applique de toute façon) accompagné d'un bref flash de contour (2 frames, non coloré seul,
-  §5.2) sur la bande concernée ; (b) un clic sonore bref identique à celui du round 1 (§6) ; (c) si
-  `navigator.vibrate` est disponible et que la préférence système ne le désactive pas, une
-  vibration courte (~10 ms) marque le cran — jamais requis pour comprendre l'état, un renfort
-  discret uniquement.
+**Mécanisme retenu — verrouillage au premier contact + hystérésis en deux phases.**
 
-### 2.4 Copie d'appareil (ADR-0015)
+1. **Résolution de bande au `pointerdown`, immédiate et définitive.** Les bandes étant jointives,
+   chaque point y de l'écran appartient à exactement une bande (pas de zone ambiguë à départager).
+   La bande sous le point de contact initial est assignée au geste **une fois pour toutes** — ce
+   n'est plus une question de "dans quelle bande le geste finit", c'est une propriété figée dès la
+   première frame de contact.
+2. **Phase pré-engagement (`|Δx| < 40px`, seuil de §2.3.1 inchangé).** Le geste n'a pas encore
+   franchi le seuil de déclenchement — il peut encore être un tap manqué, un scroll accidentel, ou
+   une dérive. Dans cette phase, une dérive verticale `|Δy| > 50 % de la hauteur de bande` (34px à
+   68px de bande mobile, valeur proportionnelle donc stable si `lead-art` retouche la hauteur)
+   **annule le geste sans effet** — même logique protectrice que le round 2, seuil relatif au lieu
+   d'un gap fixe.
+3. **Phase post-engagement (`|Δx| ≥ 40px`).** Dès que le seuil horizontal est franchi, le geste est
+   considéré **engagé** : la bande assignée à l'étape 1 devient **immunisée à toute dérive
+   verticale ultérieure**, jusqu'au relâchement. Motif : un doigt qui a déjà parcouru 40px à
+   l'horizontale sur une bande a démontré une intention claire ; le corps humain arque
+   naturellement la trajectoire d'un swipe rapide (dérive verticale de fin de geste, pas de début),
+   et c'est précisément ce que le round 2 punissait à tort en laissant la garde active jusqu'au
+   relâchement. L'hystérésis (garde stricte avant l'engagement, garde nulle après) élimine ce faux
+   positif sans jamais permettre un transfert vers la bande voisine — la bande reste celle assignée
+   à l'étape 1, quoi qu'il arrive après l'engagement.
+4. **Conséquence directe :** il n'existe **aucun scénario** où un cran s'applique à une bande
+   différente de celle touchée au `pointerdown`. La garde est désormais un test de trajectoire
+   (deux phases, un seuil proportionnel), pas un test de position à l'écran — elle survit à la
+   disparition du gap sans rouvrir le trou de sécurité que le gap comblait.
+
+**Retour visuel/haptique du cran**, inchangé sur le fond : au franchissement du seuil de
+déclenchement, (a) l'image de variante affiche un cut instantané (pas de slide/fade — la transition
+EST le geste, cohérent avec "discret" §2.3.2 ; `reduced-motion` applique D5.1) accompagné d'un bref
+flash de contour **local à la bande concernée** (2 frames, non coloré seul, §5.2) — à distinguer
+explicitement du signal de verrouillage global (§2.5), plus long et non local ; (b) un clic sonore
+bref, distinct du sting de verrouillage (§2.5) ; (c) si `navigator.vibrate` est disponible et non
+désactivé, une vibration courte (~10 ms).
+
+**Acceptance :** test e2e simulant `pointerdown` sur une bande à `y=y0`, mouvement vers
+`Δx=20px, Δy=40px` (>50 % de 68px) → geste annulé, aucun cran ; puis un second test avec
+`Δx=45px` (engagement franchi) suivi de `Δy=40px` supplémentaires → cran **appliqué à la bande
+d'origine**, aucun transfert. Les deux bandes voisines doivent rester à leur variante précédente
+dans les deux cas.
+
+### 2.5 L'état « verrouillé » — le seul feedback de toute la scène (A9/A16)
+
+Depuis B1, il n'y a plus d'acte de soumission : dès que l'état courant des 4 bandes est 4/4, la
+scène se termine **d'elle-même**. C'est le seul moment de toute la phase `ACTIVE` où quelque chose
+est montré au joueur sur la justesse de son choix (A16 : « aucun feedback par trait, sous aucune
+forme ; UN seul signal, global, binaire et terminal »). Il doit donc être conçu comme un événement
+à part, pas comme le énième changement de variante.
+
+**Ce que le joueur voit et entend, dans l'ordre, au frame où 4/4 est atteint :**
+
+1. **Gel immédiat de l'input.** Les 4 bandes cessent d'accepter tout swipe/drag/clic de chevron/
+   flèche clavier à l'instant `t`. Ce n'est pas qu'un signal visuel : c'est un changement d'état
+   fonctionnel — un joueur qui tente un geste après le verrouillage ne produit aucun effet. C'est
+   la première moitié du signal, et elle est **non ambiguë par construction** : un changement de
+   variante (§2.3.4) reste toujours actionnable l'instant suivant, un verrouillage jamais.
+2. **Un contour global unique**, autour de la surface entière des 4 bandes jointives (pas bande par
+   bande — ce serait retomber dans le feedback par trait interdit par A16), passe d'un liseré
+   ambiant fin à un cadre plein, plus épais, de forme reconnaissable — changement de **forme et
+   d'épaisseur**, jamais de teinte seule (§5.2). Il se pose et **tient** pendant `revealSeconds`
+   (1,4 s à `IDENTIFIED`, A15) avant la tenue du résultat.
+3. **La jauge télécarte se fige** au niveau où elle était — elle cesse de se vider. C'est un
+   deuxième signal binaire indépendant de la couleur ou de la forme : le temps s'arrête parce que
+   l'épreuve est finie, pas parce qu'elle a été perdue. Sous `reduced-motion`, ce gel est déjà la
+   forme "reposée" de la jauge (D5.1) — rien à animer en plus.
+4. **4 tampons simultanés** (pas séquentiels — A15 : la reptation trait-par-trait n'a plus de sens
+   informatif à `IDENTIFIED`, elle serait redondante avec le verrouillage qui vient de l'annoncer)
+   marquent chaque bande comme juste.
+5. **Un sting sonore de verrouillage, distinct du clic de cran** (§2.3.4) — plus long, un seul
+   événement, jamais confondu avec le bruit d'un swipe qui aboutit à une variante quelconque.
+6. Si `navigator.vibrate` est disponible : une vibration plus longue et de motif différent
+   (ex. deux pulses courts) de celle d'un cran simple (un seul pulse, §2.3.4) — encore une fois,
+   le signal doit être discriminable sans dépendre de l'attention portée à l'écran.
+
+**Ce que ce signal n'est jamais :** une teinte qui change sans changement de forme ; une animation
+qui ne survivrait pas à `reduced-motion` (le cadre plein et les tampons sont un état statique
+atteignable en un cut, pas une trajectoire d'animation obligatoire) ; un signal par bande (A16
+l'interdit explicitement — le verrouillage est un événement de la scène entière, pas de chacune des
+4 bandes) ; silencieux (un joueur qui ne regarde pas l'écran au moment précis du verrouillage — cas
+réaliste, l'œil est sur la cible ou sur une autre bande — doit pouvoir s'en rendre compte au son ou
+à la vibration, pas seulement à l'image figée).
+
+**Acceptance :** capture d'écran au frame de verrouillage montrant le cadre plein autour de la
+surface de bandes (pas de trait par bande) + jauge figée + 4 tampons simultanés ; test togglant
+`reducedMotion` confirmant que le cadre et les tampons apparaissent en un cut, sans trajectoire
+d'animation ; test e2e simulant un geste (swipe/drag/tap chevron/flèche) immédiatement après
+l'atteinte de 4/4 et vérifiant qu'aucun changement de variante n'en résulte ; test audio/haptique
+vérifiant que le sting et le motif de vibration du verrouillage diffèrent de ceux d'un cran simple.
+
+### 2.6 Drag desktop — mécanisme complet (Option B, §2.2)
+
+Même moteur de geste que le swipe tactile (§2.3), adapté à la souris. Les seuils et la garde
+anti-dérive de §2.3.1/§2.3.4 s'appliquent **à l'identique**, `pointerdown/pointermove/pointerup`
+étant le même type d'événement en souris qu'au doigt (Pointer Events unifie déjà les deux) : bande
+résolue au `pointerdown` (jointive, sans ambiguïté), seuil de déclenchement 40px horizontaux,
+hystérésis en deux phases identique.
+
+- **Curseur.** Au survol d'une bande (hors chevron), le curseur passe à `grab`. Pendant un drag
+  engagé, il passe à `grabbing` et reste visuellement **contraint à l'axe horizontal** de la bande
+  — même si la souris dérive verticalement pendant la phase post-engagement (§2.3.4), le curseur
+  ne "sort" pas visuellement de la ligne de la bande, pour ne pas suggérer un geste vertical
+  possible qui n'existe pas.
+- **Relâchement avant le seuil (`|Δx| < 40px` au `pointerup`).** Aucun cran n'est appliqué — la
+  variante affichée revient à son état d'avant-drag si un déplacement intermédiaire avait été
+  prévisualisé (voir ci-dessous), sinon elle n'a jamais bougé. Comportement identique à un tap
+  manqué au doigt (§2.3.1).
+- **Prévisualisation pendant le drag (différence assumée avec le tactile).** Contrairement au
+  swipe discret (§2.3.2, un cut instantané seulement au franchissement du seuil), le drag à la
+  souris peut suivre le curseur en continu pendant la phase pré-engagement/engagement — l'image de
+  variante glisse visuellement sous le pointeur — **sans qu'aucun cran ne soit appliqué avant le
+  relâchement**. C'est cohérent avec l'attente d'un geste de type "glisser-déposer" à la souris (le
+  joueur voit ce qu'il tient) sans changer la règle de fond : **1 relâchement au-delà du seuil = 1
+  cran**, jamais plus, jamais un cran par pixel parcouru. Sous `reduced-motion`, ce suivi continu
+  est désactivé (D5.1) : le curseur se déplace, l'image reste fixe jusqu'au relâchement, puis cut.
+- **Relâchement au-delà du seuil (`|Δx| ≥ 40px` au `pointerup`).** Exactement **1 cran** appliqué
+  dans la direction du déplacement, quelle que soit la distance parcourue au-delà de 40px — même
+  règle discrète que le tactile (§2.3.2), pour que le budget d'input (AC11, gate §A5) et le calcul
+  anti-brute-force (A16) restent valides indépendamment de l'appareil.
+- **Cohabitation avec les chevrons cliquables.** Les chevrons restent des `<button>` réels
+  (§2.3.3). Un `pointerdown` sur un chevron ne démarre **jamais** un drag de bande : l'événement
+  est capturé par le bouton (`stopPropagation`), donc pas de double-déclenchement possible entre un
+  clic de chevron et un drag qui aurait commencé au même endroit.
+- **Cohabitation avec le socle clavier (§2.1).** Un drag qui aboutit à un cran met à jour la bande
+  **courante** au sens clavier (celle que ↑↓ sélectionnerait ensuite) — cohérence d'un joueur qui
+  bascule entre souris et clavier en cours de scène, pas deux modèles disjoints. Le clavier reste
+  pleinement fonctionnel indépendamment de la souris, à tout instant.
+
+**Acceptance :** test e2e simulant un drag `pointerdown→pointermove(Δx=45,Δy=0)→pointerup` sur une
+bande → 1 cran ; un drag relâché à `Δx=20px` → 0 cran, retour à l'état initial ; un `pointerdown`
+sur un chevron suivi d'un `pointermove` de 45px → aucun cran de drag (seul le clic du chevron, s'il
+a lieu, produit un effet) ; vérification CSS que le curseur passe `grab`→`grabbing` pendant le
+drag engagé.
+
+### 2.7 Copie d'appareil (ADR-0015)
 
 Toute instruction affichée à l'écran (si un onboarding contextuel existe pour cette scène — à
 coordonner avec `narrative-designer`) suit le vocabulaire ADR-0015 : mobile = "**deux doigts**"
 n'est PAS pertinent ici (pas de tir), donc la copie mobile doit dire **"fais glisser une bande pour
 changer"** (jamais "touche"/"tape" seul, qui décrirait un tap et non un swipe) — jamais
-"clic"/"souris" côté mobile, jamais "glisse" côté desktop sauf si l'Option B (§2.2) est retenue au
-Figma, même règle de fork que le tutoriel (D3, ADR-0015).
+"clic"/"souris" côté mobile. Desktop : **Option B étant tranchée (§2.2)**, la copie desktop dit
+elle aussi "**fais glisser une bande pour changer**" — plus de fork nécessaire entre les deux
+copies : c'est le même geste nommé de la même façon sur les deux appareils, seul le nom de
+l'appareil qui l'exécute (souris/doigt) change si la copie a besoin de le préciser.
 
 ---
 
 ## 3. Cibles tactiles — chiffré
 
-- **Zone de swipe = la bande entière** (§2.3) : hauteur 72px en mobile landscape à 844×390 (calcul
-  §1.2), largeur = toute la colonne bandes (≥ 72 % d'écran). C'est la cible du geste primaire, pas
-  seulement une bande de confort.
+- **Zone de swipe/drag = la bande entière** (§2.3, §2.6) : hauteur **68px** en mobile landscape à
+  844×390 (valeur Figma, §1.2, §9), largeur = toute la colonne bandes (≥ 72 % d'écran). C'est la
+  cible du geste primaire, pas seulement une bande de confort. Sur desktop : 60px (§9.2).
 - **Chevrons ◁ / ▷** (accessibilité + affordance, §2.3.3) : 44×44px minimum (WCAG 2.5.5 / iOS
-  HIG) inchangé, avec 8px de marge cliquable autour du glyphe visuel — la zone de hit-test n'est
-  jamais réduite à la taille du glyphe, même rétrogradé visuellement.
-- **Espacement inter-bandes : 8px** (élargi vs 2px round 1) — c'est désormais une **garde
-  anti-dérive de swipe** en plus d'une séparation visuelle (§2.3.4) : absorbe la dérive verticale
-  du doigt avant de franchir la tolérance de 12px vers la bande voisine.
-- **CTA "SORTIR LA TÊTE"** : 44px de hauteur minimum, pleine largeur moins marges de 12px de
-  chaque côté, toujours dans les 44px du bord d'écran le plus proche pour rester joignable au
-  pouce en tenue mobile paysage à deux mains (pouces aux coins).
-- **Quand 4 bandes + HUD + CTA ne tiennent PAS** (écran < ~300px de hauteur utile, cas extrême type
-  petit téléphone avec barre de navigation OS visible) : le HUD passe à 28px (chrono seul, pas de
+  HIG) inchangé, avec marge cliquable autour du glyphe visuel — la zone de hit-test n'est jamais
+  réduite à la taille du glyphe. Ils sont **dessinés dans** la bande (semi-transparents), jamais
+  comme un trait la délimitant.
+- **Bandes jointives, zéro espacement inter-bandes** (correction directe Bertrand sur le layout,
+  round 3) : les 4 bandes ne sont séparées par aucun gap ni aucun trait — elles forment une seule
+  surface continue au gabarit exact de la cible. La garde anti-dérive de swipe que le gap portait
+  en round 2 (8px, tolérance 12px) est **retrouvée sans lui** par le mécanisme de résolution au
+  `pointerdown` + hystérésis en deux phases décrit en §2.3.4 : la sécurité ne dépend plus d'un
+  espace à l'écran.
+- **Plus de CTA à cibler** : la validation est automatique (§2.5). Aucune cible tactile de type
+  bouton principal ne subsiste hors des chevrons et du bouton retour `[✕]`.
+- **Quand 4 bandes + HUD ne tiennent PAS** (écran < ~300px de hauteur utile, cas extrême type petit
+  téléphone avec barre de navigation OS visible) : le HUD passe à 28px (jauge seule, pas de
   libellé), et les bandes compressent leur padding interne (pas leur cible de swipe — jamais en
   dessous de 44px de hauteur, on réduit le texte/l'image avant la cible).
-- **Acceptance geste (§2.3)** : test e2e simulant un swipe à 45° (doit être rejeté, aucun cran) et
-  un swipe à 25° sur 40px (doit produire exactement 1 cran) ; test simulant un `pointerdown` sur
-  une bande suivi d'une dérive verticale de 15px (doit annuler le geste, aucun cran) ; assertion
-  que les chevrons restent des `<button>` cliquables/`Enter`-activables indépendamment du swipe.
+- **Acceptance geste (§2.3, §2.6)** : test e2e simulant un swipe à 45° (doit être rejeté, aucun
+  cran) et un swipe à 25° sur 40px (doit produire exactement 1 cran) ; test simulant un
+  `pointerdown` sur une bande suivi d'une dérive verticale > 50 % de la hauteur de bande **avant**
+  franchissement du seuil de 40px (doit annuler le geste, aucun cran) et d'une dérive équivalente
+  **après** franchissement (doit conserver le cran sur la bande d'origine, aucune annulation,
+  aucun transfert) ; assertion que les chevrons restent des `<button>` cliquables/`Enter`-
+  activables indépendamment du swipe/drag ; test drag desktop équivalent (§2.6).
 
 ---
 
@@ -406,15 +553,22 @@ négociable.
 COUPE`/`LE REGARD`/`LE NEZ`/`LA BOUCHE`) ; les chevrons ◁ ▷ sont des `<button>` réels avec
 `aria-label="Variante précédente/suivante — {nom de bande}"`, actionnables au clic/`Enter`
 indépendamment du swipe (§2.3.3 — c'est leur rôle premier maintenant, pas un à-côté). Le
-`aria-pressed`/état "verrouillé" du round 1 disparaît (gate A8, plus d'état binaire à exposer). Le
-chrono s'expose en `aria-live="polite"` avec un throttle raisonnable (annoncer aux paliers
-documentés en D5.5, pas à chaque seconde).
+`aria-pressed`/état "verrouillé" indicatif du round 1 reste absent (gate A8, plus d'état binaire par
+bande à exposer) — le seul état binaire de la scène est désormais le verrouillage global terminal
+(§2.5), exposé via `aria-live="assertive"` **une fois**, au moment où il survient (pas un état
+persistant à interroger). La jauge de chrono s'expose en `role="progressbar"` avec
+`aria-valuemin/aria-valuemax/aria-valuenow` en secondes (donnée interne, jamais lue automatiquement
+— voir D5.5) et un `aria-live="polite"` séparé, distinct, pour les 3 annonces de palier.
 
-**D5.5 — Le chrono est une barrière d'accessibilité : la traiter, pas l'ignorer.** Un joueur lent
-(moteur, cognitif, lecteur d'écran) est structurellement désavantagé par un chrono serré sur une
-tâche de comparaison fine — et un joueur qui ne peut pas swiper (tremblement, précision motrice
-réduite) dépend entièrement des chevrons tapables/clavier (§2.3.3), donc du même chrono. Réponse
-à deux niveaux, **valeurs chiffrées par le gate (A7)** :
+**D5.5 — Le chrono continu est une barrière d'accessibilité : la traiter, pas l'ignorer — et sans
+dénombrer ce qui ne l'est plus.** Un joueur lent (moteur, cognitif, lecteur d'écran) reste
+structurellement désavantagé par un temps imparti serré sur une tâche de comparaison fine — B2 n'a
+supprimé que le compte d'essais, pas le chrono, et un joueur qui ne peut pas swiper/dragger
+(tremblement, précision motrice réduite) dépend entièrement des chevrons tapables/clavier (§2.3.3),
+donc du même chrono. **Nouveau problème posé par B2 :** la jauge n'a plus d'unité — un lecteur
+d'écran ne peut plus lire « il reste 4 unités », et l'annoncer en secondes brutes recréerait
+l'affichage numérique que l'interdit « temps restant » (A6) bannit précisément de la surface
+joueur. Réponse en trois volets :
 
 1. **Échappatoire = `Prefs.difficulty`** (`easy | normal | hard`,
    `src/game/systems/prefsSystem.ts`), câblée sur cette scène spécifiquement :
@@ -422,19 +576,33 @@ réduite) dépend entièrement des chevrons tapables/clavier (§2.3.3), donc du 
    fourchette historique 30-40 s pour `easy` — accessibilité avant fidélité, arbitrage gate A7).
    Un toggle qui ne s'applique pas à cette scène précise serait la même incohérence que la règle
    mère du CRT : un toggle qui ne s'applique pas partout où il le devrait est un mensonge.
-2. **Annonce des paliers pour lecteur d'écran, calés sur les paliers narratifs/musicaux du
-   gate (A7)** : à **17,5 s** (mi-parcours, 7 unités), **10,0 s** (urgence, 4 unités) et **5,0 s**
-   (dernier, 2 unités) restantes, `aria-live` annonce le temps restant en unités télécarte
-   (throttle explicite, un seul événement par palier) — un joueur non-voyant sent l'urgence sans
-   dépendre du rendu visuel du chrono, sur les mêmes battements que le reste de la scène (musique,
-   copie KENZA), pas des paliers UX isolés.
-3. **Chrono en pause sous `RotateOverlay`** (A7, close la question ouverte §8) : le joueur ne peut
-   pas jouer derrière l'overlay, donc laisser le chrono courir serait une perte non imputable.
+2. **Annonce des paliers pour lecteur d'écran — exactement 3 occurrences par run, jamais plus,
+   jamais un compte-à-rebours.** Aux paliers refaits en secondes par le gate (A13) — 50 % de
+   `timerSeconds` écoulé, puis **10,0 s** et **5,0 s restantes** (valeurs absolues, identiques dans
+   les 3 difficultés) — `aria-live="polite"` déclenche **une seule fois par palier**, jamais à
+   chaque tick. Le texte annoncé n'est **pas un nombre** : il **réutilise telles quelles les
+   répliques KENZA** déjà écrites pour ces mêmes paliers (« Ma carte descend. » / « Grouille, il me
+   reste rien. » / le sting du dernier palier) — c'est le même texte que voit et entend un joueur
+   voyant/entendant, exposé au lecteur d'écran plutôt que dupliqué avec un nombre de secondes qui
+   n'existe nulle part ailleurs à l'écran. Ça règle le « comment sans harceler » à la racine : le
+   throttle n'est pas un réglage de fréquence à calibrer, c'est **le nombre de battements
+   narratifs de la scène**, qui est déjà fixé à 3 par le reste du design (musique, copie).
+3. **La jauge expose son état sur demande, pas en continu.** `role="progressbar"` avec
+   `aria-valuenow`/`aria-valuemin`/`aria-valuemax` en secondes internes (lisible par un lecteur
+   d'écran qui navigue explicitement jusqu'à l'élément, à tout moment) et `aria-valuetext`
+   **qualitatif**, calé sur les 3 mêmes paliers (`"temps confortable"` → `"ça presse"` →
+   `"dernières secondes"`), jamais un nombre de secondes en toutes lettres — cohérent avec
+   l'interdit A6 côté accessibilité aussi, pas seulement côté rendu visuel.
+4. **Chrono en pause sous `RotateOverlay`** (A7, tranché) : le joueur ne peut pas jouer derrière
+   l'overlay, donc laisser le chrono courir serait une perte non imputable.
 
 **Acceptance (D5)** : test e2e togglant `reducedMotion`, capture en simulation daltonienne,
 assertion aria sur chaque bouton chevron + groupe de bande, test togglant `difficulty` et
 vérifiant que la durée effective devient 56/35/30 s pour CETTE scène spécifiquement, test
-togglant `RotateOverlay` et vérifiant que le chrono ne décompte plus derrière.
+togglant `RotateOverlay` et vérifiant que la jauge ne se vide plus derrière, test comptant les
+événements `aria-live` déclenchés sur un run complet (doit être exactement 3, jamais plus), test
+d'assertion que le texte annoncé ne contient jamais de chiffre de secondes/unités et que
+`aria-valuetext` suit les 3 paliers qualitatifs.
 
 ---
 
@@ -442,10 +610,11 @@ togglant `RotateOverlay` et vérifiant que le chrono ne décompte plus derrière
 
 | État | Ce que voit le joueur | Ce qu'il entend |
 | --- | --- | --- |
-| **ENTRÉE** | Transition depuis `NARRATIVE_POST` ; médaillon cible (page 23) apparaît en premier (1 beat), PUIS les 4 bandes se déploient (Paper Mario rule, §"UI Fanzine" des guidelines) ; `confirmGuardSeconds` 1,0 s avant que le CTA ne devienne actif ; chrono démarre visible dès l'affichage complet, pas avant | Sting audio court signalant l'entrée en mini-jeu, distinct de la musique de niveau |
-| **SÉLECTION EN COURS (`ACTIVE`)** | 4 bandes, chacune swipable indépendamment (§2.3) ; **zéro feedback juste/faux sous quelque forme que ce soit** (A9, gate) — seul le compteur `{n} sur {total}` évolue ; chrono `TÉLÉCARTE · {n} UNITÉS` décompte en HUD | Musique tendue en boucle (guidelines §6 — tempo = seul indicateur de tension) ; clic sonore bref à chaque cran de swipe/chevron (§2.3.4) |
-| **PALIERS CHRONO** (17,5 s / 10,0 s / 5,0 s restantes, A7) | Chrono change de style aux paliers urgence/dernier (contraste/forme, pas couleur seule — D5.2) ; PAS de shake d'écran ni de flash strobant (reduced-motion + confort général) | Répliques KENZA (mi-parcours / urgence, gate A7) ; le tempo musical s'accélère aux paliers ; annonce `aria-live` au dernier palier (D5.5) ; pas de bip strident répété |
-| **RÉVÉLATION DU VERDICT** (2,6 s, `revealSeconds`) | Écran se fige ; **c'est ici, et seulement ici, que le feedback apparaît** (A9) — 4 verdicts de haut en bas (~0,45 s chacun), correction visible de chaque bande fausse, 0,8 s de tenue ; médaillon et reconstruction se rapprochent visuellement pour la comparaison finale | Sting de verdict progressif par bande, puis sting global WON/PARTIAL/LOST (vocabulaire `spec-boss-qte-*`) |
+| **ENTRÉE** | Transition depuis `NARRATIVE_POST` ; médaillon cible (page 23) apparaît en premier (1 beat), PUIS les 4 bandes se déploient (Paper Mario rule, §"UI Fanzine" des guidelines) ; l'invariant de seed (`initialStateAllWrong`, A14) garantit un 0/4 à l'entrée — **plus de délai de grâce à attendre**, les bandes sont immédiatement actionnables ; jauge télécarte pleine et visible dès l'affichage complet | Sting audio court signalant l'entrée en mini-jeu, distinct de la musique de niveau |
+| **SÉLECTION EN COURS (`ACTIVE`)** | 4 bandes jointives, chacune swipable/dragable indépendamment (§2.3, §2.6) ; **aucun feedback par trait, sous aucune forme** (A16) — seul le compteur `{n} sur {total}` évolue ; jauge télécarte se vide en continu, sans nombre affiché (§9) ; **pas de CTA** | Musique tendue en boucle (guidelines §6 — tempo = seul indicateur de tension) ; clic sonore bref à chaque cran de swipe/drag/chevron (§2.3.4, §2.6) |
+| **VERROUILLAGE** (instantané, dès 4/4) | **Le seul feedback de la scène** (§2.5) : gel immédiat de l'input, cadre plein autour de la surface entière de bandes (pas par bande), jauge figée, 4 tampons simultanés. Ne peut survenir qu'en cours d'`ACTIVE`, jamais après expiration (A12bis) | Sting de verrouillage distinct du clic de cran ; vibration longue si disponible, motif différent d'un cran simple |
+| **PALIERS CHRONO** (50 % écoulé / 10,0 s / 5,0 s restantes, A13) — n'a lieu que si aucun verrouillage n'est encore survenu | Style de jauge change aux paliers urgence/dernier (contraste/forme, pas couleur seule — D5.2) ; PAS de shake d'écran ni de flash strobant (reduced-motion + confort général) | Répliques KENZA réutilisées comme annonce `aria-live` (D5.5) ; le tempo musical s'accélère aux paliers ; pas de bip strident répété |
+| **RÉVÉLATION DU VERDICT** (`revealSeconds` — 2,6 s à `PARTIAL`/`FAILED`, 1,4 s à `IDENTIFIED`, A15) | Écran se fige ; à `PARTIAL`/`FAILED` : 4 verdicts de haut en bas (~0,45 s chacun) avec correction visible de chaque bande fausse, 0,8 s de tenue (reptation intacte, information réelle à délivrer) ; à `IDENTIFIED` : le verrouillage (état ci-dessus) a déjà tout dit, flash + 4 tampons simultanés sans reptation ; médaillon et reconstruction se rapprochent visuellement pour la comparaison finale | Sting de verdict, puis sting global WON/PARTIAL/LOST (vocabulaire `spec-boss-qte-*`) |
 | **TENUE DU RÉSULTAT** (2,2 s, `resultHoldSeconds`) | Tampon `IDENTIFIED`/`PARTIAL`/`FAILED` affiché avec raison explicite (guidelines §5 règle 4 — ex. "3 sur 4" pour `PARTIAL`) ; textes = `narrative-designer` | — |
 | **SORTIE** | Transition vers `LEVEL_COMPLETE`/niveau suivant ; le payoff narratif (page 23 qui refuse, ou habitué refusé) se joue en pré-niveau suivant, pas ici (A10) ; les répliques d'entrée/sortie sont skippables en un geste, la phase interactive ne l'est pas (A2) | — |
 
@@ -475,65 +644,76 @@ togglant `RotateOverlay` et vérifiant que le chrono ne décompte plus derrière
 
 ## 8. Questions ouvertes restantes
 
-Toutes les questions du round 1 sont closes par le design gate (nombre de bandes/variantes = A5,
+Toutes les questions du round 1 et du round 2 sont closes. Nombre de bandes/variantes = A5,
 verrouillage indicatif = A8/CUT, chrono sous `RotateOverlay` = A7, sanction/payoff = A1/A10,
-mini-crop = A8/CUT). Il ne reste, pour cette lane, que le point que le gate a explicitement
-renvoyé ici :
-
-1. **Mapping desktop (§2.2)** : les 3 options proposées ne sont pas départagées — arbitrage sur
-   maquette Figma, demande explicite Bertrand. Le socle clavier (§2.1) est acquis quel que soit le
-   choix.
+mini-crop = A8/CUT, **mapping desktop = Option B, §2.2/§2.6, tranché par Bertrand sur Figma (§8 B3
+du gate)**. Il ne reste, pour cette lane, **aucune question ouverte** sur ce round : les trois
+arbitrages traités ici (CTA, chrono continu, drag desktop) ferment le dernier point renvoyé au
+round 2.
 
 ---
 
 ## 9. Spécification pour la maquette (Figma)
 
-Valeurs exploitables directement pour dessiner l'écran, sur les deux cibles de référence. Tout ce
-qui est en px est calculé à partir du viewport indiqué ; le style (couleurs, typo, texture,
-glow) reste `lead-art`.
+**La maquette fait référence** : fichier `muf — Design System`, page `Écrans · Portrait-robot`,
+cibles mobile 844×390 et desktop 1440×900. Ce qui suit décrit ce qui y est effectivement dessiné,
+pas une proposition à arbitrer. Le style (couleurs, typo, texture, glow) reste `lead-art`.
 
 ### 9.1 Mobile paysage — cible 844×390
 
-**Hiérarchie de zones (3 lignes empilées, la colonne médaillon traverse la ligne du milieu) :**
+**Hiérarchie de zones (2 colonnes, plus de ligne de CTA) :**
 
 | Zone | x | y | largeur | hauteur | Contenu |
 | --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 844 | 32 | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, `TÉLÉCARTE · {n} UNITÉS` centré/à droite, bouton retour `✕` en coin, ≥ 44×44px cible |
-| Médaillon | 0 | 32 | **236 (28 %)** | 314 | Portrait cible page 23, fixe, contour distinct (pas de glow — §5, gate) ; tap/long-press = overlay plein écran temporaire |
-| Colonne bandes | 236 | 32 | 608 (72 %) | 314 | 4 bandes empilées |
-| Bande (×4) | 236 | 32 + i×(72+8) | 608 | **72** | Libellé (`LA COUPE`/…) à gauche, image de variante centrée, compteur `{n}/{total}` à droite, chevrons ◁▷ semi-transparents aux bords (44×44px cible, zone de swipe = toute la bande) |
-| Gap inter-bandes | — | — | 608 | **8** | Zone morte anti-dérive (§2.3.4), pas de contenu |
-| CTA | 0 | 346 | 844 | 44 | `SORTIR LA TÊTE`, pleine largeur, inerte visuellement pendant `confirmGuardSeconds` (1,0 s) |
+| HUD | 0 | 0 | 844 | 32 | Bandeau `TÊTE À CONNAÎTRE` (peut être omis si l'espace manque, `lead-art`) à gauche ou masqué, jauge télécarte continue (sans nombre) centrée/à droite, bouton retour `✕` en coin, ≥ 44×44px cible |
+| Médaillon | 0 | 32 | **236 (28 %)** | 358 | Portrait cible page 23, fixe, contour distinct (pas de glow — §5, gate), même hauteur que le bloc de bandes en face (parité de taille des deux visages) ; tap/long-press = overlay plein écran temporaire |
+| Bloc de bandes (surface unique, jointive) | 236 | 32 | 608 (72 %) | 358 | 4 bandes empilées, **aucune séparation entre elles** |
+| Bande (×4) | 236 | 32 + i×68 | 608 | **68** | Libellé (`LA COUPE`/…) à gauche, image de variante centrée, compteur `{n}/{total}` à droite, chevrons ◁▷ semi-transparents **dessinés dans** la bande, jamais comme trait de séparation (44×44px cible, zone de swipe/drag = toute la bande) |
 
-**États à prévoir sur la maquette :** ENTRÉE (médaillon seul, bandes pas encore déployées) ·
-ACTIVE (les 5 blocs ci-dessus) · cran de swipe (flash de contour bref sur 1 bande) · palier
-urgence/dernier (chrono restylé) · RÉVÉLATION (4 verdicts qui descendent bande par bande,
-médaillon et colonne bandes rapprochés) · confirmation d'abandon (overlay léger par-dessus, pas
-plein écran).
+**Il n'y a plus de CTA ni de ligne dédiée en bas d'écran.** La hauteur libérée (44px de CTA +
+24px de gaps inter-bandes du round 2, soit 68px) est allée pour partie aux bandes elles-mêmes
+(58→68px chacune dans une itération intermédiaire encore munie d'un CTA, avant sa suppression
+définitive), et pour partie à la marge de cadrage haut/bas qui garantit que le bloc de bandes
+égale visuellement la hauteur du médaillon — 4×68 = 272px de contenu, 358px de zone disponible,
+l'écart est de la marge de composition, pas du contenu manquant.
+
+**États à prévoir sur la maquette :** ENTRÉE (médaillon seul, bandes pas encore déployées, seed
+garantissant 0/4, §6) · ACTIVE (les 2 colonnes ci-dessus, aucun CTA) · cran de swipe (flash de
+contour bref, **local à une seule bande**) · **VERROUILLAGE** (cadre plein autour de **toute** la
+surface de bandes — pas par bande — + jauge figée + 4 tampons simultanés, §2.5) · palier
+urgence/dernier (jauge restylée) · RÉVÉLATION (à `PARTIAL`/`FAILED` : 4 verdicts qui descendent
+bande par bande ; à `IDENTIFIED` : déjà montré par le verrouillage, flash + tampons simultanés) ·
+confirmation d'abandon (overlay léger par-dessus, pas plein écran).
 
 ### 9.2 Desktop — cible 1440×900
 
 | Zone | x | y | largeur | hauteur | Contenu |
 | --- | --- | --- | --- | --- | --- |
-| HUD | 0 | 0 | 1440 | 56 | Bandeau `TÊTE À CONNAÎTRE` à gauche, `TÉLÉCARTE · {n} UNITÉS` au centre, `✕ Échap` à droite |
+| HUD | 0 | 0 | 1440 | 56 | Bandeau `TÊTE À CONNAÎTRE` à gauche, jauge télécarte continue au centre, `✕ Échap` à droite |
 | Portrait cible (page 23) | 40 | 76 | **576 (40 %)** | 480 | Grand format, fixe |
-| Portrait reconstruction | 824 | 76 | **576 (40 %)** | 480 | Se construit en direct au fil des swipes/clics |
+| Portrait reconstruction | 824 | 76 | **576 (40 %)** | 480 | Même taille que la cible ; se construit en direct au fil des drags/clics de chevron |
 | Gap central | 616 | 76 | 208 | 480 | Zone tampon (peut porter un élément narratif léger, `lead-art`/`narrative-designer`) |
-| Colonne bandes | 40 | 556 | 1360 | 264 | 4 bandes empilées |
-| Bande (×4) | 40 | 556 + i×(60+8) | 1360 | **60** | Libellé, chevrons cliquables ◀▶ (44×44px), zone de variante, compteur ; bande courante (celle contrôlée au clavier) visuellement distincte (bordure, pas couleur seule) |
-| CTA | 40 | 836 | 1360 | 56 | `SORTIR LA TÊTE`, actif après `confirmGuardSeconds` |
+| Bloc de bandes (surface unique, jointive) | 40 | 556 | 1360 | 264 | 4 bandes empilées, **aucune séparation entre elles**, jusqu'au bas de l'écran — plus de ligne de CTA à réserver en dessous |
+| Bande (×4) | 40 | 556 + i×60 | 1360 | **60** | Libellé, chevrons cliquables ◁▷ **dans** la bande (44×44px cible), curseur `grab`/`grabbing` au survol/drag (§2.6), zone de variante, compteur ; bande courante (celle contrôlée au clavier ou par le dernier drag) visuellement distincte (bordure, pas couleur seule) |
 
-**Sur la maquette, prévoir les 3 variantes du mapping souris (§2.2, Options A/B/C) comme
-annotations ou frames alternatives sur la même bande** pour que l'arbitrage puisse comparer
-visuellement : zones cliquables gauche/droite (A), poignée de drag suggérée sur l'image (B),
-curseur "scroll" au survol + chevrons toujours visibles (C).
+**Il n'y a plus de CTA ni de ligne dédiée sous les bandes** : le bloc de bandes occupe l'espace
+jusqu'au bord bas de la zone de contenu.
+
+**États à prévoir en plus du mobile :** état de drag engagé (curseur `grabbing`, image qui suit le
+pointeur en pré-relâchement, §2.6) ; relâchement à mi-chemin (retour visuel à l'état d'avant-drag).
 
 ### 9.3 Constantes transverses aux deux cibles
 
-- Cible tactile/clic minimale : **44×44px**, jamais réduite quelle que soit la densité d'écran.
+- Cible tactile/clic/drag minimale : **44×44px**, jamais réduite quelle que soit la densité d'écran.
 - Contraste texte/fond : **AA, 4,5:1** minimum (valeurs exactes = `lead-art`, contrainte non
   négociable).
 - Texte informatif (libellés de bande, compteur) : **14px effectif minimum**.
 - Aucun état de la maquette ne doit encoder une information par la couleur seule (§5.2) — prévoir
-  une forme/icône en complément partout où un état change.
-- Le CTA n'est **jamais** sous une ligne de flottaison scrollée, sur aucune des deux cibles.
+  une forme/icône en complément partout où un état change. En particulier, le signal de
+  verrouillage (§2.5) doit être distinguable du flash de cran par sa **portée** (toute la surface
+  de bandes vs une seule bande), pas seulement par une teinte différente.
+- **Aucune couture, trait ou gap visible entre les 4 bandes** — c'est une contrainte de maquette,
+  pas seulement de code : deux bandes adjacentes doivent se raccorder pixel à pixel sur leur bord
+  commun quelle que soit la paire de variantes affichée (contrainte à opposer au gate art, cohérent
+  avec la règle de raccord de `lead-art`, gate §5).
+- Plus de CTA sur aucune des deux cibles : la validation est **automatique** (§2.5).
