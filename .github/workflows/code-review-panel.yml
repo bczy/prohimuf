@@ -146,7 +146,7 @@ jobs:
   code-review:
     name: "Reviewer · code-review (correctness)"
     needs: [preflight, prepare]
-    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.result == 'success' }}
+    if: ${{ needs.preflight.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -188,7 +188,7 @@ jobs:
   edge-case-hunter:
     name: "Reviewer · edge-case-hunter"
     needs: [preflight, prepare]
-    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.result == 'success' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -230,7 +230,7 @@ jobs:
   bmad-review:
     name: "Reviewer · bmad-review"
     needs: [preflight, prepare]
-    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.result == 'success' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -272,7 +272,7 @@ jobs:
   security-review:
     name: "Reviewer · security-review"
     needs: [preflight, prepare]
-    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.result == 'success' && needs.prepare.outputs.is_fix_lane == 'false' }}
+    if: ${{ needs.preflight.outputs.enabled == 'true' && needs.prepare.outputs.is_fix_lane == 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -314,7 +314,7 @@ jobs:
   verify:
     name: "Skeptic · adversarial verification"
     needs: [preflight, prepare, code-review, edge-case-hunter, bmad-review, security-review]
-    if: ${{ always() && needs.preflight.outputs.enabled == 'true' && needs.prepare.result == 'success' }}
+    if: ${{ always() && needs.preflight.outputs.enabled == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
