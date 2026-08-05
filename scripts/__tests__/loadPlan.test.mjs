@@ -70,7 +70,13 @@ describe("loadPlan — validation du plan (panel #156 run 4)", () => {
         "} as unknown as LevelPlan;\n",
     );
     try {
-      await expect(loadPlan("draft-invalid")).rejects.toThrow(/not a valid LevelPlan|aspect/i);
+      // Le préfixe seul ne prouve rien : il matche même si les issues s'impriment
+      // "[object Object]". Ce garde-fou existe pour DIRE ce qui cloche avant qu'un
+      // appel payant ne parte, donc c'est le message de l'issue qu'on exige — et
+      // l'absence de la sérialisation par défaut d'un objet.
+      await expect(loadPlan("draft-invalid")).rejects.toThrow(/not a valid LevelPlan/i);
+      await expect(loadPlan("draft-invalid")).rejects.toThrow(/aspect/i);
+      await expect(loadPlan("draft-invalid")).rejects.not.toThrow(/\[object Object\]/);
     } finally {
       fs.rmSync(file);
     }
