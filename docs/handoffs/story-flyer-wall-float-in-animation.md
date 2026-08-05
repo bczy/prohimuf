@@ -177,8 +177,12 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
 
 **Ce qui MANQUE, nommé plutôt que sous-entendu :**
 
-- **Gate `lead-art` — PASSÉ. Verdict final : PASS sur les cinq**, réserve bloquante levée
-  après rework.** Réclamé par moi auprès de
+- **Gate `lead-art` — PASSÉ sur le jeu D'ALORS, PAS sur celui qui est livré.** Verdict final
+  PASS sur les cinq emblèmes qu'il a jugés (spirale, smiley, anneaux, fil à plomb, invader),
+  réserve bloquante levée après rework. Mais le gate fiction a depuis retiré le smiley et
+  remplacé l'invader : **le lustre n'a jamais été jugé par `lead-art`**. Une passe d'exécution
+  sur cette marque est DUE avant merge — c'est le seul gate manquant restant, et il n'est pas
+  théorique : ce gate a déjà refusé une marque de ce mur (la trame) pour non-lisibilité. Réclamé par moi auprès de
   Bertrand à la fusion, puis indépendamment par le panel, puis demandé par Bertrand.
   Verdict : [`docs/art-direction/decision-flyer-crew-emblems.md`](../art-direction/decision-flyer-crew-emblems.md).
   Quatre emblèmes sur cinq passent ; **`halftone` (NADIR 94) est refusé** — le champ de
@@ -188,7 +192,7 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
   **Arbitré par Bertrand** : voie (b), remplacer par une marque d'encre pleine — la trame
   devient un **fil à plomb** (`plumb`), nadir = le point le plus bas, masse pleine et trou
   de visée percé comme les yeux du smiley. Les cinq marques sont désormais homogènes, ce
-  qui referme le grief de famille. **Re-gate : R1 LEVÉE\*\* — la loi de famille est refermée,
+  qui referme le grief de famille. \*\*Re-gate : R1 LEVÉE\*\* — la loi de famille est refermée,
   la marque tient à trois mètres y compris sous le filtre de verrouillage (une masse pleine
   encaisse là où un aplat tonal se dissolvait), le trou de visée reste ouvert à ~100 px, et
   la silhouette axiale est la seule du mur qui pointe. `lead-art` juge l'attribution « la
@@ -205,9 +209,18 @@ grasses lisibles à la photocopie — suit la même intention que le reste du mu
   même geste que le joueur. Refinement facultatif non appliqué, noté dans la note : abaisser
   le point le plus large de la masse d'un dixième de hauteur.
 
-- **Gate `narrative-designer` — PASSÉ. Verdict : PASS**, réserve bloquante levée dans le
-  même push. Verdict :
-  [`docs/game-design/narrative/decision-flyer-crew-emblems.md`](../game-design/narrative/decision-flyer-crew-emblems.md).
+- **Gate fiction — PASSÉ, après ARBITRAGE.** Gate en vigueur :
+  [`docs/game-design/decision-flyer-crew-emblems-fiction.md`](../game-design/decision-flyer-crew-emblems-fiction.md)
+  (`lead-game-designer`, PASS WITH CHANGES), implémenté en `242199ef`.
+
+  Trois sessions parallèles ont produit trois verdicts sur cette surface sans se voir. Celui
+  qui l'emporte impose deux changements, appliqués : **le tutoriel n'est plus signé** (sa copie
+  gatée dit `SANS SYSTÈME · AVANT LE SON` — une feuille non signée ne porte pas de tampon) et
+  **la finale échange l'invader contre le lustre de L'Éden**, la salle signant elle-même la
+  feuille des trois systèmes. Le verdict concurrent
+  [`narrative/decision-flyer-crew-emblems.md`](../game-design/narrative/decision-flyer-crew-emblems.md)
+  est marqué **superseded** — conservé pour son analyse des trois autres marques, caduc sur
+  ces deux-là.
 
   La question de fond est tranchée : **le symbole est une citation, l'attribution est un fait
   de fiction**. Qu'une spirale ou un smiley acid existent en 1998 n'engage personne ; dire

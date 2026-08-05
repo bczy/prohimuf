@@ -1,4 +1,17 @@
 ---
+
+> **⚠️ SUPERSEDED — ne pas citer comme gate en vigueur.**
+> Ce document juge un jeu de cinq emblèmes qui **n'est plus celui qui est livré** : il passe
+> `smiley` pour le tutoriel et `invader` pour la finale, or le code ne porte plus ni l'un ni
+> l'autre — le tutoriel est **non signé** et la finale porte un **lustre**.
+> Le gate en vigueur est [`../decision-flyer-crew-emblems-fiction.md`](../decision-flyer-crew-emblems-fiction.md),
+> arbitré par `lead-game-designer` (PASS WITH CHANGES, `5401c4e3`) et implémenté en `242199ef`.
+>
+> Conservé, non supprimé : son analyse de fond reste la meilleure sur trois des quatre marques
+> livrées (spirale, anneaux, fil à plomb) et sur la question « citation ou fiction nouvelle »,
+> et effacer un verdict de gate parce qu'un autre l'a emporté priverait le lecteur du
+> raisonnement qui a mené là. Ce qu'il dit du smiley et de l'invader est en revanche caduc.
+
 status: pass
 gate: none
 date: 2026-08-05
