@@ -6,6 +6,11 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { PortraitIntent, PortraitScene } from "@game/types/portraitRobot";
+import {
+  RESULT_HOLD_SECONDS,
+  REVEAL_SECONDS_IDENTIFIED,
+  REVEAL_SECONDS_UNRESOLVED,
+} from "@game/systems/portraitRobotSystem";
 import { PortraitRobotScreen } from "../portrait/PortraitRobotScreen";
 import type { PortraitRobotScreenProps, PortraitBandView } from "../portrait/PortraitRobotScreen";
 import { EarlyExitButton, ARM_WINDOW_MS } from "../portrait/EarlyExitButton";
@@ -37,6 +42,8 @@ const ACTIVE_SCENE: PortraitScene = {
   timerSeconds: 35,
   palier: "MID",
   revealSeconds: 0,
+  resultHoldSeconds: 0,
+  revealElapsed: 0,
   result: null,
 };
 
@@ -69,7 +76,10 @@ function resolvedScene(
   return {
     ...ACTIVE_SCENE,
     phase: "RESOLVED",
-    revealSeconds: outcome === "IDENTIFIED" ? 1.4 : 2.6,
+    // The two durations come from `src/game`; a render test re-typing 1,4 / 2,6 would be
+    // the ADR-0079 A5 breach it is here to guard against.
+    revealSeconds: outcome === "IDENTIFIED" ? REVEAL_SECONDS_IDENTIFIED : REVEAL_SECONDS_UNRESOLVED,
+    resultHoldSeconds: RESULT_HOLD_SECONDS,
     result: { outcome, correctCount, scoreDelta: 0 },
   };
 }

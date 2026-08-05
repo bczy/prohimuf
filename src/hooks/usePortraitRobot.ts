@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FACE_CATALOGUE, validatePortrait } from "@game/portraits";
 import {
   createPortraitScene,
-  revealBandStepSeconds,
+  portraitRevealProgress,
   stepPortraitScene,
-  PORTRAIT_BAND_ORDER,
 } from "@game/systems/portraitRobotSystem";
 import type { FaceCatalogue, PortraitIntent, PortraitScene } from "@game/types/portraitRobot";
 import type { PortraitBandView } from "@render/ui/portrait";
@@ -19,8 +18,6 @@ export interface PortraitRobotOptions {
   readonly timerSeconds: number;
   /** `true` under `RotateOverlay`: the fold simply stops being called (ADR-0082 D5). */
   readonly paused: boolean;
-  /** Catalogue override for tests / a future second plate. */
-  readonly catalogue?: FaceCatalogue;
   /**
    * `true` cuts the reveal's band-by-band walk to a single frame
    * (`prefers-reduced-motion`). The CONTENT is never removed — the corrections are
@@ -39,11 +36,12 @@ export interface PortraitRobotState {
   /** Queue a player request. It is DRAINED by the frame fold, never applied here. */
   readonly pushIntent: (intent: PortraitIntent) => void;
   /**
-   * `true` once the reveal has walked its last band AND held the complete face —
-   * the phase's single hand-over signal. It is driven by the SAME rAF loop as the
-   * chrono, so it stops behind `RotateOverlay` by construction rather than by a
-   * guard (panel M7: a wall-clock `setTimeout` used to commit the modifier behind
-   * the rotate overlay, and the player never saw the verdict).
+   * `true` once the reveal has walked its last band AND the complete face has been
+   * held for `resultHoldSeconds` — the phase's single hand-over signal, READ from
+   * `portraitRevealProgress` rather than computed here. It is driven by the SAME
+   * rAF loop as the chrono, so it stops behind `RotateOverlay` by construction
+   * rather than by a guard (panel M7: a wall-clock `setTimeout` used to commit the
+   * modifier behind the rotate overlay, and the player never saw the verdict).
    */
   readonly revealDone: boolean;
 }
@@ -84,24 +82,34 @@ function assetAt(
  *
  * ## The reveal (story AC4)
  *
- * The same loop accumulates the time elapsed SINCE resolution, and that single
- * accumulator drives both the band-by-band correction walk and the hand-over. There
- * is exactly ONE clock per phase: the chrono and the reveal are the same rAF, so
- * pausing one pauses the other, and the modifier can no longer be committed behind
- * an overlay the player is looking at (panel M7/M8).
+ * The reveal's clock is `scene.revealElapsed`, folded by the same
+ * `stepPortraitScene` call as the chrono, and the ONLY reader of it is
+ * `portraitRevealProgress`. This hook holds no accumulator and no threshold of its
+ * own: it used to keep a rising `sinceResolved` and compare it to a `revealSeconds`
+ * that the pure tick was DECREMENTING, so the two met halfway and every published
+ * duration was played at half length (panel run-2 blocking). A comparison the hook
+ * cannot express is a comparison it cannot get wrong.
+ *
+ * ## The catalogue
+ *
+ * There is one, `FACE_CATALOGUE`, and the shell validates it once at phase entry
+ * (`portraitCatalogueIsPlayable`, ADR-0080 D3). The `catalogue` option this hook
+ * used to take had no caller at all and bypassed that validation entirely — an
+ * unvalidated plate re-opens `NO_TRUTH_SLOT`, which draws `src=""` (the browser
+ * re-requests the document) and announces « variante 1 sur 0 ». The door is gone
+ * rather than guarded: a second plate arrives with its own validated entry point
+ * (panel run-2 minor 4).
  */
 export function usePortraitRobot({
   seed,
   timerSeconds,
   paused,
-  catalogue = FACE_CATALOGUE,
   reducedMotion = false,
 }: PortraitRobotOptions): PortraitRobotState {
+  const catalogue = FACE_CATALOGUE;
   const [scene, setScene] = useState<PortraitScene>(() =>
     createPortraitScene(catalogue, seed, timerSeconds),
   );
-  // Seconds accumulated since the scene resolved — the reveal's only clock.
-  const [sinceResolved, setSinceResolved] = useState(0);
   const inboxRef = useRef<PortraitIntent[]>([]);
   // Read at push time, not at effect time: an event fired WHILE paused (a stray touch
   // through the overlay, a key press) must be dropped on arrival. Emptying the inbox
@@ -127,14 +135,7 @@ export function usePortraitRobot({
       last = now;
       const intents = inboxRef.current;
       inboxRef.current = [];
-      setScene((current) => {
-        const next = stepPortraitScene(current, intents, dt);
-        // The reveal starts on the frame the scene resolves, not on a React effect a
-        // frame later: `stepPortraitScene` is the identity on a RESOLVED scene, so
-        // this accumulator is the only thing still moving after the verdict.
-        if (next.phase === "RESOLVED") setSinceResolved((t) => t + dt);
-        return next;
-      });
+      setScene((current) => stepPortraitScene(current, intents, dt));
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
@@ -143,15 +144,11 @@ export function usePortraitRobot({
     };
   }, [paused]);
 
-  const step = revealBandStepSeconds(scene.revealSeconds);
-  // How many bands the reveal has walked, top to bottom. `reducedMotion` cuts the
-  // walk (all four at once) — it does not remove the corrections.
-  const revealedBands =
-    scene.phase !== "RESOLVED"
-      ? 0
-      : reducedMotion || step <= 0
-        ? PORTRAIT_BAND_ORDER.length
-        : Math.min(PORTRAIT_BAND_ORDER.length, Math.floor(sinceResolved / step));
+  // How many bands the reveal has walked, top to bottom, and whether the phase may
+  // hand over. Both are READ from the pure timeline — no step, no threshold and no
+  // clock is derived on this side (ADR-0079 A5). `reducedMotion` travels in as an
+  // argument because it is a render-layer signal, and it cuts the WALK only.
+  const { revealedBands, handoverReady } = portraitRevealProgress(scene, reducedMotion);
 
   const bands = useMemo<readonly PortraitBandView[]>(
     () =>
@@ -194,7 +191,7 @@ export function usePortraitRobot({
     bands,
     targetBands,
     pushIntent,
-    revealDone: scene.phase === "RESOLVED" && sinceResolved >= scene.revealSeconds,
+    revealDone: handoverReady,
   };
 }
 

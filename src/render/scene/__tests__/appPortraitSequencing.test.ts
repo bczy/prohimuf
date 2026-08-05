@@ -174,11 +174,11 @@ async function mountIntoPlay(): Promise<void> {
 }
 
 /** Win the level, sit through the post-level scene, and land in the portrait phase. */
-async function reachPortrait(): Promise<void> {
+async function reachPortrait(hud: HudData = wonHud()): Promise<void> {
   await mountIntoPlay();
   vi.useFakeTimers();
   act(() => {
-    pushHud?.(wonHud());
+    pushHud?.(hud);
   });
   act(() => {
     vi.advanceTimersByTime(1500);
@@ -285,5 +285,106 @@ describe("B3 — the verdict is played back at the next level (AC6, gate A1b)", 
   it("plays no beat at all on a run that had no scene", async () => {
     await mountIntoPlay();
     expect(button("NARRATIVE:portrait_robot_failed")).toBeUndefined();
+  });
+});
+
+/**
+ * Moving `settleRunScore` to the exit of the scene was right — a 4/4 has to be able to
+ * qualify — but it opened a window: for the 30–56 s the scene lasts, the run's score is
+ * settled NOWHERE, while the next-level unlock fired at `LEVEL_COMPLETE` is already on
+ * disk. A tab closed in that window used to leave save state saying "level cleared" and
+ * the board saying the run never happened (panel run-2 MAJEUR).
+ */
+describe("run-2 — the deferred settlement cannot lose the run", () => {
+  /** A real teardown (`persisted: false`) vs a bfcache freeze (`persisted: true`). */
+  function pagehide(persisted: boolean): void {
+    const event = new Event("pagehide");
+    Object.defineProperty(event, "persisted", { value: persisted });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+  }
+
+  it("writes the run when the tab goes away during the scene", async () => {
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPortrait();
+    expect(saveScore).not.toHaveBeenCalled();
+    pagehide(false);
+    // The level's own 4200 lands on the board, anonymously — no NAME_ENTRY can be shown
+    // to a document that is unloading, and a deferred score is a score lost.
+    expect(saveScore).toHaveBeenCalledTimes(1);
+    expect(saveScore.mock.calls[0]?.[1]).toMatchObject({ score: 4200 });
+  });
+
+  it("writes it ANONYMOUSLY — a deferred byline is a score never written", async () => {
+    // A level score that clears the board on its own (5200 >= 5000): the nominal path
+    // would DEFER this one to NAME_ENTRY, and NAME_ENTRY never comes for a document
+    // that is unloading. The window would stay open for exactly the best runs.
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPortrait({ ...wonHud(), score: 5200 });
+    pagehide(false);
+    expect(saveScore).toHaveBeenCalledTimes(1);
+    expect(saveScore.mock.calls[0]?.[1]).toMatchObject({ score: 5200 });
+    expect(saveScore.mock.calls[0]?.[1]).not.toHaveProperty("name");
+  });
+
+  it("a bfcache freeze settles nothing — the scene can still pay its bonus", async () => {
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPortrait();
+    pagehide(true);
+    expect(saveScore).not.toHaveBeenCalled();
+    click(button("PORTRAIT_DONE"));
+    // 4200 + 1500 still clears the board: a frozen page that comes back is not a run
+    // that ended, and settling it would have robbed the player of the portrait's points.
+    expect(container?.textContent).toContain("NAME_ENTRY");
+  });
+
+  it("never puts one run on the board twice", async () => {
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPortrait();
+    pagehide(false);
+    click(button("PORTRAIT_DONE"));
+    // `saveScore` de-duplicates nothing, so the flush and the exit must not both write.
+    expect(saveScore).toHaveBeenCalledTimes(1);
+    // The run is already settled and on the board, so no byline is prompted for it.
+    expect(container?.textContent).not.toContain("NAME_ENTRY");
+  });
+
+  it("does not settle a run that is still being played", async () => {
+    await mountIntoPlay();
+    const event = new Event("pagehide");
+    Object.defineProperty(event, "persisted", { value: false });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+    // The flush is armed on the PORTRAIT_ROBOT phase alone: a tab closed mid-level does
+    // not fabricate a finished run.
+    expect(saveScore).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The end-of-run effect re-arms a 1500 ms routing timer on every execution, and the
+ * `else` branch of that timer routes to END. Once `portraitPlayedRef` is set,
+ * `portraitAhead` is false — so a re-execution while the scene is on screen would tear
+ * the player out of it, with the score never settled. Nothing was stopping it: the
+ * canvas is unmounted, so no further HUD push was expected — which is not the same as
+ * none being possible (panel run-2 minor 3).
+ */
+describe("run-2 — the scene owns its own exit", () => {
+  it("a late terminal HUD push cannot route the player out of the scene", async () => {
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPortrait();
+    act(() => {
+      // A second terminal push carrying a different score: enough to change the effect's
+      // deps and re-execute it, which is all the trapdoor ever needed.
+      pushHud?.({ ...wonHud(), score: 4201 });
+    });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(container?.textContent).toContain("PORTRAIT_DONE");
+    expect(container?.textContent).not.toContain("BACK_TO_MENU");
+    expect(saveScore).not.toHaveBeenCalled();
   });
 });

@@ -1053,3 +1053,98 @@ deux, ce qui a laissé passer deux bloquants. Chaque assertion est désormais un
 
 - **next :** `dev-r3f-render` (déjà aligné) · `game-designer` (playtest du rythme
   `IDENTIFIED`) · `qa-lead` puis nouveau tour de panel.
+
+---
+
+## 16. Tour 2 du panel — voie `dev-r3f-render` (Amelia)
+
+### 16.1 Point 1 (BLOQUANT) — la révélation jouée à moitié
+
+Le contrat pur livré en parallèle par `dev-gameplay` est **consommé tel quel** : le hook ne
+tient plus aucune horloge. `sinceResolved` est **supprimé** (state + accumulation dans la
+frame), et `usePortraitRobot` lit `portraitRevealProgress(scene, reducedMotion)` pour
+`revealedBands` **et** `handoverReady`. Il ne dérive plus ni pas, ni seuil, ni comparaison :
+la faute — un compteur montant confronté à une durée qui descendait — est devenue
+**inexprimable** côté render, pas « corrigée ».
+
+`revealBandStepSeconds` n'est plus importé par la voie render.
+
+### 16.2 Point 2 (MAJEUR) — la fenêtre de perte du score — **choix : purge à `pagehide`**
+
+`settleRunScore` reste à la sortie de la scène (le report était juste : sans lui un 4/4 ne
+peut pas qualifier). Ce qui est ajouté est la fermeture de la fenêtre qu'il a ouverte : un
+écouteur `pagehide` **armé sur la seule phase `PORTRAIT_ROBOT`** règle la manche avec un
+delta de 0 quand le document s'en va pour de bon.
+
+**Motif du choix, contre les deux autres voies :**
+
+- _Score provisoire à `LEVEL_COMPLETE` puis complété à la sortie_ — rejeté : `saveScore`
+  **n'a aucune déduplication**, deux écritures = deux lignes au tableau pour une manche.
+- _Armer `persistedRunRef` seulement une fois le score réglé_ — rejeté : le déblocage et les
+  jalons du funnel doivent, eux, être écrits à `LEVEL_COMPLETE` ; les découpler demande un
+  second garde-fou **et ne referme pas la fenêtre** (onglet fermé ⇒ score toujours perdu).
+- _`pagehide`_ — retenu : ferme exactement la fenêtre ouverte, laisse le chemin nominal
+  **inchangé octet pour octet** (une écriture, à la sortie, avec le `scoreDelta` de la scène).
+
+Deux détails qui font la correction plutôt que le pansement :
+
+- `settleRunScore(scoreDelta, canDeferByline)` : à `pagehide` la signature est **différée =
+  faux**. Un `pendingScore` est une promesse d'écrire à `NAME_ENTRY`, et il n'y a pas de
+  `NAME_ENTRY` après le déchargement — sans ça la fenêtre restait ouverte **précisément pour
+  les meilleures manches**. L'entrée part anonyme, ce que faisait le code d'avant le report.
+- `event.persisted` discrimine une vraie destruction d'un gel bfcache : une page gelée peut
+  revenir finir la scène, et la régler l'aurait privée des points du portrait. Si elle
+  revient quand même, `scoreSettledRef` garde la manche à **une** ligne.
+
+### 16.3 Point 3 (MINEUR) — la sortie de phase gardée
+
+`if (appPhase !== "PLAYING") return;` en tête de l'effet de fin de manche, et `appPhase`
+ajouté aux dépendances. La poussée HUD terminale arrive toujours pendant `PLAYING` ; une fois
+l'effet parti, la phase d'arrivée possède sa propre sortie et ré-armer le timer de 1500 ms
+depuis là est la trappe décrite par le panel.
+
+### 16.4 Point 4 (MINEUR) — la porte du catalogue arbitraire **supprimée**
+
+`PortraitRobotOptions.catalogue` **n'avait aucun appelant** (ni la phase, ni un test) et
+contournait la validation d'entrée de phase. La porte est retirée, pas gardée : `NO_TRUTH_SLOT`
+n'est plus atteignable depuis le hook par construction, et un second cliché arrivera avec son
+propre point d'entrée validé. `portraitCatalogueIsPlayable(catalogue)` garde son paramètre.
+
+### 16.5 Point 5 — commentaire corrigé
+
+`App.tsx` : le commentaire de `pendingModifier` dit maintenant ce que le code fait — deux
+champs **pré-calculés** lus (`narrativeBeat` par clé, `scoreDelta` passé à `settleRunScore`),
+zéro dérivation, et l'invariant nommé : aucun `switch` sur `outcome` de ce côté.
+
+### 16.6 La barre — des tests qui assèrent des instants
+
+- `usePortraitRobot.test.ts` : le test d'ordre (`doneAt > allCorrectedAt`) est **remplacé**.
+  Le nouveau échantillonne chaque frame et assère, pour **tout** l'échantillon,
+  `corrected === min(4, floor(revealElapsed / 0,45))` et `revealDone === (revealElapsed ≥ 4,8)` ;
+  plus trois ancres nommées (à 1,30 s rien n'a rendu la main et la reptation en est à sa
+  3ᵉ bande ; la 4ᵉ correction tombe à 1,80 s et pas à 0,90 s ; la tenue qui suit dépasse
+  `RESULT_HOLD_SECONDS`). Le test de pause vérifie en plus que l'accumulateur **n'a pas
+  bougé d'un tick** derrière l'overlay, au lieu de « moins que le seuil ».
+- `appPortraitSequencing.test.ts` : +5 tests (purge `pagehide`, écriture **anonyme** d'une
+  manche qui qualifiait seule, gel bfcache qui ne règle rien, pas de double ligne, pas de
+  purge en cours de niveau) et +1 (poussée HUD terminale tardive qui ne peut plus arracher
+  le joueur à la scène).
+- `PortraitRobotScreen.test.ts` : les 1,4 / 2,6 re-tapés dans le fixture sont remplacés par
+  les constantes de `src/game` (A5 à l'échelle du test).
+
+**Sondes de mutation** — chaque test neuf a été vu **rouge** sur la faute qu'il prétend
+attraper : `handoverReady` ramené à `revealElapsed ≥ revealSeconds / 2` (rouge), pas par
+bande divisé par deux (rouge), garde de phase neutralisée (rouge), `canDeferByline` forcé à
+vrai (rouge), `scoreSettledRef` retiré (rouge).
+
+### 16.7 Vérification
+
+- `vitest run` (suite complète) : **149 fichiers / 2070 tests, 0 échec.**
+- `tsc -p tsconfig.json --noEmit` : **propre.** `eslint .` : **propre.**
+- `yarn format:check` : **propre.**
+
+### 16.8 Reste dû
+
+- Captures `verify` de la révélation à sa vraie durée (2,6 s + 2,2 s) sur les deux classes
+  d'appareil — la scène est visible, la barre l'exige avant la PR.
+- `game-designer` : playtest du rythme `IDENTIFIED` (voir §15.5).

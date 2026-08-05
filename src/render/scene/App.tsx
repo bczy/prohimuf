@@ -326,7 +326,11 @@ export function App(): JSX.Element {
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
   // The portrait-robot verdict travelling to the NEXT level (ADR-0079 D4). Produced by
   // `levelModifierFromPortrait` in the pure layer, carried here as an opaque value, spent
-  // exactly once at the next `createInitialState`. Nothing on this side reads a field of it.
+  // exactly once at the next `createInitialState`. The shell reads two PRE-COMPUTED fields
+  // off it — `narrativeBeat` (which scene the next level owes, picked by key) and
+  // `scoreDelta` (handed to `settleRunScore`) — and derives NEITHER: ADR-0079 A5 forbids
+  // mapping an outcome to a number here, not reading a number the pure layer already
+  // wrote. No `switch` on `outcome` exists on this side, and that is the invariant.
   const [pendingModifier, setPendingModifier] = useState<LevelModifier | null>(null);
   const [runModifier, setRunModifier] = useState<LevelModifier | null>(null);
   // One portrait-robot per run (gate A3). Armed on the run identity, like the persistence block.
@@ -346,31 +350,47 @@ export function App(): JSX.Element {
   // the 1500 ms timer reads it when it fires, and a re-render in between must not
   // re-arm the effect.
   const qualifiedRef = useRef(false);
+  // The `gameKey` of the run whose score has ALREADY been written or deferred. Distinct
+  // from `persistedRunRef` on purpose: since the settlement moved to the exit of the
+  // portrait phase, "the run's side-effects fired" and "the run's score is settled" are
+  // two different instants, and collapsing them is what let the score be lost (below).
+  const scoreSettledRef = useRef<number | null>(null);
 
   /**
    * Settle the run's score — the ONE place a run's final total is decided (ADR-0054 §2,
    * hand-off §6.2). `scoreDelta` is the interstitial scene's contribution, `0` on every
    * path that has no scene. Returns whether the total qualifies for the board.
+   *
+   * `canDeferByline` is `false` on the ONE path that has no future: the tab is going
+   * away (`pagehide`). A deferred `pendingScore` is a promise to write at NAME_ENTRY,
+   * and there is no NAME_ENTRY after the document unloads — so that path writes the
+   * entry now, anonymously, rather than qualifying it into oblivion.
+   *
+   * Idempotent per run: whichever of the two paths gets there first settles, the other
+   * is a no-op. `saveScore` de-duplicates nothing, so this guard is what keeps a single
+   * run from landing twice on the board.
    */
   const settleRunScore = useCallback(
-    (scoreDelta: number): boolean => {
+    (scoreDelta: number, canDeferByline = true): boolean => {
       const isShipped =
         LEVELS.findIndex((l) => l.id === selectedLevel.id) !== -1 && !BOSS_SEAM_SHIPPED_LEVEL;
       if (!isShipped) {
         qualifiedRef.current = false;
         return false;
       }
+      if (scoreSettledRef.current === gameKey) return qualifiedRef.current;
+      scoreSettledRef.current = gameKey;
       const score = hudData.score + scoreDelta;
       const qualifies = isHighScore(selectedLevel.id, score);
       const date = new Date().toISOString();
       // M1: a qualifying run DEFERS its single write to NAME_ENTRY so the byline can be
       // attached; anything else is written now, silently and anonymously.
-      if (qualifies) setPendingScore({ score, wave: hudData.wave, date });
+      if (qualifies && canDeferByline) setPendingScore({ score, wave: hudData.wave, date });
       else saveScore(selectedLevel.id, { score, wave: hudData.wave, date });
-      qualifiedRef.current = qualifies;
-      return qualifies;
+      qualifiedRef.current = qualifies && canDeferByline;
+      return qualifiedRef.current;
     },
-    [hudData.score, hudData.wave, selectedLevel.id],
+    [hudData.score, hudData.wave, selectedLevel.id, gameKey],
   );
 
   /**
@@ -392,6 +412,42 @@ export function App(): JSX.Element {
       portraitPhaseAvailable()
     );
   }
+
+  /**
+   * The window the deferred settlement opened, closed (panel run-2 MAJEUR).
+   *
+   * Since the score is settled at the EXIT of the portrait phase (so a 1500-point
+   * `IDENTIFIED` can qualify for the board), a player who closes the tab or reloads
+   * during the scene's 30–56 s spent a run that is never written anywhere — while the
+   * next-level unlock, fired at `LEVEL_COMPLETE`, WAS written. Save state then says
+   * "level cleared" and the board says the run never happened.
+   *
+   * The chosen fix is a flush at `pagehide`, not a provisional write at
+   * `LEVEL_COMPLETE`: `saveScore` appends and de-duplicates nothing, so a provisional
+   * entry completed later means two rows for one run, and "arm `persistedRunRef` only
+   * once settled" would have left the unlock/funnel writes racing on a second guard
+   * without closing the loss window at all. This closes exactly the window that opened
+   * and leaves the nominal path byte-identical: one write, at the exit, with the
+   * scene's `scoreDelta`.
+   *
+   * `event.persisted` discriminates a real teardown from a bfcache freeze — a frozen
+   * page can come back and finish the scene, and settling it would rob the player of
+   * the portrait's points. If it comes back anyway, `scoreSettledRef` keeps the run to
+   * one entry.
+   */
+  useEffect(() => {
+    if (PREVIEW_SCREEN !== null || appPhase !== "PORTRAIT_ROBOT") return;
+    const flush = (event: PageTransitionEvent): void => {
+      if (event.persisted) return;
+      // No byline can be collected from a document that is unloading, so the entry is
+      // written now and anonymously — exactly what the pre-deferral behaviour did.
+      settleRunScore(0, false);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [appPhase, settleRunScore]);
 
   // Red vignette flash whenever a life is lost (shot, or shooting a civilian).
   const prevLivesRef = useRef(hudData.lives);
@@ -471,6 +527,15 @@ export function App(): JSX.Element {
     // deterministic (`pendingScore` stays null → the NameEntry handlers no-op on storage).
     if (PREVIEW_SCREEN !== null) return;
     if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
+    // This effect acts on the run that is still ON SCREEN, and the terminal HUD push
+    // always lands while `appPhase === "PLAYING"`. Once it has routed away, the phase
+    // it routed to owns its own exit, and re-arming the 1500 ms timer from here is a
+    // trapdoor: a re-execution after `portraitPlayedRef.current === gameKey` is set
+    // makes `portraitAhead` false, and the `else` branch below would tear the player
+    // out of the portrait scene into END with the score never settled. Not reachable
+    // today (the canvas is unmounted, so no further HUD push exists) — which is
+    // precisely why nothing was stopping it (panel run-2 minor 3).
+    if (appPhase !== "PLAYING") return;
 
     // Persistence side-effects (high-score board, next-level unlock) are scoped to
     // SHIPPED levels only. `BOSS_QTE_DEV_HARNESS_LEVEL` is deliberately EXCLUDED from
@@ -556,8 +621,9 @@ export function App(): JSX.Element {
     // every terminal push) and `unlockedLevels` (a fresh Set after the unlock
     // write) are read inside but kept OUT — either one re-running this effect
     // tears down the 1500 ms routing timer and re-enters the persistence block.
-    // `gameKey` is the run identity the guard above is armed on.
-  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, gameKey]);
+    // `gameKey` is the run identity the guard above is armed on. `appPhase` is in
+    // because the effect must STOP once it has routed — see the guard at the top.
+  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, gameKey, appPhase]);
 
   // Prefetch the R3F/Three.js chunk as soon as the player reaches the MENU so
   // the dynamic import is already cached when "Play" is clicked (ADR-0068).
