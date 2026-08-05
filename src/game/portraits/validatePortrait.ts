@@ -28,21 +28,42 @@ import {
  */
 
 /**
- * What `scripts/slice-portrait-plate.mjs` emits into `portraitPlate.generated.json`
- * (ADR-0080 D5) — the shape this validator reads, declared here because it is the
- * consumer's contract.
+ * What `scripts/slice-portrait-plate.mjs` ACTUALLY emits into
+ * `portraitPlate.generated.json` (ADR-0080 D5).
  *
- * **Hand-off, `dev-tooling-assets`:** the generated file does not exist yet. Until it
- * does, `validatePortrait(catalogue)` is called with `plate = null` and reports a
- * `plate-missing` WARNING instead of silently skipping the two provenance checks —
- * `asset-in-plate` and `plate-provenance` cannot be evaluated without it, and a skipped
- * check that says nothing is how a hand-patched band gets through.
+ * **The producer's shape makes law** (panel M9). This interface used to declare a
+ * consumer-shaped `assets: string[]` the script never wrote: `new Set(plate.assets)` on
+ * the real file was `new Set(undefined)` — a THROW, in the module whose whole contract is
+ * that it never throws. It was invisible because the test built its own fixture in the
+ * consumer's shape; the fixture is now the generated file itself, so the two shapes cannot
+ * drift again without a red test.
+ *
+ * The asset list is DERIVED from `bands` here rather than authored twice.
  */
 export interface PortraitPlateManifest {
+  /** The gabarit the plate was drawn on — informational for this validator. */
+  readonly gabaritId: string;
   /** Checksum of the plate the 24 PNGs were sliced from; must equal the catalogue's. */
   readonly plateChecksum: string;
-  /** Every asset path the script wrote, BASE-relative. */
-  readonly assets: readonly string[];
+  /** Portrait pixel size the bands were sliced at. */
+  readonly portraitSize: { readonly width: number; readonly height: number };
+  /** Normalised cut lines between the four bands. */
+  readonly seams: readonly number[];
+  /** Per band, in draw order, what the script wrote: the id and its BASE-relative path. */
+  readonly bands: Readonly<
+    Partial<Record<PortraitBandId, readonly { readonly id: string; readonly asset: string }[]>>
+  >;
+}
+
+/**
+ * Every asset path the plate claims to have written. Total on a hand-edited or
+ * half-written manifest: an absent or malformed `bands` yields an empty list and the
+ * `asset-in-plate` check reports the disagreement — it never throws (ADR-0080 D3).
+ */
+export function plateAssets(plate: PortraitPlateManifest): readonly string[] {
+  return Object.values(plate.bands ?? {})
+    .flat()
+    .flatMap((entry) => (typeof entry?.asset === "string" ? [entry.asset] : []));
 }
 
 const CANONICAL_BAND_IDS: readonly PortraitBandId[] = PORTRAIT_BAND_ORDER;
@@ -234,7 +255,7 @@ export function validatePortrait(
     );
   } else {
     // asset-in-plate — every catalogue path was written by the script, and vice versa.
-    const written = new Set(plate.assets);
+    const written = new Set(plateAssets(plate));
     const authored = new Set(bands.flatMap((b) => b.variants.map((v) => v.asset)));
     const orphans = [...authored].filter((p) => !written.has(p));
     const unclaimed = [...written].filter((p) => !authored.has(p));

@@ -30,9 +30,10 @@ import { PORTRAIT_ASSET_DIR } from "@game/types/portraitRobot";
  * the named trait). Final copy belongs with `narrative-designer` and to the plate the
  * traits describe.
  *
- * `plateChecksum` is a placeholder until `scripts/slice-portrait-plate.mjs` emits the
- * real one; `validatePortrait` reports `plate-missing` (warning) while the generated
- * manifest is absent and `plate-provenance` (error) the moment the two disagree.
+ * `plateChecksum` is the placeholder plate's, and it MATCHES
+ * `portraitPlate.generated.json`; it moves with each real slicing run.
+ * `validatePortrait` reports `plate-missing` (warning) when no manifest is supplied and
+ * `plate-provenance` (error) the moment the two disagree.
  */
 
 /** The provisional 6-cycle matrix — see the module note. One copy, four bands. */
@@ -117,6 +118,10 @@ function band(id: PortraitBandId) {
 
 export const FACE_CATALOGUE: FaceCatalogue = {
   gabaritId: "gabarit-01",
-  plateChecksum: "PROVISIONAL-NO-PLATE-YET",
+  // The checksum of the slicing run these 24 paths come from. AUTHORED, deliberately not
+  // derived from `portraitPlate.generated.json`: deriving it would make `plate-provenance`
+  // vacuous — the check exists to catch a catalogue that no longer matches the plate.
+  // It moves with every real slicing run (today: the placeholder plate).
+  plateChecksum: "placeholder:60ce334898907cb4",
   bands: [band("hair"), band("eyes"), band("nose"), band("mouth")],
 };

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { FaceCatalogue } from "@game/types/portraitRobot";
 import { FACE_CATALOGUE } from "@game/portraits/faceCatalogue.data";
-import { validatePortrait, SEED_SWEEP } from "@game/portraits/validatePortrait";
+import { validatePortrait, plateAssets, SEED_SWEEP } from "@game/portraits/validatePortrait";
 import type { PortraitPlateManifest } from "@game/portraits/validatePortrait";
+import GENERATED_PLATE from "@game/portraits/portraitPlate.generated.json";
 import {
   correctCount,
   drawPortraitPuzzle,
@@ -11,12 +12,20 @@ import {
 } from "@game/systems/portraitRobotSystem";
 import { at } from "@game/systems/__tests__/portraitFixtures";
 
-/** The plate the tooling lane will emit — synthesised here from the shipped catalogue. */
-function plateFor(catalogue: FaceCatalogue): PortraitPlateManifest {
-  return {
-    plateChecksum: catalogue.plateChecksum,
-    assets: catalogue.bands.flatMap((b) => b.variants.map((v) => v.asset)),
-  };
+/**
+ * THE FIXTURE IS THE GENERATED FILE (panel M9).
+ *
+ * It used to be a plate synthesised from the catalogue, in the CONSUMER's shape — which
+ * is precisely what hid the bug: the script writes `{bands: {...}}`, the validator read
+ * `plate.assets`, and on the real file `new Set(undefined)` threw inside the module that
+ * promises never to throw. Reading the artefact the tooling lane actually produces means
+ * a shape drift is a red test, not a runtime crash.
+ */
+const PLATE = GENERATED_PLATE as PortraitPlateManifest;
+
+/** The same manifest with its written asset list altered — still in the producer's shape. */
+function plateWithAssets(assets: readonly string[]): PortraitPlateManifest {
+  return { ...PLATE, bands: { hair: assets.map((asset) => ({ id: asset, asset })) } };
 }
 
 /** A structural clone with one band mutated — the catalogue is deeply readonly. */
@@ -31,8 +40,20 @@ const codes = (catalogue: FaceCatalogue, plate: PortraitPlateManifest | null = n
   validatePortrait(catalogue, plate).map((i) => i.code);
 
 describe("the shipped catalogue", () => {
-  it("is clean against its own generated plate", () => {
-    expect(validatePortrait(FACE_CATALOGUE, plateFor(FACE_CATALOGUE))).toEqual([]);
+  it("is clean against the GENERATED plate, read from disk in the producer's shape", () => {
+    expect(validatePortrait(FACE_CATALOGUE, PLATE)).toEqual([]);
+  });
+
+  it("the generated manifest is readable without throwing, and lists the 24 assets", () => {
+    // The M9 reproduction: this call threw before the shapes were aligned.
+    expect(() => validatePortrait(FACE_CATALOGUE, PLATE)).not.toThrow();
+    expect(plateAssets(PLATE)).toHaveLength(24);
+  });
+
+  it("a manifest with no bands at all is an ISSUE, never a throw", () => {
+    const gutted = { ...PLATE, bands: {} };
+    expect(() => validatePortrait(FACE_CATALOGUE, gutted)).not.toThrow();
+    expect(codes(FACE_CATALOGUE, gutted)).toContain("asset-in-plate");
   });
 
   it("reports plate-missing (warning only) while the generated manifest is absent", () => {
@@ -141,24 +162,22 @@ describe("the invariants (ADR-0080 D3)", () => {
 
 describe("the plate provenance (ADR-0080 D5)", () => {
   it("a hand-patched single band fails plate-provenance, not eyes", () => {
-    const plate = { ...plateFor(FACE_CATALOGUE), plateChecksum: "sliced-from-another-run" };
+    const plate = { ...PLATE, plateChecksum: "sliced-from-another-run" };
     expect(codes(FACE_CATALOGUE, plate)).toContain("plate-provenance");
   });
 
   it("asset-in-plate — catalogue and generated manifest must agree both ways", () => {
-    const plate = plateFor(FACE_CATALOGUE);
-    expect(codes(FACE_CATALOGUE, { ...plate, assets: plate.assets.slice(1) })).toContain(
-      "asset-in-plate",
-    );
+    const written = plateAssets(PLATE);
+    expect(codes(FACE_CATALOGUE, plateWithAssets(written.slice(1)))).toContain("asset-in-plate");
     expect(
-      codes(FACE_CATALOGUE, { ...plate, assets: [...plate.assets, "assets/portrait/ears-01.png"] }),
+      codes(FACE_CATALOGUE, plateWithAssets([...written, "assets/portrait/ears-01.png"])),
     ).toContain("asset-in-plate");
   });
 });
 
 describe("seed-sweep — the regression guard on the arithmetic (ADR-0080 D3)", () => {
   it("passes on the shipped catalogue over the whole sweep", () => {
-    expect(codes(FACE_CATALOGUE, plateFor(FACE_CATALOGUE))).not.toContain("seed-sweep");
+    expect(codes(FACE_CATALOGUE, PLATE)).not.toContain("seed-sweep");
     for (const seed of SEED_SWEEP) {
       const puzzle = drawPortraitPuzzle(FACE_CATALOGUE, seed);
       expect(correctCount(puzzle.initialSelection, puzzle.truth)).toBe(0);
