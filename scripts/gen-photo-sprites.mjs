@@ -198,6 +198,56 @@ async function resizeToTarget(buf, width, height, label) {
   return canvas.toBuffer("image/png");
 }
 
+// kontext's edit endpoint always returns a FIXED SQUARE resolution (observed 1024x1024,
+// see resizeToTarget's comment above) regardless of the reference's own aspect ratio. The
+// plate is 16:9 (2048x1152) — feeding that straight in and then stretching the square
+// result back to 16:9 is a NON-UNIFORM stretch (2x horizontal, 1.125x vertical), which
+// warps every straight line in the composition and is the likely reason a "single
+// variable" edit (add a terrace, remove eight pedestrians, blank two signs) came back with
+// none of the three applied cleanly: the model edited an already-distorted square, not the
+// validated reference. Pad-to-square before upload / crop-back-to-aspect after replaces
+// that anisotropic stretch with a uniform one on the padded-out canvas only, so the
+// reference's own proportions are never non-uniformly scaled.
+async function padToSquare(buf) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(buf);
+  const side = Math.max(img.width, img.height);
+  const canvas = createCanvas(side, side);
+  const ctx = canvas.getContext("2d");
+  // Pad colour is the plate's own black night sky/asphalt register, not an arbitrary
+  // matte — an inert seam instead of a visible border the model might try to "explain".
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, side, side);
+  const dx = Math.round((side - img.width) / 2);
+  const dy = Math.round((side - img.height) / 2);
+  ctx.drawImage(img, dx, dy);
+  return { buf: canvas.toBuffer("image/png"), dx, dy, origW: img.width, origH: img.height, side };
+}
+
+async function cropPadded(buf, pad, targetW, targetH, label) {
+  const { createCanvas, loadImage } = await import("@napi-rs/canvas");
+  const img = await loadImage(buf);
+  if (img.width !== img.height) {
+    // Not the fixed-square edit response this crop assumes — fall through to the generic
+    // (still-logged) resize rather than crop against a wrong scale factor.
+    return resizeToTarget(buf, targetW, targetH, label);
+  }
+  const scale = img.width / pad.side;
+  const cropX = Math.round(pad.dx * scale);
+  const cropY = Math.round(pad.dy * scale);
+  const cropW = Math.round(pad.origW * scale);
+  const cropH = Math.round(pad.origH * scale);
+  console.log(
+    `  [crop] ${label} — provider returned ${img.width}x${img.height} square (padded ` +
+      `${pad.side}x${pad.side}) → cropped back to the ${pad.origW}x${pad.origH} content ` +
+      `region, resized to ${targetW}x${targetH}`,
+  );
+  const canvas = createCanvas(targetW, targetH);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+  return canvas.toBuffer("image/png");
+}
+
 // ── Generation (flux, or kontext-edit / two-stage flux+kontext for the plate) ──
 async function generate(a) {
   if (a.editReference) {
@@ -210,15 +260,21 @@ async function generate(a) {
         `ref=${path.relative(ROOT, a.editReference)}`,
     );
     const refBuf = fs.readFileSync(a.editReference);
+    const pad = await padToSquare(refBuf);
+    console.log(
+      `  [pad] ${a.key} — ${pad.origW}x${pad.origH} padded to ${pad.side}x${pad.side} ` +
+        `square before upload (kontext edits always return a fixed square — avoids the ` +
+        `anisotropic stretch a direct 16:9 upload would need on the way back)`,
+    );
     const buf = await editImagePaid({
       prompt: a.prompt,
       seed: a.seed,
-      width: a.width,
-      height: a.height,
+      width: pad.side,
+      height: pad.side,
       model: PLATE_MODEL,
-      imageBuf: refBuf,
+      imageBuf: pad.buf,
     });
-    return await resizeToTarget(buf, a.width, a.height, `${a.key} (edit ${PLATE_MODEL})`);
+    return await cropPadded(buf, pad, a.width, a.height, `${a.key} (edit ${PLATE_MODEL})`);
   }
   if (a.twoStagePlate) {
     // Stage 1 — plain flux, TEXT ONLY, no `image=`: the model's hands are free on
