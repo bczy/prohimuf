@@ -587,21 +587,6 @@ while any defect remains.
 > the 8 dense HLM floors). Fewer or more, but every cop now frames a real window; dark
 > windows are left empty by design.
 
-### Generated levels (level-harness SP2 phase (b), T4) — zero hand-written LEVEL_CFG
-
-An id absent from `levelArt.json`'s shipped manifest is treated as a **generated
-level**: its plan (`src/game/levels/generated/<id>.ts`, `scripts/lib/loadPlan.mjs`)
-is loaded, and `scripts/lib/planCalibration.mjs`'s `levelCfgFromPlan(plan)` builds
-its detection cfg from the plan's own `calibration` block (`windowBand` +
-optional `expectedCols`, spec §2.3) — injected into `LEVEL_CFG` at run time
-(the same pattern `align-troncon.mjs` already uses for its own namespaced ids),
-**never** a hand-authored entry in this file. Its single-wide backdrop
-(`public/assets/levels/<id>/<plan.backdrop.file>.png`, phase (a)) is read in
-place of `facade.png`. A plan with no `calibration` throws immediately, with a
-clear message — phase (b) simply refuses to run for that level; **it never
-regenerates the backdrop image** on a convergence failure (spec §2.1) — a
-non-converging `--fix` exits non-zero with the defect report, same as today.
-
 ---
 
 ## align-troncon.mjs — Window-alignment harness (tronçon-sequence levels)
@@ -748,57 +733,6 @@ JPEG-despite-`.png` `facade.png`).
 
 ---
 
-## gen-street-paid.mjs — Single-wide PAID backdrop (level-harness SP2 phase (a))
-
-Generates the ONE baked single-wide backdrop image (ADR-0057 style, e.g.
-`street-wide.png`) for a **generated level** (`src/game/levels/generated/<id>.ts`),
-via a PAID (non-flux) Pollinations model at exact dimensions (`gen.pollinations.ai`
-honours width/height exactly — required for a wide backdrop's precise aspect).
-spec-level-harness-sp2 §3/§4.1.
-
-```bash
-POLLINATIONS_TOKEN=... node scripts/gen-street-paid.mjs --plan <levelId>
-FORCE=1 POLLINATIONS_TOKEN=... node scripts/gen-street-paid.mjs --plan <levelId>  # regenerate
-```
-
-- **Prompt** — `scripts/lib/paidPrompt.mjs`'s `buildPaidPrompt(plan)`: the plan's
-  own content (district, year, and — when the plan declares `calibration` — the
-  gable-wall + passage clause the window-detection harness needs) THEN the shared
-  `STYLE_BLOCK` (the house "Tardi ink, three values" law, verbatim) — content
-  before style, never concatenated the other way, so one level's decor cannot
-  bleed into another's (the "Belliard déteint sur tout" risk, spec §4.1).
-- **Seed** — `seedFromLevelId(plan.id)` (`scripts/lib/paidPrompt.mjs`): a pure,
-  deterministic hash of the level id, NEVER random (spec §2.2) — re-dispatching
-  the same level's backdrop workflow always requests the same image.
-- **Output** — `public/assets/levels/<id>/<plan.backdrop.file>.png`, committable.
-  Idempotent: skipped when the file exists, unless `FORCE=1`.
-- **Plan loading** — `scripts/lib/loadPlan.mjs` (`jiti`, `tsconfigPaths: true`):
-  the ONE way any `scripts/` generator reads a `LevelPlan`, so every phase script
-  compiles the SAME module graph the app/tests do.
-- **Cap** — this script has none of its own; the 3-paid-attempt cap lives in the
-  CI workflow that dispatches it (`gen-plan-backdrop.yml`), never here (a
-  local/manual run is one attempt with no counter to trip).
-- **Legacy mode** (no `--plan`) — UNCHANGED: the original Belliard A/B experiment
-  (one image per `MODELS`×`SEEDS`, written to `street-experiments/`, never
-  committed). Kept for reference; do not extend it.
-
-### `.github/workflows/gen-plan-backdrop.yml` — dispatch + the 3-paid-attempt cap
-
-`workflow_dispatch` input `level_id` → one job: checkout → sync with
-`origin/main` → **guard** (fails at ≥3 prior attempts) → **record the attempt**
-(commit + PUSH a `.paid-attempts` trace file, BEFORE the paid call — a push
-failure here aborts the job) → `gen-street-paid.mjs --plan <level_id>` → commit
-the generated PNG back (a push failure here is a hard FAIL, never a warning:
-the attempt already counts). `concurrency: { group: gen-plan-backdrop-<level_id>,
-cancel-in-progress: false }` serializes concurrent dispatches for the SAME
-level, so two in-flight runs can never both read the guard's count before
-either's trace commit lands. Never runs on `main`. Dry-run tested (no real
-GitHub runner) in `scripts/__tests__/gen-plan-backdrop-workflow.test.mjs`: the
-guard and record-attempt steps' `run:` blocks are extracted from the YAML and
-executed with bash against a throwaway origin/work git repo pair.
-
----
-
 ## gen-enemy-types.mjs — Enemy sprite flipbook frames
 
 Generates the enemy archetype sprites (base cops + variants, riot/CRS,
@@ -836,27 +770,6 @@ A failed fetch is logged per-asset and never crashes the run (network FLUX is
 normally blocked in the local sandbox; real art is produced in CI via
 `.github/workflows/gen-sprites.yml`, whose `enemy_*.png` glob already covers the
 new frame files — no structural workflow change).
-
-### `--plan <id>` (level-harness SP2 phase (c), T5) — additive path
-
-```bash
-node scripts/gen-enemy-types.mjs --plan <levelId> --list  # no network
-node scripts/gen-enemy-types.mjs --plan <levelId>          # network
-```
-
-Instead of `levelArt.json`'s `enemies.types`, iterates the plan's
-`archetypes[]` (`scripts/lib/loadPlan.mjs`). Each archetype's `spriteBase` is
-the output key (`public/assets/<spriteBase>*.png` — namespaced by construction,
-since a plan's own convention embeds the id in `spriteBase`, e.g.
-`enemy_fixture_vigile`); its prompt is derived from the kind's name segment
-(after the `<id>:` namespace) plus a standard pose clause for frame 2 (aiming
-
-- firing when `shoots`, reaching forward otherwise) — same 2-frame shape as
-  the hand-authored table, reusing `enemies.style`/`size` from levelArt.json so
-  a generated cast matches the house look. Seeds are FREE (spec §2.2 — re-run
-  to reroll), unlike the backdrop's pinned seed. Every step AFTER loading
-  (kontext/matched-pair generation, `cutout-enemies.mjs`, `fill-sprite-holes.mjs`)
-  is **unchanged** — they already match the `enemy_*.png` glob.
 
 ---
 
@@ -1000,45 +913,6 @@ prompt gate (`check-art-prompts.mjs`) before any paid generation, then
 `FORCE=1 node scripts/gen-nearfg-sprites.mjs`, then the grey/C1 style gate
 (`check-nearfg-style.mjs`) with a bounded regen retry, then commits
 `public/assets/nearfg/*.png`.
-
-### `--plan <id>` (level-harness SP2 phase (d), T5) — additive path
-
-```bash
-node scripts/gen-nearfg-sprites.mjs --plan <levelId> --list  # no network
-node scripts/gen-nearfg-sprites.mjs --plan <levelId>          # network
-```
-
-Instead of `levelArt.json`'s `nearForegroundArt.types`, iterates the plan's
-`props[]` and writes each one to `public/assets/nearfg/<id>/<name>.png` — the
-EXACT path `GeneratedPropSpec.asset` declares (`assets/nearfg/<id>/<name>.png`),
-so the namespace lives in the OUTPUT PATH, not just the prop's `kind` (whose
-`<id>:` prefix is unusable as a filename). The shared
-`nearForegroundArt.opening`/`style` from levelArt.json are still reused (house
-décor look); only the per-prop prompt is plan-derived (the kind's name segment
-after the namespace). Seeds are FREE (spec §2.2). `check-nearfg-style.mjs`'s
-own `--file`/`--kind` single-file mode gates each prop individually — see
-`.github/workflows/gen-plan-sprites.yml` below.
-
-### `.github/workflows/gen-plan-sprites.yml` — dispatch (skins + props matrix)
-
-`workflow_dispatch` input `level_id` → a `strategy.matrix.family: [skins,
-props]` job (independent concurrency group per level_id AND family, so a
-props failure never blocks skins landing and vice versa):
-
-- **skins** — `gen-enemy-types.mjs --plan` → `cutout-enemies.mjs` →
-  `fill-sprite-holes.mjs` (+ `--check` gate) → commit `public/assets/enemy_*.png`.
-- **props** — `gen-nearfg-sprites.mjs --plan` → a loop over
-  `gen-nearfg-sprites.mjs --plan <id> --list`'s output calling
-  `check-nearfg-style.mjs --file <path> --kind <kind>` per prop. La liste est
-  capturée par une affectation simple (`list=$(… --list)`, visible de `set -e`)
-  puis lue par here-string (`done <<< "$list"`) : ni pipe vers `while read` (le
-  corps tournerait dans un sous-shell et avalerait `fail=1`), NI substitution de
-  process `done < <(cmd)` (qui masquerait le code de sortie de `--list` lui-même
-  — un PASS creux). Épinglé par `gen-plan-sprites-workflow.test.mjs` → commit
-  `public/assets/nearfg/<id>/`.
-
-Never on `main`. Dry-run tested (no real runner) in
-`scripts/__tests__/gen-plan-sprites-workflow.test.mjs`.
 
 ---
 
@@ -1221,55 +1095,6 @@ Console errors are logged as a soft signal only.
 - **CI:** runs in `deploy.yml` via the `.github/actions/e2e-ingame` composite
   action — **after build, before publish** — so a broken game scene never
   reaches GitHub Pages.
-
----
-
-## e2e-generated-level.mjs — Generated-level playability proof (level-harness SP2 phase (e))
-
-Generalizes the SP1 §8 session-only driver
-(`docs/qa/evidence/story-level-harness-sp1/report.json` was hand-run, not
-CI-produced) into a committed script. Boots STRAIGHT into a generated level via
-the SP1 verification seam (`?preview=level&level=<id>`,
-`src/render/scene/generatedHarness.ts` — restricted to
-`GENERATED_LEVEL_CONFIGS`, so a shipped id is never bootable through this
-path) — no title/menu navigation, `App.tsx` lands directly in `PLAYING`.
-
-```bash
-node scripts/e2e-generated-level.mjs <levelId>
-PREVIEW_URL=http://127.0.0.1:4173/prohimuf/ node scripts/e2e-generated-level.mjs fixture
-```
-
-Hard gates (exit 1 on any):
-
-- the game `<canvas>` mounts with real pixel dimensions,
-- the DOM HUD renders (`score` readout present),
-- the HUD's `temps` timer value (`TimerReadout.tsx`, read directly off the DOM —
-  not a hardcoded CSS Module class name, which is content-hashed) strictly
-  DECREASES between two reads 3s apart — proves the game loop is actually
-  ticking, not a frozen/crashed scene showing a static HUD,
-- zero `pageerror` (uncaught runtime exception).
-
-**Output:** `docs/qa/evidence/<id>/{01-boot-playing.png,02-playing-later.png,
-report.json}` (`00-failure.png` instead, on a failed run). `report.json`
-mirrors the SP1 §8 session report's shape
-(`url`/`pageErrors`/`tempsFirstRead`/`tempsSecondRead`/`timerTicking`/`hudSnippet`).
-
-Reuses `e2e-lib.mjs` (`SWIFTSHADER_ARGS`, `sleep`) — no new browser-plumbing
-primitive. Expects a server already serving the production build at
-`PREVIEW_URL` (same assumption as every other `e2e-*.mjs`); never builds or
-serves anything itself.
-
-### `.github/workflows/gen-plan-verify.yml` — dispatch (build → serve → prove)
-
-`workflow_dispatch` input `level_id`: checkout → install → `yarn build` →
-serve (`vite preview`) → `e2e-generated-level.mjs "$LEVEL_ID"` → commit
-`docs/qa/evidence/<level_id>/` (committed even when the proof step FAILED —
-the evidence, including the failure screenshot and captured `pageErrors`, is
-exactly what a human needs to diagnose it) → a final step re-reads
-`report.json` and fails the WORKFLOW if `timerTicking` isn't `true` or any
-`pageErrors` were captured, so the commit-always step can never mask a real
-failure as green. Never on `main`. Meant to run LAST, after phases (a)-(d)
-have landed the level's assets on the branch.
 
 ---
 
