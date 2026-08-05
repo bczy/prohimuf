@@ -89,6 +89,10 @@ export function EarlyExitButton({ isMobile, onExit, disabled }: EarlyExitButtonP
 
   const device = isMobile ? "mobile" : "desktop";
 
+  // `aria-pressed` below is the ONE of the whole scene, and it is a transient state
+  // of THIS button — never a band state, which gate A8/A16 forbids exposing. It is
+  // absent at rest rather than `"false"`, so the attribute's mere presence in the
+  // DOM cannot be cited as a per-band precedent.
   return (
     <>
       <button
@@ -96,7 +100,7 @@ export function EarlyExitButton({ isMobile, onExit, disabled }: EarlyExitButtonP
         className={styles.root}
         data-armed={armed ? "true" : "false"}
         aria-label={EXIT_ARIA_LABEL}
-        aria-pressed={armed}
+        aria-pressed={armed ? true : undefined}
         disabled={disabled}
         onClick={handleClick}
       >

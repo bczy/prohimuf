@@ -16,7 +16,7 @@
   border: var(--keyline-width) solid transparent;
   color: var(--ink-black);
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-base);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   cursor: pointer;

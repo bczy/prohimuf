@@ -1,9 +1,5 @@
 import type { CSSProperties, JSX, RefObject } from "react";
-import type {
-  PortraitBandId,
-  PortraitIntent,
-  PortraitScene,
-} from "@game/types/portraitRobot";
+import type { PortraitBandId, PortraitIntent, PortraitScene } from "@game/types/portraitRobot";
 import {
   BAND_TEST_ID,
   LOCK_LINE,
