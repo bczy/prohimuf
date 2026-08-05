@@ -133,7 +133,7 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // sheet, not a technical overlay) so FLUX draws them instead of fighting
   // them — `detectRegistration` above reads exactly those ticks.
   opening:
-    "Flat 2D black ink drawing on a printer plate: one human head, strict frontal view, " +
+    "Flat 2D black ink drawing on a printed sheet: one human head, strict frontal view, " +
     "orthographic projection, centred, eye line level, crown to collarbone, constant skull " +
     "width. In the margin: pupil-line and nostril-base ticks at left and right, " +
     "centre-axis ticks top and bottom, crop crosses at the corners. ",
@@ -146,7 +146,7 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // validated plate, one named descriptor at a time (brief §5.2 step 4) —
   // never by re-rolling this prompt, which would change the skull.
   prompt:
-    "Hard Parisian face, broad flat forehead under a straight low hairline, wide-set deep " +
+    "Hard weathered face, broad flat forehead under a straight low hairline, wide-set " +
     "eyes under a heavy level brow, straight narrow nose ending blunt, long flat philtrum, " +
     "thin level mouth, square jaw, small ears flat to the skull, bare neck. ",
   // Shared house tail, verbatim from the bible §1/§3 register: one constant
@@ -154,8 +154,8 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // read as two draughtsmen), flat frontal light (no shadow crossing a seam),
   // white paper ground (bands are opaque, never keyed).
   style:
-    "Photocopied 1990s punk fanzine illustration: rough black ink linework of one constant " +
-    "weight, coarse halftone dots at one 45-degree hatch angle, flat frontal light, " +
+    "Photocopied 1990s punk fanzine illustration: thick black ink outline of one constant " +
+    "weight, sparse coarse halftone dots at one 45-degree angle, flat frontal light, " +
     "uniform white paper (#FFFFFF), high-contrast xerox toner.",
 };
 

@@ -724,9 +724,164 @@ avec la planche de combinaisons ayant servi à G1.
 
 ---
 
+## 8. GATE PROMPT — planche PORTRAIT-ROBOT (lead-art, Nico) — 2026-08-05
+
+**Objet gaté :** `PORTRAIT_PROMPT_FAMILY` dans `scripts/slice-portrait-plate.mjs`
+(`pending: false`, `seed: 190226`), livré par `concept-artist`.
+
+**VERDICT : PASS AVEC CONDITIONS.** Trois substitutions de tokens appliquées par moi
+directement dans le fichier (elles bloquaient la génération, elles sont d'un mot chacune,
+ce n'est pas de la première main : c'est de la direction sur un jet livré). Le prompt
+assemblé passe de 119 à **118 mots**, zéro négation, plafond §3.3 respecté avec 2 mots de
+marge rendus à la lane.
+
+### 8.1 Ce que j'ai changé, et pourquoi (opposable clause par clause)
+
+| #   | Avant                                                                                                           | Après                 | Motif                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `on a printer plate`                                                                                            | `on a printed sheet`  | **Bloquant.** « printer plate » est un OBJET (plaque offset métallique, presse) et il est en **position 8 du prompt**, la zone de poids maximal. Même mode d'échec que « zine cover » qui invoque de la typo (bible §3.8) : on risque une photo de plaque d'imprimeur au lieu d'un dessin. « printed sheet » légitime tout autant les repères de marge et garde le sol papier de la maison. |
+| 2   | `Hard Parisian face`                                                                                            | `Hard weathered face` | « Parisian » est un token de mode : il tire vers la belle gueule lissée d'édito, ce que mon §4 interdit nommément. « weathered » est une description **positive de forme**, pas une géographie. Le casting 1998 vient des 6 variantes et de la passe `art-advisor`, pas d'un adjectif national.                                                                                             |
+| 3   | `rough black ink linework` → `thick black ink outline` ; `coarse halftone dots` → `sparse coarse halftone dots` | (voir Q6)             | Le trait noir est l'organe de la scène. `outline`+`thick` le nomme comme contour porteur ; `sparse` confine la trame à l'ombre au lieu de la laisser recouvrir le trait. `rough` et `hatch` supprimés : redondants avec `Photocopied` / `xerox toner` / `dots`, ils payaient le budget de mots sans rien tenir.                                                                             |
+
+### 8.2 Conditions de PASS (toutes bloquantes)
+
+- **C-A — Roll 1 est un roll de REPÈRES, pas de visage.** La planche brute est livrée
+  telle quelle et je la lis **avant tout tranchage**. `slice-portrait-plate.mjs` ne tourne
+  pas sur roll 1 tant que je n'ai pas PASSé les repères.
+- **C-B — `findTickY` doit pouvoir échouer.** Aujourd'hui il retourne **toujours** une
+  ligne (la plus sombre de la fenêtre ±24 px), y compris quand aucun repère n'existe : un
+  grain de toner devient un repère et `registerPortrait` **rescale le visage sur du bruit**.
+  C'est le scénario « le recalage empire le cadrage » nommé dans le brief de gate.
+  `dev-tooling-assets` doit ajouter un seuil de confiance (densité d'encre minimale sur la
+  ligne retenue + contraste vs médiane de la fenêtre) qui **abort** au lieu de recaler.
+  Pas de tranchage de planche réelle avant ce garde-fou.
+- **C-C — Le grain de post-composition n'est PAS une seconde trame.** Voir Q3.
+- **C-D — Aucun re-roll de ce prompt pour produire une variante.** Voir Q4.
+- **C-E — Cap de 2 batches** (bible §6). Au-delà : escalade Bertrand avec la voie de repli
+  §5.2 (gabarit héros dessiné à la main, FLUX cantonné aux variations img2img masquées),
+  chiffrée, pas décidée en sous-main.
+
+### 8.3 Réponses aux six questions
+
+**Q1 — Les repères de marge : achat ou pari ? → C'est un PARI, et je l'assume avec un plan B.**
+Le prompt fait ce qu'il peut : les repères sont décrits comme **partie de l'imprimé** et
+non comme overlay technique, ce qui est la bonne stratégie et la seule compatible avec la
+bible §3.6. Mais FLUX place les ticks où il le veut, et surtout : la marge fait **48 px sur
+une planche de 864×1120**, soit ~4 % de l'image. C'est très peu de surface pour que le
+modèle y loge 8 tirets + 4 croix de coupe lisibles. Attends-toi à des repères présents mais
+imprécis, ou à des annotations parasites.
+**Plan B, dans cet ordre :** (1) C-B — le détecteur abort au lieu de mentir ; (2) si les
+ticks sont présents mais hors fenêtre ±24 px, on élargit la fenêtre et on **repin** les
+constantes `EYE_LINE_FRAC` / `NOSE_BASE_FRAC` sur ce que la planche donne réellement (ce
+sont des nominaux, pas des lois — les lois sont les coutures 0,32/0,52/0,72) ; (3) si les
+ticks sont absents ou décoratifs, on recale sur le **visage lui-même** (ligne de densité
+d'encre maximale = ligne des yeux) et les repères redeviennent du décor d'imprimeur ;
+(4) si (3) ne converge pas en 2 batches → repli §5.2, escalade.
+
+**Q2 — Le tilt : `eye line level` suffit-il ? → NON, et ce n'est pas grave, parce que le
+tilt est un défaut DÉTECTÉ, pas un défaut LIVRÉ.**
+L'arsenal réel n'est pas un token mais quatre : `eye line level`, `orthographic projection`,
+`centred`, et surtout les ticks **gauche ET droite** qui encodent la rotation dans leur
+désaccord. Le script en tire `tiltPx` et rejette à `tiltPx ≥ 24 px`, soit **≈ 1,6°** sur la
+largeur de planche — trois fois plus sévère que ma tolérance de 6° du §1.2bis. Un visage à
+4° ne passe donc pas en douce : il fait rejeter la planche, ce qui est exactement le
+comportement voulu (§1.2bis, portée du rejet). Deux réserves consignées : ce seuil ne vaut
+que si C-B est en place (sinon il mesure du bruit), et il produira des **faux rejets** ; si
+les rejets se mettent à clusteriser sur le tilt plutôt que sur la dérive verticale, la
+réponse est le resample affine complet noté dans l'en-tête du script, pas un
+assouplissement du seuil. Je ne desserre pas 1,6° → 6° pour faire passer une planche.
+
+**Q3 — Double couche de grain : je VALIDE les deux, avec une règle neuve.**
+Elles ne s'annulent pas — la première est un **procédé de dessin** (trame de demi-teinte,
+dans le trait), la seconde est un **procédé de tirage** (bruit de toner, sur le visage
+assemblé), et c'est la seconde qui est obligatoire par §1.0 puisqu'un grain par bande
+dessinerait les coutures. Mais il y a un mode d'échec que personne n'a nommé : **deux
+trames périodiques superposées à des pas différents font du moiré**, et un moiré à travers
+les 4 bandes est visuellement une couture. D'où la règle, que j'inscris comme condition
+C-C et que je proposerai à la bible : _le grain de post-composition est un bruit
+**non périodique** (`feTurbulence`), jamais un second point de trame, jamais une grille de
+points, jamais un angle de hachure._ Une seule trame régulière dans l'écran, et elle est
+dans le PNG. Surveillance au gate composite : **G7a** est étendu — pas de moiré, pas de
+battement de trame, grain unique et continu à travers les 3 coutures.
+
+**Q4 — Une planche = un visage, 6 variantes en `kontext` img2img, un descripteur à la fois :
+CONFIRMÉ.** C'est mon §5.2 et rien n'a bougé. Trois précisions opposables : (a) **aucune
+variante ne se produit en re-rollant ce prompt** — un re-roll change le crâne, donc casse
+le raccord par construction (ADR-0011) ; (b) chaque planche dérivée **repasse le même
+contrôle de repères et la même mesure de coutures** que la planche héros, elle n'hérite pas
+de son PASS ; (c) le descripteur varié doit rester **dans sa bande** (§1.2 : pas de frange
+qui descend sur les yeux, pas de moustache qui monte sur le nez) — un descripteur qui
+déborde sa couture est un rejet de planche, pas une variante ratée.
+
+**Q5 — L'échange proposé est REFUSÉ. Je n'échange pas les oreilles.**
+`small ears flat to the skull` n'est pas une clause de décor, c'est une **clause de
+raccord** : mon §1.1 met les oreilles dans le gabarit, et mon §1.2 fait de « l'amorce des
+oreilles » un des éléments qui doivent coïncider à la couture C1. Une oreille décollée
+déforme le contour extérieur du crâne exactement là où C1 tombe ; et l'oreille est, avec
+les yeux, l'élément **pair** le plus exposé au FAIL de parité G6. La sacrifier, c'est
+acheter un mot au prix d'une couture. Ce que j'échange à la place, et que j'ai déjà
+appliqué : `Parisian`, `rough`, `hatch`, `deep`. Quatre mots qui ne tenaient rien —
+`deep eyes` était même contre-productif, des orbites creusées appellent du modelé sous
+`flat frontal light` et le modelé près de C1/C2 est ce qui fabrique les fractures. Résultat :
+**118 mots**, deux de marge rendus à la lane pour une clause de correction future.
+
+**Q6 — Le trait noir : le prompt d'origine ne le garantissait pas assez. Il le garantit
+maintenant, sous surveillance.**
+Le calcul est celui du §1.2bis : planche réduite d'un facteur ≈ 4,6 pour une bande de
+56-68 px. `coarse` est le bon choix — une trame fine devient un gris sale à la réduction,
+une trame grossière survit en points lisibles. Le danger n'était pas la finesse, c'était la
+**couverture** : rien n'empêchait FLUX de poser des points sur le trait lui-même, et un
+contour tramé à ×4,6 se dissout. D'où `sparse` (la trame est de l'ombre, pas un
+remplissage) et `thick ... outline` (le contour est nommé comme contour porteur, pas comme
+« linework » indifférencié). **Critère de recevabilité chiffré** : sur roll 1, la planche
+réduite à hauteur de bande réelle doit conserver un contour de crâne **continu et non
+interrompu** sur tout son pourtour ; un contour qui se rompt ou vire au gris à la réduction
+est un rejet de planche, pas un réglage de post-traitement.
+
+### 8.4 Critères de recevabilité du ROLL 1 — dans l'ordre où je regarde
+
+`concept-artist` a raison : **les ticks avant le visage.** Ordre de lecture imposé.
+
+1. **Les repères.** 4 tirets latéraux (pupille G/D, narines G/D), 2 tirets d'axe (haut/bas),
+   4 croix de coupe. Présents, **dans la marge**, dessinés au même trait, horizontaux.
+2. **La géométrie du recalage.** Les tirets pupille G et D à la même ordonnée ; idem
+   narines. Écart G/D visible à l'œil = tilt = rejet.
+3. **Le format.** 864 × 1120 exact — `runReal` jette sinon, et il a raison.
+4. **Le contour à la réduction** (critère Q6).
+5. **Les zones de couture.** Front (0,32), au-dessus de l'arête (0,52), philtrum (0,72) :
+   plates et peu contrastées, aucun trait fort ne les traverse.
+6. **Balayage défauts IA (G6)**, sur fond contrastant : parité yeux / oreilles / sourcils,
+   dents, zones claires encloses.
+7. **Le registre**, en dernier : gueule dure de fanzine, pas belle gueule lissée.
+
+### 8.5 Rejet immédiat de planche (aucune discussion, on rebrûle un batch)
+
+- Repères absents, hors marge, ou remplacés par des **annotations / chiffres / texte**.
+- Repères gauche et droite en désaccord visible (tilt).
+- Vue 3/4, tête inclinée, crâne recadré ou tronqué, épaules coupées trop haut.
+- **Photoréalisme, visage numérisé, dithering ordonné, dégradé lissé sur la peau,
+  niveaux de gris rétro, palette ST** (§4, FAIL automatique).
+- Le moindre pixel coloré (§4 / G5).
+- Défaut de génération IA au sens de la bible §2 loi 3 (parité, fusion, membre détaché).
+- Contour rompu ou gris à la réduction taille bande.
+- Plus d'une épaisseur de trait, plus d'un angle de trame, ombre traversant une couture.
+
+### 8.6 Ce que ce PASS NE couvre PAS
+
+Il couvre **les mots**. Il ne couvre ni les PNG (asset gate, G1-G6, sur la planche de
+combinaisons G1 — sans elle, pas de verdict), ni le liseré de sélection, ni le
+verrouillage, ni la jauge, ni la jointure à l'écran (**gate composite G7/G7a/G7b/G7c**, sur
+captures in-game réelles uniquement). Un PASS de prompt n'a jamais valu un PASS d'asset.
+
+**Règle candidate à la bible issue de ce gate** (§3 de ma fiche, à intégrer avec les deux
+déjà en attente) : _une seule trame régulière par surface — un grain de post-composition
+est un bruit non périodique, jamais une seconde trame_ (motif Q3, moiré = couture).
+
+---
+
 ## Statut
 
-Brief de cadrage — **pas un gate**. Aucun asset généré, aucun prompt écrit, `levelArt.json` non
+Brief de cadrage — **pas un gate** (le gate prompt est en §8). Aucun asset généré, aucun prompt écrit, `levelArt.json` non
 touché. Les prompts passeront par le **prompt gate** (bible §6) ; les PNG par l'**asset gate** ;
 le liseré de sélection par le **gate composite** sur captures in-game.
 
