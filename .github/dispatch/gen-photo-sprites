@@ -61,3 +61,4 @@ run 13: dispatch `plate` alone (single remaining stage, editChain: plate edits
   instead of skipping. plateAsset.editChain confirmed single-stage, pad-to-square/crop-back
   and assertDimensions already wired (gen-photo-sprites.mjs).
 run 15: plate en texte-vers-image sur ideogram-v4-quality (modèle de street-wide.png), registre trait encré
+run 16
