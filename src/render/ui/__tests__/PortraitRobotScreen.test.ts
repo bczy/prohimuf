@@ -108,6 +108,25 @@ describe("PortraitRobotScreen — the prohibitions", () => {
     expect(html).not.toMatch(/data-correct|data-right|data-wrong/);
   });
 
+  it("draws the four bands with an IDENTICAL attribute set — only the band's own identity varies", () => {
+    // A deny-list of three strings is not a proof: it caught `data-correct` (the A16
+    // regression of 485d6bbe) and would have missed `data-ok`, a conditional class or
+    // an inline style. This is the allow-list version — anything a future pass adds to
+    // ONE band and not to its neighbours fails here, whatever it is called.
+    const html = markup();
+    const openings = html.match(/<div class="[^"]*" role="group"[^>]*>/g) ?? [];
+    expect(openings).toHaveLength(4);
+    const shapes = openings.map((tag) =>
+      (tag.match(/[a-zA-Z-]+="/g) ?? []).map((a) => a.slice(0, -2)).sort(),
+    );
+    // Same attributes on all four, and only the ones a band legitimately carries.
+    expect(new Set(shapes.map((s) => s.join(",")))).toHaveLength(1);
+    expect(shapes[0]).toEqual(["aria-label", "class", "data-band", "role"]);
+    // The one class is the shared one: no conditional variant slipped onto a band.
+    const classes = openings.map((tag) => /class="([^"]*)"/.exec(tag)?.[1] ?? "");
+    expect(new Set(classes)).toHaveLength(1);
+  });
+
   it("keeps the four bands joined — no gap, no separator element between them", () => {
     const html = markup();
     const bands = html.match(/data-band="/g) ?? [];

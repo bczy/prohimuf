@@ -117,7 +117,6 @@ export function PortraitRobotScreen({
           className={styles.band}
           role="group"
           data-band={BAND_TEST_ID[band.id]}
-          data-correct={band.ordinal === 1 ? "true" : "false"}
           aria-label={bandGroupLabel(band.label, band.ordinal, band.total)}
         >
           <span className={styles.bandLabel}>{band.label}</span>
