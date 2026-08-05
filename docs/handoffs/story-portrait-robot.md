@@ -72,8 +72,16 @@ Story planning artifact: `_bmad-output/planning-artifacts/story-portrait-robot.m
 
 ## 3. TECH PLAN — senior-architect (Winston) — 2026-08-05 — DONE
 
-**Canonical input:** `docs/game-design/design-gate-portrait-robot.md` **§3 + A4-bis**. Every
-tuning value below comes from there; where `spec-portrait-robot.md` disagrees, §3 wins.
+**Canonical input:** `docs/game-design/design-gate-portrait-robot.md` **§3 + A4-bis + §8**
+(B1/B2/B3 and the derived A12bis-A16). Every tuning value below comes from there; where
+`spec-portrait-robot.md` or `ux/portrait-robot-ux.md` disagrees, §3 wins.
+
+> **Révision 1 — 2026-08-05, after the §9 gate amendment.** The three ADR were updated **in
+> place** (each carries a dated « Révisions » section). Net architectural effect: **no lane
+> boundary moves and no new file appears** — B1/B2/B3 land inside modules the plan already
+> assigned. What changed is *what those modules contain*, plus **two new hard invariants**
+> (ADR-0079 D8, ADR-0080 D4.4/`seed-sweep`) and **two new boundary risks** (§3.4). See the
+> per-ADR summaries below.
 
 ### 3.1 The three ADR, filled — Status `Proposed`
 
@@ -88,6 +96,17 @@ tuning value below comes from there; where `spec-portrait-robot.md` disagrees, �
   applyEnergy(ENERGY_INITIAL, delta)` + a new `GameState.waveHoldRemaining` gating the single
   wave-spawn branch. Absent modifier ⇒ byte-identical build. Seed is supplied by the shell,
   frozen at entry, overridable via `?portraitSeed=`.
+  **Rév. 1 — new D8 (auto-resolution) and D9 (continuous chrono).** The 4/4 test is a
+  **post-condition of `applyPortraitIntent`**; `tickPortraitScene` is the **identity on a
+  resolved scene** (so expiry is only ever evaluated when no lock-in occurred — a property of
+  the function's domain, not a check); and the frame fold **`stepPortraitScene(scene, intents,
+  dt)` moves into `src/game`**, so the hook queues events and owns **no ordering**. That is
+  what makes « 4/4 pile au buzzer ⇒ `IDENTIFIED` » a property of the reducer instead of a race
+  between `pointerup` and rAF. `confirmGuardSeconds` **deleted** (replaced by ADR-0080's seed
+  invariant). Chrono continuous: no unit, no digit; the paliers become a **monotone `palier`
+  field on the scene** (50 % / 10 s / 5 s remaining), so three consumers cannot announce on
+  three different frames. `RotateOverlay` pause unchanged — and the inbox is **cleared** on
+  pause, never buffered.
 - **ADR-0080** — `docs/adr/0080-portrait-robot-face-data-model.md`.
   Catalogue in **`src/game/portraits/`** (mirrors `src/game/levels/`, ADR-0074 shape): 4 bands ×
   6 variants × 1 gabarit, plus a **pairwise distance matrix** (15 entries/band) that makes the
@@ -96,14 +115,29 @@ tuning value below comes from there; where `spec-portrait-robot.md` disagrees, �
   never bricks the run). Assets: **24 sliced PNGs**, one plate, **atomic** — a single writer
   script with no per-band mode + `plateChecksum` + a consistency test. Preloaded through a new
   `"portrait-robot"` manifest target during `NARRATIVE_POST`.
+  **Rév. 1 — the seed invariant `initialStateAllWrong` (gate A14) is a draw constraint, so it
+  lands here.** `drawPortraitPuzzle` now also fixes the **initial selection**, excluded from
+  the truth slot by **modular arithmetic, not rejection sampling** ⇒ `correctCount(initial) ===
+  0` for every seed, by construction. `PortraitPuzzle` gains `initialSelection`. New
+  **`seed-sweep`** invariant in `validatePortrait` (severity error), at the same rank as
+  `decoy-profile`, checking both the decoy profile and the all-wrong start over a fixed
+  deterministic seed set — stated in the ADR as a **regression guard, not a proof** (the proof
+  is the arithmetic).
 - **ADR-0081** — `docs/adr/0081-portrait-robot-input-and-presentation-layer.md`
   (**renamed** from `…-atari-st-render.md`; the ST framing is void per AC7 — index regenerated).
-  The pure layer speaks **intents** (`CYCLE / SET / FOCUS / SUBMIT / ABANDON`), never gestures:
-  the desktop mapping is one row in `usePortraitGestures`, and `src/game` does not change when
-  the Figma lands. Swipe *classification* is pure (`swipeGestureSystem.ts`, angle/distance
-  constants — the numbers `ux-designer` round 2 tunes), swipe *binding* is a hook. V1 =
-  discrete swipe (1 swipe = 1 cran). CSS Modules + `print/tokens.ts` (ADR-0046), runtime values
-  as inline CSS custom properties. `RotateOverlay` pause = the hook stops ticking.
+  The pure layer speaks **intents** (`CYCLE / SET / FOCUS / ABANDON`), never gestures. Swipe
+  *classification* is pure (`swipeGestureSystem.ts`, angle/distance constants — the numbers
+  `ux-designer` round 2 tunes), *binding* is a hook. CSS Modules + `print/tokens.ts`
+  (ADR-0046), runtime values as inline CSS custom properties.
+  **Rév. 1 — `SUBMIT` is deleted, not internalised** (B1 removed its only emitter): an intent
+  is the vocabulary of what a *player* asks for, and an unreachable member is a loaded gun that
+  re-implements the deleted CTA by accident. The resolution keeps a name — the rule
+  `resolvePortraitScene`, triggered by ADR-0079 D8.1. **Desktop closed (B3): horizontal drag →
+  `SET(i, index + crans)`**, with one new pure function `accumulateDrag` + `DRAG_CRAN_DISTANCE`
+  (a drag is continuous; `classifySwipe` judges a finished gesture and cannot serve). Discrete
+  on both device classes. No CTA zone, no `Enter` binding, continuous gauge with **no digit**,
+  two `revealSeconds` read from the scene (2,6 s / 1,4 s), no anti-brute-force counter-measure
+  (gate A16).
 
 ### 3.2 Lane cut — non-overlapping paths
 
@@ -118,12 +152,30 @@ are game-layer files and belong to `dev-gameplay` alone; `App.tsx` is render-lay
 to `dev-r3f-render` alone. `portraitPlate.generated.json` is **written only by the script**
 (tooling lane) and **read only** by the catalogue (gameplay lane).
 
+**Rév. 1 — the lane cut is unchanged.** Everything B1/B2/B3 introduced lands in modules already
+assigned: `stepPortraitScene` + `palier` + the two `revealSeconds` in `portraitRobotSystem.ts`
+and `initialSelection`/`seed-sweep` in `src/game/portraits/**` (both **dev-gameplay**);
+`accumulateDrag` + `DRAG_CRAN_DISTANCE` in `swipeGestureSystem.ts` (**dev-gameplay**, consumed
+by the render lane's hook); the pointer state machine in `usePortraitGestures.ts` and the
+removal of the CTA zone in `src/render/ui/portrait/**` (**dev-r3f-render**). **No new file, no
+lane boundary moved, no serialisation added.** Two workload notes: `dev-gameplay`'s pure
+surface grows (the D8 fold and its four ordering tests are the highest-value tests of the
+story), and `dev-r3f-render`'s hook is **larger than the TECH PLAN implied** — ADR-0081 C1
+scores that misprediction openly rather than hiding it in an estimate.
+
 ### 3.3 Order and seams
 
 1. **Step 0 — serialised, blocking (≤1 h, `dev-gameplay`).** Land the two contract files —
    `types/portraitRobot.ts` and `types/levelModifier.ts` — plus the asset **path convention**
    (`assets/portrait/<band>-<nn>.png`) agreed with `dev-tooling-assets`. Nothing else starts
    before these exist; everyone else imports them read-only. This is ADR-0076 C7's pattern.
+   **Rév. 1 — the contract files carry three more members**, and the render lane must not start
+   against a stale shape: `PortraitScene.palier`, `PortraitScene.revealSeconds`, and
+   `PortraitPuzzle.initialSelection`. `PortraitIntent` ships **without `SUBMIT`**.
+1bis. **Step 0bis — the D8 fold, first thing in step 1 (`dev-gameplay`).** `stepPortraitScene`
+   and its four ordering tests (ADR-0079 D8.3) land **before** `usePortraitRobot` is written,
+   so the hook is built against a fold that already exists and never grows an ordering of its
+   own "for now".
 2. **Step 1 — the three lanes in parallel.**
    - `dev-tooling-assets` ships **placeholder PNGs** (24 flat, distinguishable, correctly-sized
      files) on day 1 so the render lane is never blocked on the art gate. Real plate + slicing +
@@ -138,8 +190,15 @@ to `dev-r3f-render` alone. `portraitPlate.generated.json` is **written only by t
 4. **Step 3 — VERIFY (stage 5, `qa-lead`).** Beyond tsc/vitest/lint: the determinism proof runs
    in the built app via `?portraitSeed=`; `game-designer` replays against §3 and **A11 — the
    question at playtest is "is the payoff *felt*", not "does it work"**; `ux-designer` reviews
-   the swipe on a real touch device; the wave-hold's effect on quota difficulty (ADR-0079 D4)
-   is a named tuning check.
+   the swipe on a real touch device **and the drag on desktop 1280×800 (B3)**; the wave-hold's
+   effect on quota difficulty (ADR-0079 D4) is a named tuning check.
+   **Rév. 1 — three additions to the verify list**, all of them things a green suite would not
+   catch: (a) the **buzzer race played for real** — a pinned seed where the 4th correct band is
+   placed in the last visible instant, checked to yield `IDENTIFIED` on both a 60 Hz and a
+   throttled frame rate; (b) **entry state is 0/4** on every QA seed, observed in the built app,
+   not only in the sweep; (c) the **three paliers fire exactly once each** (copy, music,
+   `aria-live`) — the failure mode B2 created is an announcement repeating every frame, which
+   reads as fine in a unit test and is unbearable with a screen reader on.
 
 ### 3.4 Boundary risks I am watching at stage 6
 
@@ -148,8 +207,28 @@ to `dev-r3f-render` alone. `portraitPlate.generated.json` is **written only by t
 - **A life lost anywhere.** Structurally impossible — `LevelModifier` has no field for it. Any
   diff that adds one is a gate failure, not a tuning call (gate A1, story AC5).
 - **A drift back to dithered/photo faces** (story Risk 4, AC7).
-- **A gesture literal inside `src/game`.** ADR-0081 D1 — if `SWIPE` appears in the intent union,
-  the abstraction has failed and the desktop Figma will cost a game-layer change.
+- **[Rév. 1] `applyPortraitIntent` or `tickPortraitScene` called from `src/hooks`.** The ordering
+  guarantee of ADR-0079 D8.3 is only real while `stepPortraitScene` is the hook's single call
+  site. Two call sites = the buzzer race is back, silently, with green tests. **Blocking finding
+  at the panel, regardless of test colour** (ADR-0079 C2bis) — and D8 is reviewed as a unit, not
+  as three independent bullets.
+- **[Rév. 1] A resurrected validation act.** No button, no `Enter`, no long-press "confirm", no
+  `SUBMIT` member sneaking back into `PortraitIntent` "for the keyboard". B1 deleted the act,
+  not just the label.
+- **[Rév. 1] A per-trait feedback cue on the screen** — a tint, a check, a border, an `aria`
+  hint, a timing tell. Gate A16 permits exactly **one** signal, global and terminal: the phase
+  ending. This one arrives as a well-meant polish PR, which is why it is written down here.
+- **[Rév. 1] A rejection-sampling loop or a shell-side "nudge" enforcing the all-wrong start.**
+  ADR-0080 D4.4 / A7 / A8 — the invariant is arithmetic in the draw, and anywhere else it is
+  both unverifiable and a break of seed replayability.
+- **[Rév. 1] A chrono digit reappearing**, or a consumer comparing `remainingSeconds` to 10/5
+  instead of reading `scene.palier` (ADR-0079 D9).
+- **A gesture literal inside `src/game`.** ADR-0081 D1 — if `SWIPE` or `DRAG` appears in the
+  intent union, the abstraction has failed. **This one was live-fire-tested on 2026-08-05**: B3
+  landed the desktop drag and the intent union did not move (`SET` absorbed it). The risk is now
+  the *drag's intermediate state* leaking in — a `dragging` flag or a pixel delta on
+  `PortraitScene` (ADR-0081 A7, rejected). Pointer mid-travel belongs to the hook; only crans
+  cross the seam.
 - **A hand-patched single band** breaking the seam rule — caught by `plateChecksum`, not by eyes.
 
 ### 3.5 Descended to other lanes (non-blocking)
@@ -161,10 +240,22 @@ to `dev-r3f-render` alone. `portraitPlate.generated.json` is **written only by t
   His §4's "chrono qui coûte une vie" is false since A1 and must be corrected.
 - **`game-graphist`:** the comparison plate (§7.2) is now a **hard dependency** — it is the
   source of the 60 distance values.
-- **`ux-designer`:** round 2 (angle threshold, trigger distance, discrete vs inertial, band
-  height) lands as constants, on no critical path (ADR-0081 D3).
+- **`ux-designer`:** round 2 lands as constants, on no critical path (ADR-0081 D3). **Rév. 1 —
+  the list has changed:** *discrete vs inertial* is **closed** by B3 (discrete on both device
+  classes — an inertial desktop drag would not be "the same mental model" as a discrete touch
+  swipe); **`DRAG_CRAN_DISTANCE` joins** the open numbers beside `SWIPE_MIN_DISTANCE` and
+  `SWIPE_MAX_ANGLE_DEG`; and the round now also owes the **redistribution of the vertical
+  budget freed by the deleted CTA** and the **chrono gauge without a number** — with the
+  constraint that no affordance may reappear that reads as "confirm".
+- **`narrative-designer`:** **Rév. 1 — one new short deliverable, and it is on the critical path
+  of the screen's copy**: a gauge label to replace the dead `TÉLÉCARTE · {n} UNITÉS` (no number
+  can appear in it — gate A13). Until it lands the render lane ships the gauge **unlabelled**
+  rather than inventing copy (ADR-0081 D4). Also owed: the `PARTIAL` verdict copy and the
+  re-framing of the expiry line (gate §8 B1), which are gate conditions, not architecture.
 - **`game-designer`:** the wave hold reduces pressure *and* kill time on a quota level — a real
-  tuning consequence to re-check at playtest.
+  tuning consequence to re-check at playtest. **Rév. 1 —** gate A16 refuses any anti-sweep
+  counter-measure; if the playtest shows players sweeping instead of looking, the lever is the
+  decoy class (A5), never an input penalty. Architecture will not provide a cooldown.
 
 ---
 
@@ -268,3 +359,53 @@ clavier `Entrée`, chrono, geste desktop). **ADR-0081** cite la copie canon et l
     dédié pour la ligne de verrouillage, sinon repli fusionné).
   - `ux-designer` (Tony) : les chaînes de §6.1 sont définitives, ne pas paraphraser.
   - `dev-gameplay` : ne rien transcrire avant le PASS.
+
+## 2026-08-05 · `lead-art` (Nico) — brief PORTRAIT-ROBOT, **rév. 2** (post-gate + amendements B1/B2/B3)
+
+- **fichier :** `docs/art-direction/brief-portrait-robot.md` — mis à jour en place, note de révision datée en tête.
+- **Aucun asset, aucun prompt, `levelArt.json` intouché.** Brief de cadrage, toujours pas un gate.
+- **§1.0 (neuf) — LES BANDES SONT JOINTIVES.** Fait de production (Figma `muf — Design System` /
+  `Écrans · Portrait-robot`, corrigé par Bertrand). Gap zéro, aucun filet de séparation, surface
+  continue au gabarit **exact** de la cible. La règle de raccord n'est plus une bonne pratique,
+  c'est la condition d'existence de l'écran. Trois conséquences opposables : plus rien n'absorbe
+  l'erreur de raccord · **échelle cible ↔ construction 1:1 obligatoire** (sinon c'est le layout qui
+  plie) · **la sélection ne peut plus être géométrique** — le liseré néon reste le seul marqueur.
+- **§1.2bis (neuf) — tolérance de raccord retenue.** Référentiel : planche, portrait à 1024 px de
+  haut. **Bleed 12 px de chaque côté de la couture** (24 px de recouvrement, coupe au milieu).
+  Repères d'alignement en marge (ligne des yeux, base du nez, axe médian, traits de coupe).
+  Tolérances : demi-largeur de crâne **≤ 2 px (PASS) / ≥ 4 px (rejet)** · axe médian ≤ 1 / ≥ 2 px ·
+  tangente ≤ 3° / ≥ 6° · épaisseur de trait ≤ 10 % / > 15 %. Zone 2-4 px = alerte ; deux grandeurs
+  en alerte sur la même couture = rejet. **Le rejet porte sur la PLANCHE, pas sur la variante**
+  (atomicité ADR-0080 D5). Mécanique non liante sur le goût.
+- **§3bis (neuf) — LE VERROUILLAGE**, seul signal de la scène (A16). Proposition :
+  **RECALAGE → NÉGATIF → TAMPON**, un événement en trois couches. Global, binaire, terminal, sans
+  couleur seule, intact en `prefers-reduced-motion`. Écartés : le liseré terminal (collide avec le
+  liseré de sélection, contresens de la loi du glow) et la montée d'intensité (feedback par trait
+  déguisé).
+- **§4bis (neuf) — LA JAUGE.** L'encre s'en va, le contour reste : la carte se dépeuple, elle ne
+  rétrécit pas. Front rongé au toner, zéro dégradé, zéro teinte, zéro nombre, zéro segment, jamais
+  sous les portraits. Paliers 10 s / 5 s en **texture et épaisseur de filet**, pas en lumière.
+- **Corrections encaissées.** (a) « un chrono qui coûte une vie » était **FAUX** — la scène ne
+  retire aucune vie (A1/AC5), sanction = −20 énergie sur le niveau suivant (A1c) ; argument retiré.
+  (b) Statut tranché **surface DOM interactive** (ADR-0080 D6.3) ⇒ liseré légitime sans exception,
+  cible sans glow, **pas de CRT** (ADR-0081 D4) : partout où le brief disait « CRT allumé » comme
+  condition de test, lire **« grain xerox de post-composition »**. (c) **Auto-correction** : mon
+  §4 autorisait le néon sur le chrono critique au titre d'« alerte HUD » — **retiré**, il n'y a pas
+  de HUD ici et la jauge n'est pas interactive.
+- **G7 élargi (gate composite) :** G7a jointure à l'écran · G7b verrouillage (**4 captures dont une
+  en reduced-motion**) · G7c jauge. Aucune n'est dans un PNG : **un PASS d'asset gate ne les couvre
+  pas.**
+- **Bible :** proposition d'un **§2ter** — sur une surface DOM interactive, la loi du glow
+  s'applique à la lettre : brille ce qui se manipule, et rien d'autre, y compris ce qui est urgent.
+- **next :**
+  - `narrative-designer` (Yasmine) : libellé de jauge sans nombre — **Courier Prime, capitales,
+    une ligne, ≤ 12 caractères** ; + le libellé du tampon de verrouillage (forme et poids §3bis.1
+    sont à moi, les mots sont à elle).
+  - `ux-designer` (Tony) / `game-graphist` : l'échelle **1:1** cible ↔ construction est-elle tenue
+    par la maquette ? Si non, le layout plie, pas le gabarit.
+  - `dev-r3f-render` : le hors repérage du plateau d'accent est-il tenable sans toucher le trait du
+    visage ? S'il coûte une seconde passe, je le supprime — négatif + tampon suffisent.
+  - `dev-tooling-assets` : `scripts/slice-portrait-plate.mjs` doit **mesurer et refuser** sur les
+    quatre grandeurs de §1.2bis.
+  - `concept-artist` (Maud) : §7.1 toujours ouvert, prompts inchangés — le tranchage se durcit, la
+    planche ne change pas.

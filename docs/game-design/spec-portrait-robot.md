@@ -49,8 +49,8 @@ A10 (payoff +20/+10/0 s), A11 (le couperet), A12 (gel du twist). `timerSeconds`,
 | R4 | **Une occurrence par RUN** (j'écrivais « une par niveau »). La table de progression #1/#2/#3+ passe en **note post-V1**. | §3 D3, §7.6 | A3 (`pm`) |
 | R5 | **`variantsPerStrip` = 6, plafond dur 6, 1 seul gabarit** (24 assets). Le passage à 8 est retiré. | §3, §4.1, §7.5, AC9 | A5 (budget `lead-art`) |
 | R6 | **Payoff chiffré, intégré à la mécanique** (il manquait dans les trois specs) : retard de la 1ʳᵉ vague RG/BAC au niveau suivant, **+20 s / +10 s / 0 s**. | §2.4 (nouveau §2.5), §4.3, AC12 | A10 |
-| R7 | **Vocabulaire de surface joueur** : `LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`, bandeau `TÊTE À CONNAÎTRE`, CTA `SORTIR LA TÊTE`. Les noms cheveux/yeux/nez/bouche restent **internes**. | partout | A6 |
-| R8 | **Chrono** : habillage télécarte, 1 unité = 2,5 s (14 unités), paliers 7/4/2 unités ; modulation `Prefs.difficulty` **56 / 35 / 30 s** ; pause sous `RotateOverlay`. | §4.1, §6 | A7 |
+| R7 | **Vocabulaire de surface joueur** : `LA COUPE / LE REGARD / LE NEZ / LA BOUCHE`, bandeau `TÊTE À CONNAÎTRE`, ~~CTA `SORTIR LA TÊTE`~~ (**caduc, R10**). Les noms cheveux/yeux/nez/bouche restent **internes**. | partout | A6 |
+| R8 | **Chrono** : habillage télécarte, ~~1 unité = 2,5 s (14 unités), paliers 7/4/2 unités~~ (**caducs, R13/R14**) ; modulation `Prefs.difficulty` **56 / 35 / 30 s** et pause sous `RotateOverlay` — **maintenues**. | §4.1, §6 | A7 |
 | R9 | **La spec ne prescrit plus de geste.** Elle prescrit la **règle** (« la bande *i* passe à la variante *j* », les 4 bandes indépendantes, ordre libre, cycle bouclé). Le mapping geste↔règle appartient à `ux-designer`. | §2.2, AC2, §9 | A4-bis (Bertrand 2026-08-05) |
 
 **Ratifié par le gate et conservé intact :** D1 (sélection libre), D2 (règle du trait nommé + test
@@ -990,8 +990,19 @@ le twist « ton propre portrait-robot » (gelé, A12).
 3. **Hauteur minimale par bande** — devient une contrainte de swipe, plus seulement de lecture.
 4. **Accessibilité** : un swipe n'est actionnable ni au clavier ni au lecteur d'écran. Les chevrons
    restent en affordance + cible d'accessibilité (≥ 44×44 px), jamais en geste primaire.
-5. **Desktop : proposition sur maquette Figma** (demande de Bertrand). Socle clavier acquis
-   (↑↓ bande · ←→ variante · Entrée CTA · Échap confirmation).
+5. ~~Desktop : proposition sur maquette Figma~~ → **TRANCHÉ (B3) : option B, drag horizontal à la
+   souris sur la bande visée.** Reste à toi : seuil de distance du drag (le même chiffrage que le
+   swipe, ou un autre ?), curseur, et l'affordance qui dit « ça se tire ». Socle clavier acquis
+   (↑↓ bande · ←→ variante · Échap sortie anticipée) — **`Entrée` n'a plus de fonction** (B1), elle
+   ne doit être bindée à rien.
+5-bis. **BLOQUANT — la sortie anticipée doit devenir une affordance permanente.** Depuis B1, c'est
+   le seul geste terminal volontaire du joueur, et le joueur qui se croit fini n'a que lui. Un
+   `Escape` caché ne suffit plus : il faut une cible visible (≥ 44×44 px), non-CTA, qui ne se lise
+   pas comme « valider » (sinon on réintroduit le CTA par la fenêtre) ni comme « abandonner »
+   (sinon personne ne l'utilise). Voir §6 et AC16.
+5-ter. **La jauge sans nombre** : lisible en périphérie, sans quitter la comparaison des yeux, et
+   avec un équivalent `aria` non-numérique ou à granularité grossière (une annonce par palier, pas
+   un décompte).
 6. **Layout** : la contrainte de design est **le cible et la bande travaillée comparables sans
    scroll ni bascule**, médaillon cible ≥ **28 %** de la largeur en mobile paysage, rapproché des
    bandes (A8).
@@ -1002,7 +1013,18 @@ le twist « ton propre portrait-robot » (gelé, A12).
 8. **Le verdict `PARTIAL` (3/4)** — il manque à ta spec : tampon + lignes du « presque ». Le palier
    existe (A9) et la non-négociable §5 règle 4 impose une raison affichée.
 9. **Les deux rappels du niveau suivant** (§2.5) — obligatoires, pas optionnels.
-10. **Conversion télécarte** 1 unité = 2,5 s / 14 unités, paliers calés sur 7/4/2 unités.
+10. ~~Conversion télécarte 1 unité = 2,5 s / 14 unités~~ → **morte (B2).** Trois livrables neufs à la
+    place : (a) un **libellé de jauge sans nombre** (`TÉLÉCARTE · {n} UNITÉS` et son repli
+    `{n} UNITÉS` sont morts) ; (b) le **recadrage de ta ligne d'expiration** (« Ma carte est morte.
+    On imprime ce qu'on a. ») — elle était écrite comme la variante « le chrono expire avant toute
+    validation », or l'expiration est désormais **le chemin normal** de `PARTIAL`/`FAILED` ; la
+    ligne est bonne, son cadrage est caduc ; (c) la **copie de la sortie anticipée**, qui n'est plus
+    un abandon mais le geste « j'ai fini, imprime » (§6, AC16) — **bloquant**.
+11-bis. **Enseigner le cadenas en une réplique.** Le joueur doit comprendre, sans tutoriel, que
+    **ça s'arrêtera tout seul quand il aura raison** (§6). Une ligne de KENZA à l'entrée suffit
+    probablement ; c'est ta juridiction, pas la mienne. `SORTIR LA TÊTE` disparaît de l'IHM mais la
+    réplique source (« Sors-moi une tête, une seule ») **reste au dialogue** — et elle est
+    exactement le bon candidat.
 
 **Pour `lead-art` (Nico) — le read, pas le style :**
 
@@ -1016,9 +1038,16 @@ le twist « ton propre portrait-robot » (gelé, A12).
 
 **Pour `sound-designer` :**
 
-14. Deux paliers de resserrement musical à **4 unités (10,0 s)** et **2 unités (5,0 s)**, un `snap`
-    court de changement de variante, un `bip` au dernier palier, et le rythme « machine à écrire »
-    de la révélation (§6).
+14. Deux paliers de resserrement musical à **10,0 s** et **5,0 s restants** — **les mêmes secondes
+    dans les trois difficultés** (§4.1 D5), donc **un seul jeu de cues** à produire. Un `snap` court
+    de changement de variante (**critique** : c'est lui qui empêche le cadenas de ressembler à un
+    distributeur en panne, §6), un `bip` au dernier palier, et le rythme « machine à écrire » de la
+    révélation **à `PARTIAL`/`FAILED` uniquement**.
+14-bis. **Nouveau, et c'est le son le plus important de la scène : le `clac` de verrouillage.**
+    C'est le seul feedback global de la phase (§5 D4) et la récompense arrive **dans la frame** du
+    geste. Il doit se distinguer sans ambiguïté du `snap` de variante — un joueur ne doit jamais
+    se demander s'il a gagné. Il précède la révélation courte d'`IDENTIFIED` (1,4 s), il ne la
+    double pas.
 
 **Pour `senior-architect` / `tech-writer` :**
 
@@ -1032,10 +1061,30 @@ le twist « ton propre portrait-robot » (gelé, A12).
 
 ---
 
-## Hand-off — `lead-game-designer` (Karim), round 2
+## Hand-off — `lead-game-designer` (Karim), round 3
 
-Spec révisée sur place, journal de révision en tête. Les cinq contradictions relevées au gate sont
-transcrites (R1-R9), la §4 est **strictement alignée** sur la §3 du gate, le payoff A10 est intégré
-comme mécanique (§2.5) et non comme note, et la §2.2 ne prescrit plus aucun geste — seulement la
-règle. **Désaccords maintenus : aucun.** Deux ACs neufs (AC12 payoff, AC13 chrono/a11y, AC14
-vocabulaire) rendent les corrections vérifiables au stage 5. À logger dans `docs/handoffs/`.
+Spec révisée sur place, journal R10-R18 en tête. Les trois arbitrages Bertrand (B1/B2/B3) et tout ce
+que le gate a instruit en §8 (A12bis, A13, A14, A15, A16) sont **transcrits, pas rouverts** : deux
+moments d'évaluation, règle d'ordre du 4/4-au-buzzer comme propriété du réducteur,
+`initialStateAllWrong` en remplacement de `confirmGuardSeconds`, `revealSeconds` 1,4/2,6, D4
+reformulée, brute-force chiffré et classé sans suite.
+
+**Travail propre de la lane, au-delà de la transcription — trois choses à arbitrer :**
+
+1. **D5 (§4.1) — les paliers refaits en secondes.** Pas une conversion : une règle mixte
+   (rythme = proportionnel, panique = absolu) et **un trou trouvé** — le mi-parcours à 50 % tombe à
+   5,0 s de l'urgence en `hard`, deux cues collés qui fusionnent en rampe. Correctif proposé :
+   déclencheur à `max(timerSeconds/2 ; 17,0)` s restants, une constante, aucune branche.
+   **Ajout au canon §3 : tu tranches.**
+2. **La sortie anticipée n'est plus un abandon (AC16, §9 5-bis/10c).** C'est le seul dégât réel de
+   B1 : le joueur qui se croit fini n'a plus aucun geste et subit jusqu'à 20 s de vide. Je ne
+   réintroduis pas de bouton ; je requalifie une porte qui existe déjà. **Je le déclare bloquant
+   pour l'acceptation design au stage 5** — à confirmer par toi, avec livrables dus par
+   `narrative-designer` et `ux-designer`.
+3. **Le verdict de game feel sur la convergence (§6)**, demandé explicitement : franc, et il est
+   **favorable**.
+
+**Désaccords maintenus : deux, listés en tête** (le temps mort du joueur qui se croit fini ; le
+palier de mi-parcours en `hard`). Aucun ne porte sur B1/B2/B3, que j'exécute et que je juge bons.
+ACs neufs : **AC2-bis** (verrouillage automatique), **AC15** (aucune contre-mesure anti-balayage),
+**AC16** (sortie anticipée) ; AC3/AC4/AC7/AC9/AC13/AC14 réécrits. À logger dans `docs/handoffs/`.

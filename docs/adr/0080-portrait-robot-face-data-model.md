@@ -129,10 +129,30 @@ Invariants, error unless noted:
 | `trait-named` | every variant carries a non-empty `trait` (gate A5's rule of the named trait, made mechanical) |
 | `asset-path` | every asset path matches the gabarit's naming convention and appears in the plate manifest |
 | `plate-provenance` | `plateChecksum` matches the generated JSON (D5) |
+| `seed-sweep` | for every seed of a fixed deterministic sweep, the drawn puzzle satisfies **both** canonical draw invariants: the truth's row is 2 `strong` + 3 `medium` + 0 `fine`, **and `correctCount(initialSelection) === 0`** (gate A14) |
 
-`decoy-profile` is the one that matters: it turns the gate's difficulty composition from an
+`decoy-profile` is the one that matters for difficulty: it turns the gate's composition from an
 intention into a CI-checkable property. A catalogue whose truth candidates are all too easy or
 all too subtle fails at test time, not at playtest.
+
+**`seed-sweep` is the one that matters for safety, and it is new** (B1/A14). Bertrand's
+instruction is explicit: `initialStateAllWrong` must be checked by `validatePortrait` at the
+same rank as the decoy composition, for any seed. Mechanics and honest limits:
+
+- `validatePortrait` imports `drawPortraitPuzzle` (both pure, both `src/game`, and it still
+  **imports no catalogue** — the D3 rule is about data, not functions) and runs it over a
+  **fixed, documented seed set**: `0..999`, plus the boundary values `-1`, `0`, `1`,
+  `2**31 - 1`, `2**31`, `2**53 - 1`, and the `?portraitSeed=` values pinned by QA. Deterministic,
+  ordered, ~1 ms, no randomness in a validator.
+- **A sweep is not a proof, and this ADR will not pretend otherwise.** "For every seed" is
+  established by the *arithmetic* of D4.4 (the initial slot cannot equal the truth slot) and
+  D4.2 (the truth is drawn only from eligible variants). The sweep's job is different and just
+  as necessary: it is the **regression guard** that fires the day someone rewrites the hash,
+  "simplifies" the modular offset, or adds a seventh variant — the three edits that would break
+  the proof silently. Calling it a proof would be the same lie as `A4`'s per-variant distance
+  class, and it would be believed by the next reader.
+- Severity **error**. A catalogue that can produce a self-resolving scene is not shippable, and
+  the fallback (D3's "skip the phase") makes failing here free for the player.
 
 **No throw-at-load twin.** Unlike `createInitialState`'s margin guard (ADR-0074 §3), a
 malformed portrait catalogue must not brick the app: the scene is optional, the level is not.
@@ -225,7 +245,10 @@ player who never reaches the scene never downloads them.
 
 No second gabarit (fast-follow, gate A5); no procedural or infinite bank (story OUT); no
 per-level portrait data; no runtime image compositing to a texture; no atlas; no `fine`-class
-decoys in V1.
+decoys in V1. **No rejection-sampling loop in the draw** (D4.4); **no random or time-dependent
+seed set in the validator** (D3 `seed-sweep`); **no "nearly right" initial state** — the
+invariant is 0/4, not "at most 2/4", because any non-zero start is a free head-start on a
+board that now resolves itself.
 
 ## Consequences
 
@@ -281,10 +304,39 @@ for others 4 `strong`, so the scene's difficulty would swing per run with nothin
 Restricting the draw to eligible variants (D4.2) costs three lines and makes A5's composition
 true for every seed.
 
+**A7 — Enforce `initialStateAllWrong` by rejection sampling in the draw.** Rejected in D4.4:
+an unbounded retry loop where one line of modular arithmetic is provably correct, and an
+invariant expressed as a procedure rather than a property.
+
+**A8 — Enforce it in the scene shell instead (`createPortraitScene` nudges any correct band).**
+Tempting because it is one `if` in one place, and wrong twice: it puts a *data* invariant in
+the scene layer, where no validator and no CI can see it; and a "nudge" applied after the draw
+would silently break the presentation-order replayability the whole determinism claim rests on
+(same seed, different board, depending on whether the nudge fired). The invariant belongs to
+whoever produces the state — the draw.
+
 **A6 — Compose the four bands into one texture at runtime and draw that.** Needed only if the
 scene were a Canvas — which ADR-0079 D1 says it is not. Four stacked `<img>` in a CSS grid is
 the whole compositor, and it keeps every band independently addressable for focus, `aria` and
 the selection liseré.
+
+## Révisions
+
+**2026-08-05 — révision 1 (post-gate §8, arbitrage Bertrand B1 → gate A14).** Body edited in
+place (Status still `Proposed`).
+
+| Change | Driver |
+| --- | --- |
+| **New D4.4** — the draw now also fixes the **initial selection**, excluded from the truth slot by modular arithmetic. `PortraitPuzzle` gains `initialSelection`. `correctCount(initial) === 0` holds for every seed *by construction*, not by retry | gate A14 · B1 (a self-resolving scene is only possible once the CTA is gone) |
+| **New `seed-sweep` validator invariant** (error) — checks the decoy profile **and** the all-wrong start over a fixed deterministic seed set, at the same rank as `decoy-profile`, as instructed | Bertrand, explicit |
+| Stated plainly that the sweep is a **regression guard, not a proof** — the proof is D4.4's arithmetic | honesty about what a finite sweep establishes |
+| Context gains fact 4: since B1 the draw is load-bearing for **safety**, not only difficulty | B1 |
+| New alternatives **A7** (rejection sampling) and **A8** (fix it in the scene shell), both rejected; D7 extended | — |
+
+**Not changed:** D1 (catalogue location and shape), D2 (the distance matrix), D5 (24 sliced
+PNGs, atomic script, `plateChecksum`, preload during `NARRATIVE_POST`), D6's three answers to
+the art brief, alternatives A1-A6. `confirmGuardSeconds` never appeared in this ADR, so
+nothing is deleted here — A14 *adds* an obligation to the data model.
 
 ---
 

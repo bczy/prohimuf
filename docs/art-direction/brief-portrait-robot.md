@@ -631,9 +631,25 @@ registre où FLUX rate le plus. Toute zone claire enclose sur le visage est une 
 suspecté, pas du fond. **FAIL automatique**, quelle que soit la qualité de rendu.
 
 **G7 — Gate composite (Gate 4).** Sur captures in-game : liseré de sélection présent sur la seule
-bande active, en dégradé décroissant jusqu'à zéro (jamais un aplat, bible §2.1) ; cible sans aucun
-glow ; cible et construction lisibles simultanément à la taille réelle mobile ; sous CRT, les
-variantes restent discernables (§8.5/P5 de la bible). **Pas de capture lisible = pas de PASS.**
+bande visée, en dégradé décroissant jusqu'à zéro (jamais un aplat, bible §2.1) ; cible sans aucun
+glow ; cible et construction lisibles simultanément à la taille réelle mobile ; ~~sous CRT~~ **sous
+le grain xerox de post-composition** (pas de CRT sur cette scène, ADR-0081 D4), les variantes
+restent discernables. **Pas de capture lisible = pas de PASS.**
+
+**Rév. 2 — trois surfaces runtime neuves entrent dans G7, et aucune n'est couverte par G1-G6 :**
+
+- **G7a — la jointure à l'écran.** Gap zéro visible, grain xerox **unique** sur le visage assemblé
+  (aucune discontinuité de grain aux coutures), échelle cible ↔ construction 1:1.
+- **G7b — le verrouillage (§3bis).** Quatre captures exigées : hors repérage pendant `ACTIVE` /
+  l'instant du négatif / le tampon en tenue / **la même séquence en `prefers-reduced-motion`**.
+  Vérifs : le signal est global (rien ne désigne une bande), binaire (aucune montée d'intensité
+  avec `correctCount`), terminal (une seule inversion, jamais de clignotement), et **le hors
+  repérage ne dégrade pas la lisibilité du trait du visage** — s'il la dégrade, il saute.
+- **G7c — la jauge (§4bis).** Front rongé et non rectiligne, contour intégral persistant, aucune
+  teinte, aucun glow, aucun nombre, aucun segment, aucun arrondi, non accolée aux portraits ; les
+  trois paliers lisibles en niveaux de gris et sans son.
+
+Aucune de ces trois surfaces n'existe dans un PNG. **Un PASS d'asset gate ne les couvre pas.**
 
 **G8 — Traçabilité.** Verdict par asset et par ensemble consigné dans `docs/agent-handoffs.md`,
 avec la planche de combinaisons ayant servi à G1.
@@ -641,6 +657,28 @@ avec la planche de combinaisons ayant servi à G1.
 ---
 
 ## 7. Questions ouvertes
+
+> **Rév. 2 — ce qui est CLOS.** §7.3 Q1 (atlas ou PNG) → **24 PNG tranchés d'une planche**,
+> ADR-0080 D5/D6.1. §7.3 Q2 (où vivent les coutures) → **`portraitPlate.generated.json` émis par le
+> script, jamais écrit à la main**, ADR-0080 D5. §7.3 Q3 (atomicité) → **accordée et mécanisée**
+> (un seul script, aucun mode par bande, checksum + test de cohérence), ADR-0080 D5/D6.2 ; §1.2bis
+> en tire la portée du rejet. §7.3 Q4 (grain en post-composition) → **confirmé techniquement**,
+> ADR-0080 D6.3. §7.3 Q5 (statut de la scène) → **surface DOM interactive**, ni monde ni papier ;
+> liseré légitime, **pas de CRT** — traité en §4.
+> **Reste ouvert :** §7.1 en entier (prompts, à `concept-artist`) et §7.2 (taille réelle et
+> plancher de lisibilité, à `game-graphist` — désormais **grain xerox** et non CRT), plus les deux
+> questions neuves ci-dessous.
+
+### 7.0 Questions neuves (rév. 2)
+
+1. **À `game-graphist` / `ux-designer` :** la maquette Figma fixe-t-elle une hauteur de portrait qui
+   permet **l'échelle 1:1 exacte** entre la cible (médaillon ≥ 28 % de largeur, A8) et la surface
+   jointive ? Si non, c'est le layout qui plie (§1.0 conséquence 2) — et il faut me le dire avant
+   le tranchage, pas après.
+2. **À `ux-designer` / `dev-r3f-render` :** le hors repérage du plateau d'accent (§3bis.1) est-il
+   tenable sans toucher le trait du visage, en CSS Modules + tokens (ADR-0081 D4) ? S'il coûte une
+   deuxième passe de composition, je préfère le supprimer et laisser négatif + tampon porter le
+   verrouillage — dis-le tôt.
 
 ### 7.1 À `concept-artist` (Maud) — elle écrira les prompts, pas moi
 
@@ -693,6 +731,14 @@ touché. Les prompts passeront par le **prompt gate** (bible §6) ; les PNG par 
 le liseré de sélection par le **gate composite** sur captures in-game.
 
 Règles nouvelles proposées à l'intégration dans `docs/art-direction.md` une fois la scène cadrée
-(bible gate, §3 de ma fiche) : **la règle de raccord** (§1) et **le plancher de discernabilité**
-(§2), qui sont deux lois de famille que la bible ne couvre pas encore parce qu'aucun ensemble muf
-n'était jusqu'ici composé de morceaux interchangeables.
+(bible gate, §3 de ma fiche) : **la règle de raccord** (§1, avec ses tolérances §1.2bis) et **le
+plancher de discernabilité** (§2), qui sont deux lois de famille que la bible ne couvre pas encore
+parce qu'aucun ensemble muf n'était jusqu'ici composé de morceaux interchangeables.
+
+**Rév. 2 — une troisième règle candidate, plus large que cette scène :** la bible connaît le glow
+(§2 loi 1) et l'imprimé (§2bis), mais **elle ne dit rien d'une surface DOM interactive** — ni monde
+ni menu. ADR-0079/0080/0081 viennent d'en créer une. Je proposerai un **§2ter** : sur une surface
+DOM interactive, la loi du glow s'applique **à la lettre et rien qu'à la lettre** — brille ce qui
+se manipule (la bande visée), et **rien d'autre, y compris ce qui est urgent** (la jauge de chrono
+ne brille pas, §4bis.3). C'est le point où j'avais moi-même dérapé en rév. 1 en important le
+réflexe « alerte HUD » sur un écran qui n'a pas de HUD.
