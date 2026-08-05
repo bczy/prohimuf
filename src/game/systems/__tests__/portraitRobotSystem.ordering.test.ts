@@ -7,6 +7,7 @@ import {
   stepPortraitScene,
   tickPortraitScene,
   PORTRAIT_BAND_ORDER,
+  RESULT_HOLD_SECONDS,
   REVEAL_SECONDS_IDENTIFIED,
   REVEAL_SECONDS_UNRESOLVED,
 } from "@game/systems/portraitRobotSystem";
@@ -47,11 +48,12 @@ describe("ADR-0079 D8.2 — time cannot run on a resolved scene", () => {
     expect(resolved.phase).toBe("RESOLVED");
 
     for (const dt of [0, -0, 1 / 60, -1, -1e9, 1e9, Number.MAX_VALUE, NaN, Infinity, -Infinity]) {
-      // Everything but the reveal hold is untouched — `revealSeconds` is the ONE field a
-      // resolved scene still spends (panel M7), and it is compared apart just below.
-      expect({ ...tickPortraitScene(resolved, dt), revealSeconds: 0 }).toEqual({
+      // Everything but the tableau's clock is untouched — `revealElapsed` is the ONE
+      // field a resolved scene still moves (panel M7), and it is compared apart below.
+      // The two DURATIONS are frozen with the verdict: they are constants (run-2).
+      expect({ ...tickPortraitScene(resolved, dt), revealElapsed: 0 }).toEqual({
         ...resolved,
-        revealSeconds: 0,
+        revealElapsed: 0,
       });
     }
   });
@@ -70,34 +72,46 @@ describe("ADR-0079 D8.2 — time cannot run on a resolved scene", () => {
    * hands no `dt` and the hold simply does not advance: the pause is honoured BY
    * CONSTRUCTION, not by a guard someone has to remember to add.
    */
-  describe("the reveal hold is a dt accumulator in the scene (M7)", () => {
+  describe("the tableau's clock is a rising dt accumulator in the scene (M7)", () => {
     const resolved = () => {
       const base = sceneAt(3, 12);
       return applyPortraitIntent(base, winningIntent(base));
     };
 
-    it("counts the reveal down to exactly 0, and stops there", () => {
+    it("rises to exactly reveal + hold, and stops there", () => {
       let scene = resolved();
       expect(scene.revealSeconds).toBe(REVEAL_SECONDS_IDENTIFIED);
+      expect(scene.resultHoldSeconds).toBe(RESULT_HOLD_SECONDS);
+      expect(scene.revealElapsed).toBe(0);
       for (let i = 0; i < 600; i += 1) scene = tickPortraitScene(scene, 1 / 60);
-      expect(scene.revealSeconds).toBe(0);
+      expect(scene.revealElapsed).toBe(REVEAL_SECONDS_IDENTIFIED + RESULT_HOLD_SECONDS);
       expect(scene.result?.outcome).toBe("IDENTIFIED");
       // Still resolved, still the same verdict — the hold ending is a handover cue only.
       expect(scene.phase).toBe("RESOLVED");
     });
 
-    it("PAUSE = no dt = no advance, for as many frames as the pause lasts", () => {
-      let scene = tickPortraitScene(resolved(), 0.5);
-      const held = scene.revealSeconds;
-      for (let i = 0; i < 240; i += 1) scene = tickPortraitScene(scene, 0);
-      expect(scene.revealSeconds).toBe(held);
-      expect(tickPortraitScene(scene, 0.25).revealSeconds).toBeCloseTo(held - 0.25, 10);
+    it("the DURATIONS never move — only the elapsed does (run-2 blocking defect)", () => {
+      let scene = resolved();
+      for (let i = 0; i < 600; i += 1) {
+        scene = tickPortraitScene(scene, 1 / 60);
+        expect(scene.revealSeconds).toBe(REVEAL_SECONDS_IDENTIFIED);
+        expect(scene.resultHoldSeconds).toBe(RESULT_HOLD_SECONDS);
+      }
     });
 
-    it("the hold is the scene's number, per outcome — the component holds none", () => {
+    it("PAUSE = no dt = no advance, for as many frames as the pause lasts", () => {
+      let scene = tickPortraitScene(resolved(), 0.5);
+      const held = scene.revealElapsed;
+      for (let i = 0; i < 240; i += 1) scene = tickPortraitScene(scene, 0);
+      expect(scene.revealElapsed).toBe(held);
+      expect(tickPortraitScene(scene, 0.25).revealElapsed).toBeCloseTo(held + 0.25, 10);
+    });
+
+    it("the two durations are the scene's numbers, per outcome — the component holds none", () => {
       const expired = tickPortraitScene(sceneAt(2, 1e-9), 1);
       expect(expired.result?.outcome).toBe("FAILED");
       expect(expired.revealSeconds).toBe(REVEAL_SECONDS_UNRESOLVED);
+      expect(expired.resultHoldSeconds).toBe(RESULT_HOLD_SECONDS);
     });
   });
 
@@ -150,10 +164,10 @@ describe("ADR-0079 D8.3 — the frame fold settles the buzzer race", () => {
     expect(expired.result?.outcome).toBe("PARTIAL");
 
     const after = stepPortraitScene(expired, [winningIntent(scene)], 0.016);
-    // The board and the verdict are frozen; only the reveal hold spends the frame (M7).
-    expect({ ...after, revealSeconds: 0 }).toEqual({ ...expired, revealSeconds: 0 });
+    // The board and the verdict are frozen; only the tableau's clock advances (M7).
+    expect({ ...after, revealElapsed: 0 }).toEqual({ ...expired, revealElapsed: 0 });
     expect(after.result?.outcome).toBe("PARTIAL");
-    expect(after.revealSeconds).toBeLessThan(expired.revealSeconds);
+    expect(after.revealElapsed).toBeGreaterThan(expired.revealElapsed);
   });
 
   it("permutation test — every fold the hook could produce, with the entry before the tick", () => {

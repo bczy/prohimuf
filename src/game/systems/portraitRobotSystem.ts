@@ -69,30 +69,45 @@ export const PALIER_DERNIER_SECONDS = 5.0;
  */
 export const PALIER_MID_MIN_GAP_SECONDS = 7.0;
 
-/** Reveal hold per issue, asymmetric on purpose (gate A15). */
+/** Total reveal DURATION per issue, asymmetric on purpose (gate A15). Never decremented. */
 export const REVEAL_SECONDS_IDENTIFIED = 1.4;
 export const REVEAL_SECONDS_UNRESOLVED = 2.6;
 
 /**
- * How long the COMPLETE corrected face is held at the end of the reveal, before the
- * phase hands over (story AC4).
+ * How long the COMPLETE corrected face is held AFTER the reveal, before the phase hands
+ * over (gate §3 `resultHoldSeconds`, A15, story AC4). One value, all issues.
  *
- * `revealSeconds` is not dead time: the reveal walks the four verdicts top to bottom,
- * correcting each wrong band visibly, and then holds the whole face for this tail.
- * `revealBandStepSeconds` derives the per-band step from the two numbers above, so
- * the timeline is written ONCE, here, and the render layer reads it instead of
- * re-deriving a 0,45 s of its own (ADR-0079 A5 — the same breach `RESULT_HOLD_SECONDS
- * = 2.2` was, panel M8).
+ * Panel run-1 found this number redeclared in `src/render`; the correction DELETED it
+ * instead of moving it here, and the player then saw the verdict stamp for 0,7 s before
+ * being shipped to the end screen. A15 says what the 2,2 s buys — « le temps de lire le
+ * tampon et la ligne KENZA » — so the canonical tableau is `2,6 + 2,2 = 4,8 s`, not an
+ * excess to trim. It is a phase of its own (`portraitRevealProgress`), not a tail.
+ */
+export const RESULT_HOLD_SECONDS = 2.2;
+
+/**
+ * The tail of the reveal itself, at `PARTIAL`/`FAILED`: after the four band verdicts have
+ * walked top to bottom, the whole corrected face is held this long BEFORE the result hold
+ * begins (gate §3 « 4×~0,45 s + 0,8 s de tenue »). It is what makes the per-band step
+ * exactly 0,45 s, and `revealBandStepSeconds` is the only place it is spent.
  */
 export const REVEAL_HOLD_TAIL_SECONDS = 0.8;
 
 /**
- * Seconds each band's verdict takes during the reveal: 0,45 s on `PARTIAL`/`FAILED`
- * (there are corrections to read) and 0,15 s on `IDENTIFIED` (there are none — the
- * sweep only confirms). Derived, never authored twice.
+ * Seconds each band's verdict takes during the reveal — `(2,6 − 0,8) / 4 = 0,45 s` on
+ * `PARTIAL`/`FAILED`, where there are corrections to read.
+ *
+ * **`0` on `IDENTIFIED`, and that is the canon, not a degenerate case:** gate §3 spells
+ * out « pas de reptation » there — a flash and the four stamps SIMULTANEOUS, because a
+ * 4/4 board has nothing left to teach. A step of `0` means "all four at once", which is
+ * how `portraitRevealProgress` reads it.
+ *
+ * Takes the OUTCOME, not a duration: derived from a duration it used to accelerate as
+ * that duration shrank (panel run-2).
  */
-export function revealBandStepSeconds(revealSeconds: number): number {
-  return Math.max(0, (revealSeconds - REVEAL_HOLD_TAIL_SECONDS) / PORTRAIT_BAND_ORDER.length);
+export function revealBandStepSeconds(outcome: PortraitOutcome): number {
+  if (outcome === "IDENTIFIED") return 0;
+  return (REVEAL_SECONDS_UNRESOLVED - REVEAL_HOLD_TAIL_SECONDS) / PORTRAIT_BAND_ORDER.length;
 }
 
 /** Score barème (gate §3). */
@@ -334,8 +349,64 @@ export function createPortraitScene(
     timerSeconds,
     palier: palierFor(timerSeconds, timerSeconds),
     revealSeconds: 0,
+    resultHoldSeconds: 0,
+    revealElapsed: 0,
     result: null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// The reveal timeline (gate §3 / A15, story AC4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Where the post-verdict tableau currently is. Forward-only, like the phase itself:
+ * `NONE` (scene still `ACTIVE`) → `REVEALING` → `HOLDING` → `DONE`.
+ */
+export type PortraitRevealStage = "NONE" | "REVEALING" | "HOLDING" | "DONE";
+
+/** Everything a consumer may know about the reveal. Nothing else about it is readable. */
+export interface PortraitRevealProgress {
+  readonly stage: PortraitRevealStage;
+  /** Bands whose verdict has been played, 0..4, top to bottom. */
+  readonly revealedBands: number;
+  /** The phase's single hand-over signal: the reveal AND the result hold are both spent. */
+  readonly handoverReady: boolean;
+}
+
+/**
+ * **The only reader of the reveal clock** (ADR-0079 A5).
+ *
+ * `revealSeconds` / `resultHoldSeconds` are constants and `revealElapsed` rises; the one
+ * comparison between them lives here, so the run-2 blocking defect — a consumer comparing
+ * its own rising accumulator to a shrinking duration, halving every published number — is
+ * not "fixed", it is **inexpressible**: the hook holds no clock and no threshold to get
+ * wrong, it reads `revealedBands` and `handoverReady`.
+ *
+ * `reducedMotion` cuts the WALK, never the CONTENT (ADR-0054 §3): the four corrections
+ * are all shown at once instead of in sequence, and the durations are untouched — a
+ * player who needs less motion does not get less time to read.
+ */
+export function portraitRevealProgress(
+  scene: PortraitScene,
+  reducedMotion = false,
+): PortraitRevealProgress {
+  const { result } = scene;
+  if (scene.phase !== "RESOLVED" || result === null) {
+    return { stage: "NONE", revealedBands: 0, handoverReady: false };
+  }
+  const step = reducedMotion ? 0 : revealBandStepSeconds(result.outcome);
+  const bandCount = PORTRAIT_BAND_ORDER.length;
+  const revealedBands =
+    step <= 0 ? bandCount : Math.min(bandCount, Math.floor(scene.revealElapsed / step));
+
+  const stage: PortraitRevealStage =
+    scene.revealElapsed < scene.revealSeconds
+      ? "REVEALING"
+      : scene.revealElapsed < scene.revealSeconds + scene.resultHoldSeconds
+        ? "HOLDING"
+        : "DONE";
+  return { stage, revealedBands, handoverReady: stage === "DONE" };
 }
 
 /**
@@ -360,6 +431,8 @@ export function resolvePortraitScene(scene: PortraitScene): PortraitScene {
     phase: "RESOLVED",
     result,
     revealSeconds: outcome === "IDENTIFIED" ? REVEAL_SECONDS_IDENTIFIED : REVEAL_SECONDS_UNRESOLVED,
+    resultHoldSeconds: RESULT_HOLD_SECONDS,
+    revealElapsed: 0,
   };
 }
 
@@ -432,20 +505,21 @@ export function applyPortraitIntent(scene: PortraitScene, intent: PortraitIntent
  * A non-finite or non-positive `dt` advances nothing: time never runs backwards, which is
  * what keeps `palier` monotone without a second monotonicity guard.
  *
- * **On a RESOLVED scene the only thing that moves is `revealSeconds`** (panel M7). The
- * verdict, the board and the chrono are frozen for good — D8.2's identity holds where it
- * matters — but the reveal hold is a `dt` ACCUMULATOR here rather than a `setTimeout` in
- * the component, and that is what makes it honour the pause **by construction**: a paused
- * frame simply hands no `dt`. A wall clock in the component kept running behind
- * `RotateOverlay` and the phase ended while the player was looking at a rotate prompt.
- * The render layer reads `revealSeconds === 0` as "hand over"; it holds no timer and no
- * number of its own (ADR-0079 A5).
+ * **On a RESOLVED scene the only thing that moves is `revealElapsed`** (panel M7). The
+ * verdict, the board, the chrono AND the two durations are frozen for good — D8.2's
+ * identity holds where it matters — but the tableau's clock is a `dt` ACCUMULATOR here
+ * rather than a `setTimeout` in the component, and that is what makes it honour the pause
+ * **by construction**: a paused frame simply hands no `dt`. A wall clock in the component
+ * kept running behind `RotateOverlay` and the phase ended while the player was looking at
+ * a rotate prompt. It RISES and is clamped at `revealSeconds + resultHoldSeconds`;
+ * consumers read `portraitRevealProgress`, never this field (ADR-0079 A5).
  */
 export function tickPortraitScene(scene: PortraitScene, dt: number): PortraitScene {
   const advance = Number.isFinite(dt) && dt > 0 ? dt : 0;
   if (scene.phase !== "ACTIVE") {
-    if (scene.revealSeconds <= 0 || advance === 0) return scene;
-    return { ...scene, revealSeconds: Math.max(0, scene.revealSeconds - advance) };
+    const total = scene.revealSeconds + scene.resultHoldSeconds;
+    if (advance === 0 || scene.revealElapsed >= total) return scene;
+    return { ...scene, revealElapsed: Math.min(total, scene.revealElapsed + advance) };
   }
   const remaining = Math.max(0, scene.remainingSeconds - advance);
   if (remaining <= 0) {

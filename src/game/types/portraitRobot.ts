@@ -252,16 +252,45 @@ export interface PortraitScene {
   /** Highest tension threshold crossed so far — see `PortraitPalier`. */
   readonly palier: PortraitPalier;
   /**
-   * How long the resolution tableau is held before the phase hands over, in
-   * seconds. Two values, asymmetric on purpose (gate A15): the losing issues
-   * need time to show the corrections band by band, `IDENTIFIED` has nothing
-   * left to inform. Set by `resolvePortraitScene`; `0` while `ACTIVE`.
+   * **Total DURATION of the reveal**, in seconds — a CONSTANT for the scene's
+   * lifetime, written once by `resolvePortraitScene` and never decremented.
+   * Two values, asymmetric on purpose (gate A15): the losing issues need time to
+   * show the corrections band by band, `IDENTIFIED` has nothing left to inform.
+   * `0` while `ACTIVE`.
    *
-   * It lives on the scene so the screen reads `scene.revealSeconds` — a
-   * `switch` on the outcome inside the `.tsx` would put two gate numbers in the
-   * render layer (ADR-0082 D4, same breach as ADR-0079 A5 at a smaller scale).
+   * It used to be a COUNTDOWN, and that is the panel-run-2 blocking defect: the
+   * consumer accumulated a rising `sinceResolved` and compared it to this
+   * shrinking value, so the two crossed at HALF the canonical duration (2,6 s
+   * played as 1,3 s) and the per-band step, recomputed each frame off a
+   * shrinking number, accelerated until the four bands flipped almost together.
+   * A duration and an elapsed time are now two distinct fields with two distinct
+   * directions, and no consumer compares them by hand: `portraitRevealProgress`
+   * is the only reader of both (ADR-0079 A5).
    */
   readonly revealSeconds: number;
+  /**
+   * How long the COMPLETE corrected face is held after the reveal, before the
+   * phase hands over (gate §3 `resultHoldSeconds` = 2,2 — inchangé, toutes
+   * issues; A15: « le temps de lire le tampon et la ligne KENZA »). `0` while
+   * `ACTIVE`.
+   *
+   * A phase of its own, not a tail of `revealSeconds`: the canonical 4,8 s the
+   * player spends on the tableau is `2,6 + 2,2`, two numbers that answer two
+   * different design questions. Folding it into the reveal is how it got deleted
+   * instead of moved (panel run-2), and deleting it shipped the verdict stamp
+   * for 0,7 s.
+   */
+  readonly resultHoldSeconds: number;
+  /**
+   * Seconds elapsed since resolution — a `dt` ACCUMULATOR, monotone RISING,
+   * clamped at `revealSeconds + resultHoldSeconds`. `0` while `ACTIVE`.
+   *
+   * This is the scene's only post-verdict clock, and it lives here rather than
+   * in the hook so it honours the pause by construction: a paused frame hands no
+   * `dt` (panel M7). Consumers read `portraitRevealProgress(scene)`, never this
+   * field against `revealSeconds`.
+   */
+  readonly revealElapsed: number;
   /**
    * The verdict, or `null` while `ACTIVE`. Non-null exactly when
    * `phase === "RESOLVED"` — one flip, one writer, and nothing in the phase is

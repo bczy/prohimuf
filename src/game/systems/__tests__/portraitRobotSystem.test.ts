@@ -252,6 +252,8 @@ describe("resolvePortraitScene is the single exit (ADR-0079 D6/D8.1)", () => {
       "puzzle",
       "remainingSeconds",
       "result",
+      "resultHoldSeconds",
+      "revealElapsed",
       "revealSeconds",
       "selection",
       "timerSeconds",
