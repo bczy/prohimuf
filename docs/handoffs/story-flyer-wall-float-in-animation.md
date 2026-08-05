@@ -232,7 +232,7 @@ Ce qu'il faut en retenir, et qui ne périme pas :
   et le reviewer a refusé de rendre un PASS sur un sujet inexistant. Cause : le `checkout`
   du job `prepare` n'épinglait aucune `ref`, donc sur `workflow_dispatch` /
   `workflow_call` il atterrissait sur la **branche par défaut** et `git diff
-  origin/main...HEAD` ne rendait rien. Corrigé en amont (`refs/pull/N/head` sous les trois
+origin/main...HEAD` ne rendait rien. Corrigé en amont (`refs/pull/N/head` sous les trois
   déclencheurs), plus deux garde-fous : `prepare` échoue bruyamment sur une liste de
   fichiers vide, et `triage` compte désormais `prepare` parmi les jobs dont l'échec vaut
   DEGRADED — sans quoi un harness cassé continuait de publier un PASS creux. Le finding
