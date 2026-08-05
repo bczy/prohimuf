@@ -166,7 +166,13 @@ const PLATE_MODEL = process.env.PLATE_MODEL || "kontext";
 // ── Generation (flux, or kontext img2img for the plate via the PAID farm) ────
 async function generate(a) {
   if (a.sourceCrop) {
-    const imageUrl = rawUrl(a.sourceCrop);
+    // `sourceCrop` (like `asset`) is stored relative to public/ in levelArt.json, but the
+    // committed file lives at repo path public/<sourceCrop> — rawUrl() needs that full repo
+    // path, not the public/-relative one, or raw.githubusercontent.com 404s (root cause of
+    // every "kontext img2img FAILED ... HTTP 404" seen in CI so far: the URL pointed at
+    // <repo>/<sha>/assets/photoqte/plate-source-crop.png, missing the public/ segment where
+    // the file actually is).
+    const imageUrl = rawUrl(`public/${a.sourceCrop}`);
     console.log(
       `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_MODEL} img2img (paid), ref=${imageUrl}`,
     );
