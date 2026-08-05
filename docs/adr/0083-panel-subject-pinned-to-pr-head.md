@@ -34,6 +34,15 @@ le harness ne l'empêchait de publier un verdict malgré tout.
    diff.
 3. **`prepare` compte parmi les jobs dont l'échec donne DEGRADED** dans le triage. Il en était
    absent — c'est pourquoi un `panel-input` vide produisait quand même un verdict.
+4. **Les jobs en aval sautent proprement quand `prepare` échoue.** Les quatre reviewers et le
+   skeptic ne conditionnaient leur `if:` que sur `preflight.outputs.enabled` (plus
+   `is_fix_lane` pour trois d'entre eux), jamais sur le RÉSULTAT de `prepare`. Or les sorties
+   écrites tôt par un job survivent à son échec ultérieur : les conditions restaient donc
+   vraies, les cinq jobs démarraient, et mouraient au `download-artifact` sur un `panel-input`
+   jamais uploadé — cinq échecs CI parlant d'un artefact introuvable au lieu d'un skip propre.
+   `needs.prepare.result == 'success'` ajouté à leurs conditions. Le verdict DEGRADED est
+   inchangé : `triage` tourne en `always()` et compte déjà `prepare`, donc la garantie « jamais
+   de PASS creux » tient avant comme après.
 
 ## Consequences
 
