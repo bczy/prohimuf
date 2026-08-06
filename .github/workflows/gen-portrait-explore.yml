@@ -81,5 +81,11 @@ jobs:
         with:
           name: portrait-explore-faces
           path: scripts/.dbg-portrait-explore/
-          if-no-files-found: warn
+          # The output dir is DOT-prefixed (it is gitignored scratch), and
+          # upload-artifact skips hidden paths by default — run 31102896310
+          # generated both plates and uploaded nothing. Opt in explicitly.
+          include-hidden-files: true
+          # `warn` let that run go green with zero artifacts. The whole point of
+          # this workflow is to hand back images, so no files is a failure.
+          if-no-files-found: error
           retention-days: 14
