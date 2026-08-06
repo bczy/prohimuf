@@ -63,3 +63,4 @@ run 13: dispatch `plate` alone (single remaining stage, editChain: plate edits
 run 15: plate en texte-vers-image sur ideogram-v4-quality (modèle de street-wide.png), registre trait encré
 run 16
 run 17: plate ideogram t2i, textToImage=true
+run 18: force t2i ideogram
