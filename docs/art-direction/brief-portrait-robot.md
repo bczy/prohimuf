@@ -1224,3 +1224,195 @@ composite (G7/G7a/G7b/G7c, sur captures in-game réelles). §10.1 remplace les m
 §10.2 rend caduc le tableau de repères de §1.2bis ; §10.3 ajoute un tableau et n'en retire aucun.
 
 **Verdict : PASS — voie B, prompt §10.1, ancrages §10.2, tolérances §10.3, cap 2 tirages §10.4.**
+
+---
+
+## 11. GATE PROMPT — rév. 3, post-regard Bertrand sur ROLL 3 (la couronne)
+
+**Lane :** `lead-art` (Nico). **Entrée :** diagnostic `concept-artist` + trois consignes Bertrand
+(vue de face obligatoire · les deux visages se ressemblent énormément · on n'est pas dans le style
+BD). **Portée :** prompt uniquement. Ne vaut ni asset gate (G1-G6) ni gate composite (G7).
+**Ce §11 remplace les mots gatés en §10.1.**
+
+### 11.0 Le diagnostic est accepté, et je prends ma part
+
+`concept-artist` a raison, et la preuve qu'elle avance est la bonne preuve : **deux couronnes sur
+deux graines**, ce n'est pas du bruit, c'est une clause qui mord. `crown` était mon mot — je l'ai
+écrit deux fois en §10.1 en croyant nommer une ordonnée anatomique, et j'ai commandé un objet porté.
+`collarbone` a payé le collier de dentelle. L'absence de tout token de genre a payé le reste. C'est
+la même erreur qu'en ROLL 2 sur les repères, à un cran de subtilité : **j'ai supposé que le modèle
+lisait mon intention là où il ne lit que mes mots.**
+
+Et la troisième consigne de Bertrand (« pas dans le style BD ») se lit dans la même mécanique :
+80 mots de morphologie concrète appelant la photo, contre un bloc `style` qui démarre au mot ~90.
+Le style n'a pas été ignoré, il a été **sous-pondéré**. La cure n'est pas d'ajouter des mots de
+style — c'est de retirer des mots qui appellent la photo. La révision fait exactement ça.
+
+### 11.1 Verdict par point
+
+**1. Contrat §10.1 — TENU, les quatre clauses sont là.** Vérifié mot à mot, pas cru sur parole :
+`One unbroken closed skull outline` ✓ · `containing the hair` ✓ · sommet+menton dans la planche ✓
+(`the top of the head and the chin inside the sheet` — même clause, l'objet portable est sorti,
+c'est la bonne substitution) · `blank white cheeks and forehead` ✓ · `constant skull width` ✓ ·
+`one thin level mouth line` (pic A2) ✓. **PASS.**
+
+**2. Frontalité par symétrie observable — PASS, et le refus de `mugshot`/`passport photograph` est
+VALIDÉ sans réserve.** L'argument est juste deux fois. D'abord parce que `both ears equal, both eyes
+the same size on one level line` est **faux par construction sur un trois-quarts** : ce n'est pas un
+adjectif que le modèle peut satisfaire à moitié, c'est une contrainte géométrique réfutable — et
+elle recouvre exactement ma parité G6 et le `tiltPx` de §10.3. Ensuite parce que `mugshot` et
+`passport photograph` sont des mots de **photographie** : ils achètent la frontalité en payant le
+médium, c'est-à-dire en payant précisément la consigne 3 de Bertrand. **On ne s'achète pas la
+frontalité au prix du médium.** Je promeus ce refus en règle de prompt de la maison :
+
+> **Règle de prompt (neuve, §11) — pas de token de médium concurrent.** Aucun mot qui nomme un
+> autre médium que l'impression photocopiée (`photograph`, `mugshot`, `passport photo`, `portrait
+> photography`, `render`, `3D`, `painting`) n'entre dans un prompt muf, **même pour acheter une
+> propriété géométrique**. Toute propriété géométrique se décrit par une contrainte réfutable sur
+> le dessin. Un token de médium est un FAIL de prompt gate.
+
+**3. Les trois assouplissements — 2 PASS, 1 CONDITION.** Vérifié moi-même, pas déclaré :
+- `a hairline across it` (ex `under a straight low hairline`) : la ligne de cheveux n'est **pas** un
+  ancrage (§10.2 ne la liste pas), elle vit à l'intérieur de la bande 1. Rendre sa forme à la graine
+  ne coûte rien de mesurable. **PASS.**
+- `a nose` (ex `straight narrow nose ending blunt`) : la base du nez est **ABANDONNÉE** comme ancrage
+  en §10.2. Rien à protéger. **PASS**, et c'est même sain — c'était 5 mots de morphologie photo.
+- `eyes under a level brow` (ex `wide-set eyes under a heavy level brow`) : **NON.** `wide-set` peut
+  partir (proportion, pas ancrage). **`heavy` ne peut pas.** A1 est un **pic de densité** (§10.2), et
+  ce qui le rend franc et unique dans sa fenêtre, ce n'est pas son ordonnée (`level`, conservé) mais
+  sa **charge d'encre** — c'est `heavy` qui commande une barre noire. Le retirer, ce n'est pas rendre
+  une forme à la graine, c'est **désarmer l'ancrage A1** et fabriquer la condition d'abandon
+  §10.4-2 (« les pics ne sont pas uniques »). **CONDITION C1 : restituer `heavy`.**
+  → `eyes under a heavy level brow`.
+
+**4. `one man's head` — TRANCHÉ PAR BERTRAND, ratifié. Pas d'escalade. Voir §11.3.**
+
+**5. 120/120 — REFUSÉ en l'état. J'exige du mou, et je dis où le prendre. Voir §11.2.** Un prompt
+au ras du plafond est un prompt qu'on ne peut plus corriger sans amputer ; §8 et §10.1 ont tous
+deux rendu 2 mots à la lane, et ce n'était pas de la coquetterie — c'est la marge qui a permis
+§10.1 d'exister sans arbitrage.
+
+**6. Le risque de visage miroir — RECONNU, et il ne se traite pas par un mot de plus.** Voir §11.4.
+
+### 11.2 Ce que la révision a perdu en silence, et le budget corrigé
+
+**Un défaut non signalé, et il est sérieux : `uniform white paper (#FFFFFF)` a disparu du bloc
+`style`.** C'était le **token de sol papier ancré en hex** — celui sur lequel reposent le contrôle
+de fond de `check-sprite-style.mjs`, la propreté du cutout, et le contraste qui fait exister les
+pics de §10.2. Un fond crème ou gris clair ne casse pas l'œil, il casse la **mesure**. La règle FLUX
+de la maison exige les deux sols (papier + encre) : la révision n'en garde qu'un.
+**CONDITION C2 : restituer `uniform white paper (#FFFFFF)` dans `style`.**
+
+Trois conditions coûtent 5 mots (C1 : 1 · C2 : 4). Je les finance sans toucher une clause portante,
+et je rends 2 mots de marge :
+
+| Rachat                                                                                   | Gain | Motif                                                                                                                                             |
+| ---------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `with the top of the head and the chin inside the sheet` → `top of head and chin inside the sheet` | 4    | Même clause, mêmes deux ancres verticales, zéro objet portable. Style télégraphique = registre planche d'imprimeur.                              |
+| `Photocopied black ink drawing on white paper:` → `Black ink drawing on a printed sheet:` | 1    | `Photocopied` est déjà le premier mot de `style`, et le sol papier revient en hex par C2. On ne paie pas deux fois le même mot.                   |
+| `broad flat forehead` → `broad forehead`                                                 | 1    | `flat` est déjà porté par `blank white cheeks and forehead` (front sans trame) et par `flat frontal light`. Redondance, pas clause.               |
+| `wide-set` (déjà retiré par la révision)                                                 | 1    | Acté, proportion sans ancrage.                                                                                                                     |
+
+**Budget final : 56 + 35 + 27 = 118 mots. Deux mots de marge rendus à la lane**, comme en §8 et
+§10.1. La marge n'est pas décorative : c'est le droit de corriger ROLL 4 sans amputer une clause.
+
+### 11.2bis Les trois champs GATÉS — c'est cette version-là qui va dans le script
+
+**`opening`** (56) :
+
+> `Black ink drawing on a printed sheet: one man's head facing forward, symmetrical about a vertical centre line, both ears equal, both eyes the same size on one level line, constant skull width. One unbroken closed skull outline containing the hair, top of head and chin inside the sheet, blank white cheeks and forehead.`
+
+**`prompt`** (35) :
+
+> `Hard weathered face, broad forehead, a hairline across it, eyes under a heavy level brow, a nose, long flat philtrum, one thin level mouth line, square jaw, small ears flat to the skull, bare neck.`
+
+**`style`** (27) :
+
+> `Photocopied 1990s punk fanzine illustration: thick black ink outline of one constant weight, sparse coarse halftone dots at one 45-degree angle, flat frontal light, uniform white paper (#FFFFFF), high-contrast xerox toner.`
+
+Contrôle FLUX : zéro négation · zéro token de médium concurrent (§11.1-2) · zéro objet portable ·
+description positive de forme · sol papier ancré `#FFFFFF` et sol encre présents · genre spécifié ·
+118 ≤ 120. **PASS.**
+
+`concept-artist` peut proposer mieux **à contrat identique** — les six clauses portantes sont
+`One unbroken closed skull outline` · `containing the hair` · sommet+menton dans la planche ·
+`blank white cheeks and forehead` · `heavy level brow` (pic A1) · `one thin level mouth line`
+(pic A2), plus les trois clauses de symétrie. Elle ne peut en retirer aucune sans repasser par moi.
+
+### 11.3 Point 4 — DÉCISION DE CASTING (Bertrand, 2026-08-06) : masculin, pour l'instant
+
+**Tranché par Bertrand, 2026-08-06 : « Restons sur du masculin pour l'instant. »**
+`one man's head` est **ratifié**. Je n'escalade pas à `narrative-designer` : la décision est prise
+au-dessus de nous deux.
+
+**Ceci est une décision de casting explicite, datée, et non un effet de bord du prompt.** Je
+l'écris ici en toutes lettres parce que le mode d'échec est exactement l'inverse d'une erreur de
+rédaction : **c'est la case laissée VIDE qui a produit les deux jeunes femmes photoréalistes.** Un
+futur lecteur du prompt qui croirait `one man's head` accidentel et le retirerait au nom de la
+neutralité ne rendrait pas le prompt neutre — il rendrait le casting au prior de FLUX.
+
+> **Règle de casting (neuve, §11.3), opposable à toute révision future de ce prompt :**
+> le token de genre est un **emplacement obligatoire**. Il se **change**, il ne se **vide** jamais.
+> Le retirer est un FAIL de prompt gate, au même titre qu'un token de médium concurrent (§11.1-2).
+> Si le casting devient mixte, ce sera **un token nommé, planche par planche** — jamais une vacance
+> laissée au modèle.
+
+**« Pour l'instant » est dans la décision, donc il est dans le brief : c'est un choix de V1,
+réouvrable, pas une loi d'univers.** La réouverture est cadrée d'avance et peu chère : le scope
+ratifié est **M=1 gabarit** (§5.1, gate A5) — les 24 assets sont **un seul visage**, décliné en
+bandes. Un second gabarit (dont une variante genrée) est explicitement un **fast-follow** en §5.1,
+et il porterait son propre token nommé. Quand la question se rouvrira, elle appartiendra à
+`narrative-designer` (qui est ce visage : genre, âge, registre social — la faune d'une soirée
+clandestine de 1998, §4) ; elle ne se rouvrira pas par omission dans un prompt.
+
+Le raisonnement d'art qui soutient la décision, pour mémoire :
+
+1. **La case vide est un défaut de prompt, pas une neutralité.** Sans token de genre, FLUX ne
+   produit pas « un humain » : il produit son prior, et le prior a produit deux jeunes femmes
+   photoréalistes. Laisser la case vide, ce n'est pas s'abstenir de caster — c'est **déléguer le
+   casting au prior d'un modèle**, ce qui est le pire des deux mondes : ni décision de fiction, ni
+   contrôle d'art. Un token de genre est **obligatoire** dans ce prompt, quel qu'il soit.
+2. **La portée de fiction était surestimée, et `concept-artist` avait raison de ne pas trancher
+   seule.** « Figer le casting au masculin sur les six planches » décrit **un personnage** sous le
+   scope M=1, pas une politique de casting. Le coût d'une réouverture est un token nommé et un
+   tirage, pas une identité de jeu — ce qui est exactement pourquoi « pour l'instant » est tenable
+   sans dette.
+
+### 11.4 Point 6 — le visage miroir : la symétrie est une loi de GABARIT, pas une loi de TRAME
+
+Le risque est réel et je ne le paie pas avec un mot de plus (il n'y en a pas, et un adjectif de
+caractère de plus ferait dériver le registre). Je le paie avec une **règle de gate**, qui a
+l'avantage d'être opposable à la livraison plutôt qu'espérée à la génération :
+
+> **Règle (neuve, §11.4) — la symétrie porte sur le crâne, jamais sur l'encre.** Ce qui doit être
+> symétrique : le contour, la largeur, l'axe médian, la parité des éléments pairs (ancrages A0/A1,
+> parité G6). Ce qui **ne doit pas** l'être : la trame, les hachures, les paquets de toner, l'usure,
+> les accidents d'impression, les traits de caractère (une ride, une cicatrice, une paupière plus
+> lourde). Une planche dont l'encre est symétrique par miroir est un **FAIL de registre** au titre
+> de §4 (« pas de belle gueule lissée ») — la symétrie de gabarit ne l'excuse pas.
+
+Conséquence sur l'ordre de lecture §10.5 : **le point 9 (« le registre, en dernier ») cesse d'être
+un dernier regard et devient un motif de rejet à part entière**, au même rang que le contour. La
+révision a déplacé le risque du photoréalisme vers la fadeur ; le gate suit le risque.
+`Hard weathered face` porte seul le registre dans les mots — c'est mince, je l'assume, et c'est
+exactement pourquoi le filet est du côté de la livraison.
+
+### 11.5 Verdict
+
+**PASS SOUS CONDITIONS** — les trois champs de **§11.2bis** (et non ceux soumis) partent en ROLL 3.
+
+- **C1** — `heavy` restitué au brow (ancrage A1). _Bloquant._
+- **C2** — `uniform white paper (#FFFFFF)` restitué dans `style` (sol papier ancré). _Bloquant._
+- **C3** — 118 mots, deux de marge. Zéro mot ajouté sans rachat, et tout rachat repasse par moi.
+- **C4** — casting **masculin, ratifié par Bertrand le 2026-08-06** (« pour l'instant »).
+  `one man's head` est une **décision explicite**, pas un effet de bord : le token de genre se
+  change, il ne se vide jamais (règle §11.3). Réouvrable en fast-follow, par token nommé.
+- **C5** — §11.4 entre dans l'ordre de lecture : registre = motif de rejet, pas dernier regard.
+
+Inchangés et opposables : ancrages §10.2, tolérances §10.3, **cap 2 tirages §10.4** (ROLL 3 = planche
+héros ; ROLL 4 = un seul re-roll, et seulement si l'échec est nommable et corrigeable), exigence de
+séquence §10.4 (**une dérivée de contrôle avant la série**). Ce gate ne vaut **ni** asset gate
+(G1-G6, sur planche de combinaisons — sans elle, pas de verdict) **ni** gate composite (G7/a/b/c,
+sur captures in-game réelles).
+
+`concept-artist` écrit **§11.2bis** dans le script, mot pour mot.
