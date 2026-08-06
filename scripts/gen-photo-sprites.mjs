@@ -160,7 +160,11 @@ function loadPhotoQte() {
     // editReference wired but the edit instruction not yet written is a SETUP error, not a
     // silent fall-through to the dormant from-scratch route — concept-artist is authoring
     // `plateEdit` (short, imperative, framing clause first); do not roll on a guess meanwhile.
-    if (plateAsset.editReference !== undefined && typeof block.plateEdit !== "string") {
+    if (
+      !plateAsset.textToImage &&
+      plateAsset.editReference !== undefined &&
+      typeof block.plateEdit !== "string"
+    ) {
       throw new Error(
         "photoQte.plateAsset.editReference is wired but photoQte.plateEdit (the concept-artist's " +
           "edit instruction) is not written yet — do not dispatch the plate until it lands.",
@@ -168,17 +172,23 @@ function loadPhotoQte() {
     }
     assets.push({
       key: "plate",
-      prompt: plateAsset.editReference ? block.plateEdit : block.plate,
+      prompt: !plateAsset.textToImage && plateAsset.editReference ? block.plateEdit : block.plate,
       width: plateAsset.size.width,
       height: plateAsset.size.height,
       seed: plateAsset.seed,
       outFile: path.resolve(ROOT, "public", plateAsset.asset),
-      // editReference set → single kontext edit of the validated v2 render. Otherwise
-      // twoStagePlate (dormant fallback for a future full regeneration — see header).
-      editReference: plateAsset.editReference
-        ? path.resolve(ROOT, "public", plateAsset.editReference)
-        : undefined,
-      twoStagePlate: !plateAsset.editReference,
+      // `textToImage: true` (levelArt) forces the plain paid text-to-image route on
+      // PLATE_T2I_MODEL, ignoring any editReference kept wired for the record. That is the
+      // 2026-08-05 route: Bertrand asked for "more sketchy, more comics, more like
+      // Belliard", and the reference decor's own model draws that register natively, where
+      // kontext's ~1024px edit pass dissolved the ink before the upscale to 2048.
+      // Otherwise: editReference set → single kontext edit of the validated v2 render;
+      // neither → twoStagePlate (dormant fallback, see header).
+      editReference:
+        plateAsset.textToImage || plateAsset.editReference === undefined
+          ? undefined
+          : path.resolve(ROOT, "public", plateAsset.editReference),
+      twoStagePlate: !plateAsset.textToImage && !plateAsset.editReference,
       opaque: true, // no chroma-key, no mobile variant (ruling §1.1 — one asset, both viewports)
       mobile: false,
     });

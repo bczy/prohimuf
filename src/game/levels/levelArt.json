@@ -389,7 +389,8 @@
           "reference": "assets/photoqte/plate-signage-blanked.png",
           "promptKey": "plateEditB"
         }
-      ]
+      ],
+      "textToImage": true
     },
     "types": {
       "commandant_wait": {
