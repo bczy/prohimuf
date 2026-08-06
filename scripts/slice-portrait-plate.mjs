@@ -1260,9 +1260,29 @@ function portraitRegion() {
 // re-implementation of the gate). `runReal`'s guards are untouched.
 const EXPLORE_OUT_DIR = path.resolve(ROOT, "scripts/.dbg-portrait-explore");
 
+function assembleExplorePrompt() {
+  return `${PORTRAIT_PROMPT_FAMILY.opening}${PORTRAIT_PROMPT_FAMILY.prompt}${PORTRAIT_PROMPT_FAMILY.style}`;
+}
+
 function buildExploreUrl(seed) {
-  const assembled = `${PORTRAIT_PROMPT_FAMILY.opening}${PORTRAIT_PROMPT_FAMILY.prompt}${PORTRAIT_PROMPT_FAMILY.style}`;
-  return fluxUrl(assembled, seed, PLATE_WIDTH, PLATE_HEIGHT);
+  return fluxUrl(assembleExplorePrompt(), seed, PLATE_WIDTH, PLATE_HEIGHT);
+}
+
+// RE-PANEL 2026-08-06: the rendered images had nothing to do with the
+// prompt (photorealistic women wearing crowns, vs. the requested flat ink
+// fanzine drawing of a head) — Bertrand wants the FACT, not a guess,
+// between "the service ignored our prompt" and "we didn't send what we
+// think we sent". These are the two things that answer that: the exact
+// request URL (so it can be pasted into a browser and compared) and any
+// response header that signals a cached response (the second run
+// "generated" two plates in one second — a cache, key unknown).
+const CACHE_HEADER_PATTERN = /^(x-cache|age|cf-cache-status)$/i;
+export function extractCacheHeaders(headers) {
+  const out = {};
+  for (const [key, value] of Object.entries(headers ?? {})) {
+    if (CACHE_HEADER_PATTERN.test(key)) out[key] = value;
+  }
+  return out;
 }
 
 /** Best-effort registration measurement for the exploration report: never
@@ -1314,16 +1334,45 @@ export async function runExplore(count, { seeds } = {}) {
     seeds ?? Array.from({ length: count }, (_, i) => PORTRAIT_PROMPT_FAMILY.seed + i);
 
   fs.mkdirSync(EXPLORE_OUT_DIR, { recursive: true });
+  const assembledPrompt = assembleExplorePrompt();
   const results = [];
   for (const seed of plateSeeds) {
-    console.log(`[slice-portrait-plate] [explore] generating seed ${seed}...`);
-    const rawBuf = await fetchWithRetry(buildExploreUrl(seed));
+    const requestUrl = buildExploreUrl(seed);
+    console.log(`[slice-portrait-plate] [explore] seed ${seed} — request URL:`);
+    console.log(`  ${requestUrl}`);
+    console.log(`[slice-portrait-plate] [explore] seed ${seed} — assembled prompt:`);
+    console.log(`  ${assembledPrompt}`);
+    const rawBuf = await fetchWithRetry(requestUrl);
+    const responseHeaders = {
+      "content-type": rawBuf.contentType ?? null,
+      "content-length": rawBuf.responseHeaders?.["content-length"] ?? null,
+      ...extractCacheHeaders(rawBuf.responseHeaders),
+    };
     const buf = await ensurePngBuffer(rawBuf);
     const plate = PNG.sync.read(buf);
     const file = path.join(EXPLORE_OUT_DIR, `face-seed-${seed}.png`);
     fs.writeFileSync(file, buf);
+    const byteSize = buf.length;
+    const shortHash = sha256Hex([buf]).slice(0, 12);
+    console.log(
+      `[slice-portrait-plate] [explore] seed ${seed} — response headers: ` +
+        `${JSON.stringify(responseHeaders)}`,
+    );
+    console.log(
+      `[slice-portrait-plate] [explore] seed ${seed} — ${byteSize} bytes, sha256:${shortHash}`,
+    );
     const measurement = measureExploreBestEffort(plate);
-    results.push({ seed, width: plate.width, height: plate.height, file, ...measurement });
+    results.push({
+      seed,
+      requestUrl,
+      width: plate.width,
+      height: plate.height,
+      file,
+      byteSize,
+      shortHash,
+      responseHeaders,
+      ...measurement,
+    });
     console.log(
       `[slice-portrait-plate] [explore]   ${plate.width}x${plate.height} — contour ` +
         (measurement.contourFound
@@ -1334,35 +1383,53 @@ export async function runExplore(count, { seeds } = {}) {
     );
   }
 
+  const identicalImages =
+    results.length > 1 && results.every((r) => r.shortHash === results[0].shortHash);
+  if (identicalImages) {
+    console.warn(
+      "[slice-portrait-plate] [explore] ⚠ every plate has the SAME sha256 — bit-for-bit " +
+        "identical images (a cache hit, not N distinct generations).",
+    );
+  }
+
   const pairwise = [];
   for (let i = 0; i < results.length; i++) {
     for (let j = i + 1; j < results.length; j++) {
       const a = results[i];
       const b = results[j];
+      // Byte identity is checked independently of whether registration
+      // succeeded — a cached/duplicate response is a fact about the bytes,
+      // not about whether the contour happened to be measurable.
+      const entry = { seeds: [a.seed, b.seed], identical: a.shortHash === b.shortHash };
       if (a.contourFound && b.contourFound) {
-        pairwise.push({
-          seeds: [a.seed, b.seed],
-          crownDeltaPx: Math.abs(a.crownY - b.crownY),
-          chinDeltaPx: Math.abs(a.chinY - b.chinY),
-          axisDeltaPx: Math.abs(a.axisX - b.axisX),
-        });
+        entry.crownDeltaPx = Math.abs(a.crownY - b.crownY);
+        entry.chinDeltaPx = Math.abs(a.chinY - b.chinY);
+        entry.axisDeltaPx = Math.abs(a.axisX - b.axisX);
       }
+      pairwise.push(entry);
     }
   }
 
   const report = {
     generatedAt: new Date().toISOString(),
     promptSeed: PORTRAIT_PROMPT_FAMILY.seed,
+    assembledPrompt,
     note:
       "Reconnaissance only (Bertrand, 2026-08-06) — no pass/alert/fail verdict: " +
       "INTER_PLATE_TOLERANCE was calibrated for a kontext derivative vs a hero, not for " +
-      "independently-seeded whole-face draws. Look at the images.",
+      "independently-seeded whole-face draws. Look at the images. requestUrl is pasteable into " +
+      "a browser to compare what it renders against what was recorded here.",
+    identicalImages,
     plates: results.map(
       ({
         seed,
+        requestUrl,
         width,
         height,
         file,
+        byteSize,
+        shortHash,
+        responseHeaders,
         contourFound,
         crownY,
         chinY,
@@ -1373,9 +1440,13 @@ export async function runExplore(count, { seeds } = {}) {
         controlsError,
       }) => ({
         seed,
+        requestUrl,
         width,
         height,
         file: path.relative(ROOT, file),
+        byteSize,
+        shortHash,
+        responseHeaders,
         contour: contourFound ? { crownY, chinY, axisX, coverageRatio } : { error: contourError },
         controls: controls ?? (controlsError ? { error: controlsError } : null),
       }),

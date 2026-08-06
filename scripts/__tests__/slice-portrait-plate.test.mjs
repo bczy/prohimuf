@@ -13,6 +13,7 @@ import {
   isAspectPreservedScaleDown,
   runReal,
   measureExploreBestEffort,
+  extractCacheHeaders,
   measureSeamContinuity,
   PLATE_WIDTH,
   PLATE_HEIGHT,
@@ -594,6 +595,32 @@ describe("measureExploreBestEffort — reconnaissance measurement (Bertrand, 202
     expect(result.contourFound).toBe(true);
     expect(result.controls).toBeNull();
     expect(result.controlsError).toMatch(/control anchors ABORTED/);
+  });
+});
+
+describe("extractCacheHeaders — RE-PANEL 2026-08-06 (cache-key instrumentation)", () => {
+  it("picks out x-cache/age/cf-cache-status, case-insensitively, and nothing else", () => {
+    const headers = {
+      "Content-Type": "image/png",
+      "content-length": "12345",
+      "X-Cache": "HIT",
+      Age: "42",
+      "CF-Cache-Status": "DYNAMIC",
+      "x-request-id": "abc123",
+    };
+    expect(extractCacheHeaders(headers)).toEqual({
+      "X-Cache": "HIT",
+      Age: "42",
+      "CF-Cache-Status": "DYNAMIC",
+    });
+  });
+
+  it("returns an empty object when there are no cache-signalling headers", () => {
+    expect(extractCacheHeaders({ "content-type": "image/png" })).toEqual({});
+  });
+
+  it("handles a missing/undefined headers object without throwing", () => {
+    expect(extractCacheHeaders(undefined)).toEqual({});
   });
 });
 

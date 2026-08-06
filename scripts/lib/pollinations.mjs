@@ -185,6 +185,12 @@ export function fetchImage(url, redirects = 0) {
           // fetchImage/fetchWithRetry's contract for the other 15 call sites.
           buf.httpStatus = res.statusCode;
           buf.contentType = res.headers["content-type"];
+          // Full response headers, same attach-as-own-property pattern — RE-
+          // PANEL 2026-08-06: distinguishing "the service ignored our prompt"
+          // from "we didn't send what we think we sent" needs the response's
+          // own cache signals (x-cache/age/cf-cache-status) alongside the
+          // request URL, not just content-type.
+          buf.responseHeaders = res.headers;
           resolve(buf);
         });
       })

@@ -292,6 +292,29 @@ describe("fetchImage — attaches httpStatus/contentType to a successful buffer"
     expect(buf.contentType).toBe("image/png");
     expect(Buffer.isBuffer(buf)).toBe(true);
   });
+
+  it("attaches the full response headers as buf.responseHeaders (RE-PANEL 2026-08-06)", async () => {
+    const res = fakeResponse(200, {
+      "content-type": "image/png",
+      "content-length": "12345",
+      "x-cache": "HIT",
+      age: "42",
+    });
+    res.on.mockImplementation((ev, fn) => {
+      if (ev === "data") fn(Buffer.from("fake-png-bytes"));
+      if (ev === "end") fn();
+      return res;
+    });
+    https.get.mockImplementation((url, opts, cb) => {
+      cb(res);
+      return fakeRequest();
+    });
+
+    const buf = await fetchImage("https://image.pollinations.ai/img");
+    expect(buf.responseHeaders["content-length"]).toBe("12345");
+    expect(buf.responseHeaders["x-cache"]).toBe("HIT");
+    expect(buf.responseHeaders.age).toBe("42");
+  });
 });
 
 describe("fetchImage authentication", () => {
