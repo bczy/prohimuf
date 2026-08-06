@@ -13,6 +13,10 @@ name: Explore portrait-robot faces (reconnaissance)
 #
 # The strict production path (gen-portrait-plate.yml, `runReal`) is
 # untouched by this file.
+# `workflow_dispatch` only registers once the file lives on the default branch,
+# which it does not yet — so the marker push is the ONLY way to run this from a
+# feature branch today (same seam as gen-portrait-plate.yml, ADR-0009). Touch
+# `.github/dispatch/gen-portrait-explore` with a `ci(dispatch):` commit.
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +24,10 @@ on:
         description: "Number of whole-face plates to generate"
         required: false
         default: "2"
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-portrait-explore"
 
 permissions:
   contents: read
@@ -31,8 +39,16 @@ concurrency:
 jobs:
   explore:
     runs-on: ubuntu-latest
+    # Same guard as gen-portrait-plate.yml: a marker push only runs on an
+    # explicit `ci(dispatch):` commit, so an unrelated push touching the marker
+    # never spends a FLUX call.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
     env:
       POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      # `inputs.count` is empty on a marker push — default to 2 there. Read
+      # through env rather than interpolated into `run:` (workflow-injection
+      # hygiene, same reason gen-portrait-plate.yml quotes $GITHUB_REF_NAME).
+      EXPLORE_COUNT: ${{ github.event.inputs.count || '2' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,7 +73,7 @@ jobs:
           npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
 
       - name: Generate N whole-face plates + best-effort report (FLUX)
-        run: node scripts/slice-portrait-plate.mjs --explore-faces "${{ github.event.inputs.count }}"
+        run: node scripts/slice-portrait-plate.mjs --explore-faces "$EXPLORE_COUNT"
 
       - name: Upload the plates + report for a human to look at
         if: always()
