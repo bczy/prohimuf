@@ -932,8 +932,8 @@ doit rester détectable en px absolus (trait continu ≥ 6 px, pic ≥ 3× la m�
 `dev-tooling-assets`). La marge et le bleed sont des grandeurs **absolues** ; le visage a du mou,
 la marge n'en a pas. Je prends donc les pixels manquants sur le portrait, pas sur les repères.
 
-| Grandeur                          | Valeur                          | Statut                                       |
-| --------------------------------- | ------------------------------- | -------------------------------------------- |
+| Grandeur                          | Valeur                          | Statut                                        |
+| --------------------------------- | ------------------------------- | --------------------------------------------- |
 | **Planche livrée**                | **676 × 871** (588 796 px)      | exact, `runReal` contrôle ; sous le plafond   |
 | **Marge sur les 4 côtés**         | **48 px**                       | **inchangée** — absolue, non mise à l'échelle |
 | **Cadre du portrait**             | **580 × 775**                   | 0,749 (l'ancien 0,750, écart non gaté)        |
@@ -956,12 +956,12 @@ coïncidence, mais parce que ×0,78 **est** la conversion render-invariante. Ell
 elle est plus sévère en px de planche parce que la planche est moins réduite. C'est l'exigence qui
 est constante ; c'est le chiffre qui bouge.
 
-| Grandeur mesurée à la couture       | PASS                     | Zone d'alerte | Rejet de planche         |
-| ----------------------------------- | ------------------------ | ------------- | ------------------------ |
-| **Demi-largeur du crâne** (G et D)  | **≤ 1,5 px** (≤ 0,19 %)  | 1,5 – 3,0 px  | **≥ 3,0 px** (≥ 0,39 %)  |
-| **Position de l'axe médian**        | **≤ 0,75 px** (≤ 0,10 %) | 0,75 – 1,5 px | **≥ 1,5 px** (≥ 0,19 %)  |
-| **Écart de tangente du contour**    | **≤ 3°**                 | 3° – 6°       | **≥ 6°**                 |
-| **Épaisseur de trait entre bandes** | **≤ 10 % relatif**       | 10 – 15 %     | **> 15 %**               |
+| Grandeur mesurée à la couture       | PASS                     | Zone d'alerte | Rejet de planche        |
+| ----------------------------------- | ------------------------ | ------------- | ----------------------- |
+| **Demi-largeur du crâne** (G et D)  | **≤ 1,5 px** (≤ 0,19 %)  | 1,5 – 3,0 px  | **≥ 3,0 px** (≥ 0,39 %) |
+| **Position de l'axe médian**        | **≤ 0,75 px** (≤ 0,10 %) | 0,75 – 1,5 px | **≥ 1,5 px** (≥ 0,19 %) |
+| **Écart de tangente du contour**    | **≤ 3°**                 | 3° – 6°       | **≥ 6°**                |
+| **Épaisseur de trait entre bandes** | **≤ 10 % relatif**       | 10 – 15 %     | **> 15 %**              |
 
 Trois clauses de mesure, sans lesquelles ce tableau est décoratif :
 
@@ -1037,32 +1037,32 @@ rendus à la lane, comme en §8.
 **`opening`** (la clause de repères est supprimée et remplacée) :
 
 > `Flat 2D black ink drawing on a printed sheet: one human head, strict frontal view,
-> orthographic projection, centred, eye line level, crown to collarbone, constant skull width.
-> One unbroken closed skull outline containing the hair, crown and chin inside the sheet, blank
-> white cheeks and forehead. `
+orthographic projection, centred, eye line level, crown to collarbone, constant skull width.
+One unbroken closed skull outline containing the hair, crown and chin inside the sheet, blank
+white cheeks and forehead. `
 
 **`prompt`** (une seule substitution, `thin level mouth` → `one thin level mouth line`) :
 
 > `Hard weathered face, broad flat forehead under a straight low hairline, wide-set eyes under a
-> heavy level brow, straight narrow nose ending blunt, long flat philtrum, one thin level mouth
-> line, square jaw, small ears flat to the skull, bare neck. `
+heavy level brow, straight narrow nose ending blunt, long flat philtrum, one thin level mouth
+line, square jaw, small ears flat to the skull, bare neck. `
 
 **`style`** : **inchangé**. Il n'a jamais servi le recalage, il sert le trait ; rien dans ROLL 2 ne
 le met en cause.
 
 > `Photocopied 1990s punk fanzine illustration: thick black ink outline of one constant weight,
-> sparse coarse halftone dots at one 45-degree angle, flat frontal light, uniform white paper
-> (#FFFFFF), high-contrast xerox toner.`
+sparse coarse halftone dots at one 45-degree angle, flat frontal light, uniform white paper
+(#FFFFFF), high-contrast xerox toner.`
 
 **Ce que j'achète avec les 21 mots récupérés, clause par clause — c'est opposable :**
 
-| Clause neuve                                     | Ce qu'elle tient                                                                                                                                                                                                                              |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `One unbroken closed skull outline`              | Le contour devient le **référentiel de recalage** (§10.2) : il doit être un objet mesurable, donc fermé et continu. C'est aussi la clause §8.3 Q6 (contour porteur) promue de critère de lisibilité à **condition de mesurabilité**.          |
-| `containing the hair`                            | Rend opposable au dessin ce que §1.1 n'imposait qu'au découpage : **la coiffure ne redessine pas la silhouette du crâne**. Sans elle, la variante « cheveux » déplace le sommet du crâne et détruit le référentiel vertical d'une planche à l'autre. |
-| `crown and chin inside the sheet`                | Sommet et menton sont les **deux ancres verticales**. Tronqués, il n'y a plus d'échelle du tout. Ça remplace, en positif et sur le dessin, ce que les traits de coupe devaient garantir.                                                       |
-| `blank white cheeks and forehead`                | La clause la plus importante des trois. Elle ne décrit pas un style : elle garantit l'**unicité** des pics de densité (§10.2). Une joue tramée fabrique un maximum horizontal concurrent, et le détecteur choisit la joue.                     |
-| `one thin level mouth line`                      | `line` nomme la bouche comme **trait horizontal unique**, pas comme volume de lèvres. C'est le pic de contrôle bas.                                                                                                                            |
+| Clause neuve                        | Ce qu'elle tient                                                                                                                                                                                                                                     |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `One unbroken closed skull outline` | Le contour devient le **référentiel de recalage** (§10.2) : il doit être un objet mesurable, donc fermé et continu. C'est aussi la clause §8.3 Q6 (contour porteur) promue de critère de lisibilité à **condition de mesurabilité**.                 |
+| `containing the hair`               | Rend opposable au dessin ce que §1.1 n'imposait qu'au découpage : **la coiffure ne redessine pas la silhouette du crâne**. Sans elle, la variante « cheveux » déplace le sommet du crâne et détruit le référentiel vertical d'une planche à l'autre. |
+| `crown and chin inside the sheet`   | Sommet et menton sont les **deux ancres verticales**. Tronqués, il n'y a plus d'échelle du tout. Ça remplace, en positif et sur le dessin, ce que les traits de coupe devaient garantir.                                                             |
+| `blank white cheeks and forehead`   | La clause la plus importante des trois. Elle ne décrit pas un style : elle garantit l'**unicité** des pics de densité (§10.2). Une joue tramée fabrique un maximum horizontal concurrent, et le détecteur choisit la joue.                           |
+| `one thin level mouth line`         | `line` nomme la bouche comme **trait horizontal unique**, pas comme volume de lèvres. C'est le pic de contrôle bas.                                                                                                                                  |
 
 Rien n'est sacrifié pour les payer : `small ears flat to the skull` reste (Q5 tient toujours,
 et l'oreille redevient importante — elle est sur le contour, donc sur le référentiel).
@@ -1086,13 +1086,13 @@ la voie B utilise celle qu'on possédait déjà.
 
 **Ancrages, par rang. Ce tableau est opposable ; `dev-tooling-assets` fixe ses seuils dessus.**
 
-| Rang | Ancrage                                                            | Rôle                                                    | Pourquoi il est stable                                                                                                                                        |
-| ---- | ------------------------------------------------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A0   | **Contour du crâne** : ordonnée du sommet, ordonnée du menton      | **Référentiel vertical unique** (origine + échelle H)   | Gabarit §1.1, verrouillé dans le prompt. Trait de 5-6 px continu = l'objet le plus encré de la planche, très au-dessus du fond. Aucune bande n'a le droit d'y toucher. |
-| A0   | **Demi-largeurs du contour, par ligne** → axe médian pondéré       | **Référentiel horizontal** (centrage + détection tilt)  | Même objet, même invariance. Se mesure déjà : c'est exactement la grandeur de §9.3.                                                                             |
-| A1   | **Barre sourcils + yeux** (pic de densité horizontal haut)         | **CONTRÔLE**, jamais référentiel                        | Ordonnée gabarit (`eye line level`, `heavy level brow`), mais dessin propriété de la bande 2. Sert à vérifier la proportion et à mesurer le tilt (pic G vs D).   |
-| A2   | **Ligne de bouche** (pic de densité horizontal bas)                | **CONTRÔLE**, jamais référentiel                        | Idem, bande 4. Deuxième point de proportion : le couple A1/A2 attrape une planche dont les proportions internes ont dérivé alors que A0 est bon.                |
-| —    | **Base du nez / narines**                                          | **ABANDONNÉ**                                           | C'était un nominal ADR-0080 D5 ; il ne survit pas au changement de méthode. Deux petites taches non jointives, faible encre, forte variance de forme : ça ne fait pas un maximum horizontal franc. Le retenir, c'est refabriquer le mode d'échec de ROLL 2 à l'intérieur du visage. |
+| Rang | Ancrage                                                       | Rôle                                                   | Pourquoi il est stable                                                                                                                                                                                                                                                              |
+| ---- | ------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A0   | **Contour du crâne** : ordonnée du sommet, ordonnée du menton | **Référentiel vertical unique** (origine + échelle H)  | Gabarit §1.1, verrouillé dans le prompt. Trait de 5-6 px continu = l'objet le plus encré de la planche, très au-dessus du fond. Aucune bande n'a le droit d'y toucher.                                                                                                              |
+| A0   | **Demi-largeurs du contour, par ligne** → axe médian pondéré  | **Référentiel horizontal** (centrage + détection tilt) | Même objet, même invariance. Se mesure déjà : c'est exactement la grandeur de §9.3.                                                                                                                                                                                                 |
+| A1   | **Barre sourcils + yeux** (pic de densité horizontal haut)    | **CONTRÔLE**, jamais référentiel                       | Ordonnée gabarit (`eye line level`, `heavy level brow`), mais dessin propriété de la bande 2. Sert à vérifier la proportion et à mesurer le tilt (pic G vs D).                                                                                                                      |
+| A2   | **Ligne de bouche** (pic de densité horizontal bas)           | **CONTRÔLE**, jamais référentiel                       | Idem, bande 4. Deuxième point de proportion : le couple A1/A2 attrape une planche dont les proportions internes ont dérivé alors que A0 est bon.                                                                                                                                    |
+| —    | **Base du nez / narines**                                     | **ABANDONNÉ**                                          | C'était un nominal ADR-0080 D5 ; il ne survit pas au changement de méthode. Deux petites taches non jointives, faible encre, forte variance de forme : ça ne fait pas un maximum horizontal franc. Le retenir, c'est refabriquer le mode d'échec de ROLL 2 à l'intérieur du visage. |
 
 **Les quatre clauses de méthode, sans lesquelles ce tableau est décoratif :**
 
@@ -1100,7 +1100,7 @@ la voie B utilise celle qu'on possédait déjà.
    « le plus sombre » (c'est exactement le défaut C-B de `findTickY`, qui retournait toujours une
    ligne) mais **le plus sombre ET séparé du deuxième candidat de sa fenêtre**. Si le second pic
    est à moins de 2× le premier, le détecteur **abort**. La clause `blank white cheeks and
-   forehead` existe pour rendre cette séparation atteignable.
+forehead` existe pour rendre cette séparation atteignable.
 2. **C-B reste en vigueur, transposé.** Le détecteur doit pouvoir échouer sur le visage exactement
    comme il devait pouvoir échouer sur la marge. Abort > recalage sur du bruit. C'était vrai en
    marge, c'est plus vrai encore ici : un mauvais recalage intérieur donne une planche
@@ -1134,13 +1134,13 @@ La question est juste et la réponse tient en une distinction que je n'avais pas
   rejet systématique, et **un contrôle qui rejette tout ne protège rien**. Nouveau tableau, il est
   neuf, il ne remplace rien :
 
-| Grandeur, planche dérivée vs planche héros                       | PASS                   | Alerte        | Rejet de planche |
-| ---------------------------------------------------------------- | ---------------------- | ------------- | ---------------- |
-| **Hauteur de crâne H (sommet → menton)**                         | **≤ 0,5 % de H** (≈ 4 px) | 0,5 – 1,0 %   | **≥ 1,0 %**      |
-| **Axe médian, écart de centrage**                                | **≤ 1,5 px**           | 1,5 – 3,0 px  | **≥ 3,0 px**     |
-| **Ordonnée A1 (barre yeux), en fraction de H**                   | **≤ 1,0 % de H**       | 1,0 – 2,0 %   | **≥ 2,0 %**      |
-| **Ordonnée A2 (ligne bouche), en fraction de H**                 | **≤ 1,5 % de H**       | 1,5 – 3,0 %   | **≥ 3,0 %**      |
-| **Tilt : désaccord d'ordonnée entre pic œil G et pic œil D**     | **≤ 8 px**             | 8 – 16 px     | **≥ 16 px**      |
+| Grandeur, planche dérivée vs planche héros                   | PASS                      | Alerte       | Rejet de planche |
+| ------------------------------------------------------------ | ------------------------- | ------------ | ---------------- |
+| **Hauteur de crâne H (sommet → menton)**                     | **≤ 0,5 % de H** (≈ 4 px) | 0,5 – 1,0 %  | **≥ 1,0 %**      |
+| **Axe médian, écart de centrage**                            | **≤ 1,5 px**              | 1,5 – 3,0 px | **≥ 3,0 px**     |
+| **Ordonnée A1 (barre yeux), en fraction de H**               | **≤ 1,0 % de H**          | 1,0 – 2,0 %  | **≥ 2,0 %**      |
+| **Ordonnée A2 (ligne bouche), en fraction de H**             | **≤ 1,5 % de H**          | 1,5 – 3,0 %  | **≥ 3,0 %**      |
+| **Tilt : désaccord d'ordonnée entre pic œil G et pic œil D** | **≤ 8 px**                | 8 – 16 px    | **≥ 16 px**      |
 
 Deux points que j'assume à voix haute :
 
