@@ -181,24 +181,41 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // filled; concept-artist/lead-art re-pin at the prompt gate if they want a
   // different roll.
   seed: 190226,
-  // Cadrage lock (brief §1.1/§1.2bis, bible §3.6 drafting vocabulary; REVISED
-  // brief §10.1, lead-art, 2026-08-05 — VOIE B). Front-loaded because FLUX
-  // over-weights early tokens: medium + view + centring + constant skull
-  // width land before any face word. The margin-tick clause is GONE — margin
-  // ticks are abandoned outright (brief §10: "toute réapparition d'un token
-  // de repère de marge... est un FAIL de prompt gate, sans discussion") — and
-  // replaced by the clause that makes the skull OUTLINE itself the
-  // registration reference: "one unbroken closed skull outline containing
-  // the hair, crown and chin... blank white cheeks and forehead."
-  // `detectSkullContour`/`measureControlAnchors` above read exactly this:
+  // Cadrage lock — GATED TEXT, brief §11.2bis (lead-art, 2026-08-06),
+  // superseding §10.1. Written here WORD FOR WORD; the six load-bearing
+  // clauses (§11.2bis) cannot be removed or reworded without re-gating.
+  // Front-loaded because FLUX over-weights early tokens: medium + casting +
+  // symmetry + constant skull width land before any face word.
+  //
+  // Two words that ROLL 1/2 proved are not decoration, and that no future
+  // edit may quietly drop:
+  //   • `crown` is GONE from this field (it appeared twice in §10.1, plus
+  //     `collarbone`). Read literally by FLUX those are OBJECTS — the two
+  //     rolls came back as crowned women in lace collars. The framing they
+  //     carried is now "top of head and chin inside the sheet", which says
+  //     the same geometry without naming anything wearable (brief §11.1).
+  //   • `one man's head` is a DATED CASTING DECISION (Bertrand, 2026-08-06,
+  //     brief §11.3), not a stylistic accident. The gender token is a
+  //     mandatory slot: it may be CHANGED, never EMPTIED — an empty slot is
+  //     what handed the casting to FLUX's prior in the first place. Removing
+  //     it is a prompt-gate FAIL.
+  //
+  // Frontality is expressed as OBSERVABLE SYMMETRY, not as a projection
+  // term: `strict frontal view, orthographic projection, centred` failed on
+  // ROLL 2 (the plate came back three-quarter). "both ears equal, both eyes
+  // the same size on one level line" is false by construction on a turned
+  // head, and it is the same quantity `measureControlAnchors` reads as
+  // `tiltPx` — prompt and detector now state one thing.
+  //
+  // `detectSkullContour`/`measureControlAnchors` read exactly this field:
   // the closed outline (crown/chin extremes, A0), and the blank cheeks/
   // forehead that keep the brow/eye and mouth density peaks (A1/A2) unique
-  // in their window (brief §10.1 table, clause-by-clause).
+  // in their window.
   opening:
-    "Flat 2D black ink drawing on a printed sheet: one human head, strict frontal view, " +
-    "orthographic projection, centred, eye line level, crown to collarbone, constant skull " +
-    "width. One unbroken closed skull outline containing the hair, crown and chin inside the " +
-    "sheet, blank white cheeks and forehead. ",
+    "Black ink drawing on a printed sheet: one man's head facing forward, symmetrical about a " +
+    "vertical centre line, both ears equal, both eyes the same size on one level line, constant " +
+    "skull width. One unbroken closed skull outline containing the hair, top of head and chin " +
+    "inside the sheet, blank white cheeks and forehead. ",
   // gabarit-01 hero face — subject + silhouette ONLY (no style, no ground, no
   // colour). Every feature is named as a flat, level volume so the three seam
   // ordinates (0.32 forehead / 0.52 above the nose bridge / 0.72 philtrum)
@@ -207,13 +224,33 @@ export const PORTRAIT_PROMPT_FAMILY = {
   // Variation (6 per band) is derived later by `kontext` img2img from THIS
   // validated plate, one named descriptor at a time (brief §5.2 step 4) —
   // never by re-rolling this prompt, which would change the skull.
-  // `thin level mouth` → `one thin level mouth line` (brief §10.1): `line`
-  // names the mouth as the single horizontal control peak A2 reads, not a
-  // lip volume.
+  //
+  // GATED TEXT, brief §11.2bis. Three clauses were LOOSENED here on purpose
+  // (§11.2): `straight low hairline` → `a hairline across it`, `wide-set
+  // eyes under a heavy level brow` → `eyes under a heavy level brow`,
+  // `straight narrow nose ending blunt` → `a nose`. Motive: this field named
+  // nine features out of nine, leaving the seed no room to work — the two
+  // rolls came back as the same face twice, which would give the scene no
+  // difficulty at all. The vacated shapes are what the seed and the five
+  // `kontext` derivations now vary.
+  //
+  // What did NOT loosen, and why each one is load-bearing rather than
+  // descriptive:
+  //   • `heavy` (level brow) — A1 is a DENSITY peak, and what makes it
+  //     unique in its window is ink LOAD, not ordinate. `level` alone fixes
+  //     where the peak sits; `heavy` is what makes there be a peak at all.
+  //     Dropping it manufactures brief §10.4 abandon condition 2 (lead-art
+  //     C1, 2026-08-06).
+  //   • `one thin level mouth line` — the low control peak A2; `line` names
+  //     the mouth as a single horizontal, not a lip volume.
+  //   • `broad forehead` (C1 at 0.32), `long flat philtrum` (C3 at 0.72) —
+  //     the seam zones, which must stay flat and low-contrast.
+  //   • `square jaw`, `small ears flat to the skull`, `bare neck` — the
+  //     outline, i.e. the A0 referential itself (brief §8.3 Q5).
   prompt:
-    "Hard weathered face, broad flat forehead under a straight low hairline, wide-set " +
-    "eyes under a heavy level brow, straight narrow nose ending blunt, long flat philtrum, " +
-    "one thin level mouth line, square jaw, small ears flat to the skull, bare neck. ",
+    "Hard weathered face, broad forehead, a hairline across it, eyes under a heavy level brow, " +
+    "a nose, long flat philtrum, one thin level mouth line, square jaw, small ears flat to the " +
+    "skull, bare neck. ",
   // Shared house tail, verbatim from the bible §1/§3 register: one constant
   // ink weight and one hatch angle (brief §1.3 — two weights or two angles
   // read as two draughtsmen), flat frontal light (no shadow crossing a seam),
