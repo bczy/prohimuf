@@ -1416,3 +1416,157 @@ séquence §10.4 (**une dérivée de contrôle avant la série**). Ce gate ne va
 sur captures in-game réelles).
 
 `concept-artist` écrit **§11.2bis** dans le script, mot pour mot.
+
+---
+
+## 12. CRITÈRE DE RECEVABILITÉ — « même style, seuls les visages changent » (Bertrand, 2026-08-06)
+
+**Consigne :** « Attention les portraits doivent tous avoir le **même style**. Seuls les visages
+changent. » C'est la **loi de cohérence de famille** (bible §2 loi 2, « one printing run »), déjà
+en vigueur en §1.3 pour les bandes d'une planche. Rien de neuf sur le principe. Ce qui est neuf,
+c'est le **véhicule de production** : N planches générées indépendamment, graine seule variable.
+Ce §12 dit ce que je regarde, à partir de quel écart je rejette, et ce que je réponds à la question
+franche.
+
+### 12.1 Réponse 1 — non, le bloc `style` ne suffit pas, et il ne peut pas suffire
+
+`one constant weight` et `one 45-degree angle` sont des invariants bien écrits — **à l'intérieur
+d'une image**. C'est exactement ce qu'ils achètent et c'est déjà beaucoup : ils empêchent qu'une
+même planche mélange deux épaisseurs ou deux angles de trame. C'est la cohérence **intra-planche**,
+et sur ce terrain le bloc est bon, je ne le touche pas.
+
+**Ce qu'aucun mot ne peut acheter, c'est la cohérence inter-planches.** Le motif est mécanique et
+il ne se plaide pas :
+
+- `one constant weight` est un **quantificateur, pas une valeur**. Il dit « une seule épaisseur »,
+  il ne dit pas **laquelle**. Deux graines peuvent honorer la clause à la lettre et rendre l'une un
+  trait gras constant, l'autre un trait maigre constant. Les deux planches passent le prompt ; le
+  set échoue.
+- **Aucune valeur continue n'est adressable en mots.** Épaisseur, densité de trame, plage de
+  contraste, quantité d'usure sont des grandeurs continues ; le prompt n'a pas d'unité pour les
+  fixer, et FLUX n'obéit pas aux pixels. Écrire `6-pixel outline` ou `40% ink coverage` ne serait
+  pas une clause, ce serait une décoration — et j'ai déjà payé une fois pour avoir cru qu'un mot
+  suffisait à fabriquer une propriété globale (les repères de ROLL 2, §10 ; les liserés cuits des
+  véhicules, ADR-0011). **Une propriété globale ne s'obtient pas en la répétant dans N prompts
+  locaux.** C'est la même loi, au troisième constat.
+- **Je ne dépense donc pas mes 2 mots de marge là-dessus.** Un token de plus dans `style` donnerait
+  l'illusion d'un filet sans en être un, et coûterait la marge de correction de ROLL 4. La marge
+  reste.
+
+**Conséquence, dite nettement : le bloc `style` de §11.2bis est CONFIRMÉ inchangé, et il ne porte
+pas la cohérence inter-planches. Ce n'est pas son travail. Le filet est ailleurs — en §12.2 (la
+mesure) et en §12.3 (le véhicule).**
+
+### 12.2 Réponse 2 — le critère chiffré : cinq grandeurs, référent = la planche héros
+
+**Le référent est la PLANCHE HÉROS, jamais la médiane du batch.** C'est le point dur et il décide
+tout le reste : une médiane se déplace avec les planches qu'on lui donne, donc elle **légitime la
+dérive** — six planches qui glissent ensemble passeraient toutes. La planche héros est validée à
+l'œil et au gate, elle est fixe, et tout le monde se compare à elle. C'est le même renversement
+qu'en §10.2 : on recale sur un invariant possédé, pas sur une statistique.
+
+**Espace de mesure :** planche livrée 676 × 871, masque d'encre binarisé au seuil de la maison,
+mesures faites **hors zone de coiffure** (la variante cheveux fait légitimement varier la densité
+locale — la mesurer serait rejeter une variation qu'on a commandée).
+
+| # | Grandeur                                                                                                  | Ce que ça attrape                                        | PASS         | Alerte      | Rejet de planche |
+| - | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------ | ----------- | ---------------- |
+| S1 | **Épaisseur médiane du trait de contour** (transformée de distance sur le contour du crâne, en px planche) | trait gras vs trait maigre — le tell nº 1                | **≤ 10 %**   | 10 – 15 %   | **≥ 15 %**       |
+| S2 | **Couverture d'encre globale** (% de pixels encrés dans la bbox du portrait, hors coiffure)               | une planche globalement plus sombre / plus vide          | **≤ 10 %**   | 10 – 20 %   | **≥ 20 %**       |
+| S3 | **Angle dominant de la trame** (pic directionnel, FFT ou Radon)                                           | deux dessinateurs — c'est déjà mon interdit §1.3         | **≤ 3°**     | 3 – 6°      | **≥ 6°**         |
+| S4 | **Pas de trame** (fréquence spatiale dominante du demi-ton)                                               | trame fine vs trame grossière à angle correct            | **≤ 10 %**   | 10 – 20 %   | **≥ 20 %**       |
+| S5 | **Fraction de gris intermédiaire** (pixels hors des 10 % extrêmes de luminance)                           | contraste mou vs contraste dur — le tell de l'« usure »  | **≤ 5 pts**  | 5 – 10 pts  | **≥ 10 pts**     |
+
+Écarts **relatifs à la valeur héros** pour S1/S2/S4, **absolus** pour S3 (degrés) et S5 (points de
+pourcentage). Un sixième contrôle, hérité et non négociable : **blanc du papier** — médiane du fond
+≥ 250 sur chaque planche, et **≤ 3 niveaux d'écart** entre planches. C'est ce que `#FFFFFF` (C2)
+achète ; une planche au fond crème est un tirage différent, pas une nuance.
+
+**Règle d'agrégation, sans laquelle le tableau se contourne :** **deux grandeurs simultanément en
+zone d'alerte sur la même planche = rejet**, exactement comme la zone 2-4 px de §1.2bis. Trois
+alertes réparties sur trois planches différentes du même batch = **le batch est suspect**, on
+regarde à l'œil avant de trancher.
+
+**Portée du rejet :** une planche hors tolérance **ne se re-génère pas seule à la graine suivante**
+jusqu'à ce qu'elle passe. C'est du *cherry-picking de graine*, et c'est exactement la fabrique des
+quatre dessinateurs que la loi de famille interdit : on finirait avec six planches qui passent
+chacune contre le héros par des chemins différents. Une planche rejetée pour style **rouvre la
+question du véhicule (§12.3)**, elle ne rouvre pas la roulette.
+
+**Et le mécanique ne me lie pas.** Clause reconduite mot pour mot de §1.2bis et §10.3 : cinq mesures
+vertes et deux planches qui, côte à côte à taille réelle, ne sortent visiblement pas de la même
+photocopieuse = **FAIL quand même**. La mesure attrape la dérive de paramètre ; elle n'attrape pas
+une planche qui a « une autre main ».
+
+### 12.3 Réponse 3 — la question franche : structurellement, N tirages indépendants ne tiennent pas
+
+**Je le dis maintenant, avant le cap, parce que c'est ce qu'on m'a demandé de dire : non, N tirages
+indépendants ne peuvent pas garantir ma cohérence de famille. Ce n'est pas un risque de qualité,
+c'est une propriété du véhicule.** Le style d'un tirage FLUX est porté par des grandeurs continues
+que la graine échantillonne ; le prompt en fixe la *nature* (encre noire, trame 45°, xerox) et pas
+la *valeur*. Six échantillonnages indépendants d'une distribution donnent six valeurs — c'est la
+définition. `kontext` achetait exactement ça et rien d'autre : **le style transporté par les pixels
+au lieu d'être redemandé par les mots.** Le coordinateur le formule mieux que je ne l'avais fait,
+et il a raison.
+
+Mais la conclusion **n'est pas** « il faut revenir à `kontext` », et voici pourquoi c'est une bonne
+nouvelle : `kontext` n'était qu'une des deux façons de faire tenir des pixels ensemble. L'autre est
+plus simple, plus vieille, et déjà écrite en §5.2 :
+
+> **LA CO-GÉNÉRATION. Un seul tirage, plusieurs têtes.** Plusieurs visages sur **une même planche
+> générée en une fois**, sur une grille frontale. Le style n'est alors pas « redemandé » ni
+> « transporté » : il est **le même, par construction**, parce que c'est littéralement la même
+> image. Un seul trait, une seule trame, un seul contraste, un seul blanc. C'est le sens propre de
+> « one printing run » de la bible §2 loi 2 — pas une métaphore, un fait de production.
+
+C'est la voie « planche + tranchage » de §5.2, et elle règle la consigne de Bertrand **exactement**,
+sans rien lui coûter de ce qu'il a simplifié : la question anatomique reste traitée par le prompt
+§11.2bis, tête par tête, et la question du style sort du prompt pour devenir une propriété du
+tirage. **Seuls les visages changent** devient vrai au sens fort : ils changent *dans la même
+image*.
+
+**Ordre de préférence, et je m'y tiens :**
+
+1. **Co-génération** (plusieurs têtes en un tirage) — la seule qui rende la consigne *vraie par
+   construction*. À privilégier dès que le cadrage le permet.
+2. **Dérivation depuis la planche héros validée** (`kontext` / img2img) — le style transporté par
+   les pixels. Deuxième choix, mécanisme éprouvé, coût outillage réel.
+3. **N tirages indépendants + §12.2** — *filet de sécurité*, pas garantie. Acceptable **uniquement**
+   si la mesure est en place et si l'on accepte d'avance qu'un rejet ne se rattrape pas à la graine
+   suivante (§12.2). C'est la voie actuelle : je ne l'interdis pas, je refuse qu'on l'appelle une
+   garantie.
+
+**Ce que ROLL 3 doit trancher, et c'est peu cher :** je ne demande pas de changer de véhicule
+maintenant. Je demande que **ROLL 3 produise DEUX planches, pas une** — même prompt, deux graines.
+Deux images suffisent à mesurer S1-S5 et à regarder. Si les deux sortent dans les tolérances, la
+voie 3 est viable et on continue avec le filet. Si elles en sortent, **on le sait à la deuxième
+image et non à la sixième**, et on bascule sur la voie 1 sans avoir brûlé le cap. C'est la même
+logique que « une dérivée de contrôle avant la série » (§10.4) : la question chère se pose tôt.
+
+### 12.4 Ordre de lecture — le style entre au ROLL 3, en position 0
+
+L'ordre §10.5 est amendé. **Une observation neuve, faisable dès deux images, passe AVANT tout le
+reste** — parce que si elle échoue, c'est le véhicule qui est en cause, et les huit points suivants
+seraient une inspection de détail sur un batch condamné :
+
+> **0. LES DEUX PLANCHES CÔTE À CÔTE, à taille réelle.** Même trait, même trame, même noir, même
+> blanc ? Un seul regard, avant d'ouvrir une seule tête. Si les deux planches ne sortent pas de la
+> même photocopieuse, **je n'examine pas les visages** : la question posée n'est plus anatomique,
+> elle est de véhicule (§12.3), et elle remonte immédiatement.
+
+Puis 1-9 inchangés (contour · sommet/menton · le blanc · le format · les deux pics · le contour à
+la réduction · les zones de couture · balayage G6 · le registre, désormais motif de rejet §11.4).
+
+**Motif de rejet immédiat, neuf :** deux planches du même batch qui se lisent comme deux tirages
+différents. Il rejette le **batch**, pas la planche — cohérent avec la portée §12.2.
+
+### 12.5 Verdict §12
+
+**Le critère de recevabilité de Bertrand est ADOPTÉ et rendu opposable :** mesures S1-S5 + blanc du
+papier (§12.2), référent = planche héros, agrégation à deux alertes, aucun cherry-picking de graine.
+**Le bloc `style` de §11.2bis est confirmé inchangé** — il tient l'intra-planche, il ne tient pas
+l'inter-planches et aucun mot ne le ferait (§12.1) ; les 2 mots de marge restent à la lane.
+**Exigence de séquence, neuve : ROLL 3 = deux planches, et l'observation 0 avant tout examen de
+visage.** Réponse franche à la question franche : **N tirages indépendants ne garantissent pas la
+famille** ; la garantie s'achète par la **co-génération** (voie 1) ou la **dérivation** (voie 2),
+et §12.2 n'est qu'un filet. Le prompt n'est pas touché.
