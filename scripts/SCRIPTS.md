@@ -1132,12 +1132,17 @@ paths, consumed read-only by `dev-gameplay`'s catalogue).
     seam → write, or reject. Runs in CI
     (`.github/workflows/gen-portrait-plate.yml`) since FLUX is normally
     blocked in the local sandbox.
-  - `--control-derivative <candidate> --hero-plate <hero>` — brief §10.4/§10.5's
-    sequencing requirement: register + measure ONE candidate plate against an
-    already-registered hero and report PASS/ALERT/REJECT (brief §10.3's
-    inter-plate table) WITHOUT writing any bands. Run this on the first
-    `kontext` derivative before deriving the other 23 — discovering
-    non-reproducibility at derivative 24 costs the whole batch.
+  - `--explore-faces <N>` — RECONNAISSANCE, not production (Bertrand,
+    2026-08-06: `kontext` img2img derivation is abandoned — "il te suffit de
+    générer N visages différents, en entier, PUIS ENSUITE tu découpes les
+    bandes"). Generates N whole-face plates from the SAME prompt family with
+    different seeds, writes the raw PNGs + a best-effort measurement report
+    to `scripts/.dbg-portrait-explore/` (gitignored) — never
+    `public/assets/`, never the manifest, never a commit. Never fails the job
+    on a registration/measurement problem; only a genuine fetch/prompt-gate
+    failure aborts. Runs in CI (`.github/workflows/gen-portrait-explore.yml`,
+    separate from the production workflow on purpose) and uploads the plates
+    - report as an artifact.
 - **Prompt family:** `PORTRAIT_PROMPT_FAMILY` in the script (not
   `levelArt.json` — ADR-0080 D1/A3 explicitly excludes this catalogue from
   that file). Ships `pending: true` with empty prose — the words are
@@ -1150,9 +1155,14 @@ paths, consumed read-only by `dev-gameplay`'s catalogue).
   prompt gate, sans discussion").
 - **Two tolerance tables, not one — do not conflate them:** `TOLERANCE` (brief
   §9.3) measures seam continuity WITHIN one already-registered plate
-  (sub-pixel, unaffected by registration accuracy); `INTER_PLATE_TOLERANCE`
-  (brief §10.3) measures whether a DERIVED plate's A0/A1/A2 reproduce the HERO
-  plate's (looser, because A0 measures a curve, not a printed line).
+  (sub-pixel, unaffected by registration accuracy) and gates `runReal`.
+  `INTER_PLATE_TOLERANCE` + `compareToHeroPlate` (brief §10.3) were
+  calibrated for a `kontext` derivative reproducing a fixed hero — that
+  workflow is abandoned (Bertrand, 2026-08-06), so nothing currently calls
+  them; kept because the comparison logic is still valid, just needs
+  re-calibrated thresholds once N-independent-seed proportion tolerances
+  exist. `--explore-faces`'s pairwise report deliberately does NOT use them
+  (see its own comment) — it reports raw deltas, no verdict.
 - **Known limit, stated in the file header:** the recalage pass corrects
   vertical drift only (uniform scale+offset fitted to the skull outline's
   crown/chin), not rotation/tangent drift — the A1 brow/eye bar's left/right

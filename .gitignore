@@ -35,6 +35,9 @@ coverage/
 scripts/.dbg-*.jpg
 # Per-window crop evidence from the align-windows harness verification
 scripts/.dbg-crops/
+# scripts/slice-portrait-plate.mjs --explore-faces output — reconnaissance
+# only, uploaded as a CI artifact, never committed
+scripts/.dbg-portrait-explore/
 
 # CodeGraph local index (rebuilt per machine via `codegraph index`)
 .codegraph/

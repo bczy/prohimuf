@@ -37,13 +37,16 @@
  *     <path>` bypasses the network call for local testing against a
  *     hand-supplied PNG.
  *
- *   node scripts/slice-portrait-plate.mjs --control-derivative <candidate> --hero-plate <hero>
- *     Brief §10.4's sequencing requirement: register + measure ONE candidate
- *     plate against an already-registered hero plate and report PASS/ALERT/
- *     REJECT (§10.3's inter-plate table) WITHOUT writing any bands — run
- *     this on the first `kontext` derivative before deriving the other 23,
- *     because discovering non-reproducibility at derivative 24 costs the
- *     whole batch.
+ *   node scripts/slice-portrait-plate.mjs --explore-faces <N>
+ *     RECONNAISSANCE, not production (Bertrand, 2026-08-06 — the `kontext`
+ *     img2img derivation this replaced is abandoned: "il te suffit de
+ *     générer N visages différents, en entier, PUIS ENSUITE tu découpes les
+ *     bandes"). Generates N WHOLE-face plates from the SAME prompt family
+ *     with different seeds, writes the raw PNGs + a best-effort measurement
+ *     report to `scripts/.dbg-portrait-explore/` — NEVER `public/assets/`,
+ *     never the manifest, never a commit. Reports what `detectSkullContour`/
+ *     `measureControlAnchors` find per plate but never fails the job on a
+ *     measurement problem — the point is to look at the images.
  *
  * `FORCE=1` regenerates even if all 24 files already exist. Without it, an
  * existing complete set is left untouched (idempotent).
@@ -1129,13 +1132,7 @@ export async function runReal(plateArg) {
   // order, one level deeper than §8.4's retired "repères avant le visage"):
   // if the outline isn't measurable, there is no point measuring anything
   // else, and the reader should see the reference failure first.
-  const contourRegion = {
-    xFrom: PLATE_MARGIN_PX,
-    xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
-    yFrom: PLATE_MARGIN_PX,
-    yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
-  };
-  const contour = detectSkullContour(plate, contourRegion);
+  const contour = detectSkullContour(plate, portraitRegion());
   const controls = measureControlAnchors(plate, contour);
   const { tiltPx } = controls;
   if (tiltPx >= INTER_PLATE_TOLERANCE.tiltPx.fail) {
@@ -1214,12 +1211,10 @@ export async function runReal(plateArg) {
     }
   }
   const checksum = `sha256:${sha256Hex([buf])}`;
-  // Persist THIS plate's A0/A1/A2 measurements as the hero reference — brief
-  // §10.2 clause 4: every future derivative is registered against this
-  // plate's own numbers, not an external nominal. `--control-derivative`
-  // reads this back via `--hero-plate <path>`'s own re-measurement today
-  // (see main()); stashing it in the manifest too means a future run doesn't
-  // need the raw hero plate file on disk, only the committed manifest.
+  // Persist THIS plate's A0/A1/A2 measurements alongside the manifest —
+  // diagnostic record of what registration actually measured on the plate
+  // that produced the committed bands, independent of the (now abandoned)
+  // kontext-derivative comparison workflow this used to feed.
   writeManifest(checksum, {
     registration: {
       crownY: contour.crownY,
@@ -1235,52 +1230,164 @@ export async function runReal(plateArg) {
   );
 }
 
-/** Brief §10.4/§10.5 sequencing requirement: register + measure ONE
- * candidate plate against an already-registered hero plate and report
- * PASS/ALERT/REJECT (§10.3's inter-plate table) WITHOUT writing any bands —
- * run this on the first `kontext` derivative before deriving the other 23,
- * because discovering non-reproducibility at derivative 24 costs the whole
- * batch. Re-measures the hero plate from its own PNG rather than trusting a
- * possibly-stale committed manifest, since the whole point is to verify
- * TODAY's method reproduces, not to compare against a stored number that
- * itself might predate a method change. */
-export async function runControlDerivative(candidatePlateArg, heroPlateArg) {
-  const measure = (buf) => {
-    const png = PNG.sync.read(buf);
-    if (png.width !== PLATE_WIDTH || png.height !== PLATE_HEIGHT) {
-      throw new Error(
-        `plate is ${png.width}x${png.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — cannot ` +
-          "compare a wrongly-sized plate",
-      );
-    }
-    const region = {
-      xFrom: PLATE_MARGIN_PX,
-      xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
-      yFrom: PLATE_MARGIN_PX,
-      yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
-    };
-    const contour = detectSkullContour(png, region);
-    const controls = measureControlAnchors(png, contour);
-    return { ...contour, ...controls };
+/** Absolute portrait-crop region within a fetched PLATE, in plate-absolute
+ * coordinates — the same window every registration/measurement function
+ * below operates on. Shared so `runReal`, `runExplore` and tests all derive
+ * it identically instead of re-deriving it slightly differently. */
+function portraitRegion() {
+  return {
+    xFrom: PLATE_MARGIN_PX,
+    xTo: PLATE_MARGIN_PX + PORTRAIT_WIDTH,
+    yFrom: PLATE_MARGIN_PX,
+    yTo: PLATE_MARGIN_PX + PORTRAIT_HEIGHT,
   };
+}
 
-  const hero = measure(fs.readFileSync(heroPlateArg));
-  const candidate = measure(fs.readFileSync(candidatePlateArg));
-  const report = compareToHeroPlate(candidate, hero);
+// ── Exploration mode (Bertrand, 2026-08-06) ──────────────────────────────
+// "le visage doit toujours être à peu près proportionné de la même façon...
+// il te suffit de générer N visages différents, en entier et non bande par
+// bande, PUIS ENSUITE tu découpes les bandes" — the `kontext` img2img
+// derivation this file's earlier `runControlDerivative`/`--control-
+// derivative` mode existed to gate is ABANDONED along with it: there is no
+// "derivative" anymore to validate before deriving 23 more, just N
+// independent whole-face draws from the SAME prompt family with different
+// seeds. This mode exists for ONE purpose right now — "essaie de lancer la
+// création de deux visages différents pour voir" — and is deliberately NOT
+// production: it never writes to `public/assets/`, never touches the
+// manifest/checksum, and never FAILS the job on a measurement problem (it
+// reports what it finds, best-effort, using the SAME production detectors
+// as `runReal` — this is reconnaissance on real output, not a weaker
+// re-implementation of the gate). `runReal`'s guards are untouched.
+const EXPLORE_OUT_DIR = path.resolve(ROOT, "scripts/.dbg-portrait-explore");
 
-  console.log(
-    `[slice-portrait-plate] control derivative vs hero — ${report.pass ? "PASS" : "REJECT"}`,
-  );
-  console.log("  hero:     ", hero);
-  console.log("  candidate:", candidate);
-  console.log("  deltas:   ", report.values);
-  if (report.alerts.length > 0) console.warn("  alert zone:", report.alerts);
-  if (!report.pass) {
+function buildExploreUrl(seed) {
+  const assembled = `${PORTRAIT_PROMPT_FAMILY.opening}${PORTRAIT_PROMPT_FAMILY.prompt}${PORTRAIT_PROMPT_FAMILY.style}`;
+  return fluxUrl(assembled, seed, PLATE_WIDTH, PLATE_HEIGHT);
+}
+
+/** Best-effort registration measurement for the exploration report: never
+ * throws. Calls the SAME production detectors `runReal` uses
+ * (`detectSkullContour`, `measureControlAnchors`) — this mode reports what
+ * they find rather than weakening them; a plate that fails registration is
+ * reported as "not found" with the real abort message, not silently
+ * skipped or waved through. */
+export function measureExploreBestEffort(plate) {
+  const region = portraitRegion();
+  let contour;
+  try {
+    contour = detectSkullContour(plate, region);
+  } catch (e) {
+    return { contourFound: false, contourError: e.message };
+  }
+  try {
+    const controls = measureControlAnchors(plate, contour);
+    return { contourFound: true, ...contour, controls, controlsError: null };
+  } catch (e) {
+    return { contourFound: true, ...contour, controls: null, controlsError: e.message };
+  }
+}
+
+/** Exploration mode (NOT production): generates `count` WHOLE-face plates
+ * from the SAME prompt family with different seeds (default: the prompt
+ * family's own pinned seed, +1 per plate — pass `seeds` to override), and
+ * writes the raw PNGs plus a JSON measurement report to `EXPLORE_OUT_DIR` —
+ * never `public/assets/`, never the manifest. Reports crown/chin/axis and
+ * A1/A2 per plate, and the raw pairwise delta between every pair of
+ * successfully-measured plates, WITHOUT categorising it pass/alert/fail:
+ * `INTER_PLATE_TOLERANCE` (brief §10.3) was calibrated for a `kontext`
+ * img2img derivative reproducing a fixed hero, not for N independently-
+ * seeded FLUX draws — reusing those thresholds here would imply a verdict
+ * this mode has no calibration to support. Never throws on a measurement
+ * problem; only a genuine fetch/prompt-gate failure aborts the whole run. */
+export async function runExplore(count, { seeds } = {}) {
+  if (PORTRAIT_PROMPT_FAMILY.pending) {
     throw new Error(
-      "control derivative REJECTED — VOIE B does not reproduce plate-to-plate (brief §10.4 " +
-        "abandon condition 3): escalate, do not derive the other 23 variants on this method.",
+      "PORTRAIT_PROMPT_FAMILY.pending is still true — concept-artist has not authored the " +
+        "plate prompt yet (art brief §7.1). Refusing to spend a FLUX call on empty prose.",
     );
   }
+  const { errors } = lintPromptFamily(PORTRAIT_PROMPT_FAMILY);
+  if (errors.length > 0) {
+    throw new Error(`PORTRAIT_PROMPT_FAMILY failed the prompt gate:\n${errors.join("\n")}`);
+  }
+  const plateSeeds =
+    seeds ?? Array.from({ length: count }, (_, i) => PORTRAIT_PROMPT_FAMILY.seed + i);
+
+  fs.mkdirSync(EXPLORE_OUT_DIR, { recursive: true });
+  const results = [];
+  for (const seed of plateSeeds) {
+    console.log(`[slice-portrait-plate] [explore] generating seed ${seed}...`);
+    const rawBuf = await fetchWithRetry(buildExploreUrl(seed));
+    const buf = await ensurePngBuffer(rawBuf);
+    const plate = PNG.sync.read(buf);
+    const file = path.join(EXPLORE_OUT_DIR, `face-seed-${seed}.png`);
+    fs.writeFileSync(file, buf);
+    const measurement = measureExploreBestEffort(plate);
+    results.push({ seed, width: plate.width, height: plate.height, file, ...measurement });
+    console.log(
+      `[slice-portrait-plate] [explore]   ${plate.width}x${plate.height} — contour ` +
+        (measurement.contourFound
+          ? `crownY=${measurement.crownY} chinY=${measurement.chinY} ` +
+            `axisX=${measurement.axisX.toFixed(1)}` +
+            (measurement.controlsError ? ` (controls: ${measurement.controlsError})` : "")
+          : `NOT FOUND (${measurement.contourError})`),
+    );
+  }
+
+  const pairwise = [];
+  for (let i = 0; i < results.length; i++) {
+    for (let j = i + 1; j < results.length; j++) {
+      const a = results[i];
+      const b = results[j];
+      if (a.contourFound && b.contourFound) {
+        pairwise.push({
+          seeds: [a.seed, b.seed],
+          crownDeltaPx: Math.abs(a.crownY - b.crownY),
+          chinDeltaPx: Math.abs(a.chinY - b.chinY),
+          axisDeltaPx: Math.abs(a.axisX - b.axisX),
+        });
+      }
+    }
+  }
+
+  const report = {
+    generatedAt: new Date().toISOString(),
+    promptSeed: PORTRAIT_PROMPT_FAMILY.seed,
+    note:
+      "Reconnaissance only (Bertrand, 2026-08-06) — no pass/alert/fail verdict: " +
+      "INTER_PLATE_TOLERANCE was calibrated for a kontext derivative vs a hero, not for " +
+      "independently-seeded whole-face draws. Look at the images.",
+    plates: results.map(
+      ({
+        seed,
+        width,
+        height,
+        file,
+        contourFound,
+        crownY,
+        chinY,
+        axisX,
+        coverageRatio,
+        contourError,
+        controls,
+        controlsError,
+      }) => ({
+        seed,
+        width,
+        height,
+        file: path.relative(ROOT, file),
+        contour: contourFound ? { crownY, chinY, axisX, coverageRatio } : { error: contourError },
+        controls: controls ?? (controlsError ? { error: controlsError } : null),
+      }),
+    ),
+    pairwise,
+  };
+  const reportFile = path.join(EXPLORE_OUT_DIR, "report.json");
+  fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  console.log(
+    `[slice-portrait-plate] [explore] wrote ${results.length} plate(s) + report to ` +
+      `${path.relative(ROOT, EXPLORE_OUT_DIR)}`,
+  );
   return report;
 }
 
@@ -1288,13 +1395,13 @@ export async function runControlDerivative(candidatePlateArg, heroPlateArg) {
 async function main() {
   const args = process.argv.slice(2);
 
-  const cdi = args.indexOf("--control-derivative");
-  if (cdi !== -1) {
-    const hpi = args.indexOf("--hero-plate");
-    if (hpi === -1) {
-      throw new Error("--control-derivative requires --hero-plate <path> (brief §10.4/§10.5)");
+  const efi = args.indexOf("--explore-faces");
+  if (efi !== -1) {
+    const count = Number(args[efi + 1]);
+    if (!Number.isInteger(count) || count < 1) {
+      throw new Error("--explore-faces requires a positive integer count (e.g. --explore-faces 2)");
     }
-    await runControlDerivative(args[cdi + 1], args[hpi + 1]);
+    await runExplore(count);
     return;
   }
 

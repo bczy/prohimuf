@@ -12,7 +12,7 @@ import {
   ensurePngBuffer,
   isAspectPreservedScaleDown,
   runReal,
-  runControlDerivative,
+  measureExploreBestEffort,
   measureSeamContinuity,
   PLATE_WIDTH,
   PLATE_HEIGHT,
@@ -564,50 +564,36 @@ describe("seam ordinates land on whole pixels with no float rounding (brief §9.
   });
 });
 
-describe("runControlDerivative — brief §10.4/§10.5's sequencing requirement", () => {
-  // Drives the REAL function through its documented --plate-file arguments
-  // (no mocking) with genuine @napi-rs/canvas-drawn hero/candidate plates —
-  // "one derivative, measure, stop" before ever deriving the other 23.
-  function writePlateFile(buf) {
-    const file = path.join(
-      os.tmpdir(),
-      `slice-portrait-plate-cd-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
-    );
-    fs.writeFileSync(file, buf);
-    return file;
-  }
-
-  it("passes a candidate that reproduces the hero plate closely", async () => {
-    const { PNG: PNGLib } = await import("pngjs");
-    const heroPng = await makeSkullPlate();
-    const candidatePng = await makeSkullPlate({ crownLocalY: 16, a1Y: DEFAULT_A1_Y + 1 });
-    const heroFile = writePlateFile(PNGLib.sync.write(heroPng));
-    const candidateFile = writePlateFile(PNGLib.sync.write(candidatePng));
-    try {
-      const report = await runControlDerivative(candidateFile, heroFile);
-      expect(report.pass).toBe(true);
-    } finally {
-      fs.rmSync(heroFile, { force: true });
-      fs.rmSync(candidateFile, { force: true });
-    }
+describe("measureExploreBestEffort — reconnaissance measurement (Bertrand, 2026-08-06)", () => {
+  // The kontext-derivative sequencing this file's earlier runControlDerivative
+  // covered is abandoned along with img2img derivation itself (Bertrand:
+  // "il te suffit de générer N visages différents, en entier... PUIS ENSUITE
+  // tu découpes"). This is the pure, network-free half of --explore-faces:
+  // it calls the SAME production detectors runReal uses, so a plate that
+  // fails registration is reported as such, never silently accepted.
+  it("reports a full measurement for a genuine registerable plate", async () => {
+    const png = await makeSkullPlate();
+    const result = measureExploreBestEffort(png);
+    expect(result.contourFound).toBe(true);
+    expect(result.controlsError).toBeNull();
+    expect(result.controls.tiltPx).toBe(0);
+    expect(typeof result.crownY).toBe("number");
+    expect(typeof result.axisX).toBe("number");
   });
 
-  it("rejects a candidate whose skull height does not reproduce (brief §10.4 abandon condition 3)", async () => {
-    const { PNG: PNGLib } = await import("pngjs");
-    const heroPng = await makeSkullPlate();
-    // Chin ~140px shorter than the hero's — a real non-reproducibility, not
-    // a rounding artefact.
-    const candidatePng = await makeSkullPlate({ chinLocalY: PORTRAIT_HEIGHT - 200 });
-    const heroFile = writePlateFile(PNGLib.sync.write(heroPng));
-    const candidateFile = writePlateFile(PNGLib.sync.write(candidatePng));
-    try {
-      await expect(runControlDerivative(candidateFile, heroFile)).rejects.toThrow(
-        /does not reproduce plate-to-plate/,
-      );
-    } finally {
-      fs.rmSync(heroFile, { force: true });
-      fs.rmSync(candidateFile, { force: true });
-    }
+  it("reports contourFound: false with the real abort reason, never a guess, on a blank plate", () => {
+    const png = blankPlate();
+    const result = measureExploreBestEffort(png);
+    expect(result.contourFound).toBe(false);
+    expect(result.contourError).toMatch(/not a measurable object on this plate/);
+  });
+
+  it("reports the contour but a controlsError when A1/A2 aren't found — does not throw", async () => {
+    const png = await makeSkullPlate({ drawA1: false });
+    const result = measureExploreBestEffort(png);
+    expect(result.contourFound).toBe(true);
+    expect(result.controls).toBeNull();
+    expect(result.controlsError).toMatch(/control anchors ABORTED/);
   });
 });
 
