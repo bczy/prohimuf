@@ -64,3 +64,4 @@ run 15: plate en texte-vers-image sur ideogram-v4-quality (modèle de street-wid
 run 16
 run 17: plate ideogram t2i, textToImage=true
 run 18: force t2i ideogram
+run 19: plate supprimée, t2i ideogram
