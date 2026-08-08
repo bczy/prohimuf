@@ -271,7 +271,15 @@ const PLATE_T2I_MODEL = process.env.PLATE_T2I_MODEL || "ideogram-v4-quality";
 async function resizeToTarget(buf, width, height, label) {
   const { createCanvas, loadImage } = await import("@napi-rs/canvas");
   const img = await loadImage(buf);
-  if (img.width === width && img.height === height) return buf; // already exact — no-op
+  // Exact size AND already a PNG → hand the provider's own bytes back untouched.
+  // Exact size but NOT a PNG still has to be re-encoded: `ideogram-v4-quality` honours
+  // width/height on the paid farm but answers in JPEG, and every downstream step
+  // (chroma-key, despeckle, the DOM plate/pose composite) assumes a real PNG. Re-encoding
+  // is lossless here — we decode the provider's pixels once and write them back as PNG.
+  if (img.width === width && img.height === height && pngDimensions(buf)) return buf;
+  if (!pngDimensions(buf)) {
+    console.log(`  [format] ${label} — provider answered non-PNG, re-encoding to PNG`);
+  }
   console.log(
     `  [resize] ${label} — provider returned ${img.width}x${img.height} → stretched to ${width}x${height}`,
   );
@@ -416,12 +424,14 @@ async function generate(a) {
   }
   if (a.opaque) {
     // The plate with no editReference wired: text-to-image on the reference decor's own
-    // model (see PLATE_T2I_MODEL). Exact dimensions are honoured on the paid farm, so no
-    // resize is needed — assertDimensions downstream still fails loud if that changes.
+    // model (see PLATE_T2I_MODEL). It honours width/height on the paid farm but answers
+    // in JPEG (observed 2026-08-06, run 31109622216) — resizeToTarget re-encodes to PNG
+    // and is a no-op on the pixels when the size already matches. assertDimensions
+    // downstream still fails loud if the size ever drifts.
     console.log(
       `  [seed] ${a.key} seed=${a.seed} (pinned) — ${PLATE_T2I_MODEL} text-to-image (paid)`,
     );
-    return fetchWithRetry(
+    const t2i = await fetchWithRetry(
       genPaidUrl({
         prompt: a.prompt,
         seed: a.seed,
@@ -430,6 +440,7 @@ async function generate(a) {
         model: PLATE_T2I_MODEL,
       }),
     );
+    return await resizeToTarget(t2i, a.width, a.height, `${a.key} (${PLATE_T2I_MODEL} t2i)`);
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
   return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
