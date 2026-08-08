@@ -11,11 +11,23 @@
  * (registration) pass and the seam-tolerance measurement that the brief
  * (§1.2bis) makes a condition of existence for the screen, not a nicety.
  *
- * ATOMICITY (ADR-0080 D5, art brief §1.2bis "portée du rejet"): there is no
- * per-band mode and no "regenerate one variant" flag — that absence IS the
- * atomicity guarantee. A run either writes all 24 files + the manifest
- * together, or writes nothing. A plate that fails the seam-tolerance gate is
- * rejected WHOLE (not per variant) — see `measureSeamContinuity` below.
+ * ATOMICITY (ADR-0080 D5, art brief §1.2bis "portée du rejet"), scaled to N
+ * plates (Bertrand, 2026-08-06 — "complète la collection"): there is no
+ * per-band mode, no per-plate mode, and no "regenerate one variant/one seed"
+ * flag — that absence IS the atomicity guarantee. A run fetches
+ * `VARIANTS_PER_BAND` (6) independent WHOLE-face plates from the SAME prompt
+ * family (seeds `PORTRAIT_PROMPT_FAMILY.seed + i`), and either writes all 24
+ * files (variant `i` of band `b` = seam-slice `b` of plate `i`) + the
+ * manifest together, or writes nothing. A batch where ANY plate fails ANY
+ * gate — its own registration, its own seam continuity, OR reproducibility
+ * against the other plates (brief §10.3 `INTER_PLATE_TOLERANCE`) — is
+ * rejected WHOLE, never per-plate: brief §10's anti-cherry-picking clause
+ * ("une planche rejetée ne se re-génère pas à la graine suivante jusqu'à ce
+ * qu'elle passe") forbids selectively re-rolling a single failure until it
+ * passes, so there is deliberately no "drop the bad plate and draw a
+ * replacement" code path — a batch failure means regenerating the WHOLE
+ * batch (same seeds, or a new seed set decided batch-wide), never patching
+ * one seed in place. See `runReal`'s own comment for the full reasoning.
  *
  * Modes:
  *   node scripts/slice-portrait-plate.mjs --placeholder
@@ -26,16 +38,17 @@
  *     dependency-free (same small PNG encoder as gen-courier-sprites.mjs).
  *
  *   node scripts/slice-portrait-plate.mjs [--plate <path>]
- *     The REAL pipeline: fetch (or read, with --plate) a face plate, run the
- *     recalage pass against the skull OUTLINE (crown/chin ordinates + per-row
- *     half-widths, art brief §10.2 — margin ticks are abandoned), slice at
- *     the 3 seams with bleed removed at the ordinate, measure the 4
- *     seam-tolerance grandeurs of §9.3 on every internal seam, and write all
- *     24 files + the manifest ONLY if every seam passes. FLUX generation is
- *     normally BLOCKED in the local sandbox (AGENTS.md) — this mode is
- *     exercised in CI (.github/workflows/gen-portrait-plate.yml). `--plate
- *     <path>` bypasses the network call for local testing against a
- *     hand-supplied PNG.
+ *     The REAL pipeline: fetch (or read a single hand-supplied PNG, with
+ *     --plate, reused for every seed slot — local testing only) 6 whole-face
+ *     plates, run the recalage pass on each plate's skull OUTLINE
+ *     (crown/chin ordinates + per-row half-widths, art brief §10.2 — margin
+ *     ticks are abandoned), check every plate reproduces the others within
+ *     `INTER_PLATE_TOLERANCE` (brief §10.3), slice each at the 3 seams with
+ *     bleed removed at the ordinate, measure the 4 seam-tolerance grandeurs
+ *     of §9.3 per plate per seam, and write all 24 files + the manifest ONLY
+ *     if every plate passes every gate. FLUX generation is normally BLOCKED
+ *     in the local sandbox (AGENTS.md) — this mode is exercised in CI
+ *     (.github/workflows/gen-portrait-plate.yml).
  *
  *   node scripts/slice-portrait-plate.mjs --explore-faces <N>
  *     RECONNAISSANCE, not production (Bertrand, 2026-08-06 — the `kontext`
@@ -762,6 +775,24 @@ export function cropPortrait(png) {
   return out;
 }
 
+/** RGB (no alpha — bands are opaque, brief §1.0) slice of `[top, bottom)`
+ * from a registered portrait. Pure function of the portrait it's given, so
+ * the batch pipeline calls it once per (plate, band) pair — variant `i` of
+ * band `b` is exactly `bandRGB(plates[i].portrait, band.top, band.bottom)`. */
+function bandRGB(portrait, top, bottom, height = bottom - top) {
+  const out = Buffer.alloc(PORTRAIT_WIDTH * height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < PORTRAIT_WIDTH; x++) {
+      const srcIdx = (PORTRAIT_WIDTH * (top + y) + x) << 2;
+      const dstIdx = height === 0 ? 0 : (y * PORTRAIT_WIDTH + x) * 3;
+      out[dstIdx] = portrait.data[srcIdx];
+      out[dstIdx + 1] = portrait.data[srcIdx + 1];
+      out[dstIdx + 2] = portrait.data[srcIdx + 2];
+    }
+  }
+  return out;
+}
+
 // §10.3's NEW table — the INTER-PLATE reproducibility check (derived vs
 // hero), DISTINCT from `TOLERANCE` below (§9.3, seam continuity WITHIN one
 // plate — lead-art was explicit these do not change: "un recalage raté
@@ -1005,7 +1036,7 @@ export function measureSeamContinuity(topPortrait, topRow, botPortrait, botRow) 
 }
 
 // ── Real pipeline (network / --plate) ────────────────────────────────────
-async function fetchPlate(plateArg) {
+async function fetchPlate(plateArg, seed) {
   if (plateArg) return fs.readFileSync(plateArg);
   if (PORTRAIT_PROMPT_FAMILY.pending) {
     throw new Error(
@@ -1019,7 +1050,7 @@ async function fetchPlate(plateArg) {
     throw new Error(`PORTRAIT_PROMPT_FAMILY failed the prompt gate:\n${errors.join("\n")}`);
   }
   const assembled = `${PORTRAIT_PROMPT_FAMILY.opening}${PORTRAIT_PROMPT_FAMILY.prompt}${PORTRAIT_PROMPT_FAMILY.style}`;
-  const url = fluxUrl(assembled, PORTRAIT_PROMPT_FAMILY.seed, PLATE_WIDTH, PLATE_HEIGHT);
+  const url = fluxUrl(assembled, seed ?? PORTRAIT_PROMPT_FAMILY.seed, PLATE_WIDTH, PLATE_HEIGHT);
   return fetchWithRetry(url);
 }
 
@@ -1133,137 +1164,262 @@ export function isAspectPreservedScaleDown(actualW, actualH, expectedW, expected
   return Math.abs(actualRatio - expectedRatio) / expectedRatio < ASPECT_RATIO_TOLERANCE;
 }
 
-export async function runReal(plateArg) {
-  const rawBuf = await fetchPlate(plateArg);
-  const buf = await ensurePngBuffer(rawBuf);
-  const plate = PNG.sync.read(buf);
-  if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
-    if (isAspectPreservedScaleDown(plate.width, plate.height, PLATE_WIDTH, PLATE_HEIGHT)) {
-      const requestedAreaPx = PLATE_WIDTH * PLATE_HEIGHT;
-      const actualAreaPx = plate.width * plate.height;
-      const overCap = requestedAreaPx > POLLINATIONS_FLUX_AREA_CAP_PX;
-      throw new Error(
+/** Builds the wrong-size diagnostic message for one plate, and says whether
+ * the cause is SYSTEMIC (Pollinations' area cap — every plate in the batch
+ * requests the identical PLATE_WIDTH/PLATE_HEIGHT, so it will hit every
+ * remaining seed identically; no point spending 5 more FLUX calls to learn
+ * the same fact 5 more times) or plate-specific (collected into the batch
+ * report, the rest of the batch is still worth fetching). */
+function sizeMismatchDiagnostic(plate) {
+  if (isAspectPreservedScaleDown(plate.width, plate.height, PLATE_WIDTH, PLATE_HEIGHT)) {
+    const requestedAreaPx = PLATE_WIDTH * PLATE_HEIGHT;
+    const actualAreaPx = plate.width * plate.height;
+    const overCap = requestedAreaPx > POLLINATIONS_FLUX_AREA_CAP_PX;
+    return {
+      systemic: true,
+      message:
         `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
-          "the aspect ratio is preserved (not a framing drift): the whole plate was rendered " +
-          "at a uniform smaller scale. " +
-          (overCap
-            ? "Consistent with Pollinations' flux max-pixel-area cap (~590K px, documented in " +
-              `gen-level-art.mjs's normalizeSize and RE-PANEL run 5d5b5f51): this request's ` +
-              `${requestedAreaPx}px area exceeds it, the response's ${actualAreaPx}px does not.`
-            : `UNEXPECTED: this request's ${requestedAreaPx}px area is already under the ` +
-              "documented ~590K px cap (§9 GATE DIMENSIONS sized it there specifically to " +
-              "render natively) — this is NOT the previously-diagnosed cap; investigate as a " +
-              "new failure mode before assuming the old explanation still applies.") +
-          " Refusing to proceed: upscaling before measuring would fabricate sub-pixel " +
-          "precision on tolerances lead-art pixel-calibrated on this exact plate height (art " +
-          "brief §9.3), and rescaling those tolerances to a different reference is lead-art's " +
-          `call, not this script's — ESCALATE to lead-art${overCap ? " rather than retrying (a re-dispatch will hit the same cap)" : ""}.`,
-      );
-    }
-    throw new Error(
+        "the aspect ratio is preserved (not a framing drift): the whole plate was rendered " +
+        "at a uniform smaller scale. " +
+        (overCap
+          ? "Consistent with Pollinations' flux max-pixel-area cap (~590K px, documented in " +
+            `gen-level-art.mjs's normalizeSize and RE-PANEL run 5d5b5f51): this request's ` +
+            `${requestedAreaPx}px area exceeds it, the response's ${actualAreaPx}px does not.`
+          : `UNEXPECTED: this request's ${requestedAreaPx}px area is already under the ` +
+            "documented ~590K px cap (§9 GATE DIMENSIONS sized it there specifically to " +
+            "render natively) — this is NOT the previously-diagnosed cap; investigate as a " +
+            "new failure mode before assuming the old explanation still applies.") +
+        " Refusing to proceed: upscaling before measuring would fabricate sub-pixel " +
+        "precision on tolerances lead-art pixel-calibrated on this exact plate height (art " +
+        "brief §9.3), and rescaling those tolerances to a different reference is lead-art's " +
+        `call, not this script's — ESCALATE to lead-art${overCap ? " rather than retrying (a re-dispatch will hit the same cap)" : ""}.`,
+    };
+  }
+  return {
+    systemic: false,
+    message:
       `plate is ${plate.width}x${plate.height}, expected ${PLATE_WIDTH}x${PLATE_HEIGHT} — ` +
-        "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
-    );
-  }
-  // A0 first (registration reference), THEN the face (brief §10.5's read
-  // order, one level deeper than §8.4's retired "repères avant le visage"):
-  // if the outline isn't measurable, there is no point measuring anything
-  // else, and the reader should see the reference failure first.
-  const contour = detectSkullContour(plate, portraitRegion());
-  const controls = measureControlAnchors(plate, contour);
-  const { tiltPx } = controls;
-  if (tiltPx >= INTER_PLATE_TOLERANCE.tiltPx.fail) {
-    throw new Error(
-      `plate rejected — A1 (brow/eye bar) tilt disagreement ${tiltPx}px between the left and ` +
-        `right halves is at or beyond the ${INTER_PLATE_TOLERANCE.tiltPx.fail}px reject ` +
-        "threshold (brief §10.3); rotation is not correctable here (see file-header HONEST " +
-        "LIMIT). The plate must be regenerated.",
-    );
-  }
-  if (tiltPx > INTER_PLATE_TOLERANCE.tiltPx.pass) {
-    console.warn(
-      `[slice-portrait-plate] ⚠ A1 tilt ${tiltPx}px is in the alert zone ` +
-        `(${INTER_PLATE_TOLERANCE.tiltPx.pass}-${INTER_PLATE_TOLERANCE.tiltPx.fail}px, brief §10.3)`,
-    );
-  }
-  const portrait = cropPortrait(plate);
+      "framing drifted beyond what registration can fix (see file-header HONEST LIMIT)",
+  };
+}
 
-  const seams = seamOrdinatesPx();
-  const bandRGB = (top, bottom) => {
-    const height = bottom - top;
-    const out = Buffer.alloc(PORTRAIT_WIDTH * height * 3);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < PORTRAIT_WIDTH; x++) {
-        const srcIdx = (PORTRAIT_WIDTH * (top + y) + x) << 2;
-        const dstIdx = height === 0 ? 0 : (y * PORTRAIT_WIDTH + x) * 3;
-        out[dstIdx] = portrait.data[srcIdx];
-        out[dstIdx + 1] = portrait.data[srcIdx + 1];
-        out[dstIdx + 2] = portrait.data[srcIdx + 2];
+/** Fetches, validates and registers ONE plate at the given seed. Returns
+ * `{ seed, buf, plate, contour, controls, portrait }` on success. Throws a
+ * `{ systemic }`-tagged error on a wrong-size plate (batch-fatal, see
+ * `sizeMismatchDiagnostic`) or on a fetch/decode failure; returns
+ * `{ seed, problem }` (never throws) on a registration failure (missing
+ * contour, missing A1/A2, tilt over threshold) — a per-plate content defect
+ * that does not prevent measuring the REST of the batch. */
+async function fetchAndRegisterOnePlate(plateArg, seed) {
+  let buf, plate;
+  try {
+    const rawBuf = await fetchPlate(plateArg, seed);
+    buf = await ensurePngBuffer(rawBuf);
+    plate = PNG.sync.read(buf);
+  } catch (e) {
+    const err = new Error(`seed ${seed}: fetch/decode failed — ${e.message}`);
+    err.systemic = false;
+    throw err;
+  }
+  if (plate.width !== PLATE_WIDTH || plate.height !== PLATE_HEIGHT) {
+    const { message, systemic } = sizeMismatchDiagnostic(plate);
+    const err = new Error(`seed ${seed}: ${message}`);
+    err.systemic = systemic;
+    throw err;
+  }
+
+  let contour, controls;
+  try {
+    // A0 first (registration reference), THEN the face (brief §10.5's read
+    // order, one level deeper than §8.4's retired "repères avant le
+    // visage"): if the outline isn't measurable, there is no point
+    // measuring anything else on THIS plate.
+    contour = detectSkullContour(plate, portraitRegion());
+    controls = measureControlAnchors(plate, contour);
+  } catch (e) {
+    return { seed, problem: `seed ${seed}: registration — ${e.message}` };
+  }
+  if (controls.tiltPx >= INTER_PLATE_TOLERANCE.tiltPx.fail) {
+    return {
+      seed,
+      problem:
+        `seed ${seed}: A1 (brow/eye bar) tilt disagreement ${controls.tiltPx}px is at or ` +
+        `beyond the ${INTER_PLATE_TOLERANCE.tiltPx.fail}px reject threshold (brief §10.3); ` +
+        "rotation is not correctable here (see file-header HONEST LIMIT).",
+    };
+  }
+  if (controls.tiltPx > INTER_PLATE_TOLERANCE.tiltPx.pass) {
+    console.warn(
+      `[slice-portrait-plate] ⚠ seed ${seed}: A1 tilt ${controls.tiltPx}px is in the alert ` +
+        `zone (${INTER_PLATE_TOLERANCE.tiltPx.pass}-${INTER_PLATE_TOLERANCE.tiltPx.fail}px, brief §10.3)`,
+    );
+  }
+  return { seed, buf, plate, contour, controls, portrait: cropPortrait(plate) };
+}
+
+/** Batch production pipeline (Bertrand, 2026-08-06, "complète la collection"
+ * — replaces the V1 "one gabarit, one hero plate" TODO this file used to
+ * carry): `VARIANTS_PER_BAND` (6) independent whole-face plates, same
+ * `PORTRAIT_PROMPT_FAMILY`, seeds `PORTRAIT_PROMPT_FAMILY.seed + i` (the
+ * exact scheme ROLL 3's validated pair used, extended) — sliced at the SAME
+ * 3 seams, variant `i` of band `b` = seam-slice `b` of plate `i`. The
+ * manifest SHAPE does not change (still `bands[id] = VARIANTS_PER_BAND
+ * entries`, as it already was written to be) — only how each buffer is
+ * produced.
+ *
+ * ATOMICITY, scaled to N plates, not relaxed (ADR-0080 D5): every plate is
+ * fetched and measured, EVERY problem across the WHOLE batch is collected,
+ * and only THEN does the batch pass or reject as ONE unit — nothing is
+ * written unless all 6 plates individually pass AND reproduce each other
+ * within `INTER_PLATE_TOLERANCE`. There is deliberately NO "drop the bad
+ * plate and draw a replacement" path: brief §10's anti-cherry-picking
+ * clause ("une planche rejetée ne se re-génère pas à la graine suivante
+ * jusqu'à ce qu'elle passe") forbids selectively re-rolling a single
+ * failure until it passes, and the cleanest way to make that impossible is
+ * to not build a per-plate retry mechanism at all — a batch failure is a
+ * batch failure, reported with every number, and regenerating means
+ * re-running the WHOLE batch (same seeds, or a new seed set decided
+ * batch-wide by a human), never patching one seed in place. */
+export async function runReal(plateArg) {
+  const seeds = Array.from(
+    { length: VARIANTS_PER_BAND },
+    (_, i) => PORTRAIT_PROMPT_FAMILY.seed + i,
+  );
+
+  const plates = [];
+  const problems = [];
+  for (const seed of seeds) {
+    let result;
+    try {
+      result = await fetchAndRegisterOnePlate(plateArg, seed);
+    } catch (e) {
+      problems.push(e.message);
+      if (e.systemic) {
+        console.error(
+          "[slice-portrait-plate] REJECTED — systemic failure, not spending the remaining " +
+            `${seeds.length - seeds.indexOf(seed) - 1} FLUX call(s) on the same cap:`,
+        );
+        console.error(`  ✗ ${e.message}`);
+        throw new Error("batch rejected — see above; the WHOLE batch must be regenerated");
+      }
+      continue;
+    }
+    if (result.problem) problems.push(result.problem);
+    else plates.push(result);
+  }
+
+  // Inter-plate reproducibility (brief §10.3, point 1 of the 2026-08-06
+  // brief: "vérifie-le et rapporte-le" — do the same fixed seams actually
+  // land on the same facial position across independently-drawn plates?).
+  // plates[0] is the reference — an arbitrary but deterministic choice
+  // (first successfully-registered plate), not a privileged "hero": every
+  // plate went through the identical gate above.
+  const interPlateReports = [];
+  if (plates.length > 1) {
+    const reference = {
+      crownY: plates[0].contour.crownY,
+      chinY: plates[0].contour.chinY,
+      axisX: plates[0].contour.axisX,
+      a1Y: plates[0].controls.a1Y,
+      a2Y: plates[0].controls.a2Y,
+      tiltPx: plates[0].controls.tiltPx,
+    };
+    for (const p of plates.slice(1)) {
+      const candidate = {
+        crownY: p.contour.crownY,
+        chinY: p.contour.chinY,
+        axisX: p.contour.axisX,
+        a1Y: p.controls.a1Y,
+        a2Y: p.controls.a2Y,
+        tiltPx: p.controls.tiltPx,
+      };
+      const report = compareToHeroPlate(candidate, reference);
+      interPlateReports.push({ seed: p.seed, referenceSeed: plates[0].seed, ...report });
+      if (!report.pass) {
+        problems.push(
+          `seed ${p.seed} vs reference seed ${plates[0].seed}: inter-plate reproducibility ` +
+            `FAILED — ${JSON.stringify(report.values)}`,
+        );
+      } else if (report.alerts.length > 0) {
+        console.warn(
+          `[slice-portrait-plate] ⚠ seed ${p.seed} vs reference seed ${plates[0].seed} in ` +
+            `alert zone:`,
+          report.alerts,
+        );
       }
     }
-    return out;
-  };
-
-  // Measure every internal seam (between consecutive bands) BEFORE writing
-  // anything — the whole plate is rejected together (brief §1.2bis "portée
-  // du rejet"), never a single band.
-  const seamReports = [];
-  for (let i = 0; i < seams.length - 1; i++) {
-    const seamY = seams[i].bottom; // == seams[i+1].top
-    const report = measureSeamContinuity(portrait, seamY - 1, portrait, seamY);
-    seamReports.push({ between: `${seams[i].id}/${seams[i + 1].id}`, ...report });
   }
-  // Tilt was already gated above (before any seam is even measured) — not
-  // repeated here.
+
+  // Per-plate seam continuity (brief §9.3, unchanged) — measured for EVERY
+  // successfully-registered plate, not just the reference. This is also
+  // where a hair lock crossing a seam (brief §10.2 clause 3 / §8.4-5) shows
+  // up as a concrete number, per plate.
+  const seams = seamOrdinatesPx();
+  const seamReports = [];
+  for (const p of plates) {
+    for (let i = 0; i < seams.length - 1; i++) {
+      const seamY = seams[i].bottom; // == seams[i + 1].top
+      const report = measureSeamContinuity(p.portrait, seamY - 1, p.portrait, seamY);
+      seamReports.push({
+        seed: p.seed,
+        between: `${seams[i].id}/${seams[i + 1].id}`,
+        ...report,
+      });
+    }
+  }
   const failedSeams = seamReports.filter((r) => !r.pass);
-  if (failedSeams.length > 0) {
-    console.error("[slice-portrait-plate] REJECTED — plate fails seam continuity:");
-    for (const r of failedSeams) console.error(`  ✗ ${r.between}`, r.values);
-    throw new Error(
-      "plate rejected — see above; the WHOLE plate must be regenerated (ADR-0080 D5)",
-    );
+  for (const r of failedSeams) {
+    problems.push(`seed ${r.seed}: seam ${r.between} FAILED — ${JSON.stringify(r.values)}`);
   }
   for (const r of seamReports.filter((r) => r.alerts.length > 0)) {
-    console.warn(`[slice-portrait-plate] ⚠ ${r.between} in alert zone:`, r.alerts);
+    console.warn(`[slice-portrait-plate] ⚠ seed ${r.seed}: ${r.between} in alert zone:`, r.alerts);
   }
 
-  const files = seams.map(({ id, top, bottom }) => ({
-    id,
-    height: bottom - top,
-    rgb: bandRGB(top, bottom),
-  }));
+  if (problems.length > 0 || plates.length < VARIANTS_PER_BAND) {
+    console.error(
+      `[slice-portrait-plate] REJECTED — batch fails (${plates.length}/${VARIANTS_PER_BAND} ` +
+        `plates registered, ${problems.length} problem(s)):`,
+    );
+    for (const p of problems) console.error(`  ✗ ${p}`);
+    throw new Error(
+      "batch rejected — see above; the WHOLE batch must be regenerated (ADR-0080 D5, scaled " +
+        "to N plates) — do not regenerate a single seed in place (brief §10 anti-cherry-picking " +
+        "clause).",
+    );
+  }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const written = [];
-  for (const { id, height, rgb } of files) {
-    for (let i = 0; i < VARIANTS_PER_BAND; i++) {
-      // V1: all 6 variants of a band come from the SAME registered slice
-      // (one gabarit, one hero plate). A future multi-face plate replaces
-      // this loop body with per-variant crops; the manifest shape does not
-      // change, only how each buffer is produced.
+  for (const { id, top, bottom } of seams) {
+    const height = bottom - top;
+    for (let i = 0; i < plates.length; i++) {
+      const rgb = bandRGB(plates[i].portrait, top, bottom, height);
       const png = encodePngRGB(PORTRAIT_WIDTH, height, rgb);
       const name = variantFileName(id, i);
       fs.writeFileSync(path.join(OUT_DIR, name), png);
       written.push(png);
     }
   }
-  const checksum = `sha256:${sha256Hex([buf])}`;
-  // Persist THIS plate's A0/A1/A2 measurements alongside the manifest —
-  // diagnostic record of what registration actually measured on the plate
-  // that produced the committed bands, independent of the (now abandoned)
-  // kontext-derivative comparison workflow this used to feed.
+
+  const checksum = `sha256:${sha256Hex(plates.map((p) => p.buf))}`;
+  // Persist every plate's A0/A1/A2 measurements + the inter-plate
+  // reproducibility report alongside the manifest — the numbers behind the
+  // "same seams land on the same face" claim, not just the claim.
   writeManifest(checksum, {
-    registration: {
-      crownY: contour.crownY,
-      chinY: contour.chinY,
-      axisX: contour.axisX,
-      a1Y: controls.a1Y,
-      a2Y: controls.a2Y,
-      tiltPx: controls.tiltPx,
-    },
+    registration: plates.map((p) => ({
+      seed: p.seed,
+      crownY: p.contour.crownY,
+      chinY: p.contour.chinY,
+      axisX: p.contour.axisX,
+      a1Y: p.controls.a1Y,
+      a2Y: p.controls.a2Y,
+      tiltPx: p.controls.tiltPx,
+    })),
+    interPlateReproducibility: interPlateReports,
   });
   console.log(
-    `[slice-portrait-plate] wrote ${written.length} PNGs + manifest (checksum ${checksum})`,
+    `[slice-portrait-plate] wrote ${written.length} PNGs from ${plates.length} plates + ` +
+      `manifest (checksum ${checksum})`,
   );
 }
 

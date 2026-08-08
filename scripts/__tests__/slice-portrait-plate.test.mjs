@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { PNG } from "pngjs";
 import {
   detectSkullContour,
@@ -22,6 +22,8 @@ import {
   PORTRAIT_HEIGHT,
   SEAMS,
   TOLERANCE,
+  VARIANTS_PER_BAND,
+  PORTRAIT_PROMPT_FAMILY,
 } from "../slice-portrait-plate.mjs";
 
 // VOIE B (brief §10, Bertrand/lead-art, ROLL 2 retrospective 2026-08-05):
@@ -378,7 +380,16 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
     return file;
   }
 
-  it("names an aspect-preserved scale-down as Pollinations' cap, not a framing drift", async () => {
+  // The batch pipeline collects every plate's diagnostic and logs it via
+  // console.error before throwing one generic "batch rejected" summary (so
+  // the thrown message alone no longer carries the specific cause) — assert
+  // the specific diagnostic in what was actually logged, and the generic
+  // wrapper in what was thrown.
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("names an aspect-preserved scale-down as Pollinations' cap, not a framing drift, and stops after ONE seed (systemic)", async () => {
     // Today's PLATE_WIDTH/PLATE_HEIGHT (676x871 = 588,796px) were sized by §9
     // GATE DIMENSIONS specifically to sit under the ~590K px cap — so a
     // scale-down AT THESE dimensions is now the "UNEXPECTED, investigate as a
@@ -388,27 +399,75 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
     // is asserted specifically to lock in today's regime.
     const scale = 0.78;
     const file = writeTempPlate(Math.round(PLATE_WIDTH * scale), Math.round(PLATE_HEIGHT * scale));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
-      await expect(runReal(file)).rejects.toThrow(
-        /aspect ratio is preserved \(not a framing drift\)/,
-      );
-      await expect(runReal(file)).rejects.toThrow(/ESCALATE to lead-art/);
-      await expect(runReal(file)).rejects.toThrow(/UNEXPECTED.*under the.*documented ~590K/);
-      await expect(runReal(file)).rejects.not.toThrow(
-        /framing drifted beyond what registration can fix/,
-      );
+      await expect(runReal(file)).rejects.toThrow(/batch rejected/);
+      const logged = errorSpy.mock.calls.flat().join("\n");
+      expect(logged).toMatch(/aspect ratio is preserved \(not a framing drift\)/);
+      expect(logged).toMatch(/ESCALATE to lead-art/);
+      expect(logged).toMatch(/UNEXPECTED.*under the.*documented ~590K/);
+      expect(logged).not.toMatch(/framing drifted beyond what registration can fix/);
+      // Systemic (the cap applies identically to every seed): the batch
+      // stops after the FIRST plate rather than spending 5 more FLUX calls
+      // to learn the same fact five more times — asserted by the "not
+      // spending the remaining N FLUX call(s)" log line naming 5 remaining.
+      expect(logged).toMatch(/not spending the remaining 5 FLUX call\(s\)/);
     } finally {
       fs.rmSync(file, { force: true });
     }
   });
 
-  it("still calls out a genuine framing drift (different aspect ratio) by its own message", async () => {
+  it("still calls out a genuine framing drift (different aspect ratio) by its own message, one line per seed", async () => {
     const file = writeTempPlate(PLATE_WIDTH - 200, PLATE_HEIGHT); // same height, much narrower
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
-      await expect(runReal(file)).rejects.toThrow(
-        /framing drifted beyond what registration can fix/,
-      );
-      await expect(runReal(file)).rejects.not.toThrow(/aspect ratio is preserved/);
+      await expect(runReal(file)).rejects.toThrow(/batch rejected/);
+      const logged = errorSpy.mock.calls.flat().join("\n");
+      expect(logged).toMatch(/framing drifted beyond what registration can fix/);
+      expect(logged).not.toMatch(/aspect ratio is preserved/);
+      // NOT systemic in this script's own judgement — every one of the 6
+      // seeds is attempted and reported (--plate reuses the same file for
+      // every seed in this test, so the diagnostic legitimately repeats).
+      expect(
+        errorSpy.mock.calls
+          .flat()
+          .join("\n")
+          .match(/framing drifted/g)?.length,
+      ).toBe(6);
+    } finally {
+      fs.rmSync(file, { force: true });
+    }
+  });
+
+  it("processes all VARIANTS_PER_BAND plates through registration + inter-plate reproducibility before the seam gate — never stops at plate 1 on a content problem", async () => {
+    // `--plate <file>` reuses the SAME genuine skull-contour plate for every
+    // seed slot, so registration (A0/A1/A2) and inter-plate reproducibility
+    // (identical plate vs itself: every delta is exactly 0) both PASS for
+    // all 6 — this is not a real drawn face, so §9.3 seam continuity
+    // (unchanged, pre-existing gate) is expected to fail, same as the
+    // single-plate story before this batch change. What this test locks in
+    // is the ORDER and COVERAGE of the new batch loop: the rejection must
+    // name a SEAM problem, on ALL 6 seeds, never stopping early at
+    // registration or inter-plate the way a content-level problem would.
+    const { PNG: PNGLib } = await import("pngjs");
+    const png = await makeSkullPlate();
+    const file = path.join(
+      os.tmpdir(),
+      `slice-portrait-plate-batch-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
+    );
+    fs.writeFileSync(file, PNGLib.sync.write(png));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await expect(runReal(file)).rejects.toThrow(/batch rejected/);
+      const logged = errorSpy.mock.calls.flat().join("\n");
+      expect(logged).toMatch(/seed \d+: seam .* FAILED/);
+      expect(logged).not.toMatch(/registration —/);
+      expect(logged).not.toMatch(/inter-plate reproducibility FAILED/);
+      // All VARIANTS_PER_BAND seeds reached the seam check (proves the loop
+      // didn't stop early) — the exact seed scheme runReal itself uses.
+      for (let i = 0; i < VARIANTS_PER_BAND; i++) {
+        expect(logged).toMatch(new RegExp(`seed ${PORTRAIT_PROMPT_FAMILY.seed + i}: seam`));
+      }
     } finally {
       fs.rmSync(file, { force: true });
     }
