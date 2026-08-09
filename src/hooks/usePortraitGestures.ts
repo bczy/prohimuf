@@ -39,7 +39,7 @@ export interface PortraitGestureOptions {
 }
 
 /**
- * The BINDING half of the input layer (ADR-0082 D2/D2bis). It owns pointer and key
+ * The BINDING half of the input layer (ADR-0083 D2/D2bis). It owns pointer and key
  * listeners and holds the mapping table — and nothing else. Every decision about
  * what a gesture *is* comes from `swipeGestureSystem` (pure); every decision about
  * what it *does to a board* comes from the fold in `portraitRobotSystem` (pure).
@@ -78,7 +78,7 @@ export interface PortraitGestureOptions {
  *
  * A drag crossing three crans emits **one** `CYCLE(±3)`, not three `CYCLE(±1)`s: the
  * lock-in post-condition then runs once, on the board the player aimed at, instead of
- * three times on intermediate boards they never chose (ADR-0082 D2bis).
+ * three times on intermediate boards they never chose (ADR-0083 D2bis).
  *
  * It is RELATIVE, and that is the ordering fix of panel run-1: the hook used to bank
  * crans and emit an absolute `SET(indexOf(band) + crans)`, computed from the selection

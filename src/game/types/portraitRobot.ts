@@ -1,6 +1,6 @@
 /**
  * Portrait-robot — the interstitial photofit scene, contract types (ADR-0079,
- * ADR-0080, ADR-0082; tuning canon: `docs/game-design/design-gate-portrait-robot.md` §3).
+ * ADR-0080, ADR-0083; tuning canon: `docs/game-design/design-gate-portrait-robot.md` §3).
  *
  * The player reconstructs a face from four stacked bands (hair / eyes / nose /
  * mouth), six variants each, against a chrono. Placing the fourth correct band
@@ -169,7 +169,7 @@ export type PortraitPalier = "NONE" | "MID" | "URGENT" | "LAST";
 
 /**
  * The player's vocabulary — what a player ASKS FOR, never how they asked
- * (ADR-0082 D1). No `SWIPE`, no `DRAG`, no `TAP`, no `ARROW_LEFT`: if a
+ * (ADR-0083 D1). No `SWIPE`, no `DRAG`, no `TAP`, no `ARROW_LEFT`: if a
  * gesture-shaped member ever appears here, the abstraction has failed. The
  * desktop drag of B3 was absorbed by `SET` with zero new member — pointer
  * mid-travel belongs to the hook, only crans cross the seam.
@@ -179,7 +179,7 @@ export type PortraitPalier = "NONE" | "MID" | "URGENT" | "LAST";
  * not merely its label: the scene resolves itself at 4/4 (ADR-0079 D8.1). An
  * unreachable member here is a loaded gun that re-implements the deleted CTA by
  * accident, which is why it is absent from the union rather than ignored by the
- * reducer (ADR-0082 D1). The resolution kept a name — the rule
+ * reducer (ADR-0083 D1). The resolution kept a name — the rule
  * `resolvePortraitScene` — it just stopped being a request.
  *
  * `applyPortraitIntent` is total: an out-of-range index, an unknown band or an

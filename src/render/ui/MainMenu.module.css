@@ -84,3 +84,25 @@
   border-bottom: 3px solid transparent;
   font-weight: 400;
 }
+
+/* NIVEAUX only. Declaring just overflow-y leaves overflow-x computing to `auto` as well,
+   so the flyer float-in — which drifts each sheet up to ±44px sideways — grew this
+   container's scrollable width and could pop a transient horizontal scrollbar for the ~2s
+   of the entrance. A transform counts toward scrollable overflow even though it never
+   affects layout, so this was real, not just visual bleed.
+
+   `hidden` rather than `clip`: with a scrolling value on the other axis the spec makes
+   `clip` compute to `hidden` regardless (verified in-browser — computed overflow-x came
+   back `hidden` while the sheet still said `clip`), so writing `clip` would only describe
+   a behaviour the page never gets. No `overflow-clip-margin` either — it applies to `clip`
+   alone, so it would be inert.
+
+   Scoped to this rubrique rather than the shared `.rubriques`: SCORES and OPTIONS have no
+   sideways drift, and clipping them would trade a visible scrollbar for silently cut
+   content if their copy ever outgrew the container.
+
+   The short-landscape rack is unaffected: `.muf-flyerwall` is a descendant with its own
+   `overflow-x: auto`, so it stays its own scroll container. */
+.rubriquesLevels {
+  overflow-x: hidden;
+}

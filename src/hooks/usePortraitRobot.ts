@@ -16,7 +16,7 @@ export interface PortraitRobotOptions {
   readonly seed: number;
   /** Chrono for this run's difficulty — the shell reads gate §3's table, never this hook. */
   readonly timerSeconds: number;
-  /** `true` under `RotateOverlay`: the fold simply stops being called (ADR-0082 D5). */
+  /** `true` under `RotateOverlay`: the fold simply stops being called (ADR-0083 D5). */
   readonly paused: boolean;
   /**
    * `true` cuts the reveal's band-by-band walk to a single frame

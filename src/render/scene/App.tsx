@@ -778,6 +778,7 @@ export function App(): JSX.Element {
       <MainMenu
         unlockedLevels={unlockedLevels}
         prefs={prefs}
+        reducedMotion={reducedMotion}
         onPlay={handlePlay}
         onSavePrefs={handleSavePrefs}
       />,

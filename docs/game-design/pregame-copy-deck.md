@@ -18,6 +18,45 @@ and is **replaced** throughout.
 
 ---
 
+## Amendment log
+
+A gated deck carries its corrections visibly. Every entry below names its date, its author
+and the gate that ordered it; superseded text is struck through in place, never deleted.
+
+**Amendment round 1 — 2026-08-05 · `narrative-designer` (Yasmine) · ordered by condition
+**K-1** of the `lead-game-designer` PASS WITH CHANGES on
+`decision-flyer-crew-emblems-fiction.md` (Karim, 2026-08-05, PR #145, branch
+`claude/flyer-wall-float-in-animation`).**
+
+Why: `FLYER_EMBLEMS` in `src/render/ui/menu/FlyerMotif.tsx` attributes one identity mark per
+flyer. Two of those attributions diverged from this deck, and a third and fourth surface
+(the tutorial, the finale) were never covered here at all. A gated doc contradicted by
+shipped code is drift; K-1 closes it by moving the corrections into the canon itself.
+
+| #   | Section     | Change                                                                                              |
+| --- | ----------- | --------------------------------------------------------------------------------------------------- |
+| A-1 | §2.1        | Records explicitly that the tutorial flyer carries **no crew emblem** (net-new: never stated here). |
+| A-2 | §2.3        | Motif `biohazard` → **concentric rings**, re-motivated on the crew's own ground.                    |
+| A-3 | §2.4        | Motif `acid smiley` → **plumb bob**, re-motivated on the sign-IS-the-name logic.                    |
+| A-4 | §2.6 (new)  | Records the finale sheet's **chandelier** mark, sourced to the finale spec §1.3.                    |
+| A-5 | §9.2 (new)  | Crew↔motif table, one row per sheet — including the two sheets that have no crew.                   |
+| A-6 | §9.2 → §9.3 | Former §9.2 "Owed follow-ups" renumbered §9.3 to make room for A-5. No content change.              |
+| A-7 | §2.2        | Logs the spiral **as homage** to Spiral Tribe (unchanged motif, missing provenance).                |
+
+**A-2 and A-3 are not word swaps.** The superseded motifs each carried their own
+justification — the biohazard was argued from the warehouse/industrial register, the acid
+smiley from "euphoria over the melancholy". Neither reason transfers to its replacement, so
+both paragraphs are rewritten around the new sign's own logic rather than edited in place.
+The struck-through originals stay so the reasoning that was replaced is still legible.
+
+**Flag, not amended (needs Karim, not me).** The header of this deck still reads
+`status **DRAFT, awaiting PASS**` while `docs/game-design/README.md` records it as
+**PASS w/ conditions** 2026-07-14 (`pre-game-design-gate.md`) and K-1 itself calls it gated
+canon. The status line is stale, but granting a PASS is not the author's to write — left to
+`lead-game-designer`.
+
+---
+
 ## 0. Canonical naming decisions (quick reference)
 
 | Thing                                             | Decision                                      | Notes                                                                            |
@@ -92,6 +131,17 @@ ici". **This is the only flyer with no info-line** — you don't call, you're al
 | Info-line slot (struck out)        | `pas besoin d'appeler`        | 24 car.         |
 | Menu badge (kept from ADR-0012)    | `TUTORIEL`                    | 10 car.         |
 
+> **Amendment A-1 (2026-08-05, Yasmine — K-1).** **This sheet carries no crew emblem.** The
+> four gig flyers each take one stamp (§9.2); this one takes none, and that absence is the
+> design, not a gap waiting to be filled. `SANS SYSTÈME · AVANT LE SON` means the sheet is
+> **unsigned** — Muf has no system yet — and an unsigned sheet takes no stamp. It is the same
+> withholding as the struck-out info-line one row above: this flyer's whole fiction is _not
+> affiliated yet_, so any scene badge on it would be denied by its own crew slot.
+> The only mark it carries is DISPATCH's hand — the circled `23` and the arrow already
+> written into this section's preamble, which is handwriting, not a stamp.
+> Consequence in code: the sheet is simply **absent** from `FLYER_EMBLEMS`, which is that
+> table's documented contract for "no motif". Not a fallback — the specified state.
+
 ### 2.2 Rue Belliard — `belliard` (19e, 1998) · **FACILE**
 
 | Slot                       | Copy (French)                | Max     |
@@ -107,6 +157,20 @@ ici". **This is the only flyer with no info-line** — you don't call, you're al
 
 Motifs: **spiral**, `23`, "no logo". `19` = arrondissement, `98` = year.
 
+> **Amendment A-7 (2026-08-05, Yasmine — K-1).** The motif is unchanged; what was missing is
+> its provenance. The spiral and the number `23` are **an homage to Spiral Tribe**, the sound
+> system that carried the free-party circuit into France after Castlemorton and to whom the
+> `23` belonged. That is exactly what a fictional French crew of 1998 would be doing, and a
+> spiral and a number are common cultural property, not marks anyone owns — so this sits on
+> the same legal footing as _l'Éden_ and the `08 36` numbers.
+> **Recorded so it is never "sharpened".** A later contributor must not push this mark toward
+> the real collective's actual artwork: that would turn a nod into appropriation. It is a
+> nod, drawn in this zine's own hand, and it stays one.
+> Note also that this deck lists the spiral as a motif on all three gig flyers (§2.2/§2.3/
+> §2.4) — a shared scene sign, like the `23`. Its use as SPIRALE 23's **exclusive** stamp is
+> legitimate only because that crew's name claims it; do not later read this as
+> "spiral = Belliard only".
+
 ### 2.3 Stalingrad — `stalingrad` (19e, 1998) · **DIFFICILE**
 
 | Slot                       | Copy (French)                 | Max     |
@@ -120,8 +184,26 @@ Motifs: **spiral**, `23`, "no logo". `19` = arrondissement, `98` = year.
 | Info-line                  | `08 36 23 95 19`              | 18 car. |
 | Flavor difficulty          | `AMBIANCE : CHAUD`            | 22 car. |
 
-Motifs: **biohazard** (warehouse/industrial), spiral, `23`. Info-line `95` nods to KENZA's
-shipped line _"Ils ont des planques là-dedans depuis '95"_.
+~~Motifs: **biohazard** (warehouse/industrial), spiral, `23`.~~ **Superseded by A-2.**
+Info-line `95` nods to KENZA's shipped line _"Ils ont des planques là-dedans depuis '95"_
+(unchanged).
+
+Motifs: **concentric rings** (canal ripple / speaker wavefront), spiral, `23`.
+
+> **Amendment A-2 (2026-08-05, Yasmine — K-1).** The rings are not a redressing of the
+> biohazard; they are a different argument, so the motivation is rewritten rather than
+> patched.
+> **What the rings say.** Concentric rings read two ways at once, and both are this crew's
+> own: **ripples on the canal** — KANAL SYSTEM carries the water in its name and this flyer
+> states `BORDS DU CANAL · 19e` — and a **speaker cone / wavefront**, which is the slogan
+> `UN ENTREPÔT · UN MUR DE SON` drawn instead of written. One shape that means the place and
+> the sound at once is a crew mark; that is what a stamp is for.
+> **Why the biohazard went.** It was period-plausible (it belonged to the hardcore/gabber and
+> early-tekno visual stock) but it was **borrowed**: it said "industrial" in general and
+> nothing about _this_ crew in particular, and it dragged a toxic/danger connotation onto a
+> party whose written register here is welcoming — `RV : SUR L'INFO-LINE`, a whole night
+> `00H → AUBE`. Wrong tone, no ownership. That is the author's own misjudgement, corrected.
+> Ground: `decision-flyer-crew-emblems-fiction.md` §2.2 (PASS w/ condition C1). Slot `mid`.
 
 > **Difficulty read (data-true).** With shipped `enemySpeedMultiplier`
 > (`>1.2 → DIFFICILE`), Stalingrad (`1.3`) stamps **DIFFICILE**, same as Vitry (`1.6`). The
@@ -144,8 +226,40 @@ shipped line _"Ils ont des planques là-dedans depuis '95"_.
 | Info-line                  | `08 36 23 94 09`                   | 18 car. |
 | Flavor difficulty          | `AMBIANCE : BRÛLANT`               | 22 car. |
 
-Motifs: **acid smiley** (euphoria over the melancholy), spiral, `23`. Zone line echoes
-KENZA/MUF's shipped exchange (_"Tu connais ?" / "J'ai grandi là-bas."_). Info-line ends
+~~Motifs: **acid smiley** (euphoria over the melancholy), spiral, `23`.~~
+**Superseded by A-3.**
+
+Motifs: **plumb bob** (the nadir; the mason's tool of the barres), spiral, `23`.
+
+> **Amendment A-3 (2026-08-05, Yasmine — K-1).** Again a different argument, not a different
+> word. The smiley's reason was contrast — euphoria laid over the melancholy. The plumb bob's
+> reason is identity, and it does the same emotional work more specifically.
+> **The sign IS the name.** A plumb bob is a weight on a line that points, by gravity and
+> nothing else, straight down — at the **nadir**. The mark arrives at the crew's name by
+> physics rather than by illustration, which makes it rhyme with SPIRALE 23's spiral: the two
+> denotative marks of the set, so the wall reads as one printing.
+> **It is period- and class-true.** A plumb bob is a mason's and builder's tool — the sign of
+> the people who poured the barres. On the flyer for `AU PIED DES BARRES · SON MAXIMAL`, in
+> the 94, it belongs to the place as no astronomical or acid symbol would. It is a tool, not a
+> scene badge, which suits a crew defined by its soundman (DJ Masta Klem, §9.1) rather than by
+> its affiliation.
+> **It carries the grief without narrating it.** Vitry is the level where the loop stops and
+> Muf goes quiet — « Ma mère habitait au 9e. Fenêtre du coin. » « J'aurais pas dû revenir. » A
+> plumb line hangs, pulls down and finds the bottom. The sheet holds the weight of the
+> post-scene before the player has read it, and never says so.
+> **The smiley leaves the set entirely and is reassigned nowhere.** It is the scene's most
+> loaded sign — acid house 1988, the Second Summer of Love, and by the mid-90s the free-party
+> circuit's inherited badge: it always asserts _there is a system here_. On this sheet the
+> plumb bob now does its job better; on any other it would be a scene affiliation with no crew
+> behind it, which is decoration, and this zine does not decorate. It is not in the motif
+> vocabulary any more.
+> **Slot `hero` — defended.** NADIR 94 is the one sheet led by its image: the bob hangs across
+> the top and the lettering starts under it. On the flyer for the heaviest level the image
+> outranks the words and physically presses them down the page. Do **not** normalise Vitry to
+> `mid`/`body` for consistency; the asymmetry is the point.
+> Ground: `decision-flyer-crew-emblems-fiction.md` §2.3 + §2.4 (PASS, condition C1b).
+
+Zone line echoes KENZA/MUF's shipped exchange (_"Tu connais ?" / "J'ai grandi là-bas."_). Info-line ends
 `09` = the 9th floor of the shipped Vitry post-scene (_"Ma mère habitait au 9e"_) —
 **intentional deep-cut, not a typo** (§8).
 
@@ -167,6 +281,36 @@ but the details are withheld: torn / face-down / line dead.
 **Art suggestion (not a fait accompli — art flow owns it):** locked flyer rendered
 _torn or face-down_ so only the crew name + `LIGNE FERMÉE` read. Crew name stays legible;
 everything else is the tear.
+
+### 2.6 Niveau Final — `niveau-final` (l'Éden, 31 déc. 1999) · **mark only**
+
+> **Amendment A-4 (2026-08-05, Yasmine — K-1).** New section. This deck was written when only
+> the four 1998 gigs existed, so the finale sheet has no copy table here — **its player-facing
+> copy is authored and gated in `spec-niveau-final-fiction.md` §4.1 (`PLAYABLE_COPY`) and is
+> not restated or duplicated in this deck.** K-1 requires only one thing to land here: the
+> sheet's **mark**, so the next reader finds the whole emblem set in one place (§9.2).
+
+**Mark: the chandelier**, reduced to a sign — a radiating pendant, a hub on a rod with its
+branches thrown out and down. Slot `body`.
+
+The ground is `spec-niveau-final-fiction.md` §1.3: l'Éden's own fixture, « **le lustre
+d'origine de l'Éden — le vieux monde suspendu au-dessus de la fête** », listed there as
+belonging to _la salle (le passé)_. Three things follow, and all three are why it is the
+right mark:
+
+- **It is the venue's mark, not a crew's.** L'Éden is a **Lieu**, never a collectif — the
+  building's own dead marquee, the name still bolted over a door the underground moved in
+  under without renaming. §9.1's standing rule (a crew is a collective) is therefore not
+  violated: this sheet is signed by **the hall**. There is no sound system called L'Éden.
+- **It is period-true and it is the level's subject.** An inter-war dancing — parquet,
+  balcony, one heavy chandelier still hanging — on the night the century turns: the old world
+  overhead while the last night of it plays underneath.
+- **It pays off in-game.** The same object the room turns against le Commandant, so the flyer
+  the player skimmed in the menu comes back as a weapon.
+
+Register constraint (§3 of the decision doc applies here as everywhere): a **stamp**, not a
+logo — hand-cut, off-register, ink-starved. Nothing on this mark glows; the rays are
+branches, not light.
 
 ---
 
@@ -377,7 +521,36 @@ purpose — no collision:**
 Rule for the future bible: a **crew** is a collective; a **contact** is an individual who
 belongs to or serves a crew. Never merge a crew name with a contact name.
 
-### 9.2 Owed follow-ups (not actioned in this deck)
+### 9.2 Sheet ↔ mark (the emblem set) — Amendment A-5
+
+> **Amendment A-5 (2026-08-05, Yasmine — K-1).** New section. **Five sheets, four marks.**
+> One row per sheet, including the two that have no crew, so the next reader never has to
+> re-derive this map by reading the SVG. Each mark is UNIQUE across the wall: repeating one
+> turns a signature into wallpaper.
+
+| Sheet           | Level id       | Crew / owner     | Mark                 | Slot   | Fiction ground                                                           |
+| --------------- | -------------- | ---------------- | -------------------- | ------ | ------------------------------------------------------------------------ |
+| Tutoriel        | `tutorial`     | — (unsigned)     | **none**             | —      | `SANS SYSTÈME · AVANT LE SON` — an unsigned sheet takes no stamp (§2.1). |
+| Rue Belliard    | `belliard`     | `SPIRALE 23`     | **spiral**           | `body` | The name IS the sign; logged **as homage** to Spiral Tribe (§2.2).       |
+| Stalingrad      | `stalingrad`   | `KANAL SYSTEM`   | **concentric rings** | `mid`  | Canal ripple + speaker wavefront — the crew's own ground (§2.3).         |
+| Vitry — 94      | `vitry`        | `NADIR 94`       | **plumb bob**        | `hero` | A plumb bob points at the nadir: the sign IS the name (§2.4).            |
+| L'Éden (finale) | `niveau-final` | la salle (venue) | **chandelier**       | `body` | The hall's own fixture — `spec-niveau-final-fiction.md` §1.3 (§2.6).     |
+
+Two rules this table encodes, both binding on any future contributor:
+
+- **A mark belongs to an owner.** Four of the five sheets have one (three crews, one venue).
+  The fifth has none, and therefore has no mark. An emblem with no owner is decoration.
+- **`hero` is not a style choice.** Only Vitry leads with its image (§2.4). Do not normalise
+  it, and do not promote another sheet to `hero` here — wall rhythm across the five sheets is
+  a composition question owned jointly by `lead-art` and `ux-designer`, deferred to their
+  pile-repli pass, not settled in this deck.
+
+Two motifs that are **out of the vocabulary**, recorded so neither comes back by accident:
+the **acid smiley** (no owner in this fiction — A-3) and the **biohazard** (borrowed, says
+nothing about KANAL SYSTEM — A-2). The rings, the plumb bob, the spiral and the chandelier
+are the whole set.
+
+### 9.3 Owed follow-ups (not actioned in this deck)
 
 - Mirror this gated-canon list into `docs/game-design/README.md` (gate f1) — owed, and left
   to the orchestrator/lead since this pass edits **only** the copy deck.

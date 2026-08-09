@@ -3,6 +3,17 @@ import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-config-prettier";
 import globals from "globals";
 
+// Node-only globals for scripts/**: flat config MERGES languageOptions.globals
+// across matching blocks instead of replacing them, so the base block's browser
+// globals (window, document, …) would silently survive. Explicitly switch every
+// browser global "off", then re-enable the Node + ES2022 sets (the spread order
+// restores the keys the two environments share, e.g. console/fetch/URL).
+const scriptsNodeGlobals = {
+  ...Object.fromEntries(Object.keys(globals.browser).map((k) => [k, "off" as const])),
+  ...globals.node,
+  ...globals.es2022,
+};
+
 export default tseslint.config(
   {
     ignores: [
@@ -95,7 +106,7 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
 
     languageOptions: {
-      globals: { ...globals.node, ...globals.es2022 },
+      globals: scriptsNodeGlobals,
     },
 
     rules: {
@@ -118,7 +129,32 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
 
-      globals: { ...globals.node, ...globals.es2022 },
+      globals: scriptsNodeGlobals,
+    },
+  },
+
+  // Browser-driving harnesses (Playwright): their page.evaluate()/
+  // waitForFunction() callbacks are authored here but EXECUTE in the page, so
+  // window/document are legitimate identifiers in these files only. Any other
+  // script referencing a browser global fails no-undef — add the file here
+  // only if it genuinely drives a browser.
+  {
+    files: [
+      "scripts/align-grilles.mjs",
+
+      "scripts/align-troncon.mjs",
+
+      "scripts/align-windows.mjs",
+
+      "scripts/e2e-generated-level.mjs",
+
+      "scripts/e2e-lib.mjs",
+
+      "scripts/screenshot-preview.mjs",
+    ],
+
+    languageOptions: {
+      globals: { ...globals.browser },
     },
   },
 

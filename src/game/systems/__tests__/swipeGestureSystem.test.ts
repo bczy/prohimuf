@@ -13,7 +13,7 @@ function dyAt(dx: number, deg: number): number {
   return Math.abs(dx) * Math.tan((deg * Math.PI) / 180);
 }
 
-describe("classifySwipe — the boundaries are the test (ADR-0082 D2)", () => {
+describe("classifySwipe — the boundaries are the test (ADR-0083 D2)", () => {
   it("names the direction of a clean horizontal swipe", () => {
     expect(classifySwipe(0.2, 0, 120)).toBe("right");
     expect(classifySwipe(-0.2, 0, 120)).toBe("left");
@@ -53,7 +53,7 @@ describe("classifySwipe — the boundaries are the test (ADR-0082 D2)", () => {
   });
 });
 
-describe("accumulateDrag — one cran per DRAG_CRAN_DISTANCE (ADR-0082 D2bis)", () => {
+describe("accumulateDrag — one cran per DRAG_CRAN_DISTANCE (ADR-0083 D2bis)", () => {
   it("crosses no cran below the threshold and exactly one at it", () => {
     expect(accumulateDrag(0, DRAG_CRAN_DISTANCE * 0.99).crans).toBe(0);
     expect(accumulateDrag(0, DRAG_CRAN_DISTANCE).crans).toBe(1);

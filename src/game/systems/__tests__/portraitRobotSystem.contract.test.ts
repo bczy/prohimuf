@@ -55,7 +55,7 @@ describe("the frame fold is the only entry point across the seam", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("no gesture literal leaks into the intent vocabulary (ADR-0082 D1)", () => {
+  it("no gesture literal leaks into the intent vocabulary (ADR-0083 D1)", () => {
     const source = readFileSync("src/game/types/portraitRobot.ts", "utf8");
     const union = source.slice(source.indexOf("export type PortraitIntent"));
     // `SUBMIT` was deleted, not internalised (B1): an unreachable member is a loaded gun

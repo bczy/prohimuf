@@ -8,7 +8,7 @@ Story planning artifact: `_bmad-output/planning-artifacts/story-portrait-robot.m
 
 - **ADR-0079:** Portrait-robot scene as interstitial mini-game within the app-shell — boundary (game/render/hooks seams, insertion point between level completions, state handoff with level loader).
 - **ADR-0080:** Face-band data model — archetype registry, target/variant matching, determinism & seed control, asset format, pooling strategy.
-- **ADR-0082:** Input & presentation layer — gesture-agnostic intent vocabulary, house BD-comics DA, CSS Modules. _(File renamed 2026-08-05 from `…-atari-st-render.md`: the Atari ST aesthetic is void per Bertrand's 2026-08-05 arbitration / story AC7 — the DA stays house BD-comics. The intake header's "explicit Atari ST digitized-face aesthetic" above is likewise superseded.)_
+- **ADR-0083:** Input & presentation layer — gesture-agnostic intent vocabulary, house BD-comics DA, CSS Modules. _(File renamed 2026-08-05 from `…-atari-st-render.md`: the Atari ST aesthetic is void per Bertrand's 2026-08-05 arbitration / story AC7 — the DA stays house BD-comics. The intake header's "explicit Atari ST digitized-face aesthetic" above is likewise superseded.)_
 
 ---
 
@@ -125,7 +125,7 @@ dt)` moves into `src/game`**, so the hook queues events and owns **no ordering**
   `decoy-profile`, checking both the decoy profile and the all-wrong start over a fixed
   deterministic seed set — stated in the ADR as a **regression guard, not a proof** (the proof
   is the arithmetic).
-- **ADR-0082** — `docs/adr/0082-portrait-robot-input-and-presentation-layer.md`
+- **ADR-0083** — `docs/adr/0083-portrait-robot-input-and-presentation-layer.md`
   (**renamed** from `…-atari-st-render.md`; the ST framing is void per AC7 — index regenerated).
   The pure layer speaks **intents** (`CYCLE / SET / FOCUS / ABANDON`), never gestures. Swipe
   _classification_ is pure (`swipeGestureSystem.ts`, angle/distance constants — the numbers
@@ -162,7 +162,7 @@ by the render lane's hook); the pointer state machine in `usePortraitGestures.ts
 removal of the CTA zone in `src/render/ui/portrait/**` (**dev-r3f-render**). **No new file, no
 lane boundary moved, no serialisation added.** Two workload notes: `dev-gameplay`'s pure
 surface grows (the D8 fold and its four ordering tests are the highest-value tests of the
-story), and `dev-r3f-render`'s hook is **larger than the TECH PLAN implied** — ADR-0082 C1
+story), and `dev-r3f-render`'s hook is **larger than the TECH PLAN implied** — ADR-0083 C1
 scores that misprediction openly rather than hiding it in an estimate.
 
 ### 3.3 Order and seams
@@ -225,11 +225,11 @@ scores that misprediction openly rather than hiding it in an estimate.
   both unverifiable and a break of seed replayability.
 - **[Rév. 1] A chrono digit reappearing**, or a consumer comparing `remainingSeconds` to 10/5
   instead of reading `scene.palier` (ADR-0079 D9).
-- **A gesture literal inside `src/game`.** ADR-0082 D1 — if `SWIPE` or `DRAG` appears in the
+- **A gesture literal inside `src/game`.** ADR-0083 D1 — if `SWIPE` or `DRAG` appears in the
   intent union, the abstraction has failed. **This one was live-fire-tested on 2026-08-05**: B3
   landed the desktop drag and the intent union did not move (`SET` absorbed it). The risk is now
   the _drag's intermediate state_ leaking in — a `dragging` flag or a pixel delta on
-  `PortraitScene` (ADR-0082 A7, rejected). Pointer mid-travel belongs to the hook; only crans
+  `PortraitScene` (ADR-0083 A7, rejected). Pointer mid-travel belongs to the hook; only crans
   cross the seam.
 - **A hand-patched single band** breaking the seam rule — caught by `plateChecksum`, not by eyes.
 
@@ -242,7 +242,7 @@ scores that misprediction openly rather than hiding it in an estimate.
   His §4's "chrono qui coûte une vie" is false since A1 and must be corrected.
 - **`game-graphist`:** the comparison plate (§7.2) is now a **hard dependency** — it is the
   source of the 60 distance values.
-- **`ux-designer`:** round 2 lands as constants, on no critical path (ADR-0082 D3). **Rév. 1 —
+- **`ux-designer`:** round 2 lands as constants, on no critical path (ADR-0083 D3). **Rév. 1 —
   the list has changed:** _discrete vs inertial_ is **closed** by B3 (discrete on both device
   classes — an inertial desktop drag would not be "the same mental model" as a discrete touch
   swipe); **`DRAG_CRAN_DISTANCE` joins** the open numbers beside `SWIPE_MIN_DISTANCE` and
@@ -252,7 +252,7 @@ scores that misprediction openly rather than hiding it in an estimate.
 - **`narrative-designer`:** **Rév. 1 — one new short deliverable, and it is on the critical path
   of the screen's copy**: a gauge label to replace the dead `TÉLÉCARTE · {n} UNITÉS` (no number
   can appear in it — gate A13). Until it lands the render lane ships the gauge **unlabelled**
-  rather than inventing copy (ADR-0082 D4). Also owed: the `PARTIAL` verdict copy and the
+  rather than inventing copy (ADR-0083 D4). Also owed: the `PARTIAL` verdict copy and the
   re-framing of the expiry line (gate §8 B1), which are gate conditions, not architecture.
 - **`game-designer`:** the wave hold reduces pressure _and_ kill time on a quota level — a real
   tuning consequence to re-check at playtest. **Rév. 1 —** gate A16 refuses any anti-sweep
@@ -313,7 +313,7 @@ scores that misprediction openly rather than hiding it in an estimate.
      l'asset de la variante JUSTE par bande après résolution. Dérivable de `puzzle.truth`
      côté hook, mais c'est une surface neuve à valider, pas une initiative de lane.
      → `senior-architect` / `ux-designer`.
-  4. **Armement de la sortie anticipée** — ADR-0082/gate A17 le situent « dans le hook » ;
+  4. **Armement de la sortie anticipée** — ADR-0083/gate A17 le situent « dans le hook » ;
      il vit dans `EarlyExitButton` (état local, `ARM_WINDOW_MS`), donc dans la couche render
      et hors du modèle de jeu comme exigé, mais pas littéralement dans `src/hooks`.
      → `senior-architect`.
@@ -369,7 +369,7 @@ scores that misprediction openly rather than hiding it in an estimate.
 1. Verified 0082 free across local, index, origin/main.
 2. Renamed file: `docs/adr/0081-portrait-robot-input-and-presentation-layer.md` → `0082-…`
 3. Updated ADR header: renumbering note + collision timestamp.
-4. Replaced ADR-0081 → ADR-0082 in 64 references (12 TS files, 8 Markdown docs, 2 adjacent ADRs).
+4. Replaced ADR-0081 → ADR-0083 in 64 references (12 TS files, 8 Markdown docs, 2 adjacent ADRs).
 5. Merged origin/main; regenerated `docs/adr/README.md` and `public/adr/index.html` (conflicts on generated files resolved by script).
 6. Typecheck remains ✓ after merge.
 
@@ -425,7 +425,7 @@ asymétrie des deux `revealSeconds`.
 (R5/R7/R8, §4.1 `confirmGuardSeconds`+unités, §4.2 seuils, §6 paliers, AC13/AC14/§7),
 `spec-portrait-robot-fiction.md` (§4.5 libellé télécarte, §4.7 cadrage expiration, §4.9 replis),
 `ux/portrait-robot-ux.md` (CTA dans les 2 wireframes + tables de layout, budgets verticaux, §"ENTRÉE",
-clavier `Entrée`, chrono, geste desktop). **ADR-0082** cite la copie canon et le compte d'unités ⇒
+clavier `Entrée`, chrono, geste desktop). **ADR-0083** cite la copie canon et le compte d'unités ⇒
 `tech-writer` / `senior-architect`.
 
 ---
@@ -489,7 +489,7 @@ clavier `Entrée`, chrono, geste desktop). **ADR-0082** cite la copie canon et l
 - **Corrections encaissées.** (a) « un chrono qui coûte une vie » était **FAUX** — la scène ne
   retire aucune vie (A1/AC5), sanction = −20 énergie sur le niveau suivant (A1c) ; argument retiré.
   (b) Statut tranché **surface DOM interactive** (ADR-0080 D6.3) ⇒ liseré légitime sans exception,
-  cible sans glow, **pas de CRT** (ADR-0082 D4) : partout où le brief disait « CRT allumé » comme
+  cible sans glow, **pas de CRT** (ADR-0083 D4) : partout où le brief disait « CRT allumé » comme
   condition de test, lire **« grain xerox de post-composition »**. (c) **Auto-correction** : mon
   §4 autorisait le néon sur le chrono critique au titre d'« alerte HUD » — **retiré**, il n'y a pas
   de HUD ici et la jauge n'est pas interactive.
@@ -570,7 +570,7 @@ clavier `Entrée`, chrono, geste desktop). **ADR-0082** cite la copie canon et l
   - `narrative-designer` (Yasmine) : copie de la sortie anticipée (2 états : au repos / armé),
     en plus du libellé de jauge déjà dû.
   - `senior-architect` (Winston) : A17 ajoute un sous-état d'IHM **hors modèle de jeu** (armement) —
-    à cadrer dans ADR-0082 ; A18 ajoute **une** constante dérivée, aucune branche.
+    à cadrer dans ADR-0083 ; A18 ajoute **une** constante dérivée, aucune branche.
   - `lead-art` (Nico) : R-3 ratifiée, ta §5 et ADR-0080 D5 sont le fait acquis ; la génération
     bande-par-bande n'est plus une option à évaluer.
 
@@ -785,7 +785,7 @@ support des revues art et UX qui restent à faire.
   assumé, §3.4) et fixer la forme du manifeste sur celle du producteur (`{bands}`, finding M9).
 - **ADR-0079 D4** — documenter le nouveau champ `scoreDelta` et sa temporalité distincte (§6.2),
   ainsi que le déplacement du calcul de `pendingScore`.
-- **Gate §3 / ADR-0082** — enregistrer l'amendement `Escape` une fois `lead-game-designer` PASS
+- **Gate §3 / ADR-0083** — enregistrer l'amendement `Escape` une fois `lead-game-designer` PASS
   (§6.3). `tech-writer` transcrit, il ne décide pas.
 - **JSDoc `PortraitBandAsset`** — le commentaire affirme que la lane render préfixe `BASE_URL`
   alors qu'elle ne le fait pas (M10) : à réaligner **après** la correction, pas à la place.
@@ -975,7 +975,7 @@ ajouts ci-dessus par `83abd537`. Rien n'est perdu et tout est vert, mais **la r�
   par bande : je le signale plutôt que de le laisser découvrir au panel.
 
 - **next :** `lead-game-designer` (amendement §3 `Échap`) · `tech-writer` (ADR-0079 D4 :
-  `scoreDelta`, la queue de révélation, la dépendance `POST_LEVEL_NARRATIVE` levée ; ADR-0082 D1 :
+  `scoreDelta`, la queue de révélation, la dépendance `POST_LEVEL_NARRATIVE` levée ; ADR-0083 D1 :
   `CYCLE.delta` relatif) · `game-designer` (rythme de la scène résolue) · puis **un seul** nouveau
   tour de panel.
 

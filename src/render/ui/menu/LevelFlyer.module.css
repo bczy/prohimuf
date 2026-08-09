@@ -334,3 +334,33 @@
   color: var(--ink-black);
   margin-top: 6px;
 }
+
+/* Crew emblem (FlyerMotif) — the one ink stamp each printer put on its sheet. Given its
+   OWN row rather than laid behind the copy: the parked R3F spike tried it as a backdrop
+   and the difficulty stamp became unreadable through it, and a watermark under body text
+   would trade contrast for decoration on a surface whose job is to be read. `currentColor`
+   inherits the sheet's ink, so no hex is redeclared here (art-direction single-source). */
+.motifRow {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 2px;
+  color: var(--ink-black);
+  /* Photocopied ink is never fully solid; this also keeps the emblem clearly décor
+     rather than competing with the stamps that carry real state. */
+  opacity: 0.82;
+}
+
+/* Locked sheets are greyscaled as a whole by `--flyer-lock-filter`; the emblem fades a
+   little further so a closed line reads as closed at a glance. */
+.motifRowLocked {
+  opacity: 0.5;
+}
+
+/* The sheet that leads with its image: the block runs across the top and the lettering
+   starts underneath. Pulled to the paper's edges so it reads as a printed band rather
+   than an icon dropped into the margin. */
+.motifHero {
+  margin: -2px -4px 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink-black);
+}

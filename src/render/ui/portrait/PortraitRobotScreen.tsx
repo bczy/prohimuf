@@ -77,7 +77,7 @@ export interface PortraitRobotScreenProps {
 }
 
 /**
- * PORTRAIT-ROBOT — « TÊTE À CONNAÎTRE » (ADR-0079 D1, ADR-0082 D4).
+ * PORTRAIT-ROBOT — « TÊTE À CONNAÎTRE » (ADR-0079 D1, ADR-0083 D4).
  *
  * A pure DOM screen: no `<Canvas>`, no Three, no `CrtPass`. It renders a
  * `PortraitScene` and emits `PortraitIntent`s, and it holds no rule — the chrono,

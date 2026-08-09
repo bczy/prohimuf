@@ -1,7 +1,7 @@
 /**
  * PORTRAIT-ROBOT — the screen's canonical strings, transcribed verbatim.
  *
- * The render lane authors NO copy (ADR-0082 D4). Every string below is copied
+ * The render lane authors NO copy (ADR-0083 D4). Every string below is copied
  * character-for-character out of `docs/game-design/spec-portrait-robot-fiction.md`
  * (round 3), which is the only place they may be changed. The section reference
  * sits beside each one so a reviewer can diff them against the spec without
@@ -33,7 +33,7 @@ export const SUPERTITLE_SHORT = "PAGE 23";
 
 /**
  * Gauge label (fiction §4.5) — the word alone, 9 chars, no separator, no value.
- * ADR-0082 D4 told the render lane to ship the gauge unlabelled until the
+ * ADR-0083 D4 told the render lane to ship the gauge unlabelled until the
  * narrative lane delivered a number-free label; round 2 delivered this one.
  */
 export const GAUGE_LABEL = "TÉLÉCARTE";
@@ -126,7 +126,7 @@ export function bandGroupLabel(bandLabel: string, ordinal: number, total: number
 }
 
 /**
- * Internal band ids never reach the screen (ADR-0082 D4) — this map exists only so
+ * Internal band ids never reach the screen (ADR-0083 D4) — this map exists only so
  * a `data-band` attribute can carry one for the gesture hook and the e2e tests.
  */
 export const BAND_TEST_ID: Readonly<Record<PortraitBandId, string>> = {

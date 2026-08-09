@@ -10,7 +10,7 @@
   (`LevelParams` / `validateLevel` discipline), ADR-0076 (the `src/game` ↔ `src/hooks`
   purity seam and the "no `Date.now` on the pure path" rule), ADR-0068 (lazy R3F chunk —
   why this screen must not be a Canvas), ADR-0046 (CSS Modules + tokens), ADR-0080
-  (the face data model), ADR-0082 (input & presentation).
+  (the face data model), ADR-0083 (input & presentation).
 - **Inputs (canonical):** `docs/game-design/design-gate-portrait-robot.md` §3 + arbitrages
   **A4-bis** and **§8** (B1/B2/B3 and the derived A12bis-A16, Bertrand, 2026-08-05) — the only
   tuning source of truth; story
@@ -346,7 +346,7 @@ No `GameState` sub-record; no persistence; no retry/practice mode; no second occ
 life delta of any kind (the type has no field for one — the prohibition is **structural**, not a
 review promise: `LevelModifier` cannot express a life loss); no energy reward; no effect on
 quota, weapons, geometry or completion; no CRT/Three on this phase. **Since B1/B2:** no
-submission act and no `SUBMIT` intent (ADR-0082 D1); no confirm-guard delay of any kind (D8.4);
+submission act and no `SUBMIT` intent (ADR-0083 D1); no confirm-guard delay of any kind (D8.4);
 no chrono quantisation, unit count or displayed number (D9); no voluntary `PARTIAL` — 3/4 is
 reachable only at the buzzer or on abandon, so no code path may produce `PARTIAL` from an entry.
 

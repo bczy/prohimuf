@@ -31,7 +31,7 @@ const PALIER_STEP: Readonly<Record<PortraitPalier, number>> = {
 };
 
 /**
- * The télécarte gauge (gate A13 / ADR-0082 D4/D5).
+ * The télécarte gauge (gate A13 / ADR-0083 D4/D5).
  *
  * A card that EMPTIES, not a counter that decrements: the ink leaves, the outline
  * stays. It renders **no number, no unit, no segment** — the only thing that

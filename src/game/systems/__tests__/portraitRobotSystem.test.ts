@@ -160,7 +160,7 @@ describe("the chrono is a dt accumulator, never a clock (ADR-0079 D2)", () => {
   });
 });
 
-describe("applyPortraitIntent is total (ADR-0082 D1)", () => {
+describe("applyPortraitIntent is total (ADR-0083 D1)", () => {
   it("CYCLE wraps in both directions and carries its own band", () => {
     const scene = fresh();
     const start = at(scene.selection, 1);

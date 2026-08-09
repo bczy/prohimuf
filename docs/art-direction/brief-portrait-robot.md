@@ -33,7 +33,7 @@ Deux corrections que le gate me fait redescendre, et que j'accepte sans réserve
   surface pré-jeu**, c'est une **surface DOM interactive**. Conséquences DA, appliquées ci-dessous :
   le **liseré néon de sélection est légitime** (la bande est manipulée, donc elle brille — loi du
   glow, §2 loi 1), la **cible reste sans glow**, et le **CRT §8 de la bible ne s'applique pas**
-  (ADR-0082 D4 : `CrtPass` vit dans `GameScene`, la scène vit hors `GameScene`). Tout mon
+  (ADR-0083 D4 : `CrtPass` vit dans `GameScene`, la scène vit hors `GameScene`). Tout mon
   vocabulaire « CRT allumé » comme condition de test est donc **caduc sur cette scène** : les tests
   de lisibilité se font **sans CRT, avec le grain xerox de post-composition**, qui est le seul
   mangeur de détail de cet écran.
@@ -305,7 +305,7 @@ sera jugé sur des captures in-game réelles, pas sur les PNG. Rappel de §1.0 :
 **seul** marqueur de sélection autorisé, parce qu'il est le seul qui ne décolle pas la jointure.
 Depuis A4-bis (swipe direct sur la bande visée, pas de tap de sélection), il n'y a plus de « bande
 active » persistante au doigt : le liseré est un **écho transitoire du geste**, pas un état
-(ADR-0082 D4). Au clavier, où la notion de bande focalisée existe toujours, il est un état.
+(ADR-0083 D4). Au clavier, où la notion de bande focalisée existe toujours, il est un état.
 Les deux cas passent par le même dégradé, jamais par un aplat.
 
 ---
@@ -436,7 +436,7 @@ pas :
   - **La cible reste à zéro glow** (elle n'est pas manipulée) — inchangé.
   - **Le §2bis « zéro glow » ne s'applique pas** : ce n'est pas un menu, elle a une issue et un coût.
   - **Le CRT §8 ne s'applique pas** : `CrtPass` vit dans `GameScene`, cette scène vit dehors
-    (ADR-0082 D4). **Partout où ce brief écrit « CRT allumé » comme condition de test — §2, §6 G4,
+    (ADR-0083 D4). **Partout où ce brief écrit « CRT allumé » comme condition de test — §2, §6 G4,
     §6 G7, §7.2 — lire « grain xerox de post-composition appliqué ».** C'est ce grain, unique et
     posé sur le visage assemblé, qui est le mangeur de détail de cet écran ; c'est donc lui, et lui
     seul, qui conditionne le plancher de discernabilité.
@@ -633,7 +633,7 @@ suspecté, pas du fond. **FAIL automatique**, quelle que soit la qualité de ren
 **G7 — Gate composite (Gate 4).** Sur captures in-game : liseré de sélection présent sur la seule
 bande visée, en dégradé décroissant jusqu'à zéro (jamais un aplat, bible §2.1) ; cible sans aucun
 glow ; cible et construction lisibles simultanément à la taille réelle mobile ; ~~sous CRT~~ **sous
-le grain xerox de post-composition** (pas de CRT sur cette scène, ADR-0082 D4), les variantes
+le grain xerox de post-composition** (pas de CRT sur cette scène, ADR-0083 D4), les variantes
 restent discernables. **Pas de capture lisible = pas de PASS.**
 
 **Rév. 2 — trois surfaces runtime neuves entrent dans G7, et aucune n'est couverte par G1-G6 :**
@@ -676,7 +676,7 @@ avec la planche de combinaisons ayant servi à G1.
    jointive ? Si non, c'est le layout qui plie (§1.0 conséquence 2) — et il faut me le dire avant
    le tranchage, pas après.
 2. **À `ux-designer` / `dev-r3f-render` :** le hors repérage du plateau d'accent (§3bis.1) est-il
-   tenable sans toucher le trait du visage, en CSS Modules + tokens (ADR-0082 D4) ? S'il coûte une
+   tenable sans toucher le trait du visage, en CSS Modules + tokens (ADR-0083 D4) ? S'il coûte une
    deuxième passe de composition, je préfère le supprimer et laisser négatif + tampon porter le
    verrouillage — dis-le tôt.
 

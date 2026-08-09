@@ -802,7 +802,7 @@ correction sont donc solidaires — l'un ne tient que si l'autre est fait.
 **Conséquence aval :** l'`ux-designer` doit livrer les états armé/désarmé **pour le pointeur
 seulement** (la ligne d'A17 « `Échap` en deux temps » de mon §11 de hand-off est caduque) ; la copie
 de sortie de `narrative-designer` reste à **deux états** (repos / armé), l'état armé n'étant
-simplement jamais atteint au clavier ; ADR-0082 enregistre l'asymétrie (`tech-writer` transcrit).
+simplement jamais atteint au clavier ; ADR-0083 enregistre l'asymétrie (`tech-writer` transcrit).
 
 ### R-4 — Reptation de révélation : « GARDE », donc on implémente
 
@@ -967,7 +967,7 @@ désaccord de lane n'est rouvert. Les deux items du panel qui portaient mon nom 
 qu'amendement, M6 en tant que décision) sont **levés côté design**. Restent des tâches de lane, pas
 de gate : l'ordre de focus d'`EarlyExitButton` (`dev-r3f-render`, défaut), l'implémentation de la
 reptation (`dev-r3f-render`, avec le hold de révélation remonté dans la scène pure — prescription
-M7), l'affordance armé/désarmé pointeur-seulement (`ux-designer`) et la transcription en ADR-0082
+M7), l'affordance armé/désarmé pointeur-seulement (`ux-designer`) et la transcription en ADR-0083
 (`tech-writer`).
 
 ---

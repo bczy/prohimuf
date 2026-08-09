@@ -17,6 +17,8 @@ import {
 import type { Corner } from "@render/ui/print";
 import { cx } from "../controls";
 import { difficultyMark } from "./derivations";
+import { FlyerMotif, FLYER_EMBLEMS } from "./FlyerMotif";
+import type { MotifSlot } from "./FlyerMotif";
 import styles from "./LevelFlyer.module.css";
 
 /**
@@ -220,6 +222,48 @@ function InfoRow({ children }: { children: React.ReactNode }): JSX.Element {
   return <div className={styles.infoRow}>{children}</div>;
 }
 
+/**
+ * The crew's emblem, if that level has one. Renders NOTHING for a level absent from
+ * `FLYER_EMBLEMS` — decoration must never turn a new level into a broken slot, so
+ * this is an early return rather than a fallback motif.
+ *
+ * The tilt is derived from the level id, not `Math.random`: the flyer wall's whole
+ * materiality doctrine is that every jitter is deterministic, so a re-render can never
+ * shuffle the sheet under the player's eyes.
+ */
+function CrewMotif({
+  levelId,
+  slot,
+  locked = false,
+}: {
+  levelId: string;
+  /** Only renders when this level's placement asks for this slot. */
+  slot: MotifSlot;
+  locked?: boolean;
+}): JSX.Element | null {
+  const emblem = FLYER_EMBLEMS[levelId];
+  if (emblem === undefined) return null;
+  if (emblem.slot !== slot) return null;
+  return (
+    <div
+      className={cx(
+        styles.motifRow,
+        slot === "hero" ? styles.motifHero : undefined,
+        locked ? styles.motifRowLocked : undefined,
+      )}
+      style={emblem.offsetY === 0 ? undefined : { marginTop: emblem.offsetY }}
+    >
+      <FlyerMotif
+        kind={emblem.kind}
+        size={emblem.sizePx}
+        tiltDeg={emblem.tiltDeg}
+        instanceId={levelId}
+        wearSeed={emblem.wearSeed}
+      />
+    </div>
+  );
+}
+
 export function LevelFlyer({
   level,
   flyerIndex,
@@ -311,9 +355,15 @@ export function LevelFlyer({
                 <Stamp label={TUTORIAL_COPY.stamp} ink={INK.full} shape="box" />
                 <div className={styles.tutorialName}>{level.name}</div>
                 <div className={styles.handNote}>{TUTORIAL_COPY.handNote}</div>
+                {/* All three slots, like PlayableBody and LockedBody: a renderer that
+                    offers fewer is how NADIR 94 lost its emblem. Dormant while the tutorial
+                    sits in `mid`, and that is the point — it stays correct if it moves. */}
+                <CrewMotif levelId={level.id} slot="hero" />
+                <CrewMotif levelId={level.id} slot="mid" />
                 <InfoRow>{TUTORIAL_COPY.crew}</InfoRow>
                 <InfoRow>{TUTORIAL_COPY.rvLine}</InfoRow>
                 <div className={styles.strike}>{TUTORIAL_COPY.noLine}</div>
+                <CrewMotif levelId={level.id} slot="body" />
                 <div className={styles.markTop}>
                   <Stamp label={TUTORIAL_COPY.badge} ink={INK.black} shape="oval" />
                 </div>
@@ -380,6 +430,8 @@ function PlayableBody({
 
   return (
     <>
+      <CrewMotif levelId={level.id} slot="hero" />
+
       <div className={styles.playableHead}>
         <div>
           <div className={styles.crew}>{copy?.crew ?? level.district}</div>
@@ -400,6 +452,8 @@ function PlayableBody({
         {copy !== undefined && <span className={styles.ambiance}>{copy.ambiance}</span>}
       </div>
 
+      <CrewMotif levelId={level.id} slot="mid" />
+
       {copy !== undefined && (
         <>
           <div className={styles.slogan}>{copy.slogan}</div>
@@ -409,6 +463,8 @@ function PlayableBody({
           <InfoRow>☎ {copy.infoLine}</InfoRow>
         </>
       )}
+
+      <CrewMotif levelId={level.id} slot="body" />
 
       <div className={styles.stats}>
         <span>⏱ {level.timeSeconds} s</span>
@@ -423,15 +479,24 @@ function LockedBody({ level }: { level: LevelConfig }): JSX.Element {
 
   return (
     <>
+      {/* Every slot the playable layout offers must exist here too, or a level placed in a
+          slot this branch omits silently loses its emblem while it is locked — which is
+          most of the wall on a first visit. That is how NADIR 94, the one sheet designed to
+          LEAD with its mark, shipped with no emblem at all. Said without naming the mark:
+          the one it carried then has since been replaced, and a comment that outlives the
+          shape it describes is how the shape comes back. */}
+      <CrewMotif levelId={level.id} slot="hero" locked />
       {/* Crew name stays legible; the rest is the tear (deck §2.5). */}
       <div className={styles.crew}>{copy?.crew ?? level.district}</div>
       <div className={styles.nameLocked}>{level.name}</div>
       <div className={styles.stampBlock}>
         <Stamp label={LOCKED_COPY.badge} ink={INK.black} shape="diagonal" struck />
       </div>
+      <CrewMotif levelId={level.id} slot="mid" locked />
       <InfoRow>{LOCKED_COPY.dateLine}</InfoRow>
       <InfoRow>{LOCKED_COPY.rvLine}</InfoRow>
       <InfoRow>☎ {LOCKED_COPY.infoLine}</InfoRow>
+      <CrewMotif levelId={level.id} slot="body" locked />
       <div className={styles.markTop}>
         <Stamp label={LOCKED_COPY.overlay} ink={INK.full} shape="diagonal" />
       </div>
