@@ -314,6 +314,17 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     expect(boards.size).toBeGreaterThan(100);
   });
 
+  it("the truth is ONE face: the same variant index in all four bands (gate A19)", () => {
+    // The variant index IS the source plate, so a per-band truth built the suspect out of
+    // four different people — a chimera the player could solve by spotting the tone break
+    // at a seam instead of comparing features. This is the invariant that forbids it.
+    for (let seed = 0; seed < 500; seed += 1) {
+      const puzzle = drawPortraitPuzzle(TEST_CATALOGUE, seed);
+      const indices = puzzle.truth.map((slot, b) => at(at(puzzle.order, b), slot));
+      expect(new Set(indices).size).toBe(1);
+    }
+  });
+
   it("order is a permutation of every slot, per band", () => {
     for (const seed of SEEDS) {
       for (const bandOrder of drawPortraitPuzzle(TEST_CATALOGUE, seed).order) {

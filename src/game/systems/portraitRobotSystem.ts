@@ -292,6 +292,51 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
   const truth: number[] = [];
   const initialSelection: number[] = [];
 
+  // ONE variant index for all four bands (Bertrand, 2026-08-09, gate A19).
+  //
+  // The variant index IS the source plate, identically across the bands, so a truth drawn
+  // per band composed the suspect out of four DIFFERENT people — a chimera, with a break
+  // of tone and width at every seam. The player then solved the scene by spotting the
+  // discontinuity instead of comparing features. Drawing one index for the whole face
+  // makes the suspect a real, coherent person, and leaves the CHIMERAS where they belong:
+  // in the player's wrong attempts.
+  //
+  // Cost, stated rather than hidden: the suspect space drops from n⁴ to n (10 instead of
+  // 10 000). That is not a regression, it is what "the suspect is a real face" means with
+  // this catalogue — variety now comes from which face, from the per-band slot shuffle and
+  // from the all-wrong start, not from combinatorics on incoherent heads.
+  //
+  // Eligibility is intersected across bands: the index must be an eligible truth in EVERY
+  // band, otherwise the decoy composition would silently hold in some bands and not others.
+  const commonPool = ((): readonly number[] => {
+    const counts = new Map<number, number>();
+    let bandsWithVariants = 0;
+    for (const band of catalogue.bands) {
+      const n = band.variants.length;
+      if (n === 0) continue;
+      bandsWithVariants += 1;
+      const eligible = band.variants
+        .map((_, i) => i)
+        .filter((i) => isEligibleTruth(band.distances, i, n));
+      const pool = eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
+      for (const i of pool) counts.set(i, (counts.get(i) ?? 0) + 1);
+    }
+    // Present in every non-empty band. Falls back to whatever is shared by the most bands,
+    // then to index 0 — a degraded catalogue must never throw here (ADR-0080 D4 totality).
+    const shared = [...counts.entries()]
+      .filter(([, c]) => c === bandsWithVariants)
+      .map(([i]) => i)
+      .sort((a, b) => a - b);
+    if (shared.length > 0) return shared;
+    const best = Math.max(0, ...counts.values());
+    const fallback = [...counts.entries()]
+      .filter(([, c]) => c === best)
+      .map(([i]) => i)
+      .sort((a, b) => a - b);
+    return fallback.length > 0 ? fallback : [0];
+  })();
+  const faceIndex = commonPool[portraitHash(seed, 0, 3) % commonPool.length] ?? 0;
+
   catalogue.bands.forEach((band, bandIndex) => {
     const n = band.variants.length;
     if (n === 0) {
@@ -308,14 +353,15 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
       initialSelection.push(0);
       return;
     }
+    // The SAME face for every band. A band shorter than `faceIndex` (only reachable on a
+    // catalogue `validatePortrait` would already reject) falls back to its own pool rather
+    // than reading out of bounds.
     const eligible = band.variants
       .map((_, i) => i)
       .filter((i) => isEligibleTruth(band.distances, i, n));
     const pool = eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
-
-    // `pool` is non-empty here (the `n === 0` band returned above), so the `?? 0`
-    // is the index signature's tax and not a fallback the draw can take.
-    const truthIndex = pool[portraitHash(seed, bandIndex, 0) % pool.length] ?? 0;
+    const truthIndex =
+      faceIndex < n ? faceIndex : (pool[portraitHash(seed, bandIndex, 0) % pool.length] ?? 0);
     const bandOrder = seededShuffle(n, portraitHash(seed, bandIndex, 1));
     const truthSlot = bandOrder.indexOf(truthIndex);
 
