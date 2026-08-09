@@ -442,8 +442,27 @@ async function generate(a) {
     );
     return await resizeToTarget(t2i, a.width, a.height, `${a.key} (${PLATE_T2I_MODEL} t2i)`);
   }
-  console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
-  const flux = await fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
+  // Cut-outs go through the PAID farm's flux, not the anonymous `image.pollinations.ai`
+  // one. Same model name, different tier, and the gap is not subtle: the free route
+  // returned photoreal renders with the wrong figure count and no magenta ground at all
+  // for the whole 11-sprite Rev.6 batch (run 31317719540 — every single one unusable),
+  // while the paid farm draws the house ink register and honours the prompt. Free flux
+  // stays reachable via PHOTO_CUTOUT_FREE=1 for a no-cost smoke test, never for shipped art.
+  const useFree = process.env.PHOTO_CUTOUT_FREE === "1";
+  console.log(
+    `  [seed] ${a.key} seed=${a.seed} (pinned) — flux ${useFree ? "(free tier)" : "(paid farm)"}`,
+  );
+  const flux = await fetchWithRetry(
+    useFree
+      ? fluxUrl(a.prompt, a.seed, a.width, a.height)
+      : genPaidUrl({
+          prompt: a.prompt,
+          seed: a.seed,
+          width: a.width,
+          height: a.height,
+          model: "flux",
+        }),
+  );
   // Same normalisation as the other three routes above (`resizeToTarget`'s own comment):
   // flux can answer a matching-size request in JPEG too, not just the paid t2i/edit
   // models — observed on this exact route (run 31317593493, commandant_table_apres:

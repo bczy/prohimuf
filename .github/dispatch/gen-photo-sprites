@@ -80,3 +80,4 @@ run 23: retry after fixing gen-photo-sprites.mjs's plain-flux route (root-cause 
   flux branch was the one route that never called resizeToTarget, so a same-size JPEG
   response crashed assertDimensions on commandant_table_apres in run 22 instead of being
   re-encoded like every other route already does).
+run 22: sujets sur flux PAYANT (gen.pollinations.ai)
