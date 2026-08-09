@@ -411,7 +411,11 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
       // stops after the FIRST plate rather than spending 5 more FLUX calls
       // to learn the same fact five more times — asserted by the "not
       // spending the remaining N FLUX call(s)" log line naming 5 remaining.
-      expect(logged).toMatch(/not spending the remaining 5 FLUX call\(s\)/);
+      // Dérivé du compte : « 5 » était VARIANTS_PER_BAND - 1 à six variantes et ne
+      // vérifiait plus rien à dix.
+      expect(logged).toMatch(
+        new RegExp(`not spending the remaining ${String(VARIANTS_PER_BAND - 1)} FLUX call\\(s\\)`),
+      );
     } finally {
       fs.rmSync(file, { force: true });
     }
@@ -433,7 +437,7 @@ describe("runReal — wrong-size plate diagnostic (RE-PANEL run 5d5b5f51)", () =
           .flat()
           .join("\n")
           .match(/framing drifted/g)?.length,
-      ).toBe(6);
+      ).toBe(VARIANTS_PER_BAND);
     } finally {
       fs.rmSync(file, { force: true });
     }

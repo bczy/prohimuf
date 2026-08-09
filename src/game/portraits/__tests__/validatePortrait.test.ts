@@ -9,6 +9,7 @@ import {
   drawPortraitPuzzle,
   isEligibleTruth,
   PORTRAIT_BAND_ORDER,
+  VARIANTS_PER_BAND,
 } from "@game/systems/portraitRobotSystem";
 import { at } from "@game/systems/__tests__/portraitFixtures";
 
@@ -44,10 +45,12 @@ describe("the shipped catalogue", () => {
     expect(validatePortrait(FACE_CATALOGUE, PLATE)).toEqual([]);
   });
 
-  it("the generated manifest is readable without throwing, and lists the 24 assets", () => {
+  it("the generated manifest is readable without throwing, and lists every band asset", () => {
     // The M9 reproduction: this call threw before the shapes were aligned.
     expect(() => validatePortrait(FACE_CATALOGUE, PLATE)).not.toThrow();
-    expect(plateAssets(PLATE)).toHaveLength(24);
+    // Derived, never a literal: the count moved 24 → 40 and a hard-coded 24 turned a
+    // deliberate data change into four red tests saying nothing about the data.
+    expect(plateAssets(PLATE)).toHaveLength(4 * VARIANTS_PER_BAND);
   });
 
   it("a manifest with no bands at all is an ISSUE, never a throw", () => {
@@ -62,7 +65,7 @@ describe("the shipped catalogue", () => {
     expect(issues[0]?.severity).toBe("warning");
   });
 
-  it("carries 4 bands x 6 variants, in draw order, with the canonical labels", () => {
+  it("carries 4 bands x VARIANTS_PER_BAND variants, in draw order, with the canonical labels", () => {
     expect(FACE_CATALOGUE.bands.map((b) => b.id)).toEqual([...PORTRAIT_BAND_ORDER]);
     expect(FACE_CATALOGUE.bands.map((b) => b.label)).toEqual([
       "LA COUPE",
@@ -70,7 +73,8 @@ describe("the shipped catalogue", () => {
       "LE NEZ",
       "LA BOUCHE",
     ]);
-    for (const band of FACE_CATALOGUE.bands) expect(band.variants).toHaveLength(6);
+    for (const band of FACE_CATALOGUE.bands)
+      expect(band.variants).toHaveLength(VARIANTS_PER_BAND);
   });
 });
 
@@ -121,13 +125,16 @@ describe("the invariants (ADR-0080 D3)", () => {
       "distance-complete",
     );
 
-    const unknown = { ...FACE_CATALOGUE.bands[0]?.distances, "1:9": "strong" };
+    // The out-of-range index is DERIVED: `1:9` was out of range at six variants and became
+    // a legitimate pair at ten, so the literal quietly stopped testing anything.
+    const outOfRange = `1:${String(VARIANTS_PER_BAND)}`;
+    const unknown = { ...FACE_CATALOGUE.bands[0]?.distances, [outOfRange]: "strong" };
     expect(codes(withBand(0, (band) => ({ ...band, distances: unknown })))).toContain(
       "distance-complete",
     );
   });
 
-  it("decoy-profile — a band with no 2-strong/3-medium row has no eligible truth", () => {
+  it("decoy-profile — a band with no 2-strong/rest-medium row has no eligible truth", () => {
     const flat = Object.fromEntries(
       Object.keys(FACE_CATALOGUE.bands[0]?.distances ?? {}).map((k) => [k, "medium"]),
     );

@@ -3,6 +3,7 @@ import { manifestFor } from "@game/systems/assetManifest";
 import { PORTRAIT_ROBOT_NARRATIVE } from "@game/systems/narrativeSystem";
 import { FACE_CATALOGUE } from "@game/portraits";
 import { PORTRAIT_ASSET_DIR } from "@game/types/portraitRobot";
+import { VARIANTS_PER_BAND } from "@game/systems/portraitRobotSystem";
 import { FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 
 /**
@@ -13,9 +14,9 @@ import { FIRST_PLAYABLE_LEVEL } from "@game/levels/levels";
 describe('the "portrait-robot" manifest target', () => {
   const manifest = manifestFor("portrait-robot");
 
-  it("is exactly the 24 sliced band PNGs, de-duplicated and stably ordered", () => {
-    expect(manifest).toHaveLength(24);
-    expect(new Set(manifest).size).toBe(24);
+  it("is exactly the sliced band PNGs, de-duplicated and stably ordered", () => {
+    expect(manifest).toHaveLength(4 * VARIANTS_PER_BAND);
+    expect(new Set(manifest).size).toBe(4 * VARIANTS_PER_BAND);
     expect(manifest).toEqual(manifestFor("portrait-robot"));
   });
 

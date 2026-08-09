@@ -48,8 +48,17 @@ export const PORTRAIT_BAND_ORDER = [
   "mouth",
 ] as const satisfies readonly PortraitBandId[];
 
-/** Hard ceiling, gate A5. Six variants per band, one gabarit, 24 assets. */
-export const VARIANTS_PER_BAND = 6;
+/**
+ * Variants per band, one gabarit. Raised 6 → 10 on Bertrand's call (2026-08-09, "plus de
+ * bandes"), so the four remaining registered plates enter the pool: 4 bands × 10 = 40
+ * assets, and 10⁴ = 10 000 possible suspects instead of 1296.
+ *
+ * Gate A5 wrote "six" as a hard ceiling, so this supersedes it — the ceiling was a
+ * production budget (24 assets to draw), not a mechanic. What DOES stay a mechanic is the
+ * decoy composition: every eligible truth keeps exactly 2 `strong` neighbours and no
+ * `fine` one, which `isEligibleTruth` now expresses independently of the count.
+ */
+export const VARIANTS_PER_BAND = 10;
 
 /** Chrono per `Prefs.difficulty` (gate §3 `timerSeconds`). */
 export const PORTRAIT_TIMER_SECONDS: Readonly<Record<"easy" | "normal" | "hard", number>> = {
@@ -249,7 +258,11 @@ export function distanceRow(
 
 /**
  * The gate's V1 decoy composition, made executable (gate §3, A5): a variant is eligible
- * to be the truth when its row is exactly 2 `strong` + 3 `medium` + 0 `fine`.
+ * to be the truth when its row holds exactly 2 `strong`, no `fine`, and `medium`
+ * everywhere else. Stated that way it is INDEPENDENT of the variant count — the gate
+ * wrote "2 strong + 3 medium" for six variants, which is the same rule at n = 6, and
+ * hard-coding the 3 would have silently disqualified every variant at n = 10 (falling
+ * back to the whole pool, i.e. no decoy composition at all, with nothing saying so).
  * `drawPortraitPuzzle` picks only among eligible variants — which is what makes the
  * composition true for EVERY seed rather than on average.
  */
@@ -263,7 +276,7 @@ export function isEligibleTruth(
   const strong = row.filter((d) => d === "strong").length;
   const medium = row.filter((d) => d === "medium").length;
   const fine = row.filter((d) => d === "fine").length;
-  return strong === 2 && medium === 3 && fine === 0;
+  return strong === 2 && fine === 0 && medium === variantCount - 3;
 }
 
 /**

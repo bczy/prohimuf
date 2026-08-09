@@ -1,6 +1,6 @@
 {
   "gabaritId": "gabarit-01",
-  "plateChecksum": "sha256:cb3035ad860dcc126b13491e133d4a3b9f36201bdb5e273308b029f303f1abfe",
+  "plateChecksum": "sha256:55d6d3b5d319bdfad67bc14d6edafad248d141b122c97217aa9c0a3f6350346e",
   "portraitSize": {
     "width": 676,
     "height": 871
@@ -35,6 +35,22 @@
       {
         "id": "hair-06",
         "asset": "assets/portrait/hair-06.png"
+      },
+      {
+        "id": "hair-07",
+        "asset": "assets/portrait/hair-07.png"
+      },
+      {
+        "id": "hair-08",
+        "asset": "assets/portrait/hair-08.png"
+      },
+      {
+        "id": "hair-09",
+        "asset": "assets/portrait/hair-09.png"
+      },
+      {
+        "id": "hair-10",
+        "asset": "assets/portrait/hair-10.png"
       }
     ],
     "eyes": [
@@ -61,6 +77,22 @@
       {
         "id": "eyes-06",
         "asset": "assets/portrait/eyes-06.png"
+      },
+      {
+        "id": "eyes-07",
+        "asset": "assets/portrait/eyes-07.png"
+      },
+      {
+        "id": "eyes-08",
+        "asset": "assets/portrait/eyes-08.png"
+      },
+      {
+        "id": "eyes-09",
+        "asset": "assets/portrait/eyes-09.png"
+      },
+      {
+        "id": "eyes-10",
+        "asset": "assets/portrait/eyes-10.png"
       }
     ],
     "nose": [
@@ -87,6 +119,22 @@
       {
         "id": "nose-06",
         "asset": "assets/portrait/nose-06.png"
+      },
+      {
+        "id": "nose-07",
+        "asset": "assets/portrait/nose-07.png"
+      },
+      {
+        "id": "nose-08",
+        "asset": "assets/portrait/nose-08.png"
+      },
+      {
+        "id": "nose-09",
+        "asset": "assets/portrait/nose-09.png"
+      },
+      {
+        "id": "nose-10",
+        "asset": "assets/portrait/nose-10.png"
       }
     ],
     "mouth": [
@@ -113,6 +161,22 @@
       {
         "id": "mouth-06",
         "asset": "assets/portrait/mouth-06.png"
+      },
+      {
+        "id": "mouth-07",
+        "asset": "assets/portrait/mouth-07.png"
+      },
+      {
+        "id": "mouth-08",
+        "asset": "assets/portrait/mouth-08.png"
+      },
+      {
+        "id": "mouth-09",
+        "asset": "assets/portrait/mouth-09.png"
+      },
+      {
+        "id": "mouth-10",
+        "asset": "assets/portrait/mouth-10.png"
       }
     ]
   },
@@ -122,7 +186,11 @@
     "longs",
     "base8042",
     "serig8042",
-    "colorbook"
+    "colorbook",
+    "chauve",
+    "plaque26",
+    "gomine",
+    "rase"
   ],
   "bandRows": [
     0,

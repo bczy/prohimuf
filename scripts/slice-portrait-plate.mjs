@@ -135,7 +135,7 @@ const FORCE = process.env.FORCE === "1";
 // actual decision.
 export const GABARIT_ID = "gabarit-01";
 export const BAND_ORDER = ["hair", "eyes", "nose", "mouth"];
-export const VARIANTS_PER_BAND = 6;
+export const VARIANTS_PER_BAND = 10;
 export const PORTRAIT_WIDTH = 580;
 export const PORTRAIT_HEIGHT = 775;
 // C1 (hair/eyes), C2 (eyes/nose), C3 (nose/mouth) — fraction of PORTRAIT_HEIGHT

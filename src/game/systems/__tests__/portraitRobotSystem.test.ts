@@ -193,7 +193,9 @@ describe("applyPortraitIntent is total (ADR-0082 D1)", () => {
 
   it("an out-of-range or non-integer SET index is a no-op, never a throw", () => {
     const scene = fresh();
-    for (const index of [-1, 6, 99, 1.5, NaN, Infinity]) {
+    // `VARIANTS_PER_BAND` and not a literal: `6` was out of range at six variants and
+    // became a VALID index at ten, so the literal quietly stopped testing the guard.
+    for (const index of [-1, VARIANTS_PER_BAND, 99, 1.5, NaN, Infinity]) {
       expect(applyPortraitIntent(scene, { kind: "SET", band: "hair", index })).toBe(scene);
     }
   });
@@ -312,10 +314,12 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     expect(boards.size).toBeGreaterThan(100);
   });
 
-  it("order is a permutation of the six slots, per band", () => {
+  it("order is a permutation of every slot, per band", () => {
     for (const seed of SEEDS) {
       for (const bandOrder of drawPortraitPuzzle(TEST_CATALOGUE, seed).order) {
-        expect([...bandOrder].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5]);
+        expect([...bandOrder].sort((a, b) => a - b)).toEqual(
+          Array.from({ length: VARIANTS_PER_BAND }, (_, k) => k),
+        );
       }
     }
   });
@@ -331,15 +335,19 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     }
   });
 
-  it("the initial slot spreads over all five non-truth slots (no dead offset)", () => {
+  it("the initial slot spreads over every non-truth slot (no dead offset)", () => {
     const offsets = new Set<number>();
     for (let seed = 0; seed < 200; seed += 1) {
       const puzzle = drawPortraitPuzzle(TEST_CATALOGUE, seed);
       puzzle.truth.forEach((truthSlot, i) => {
-        offsets.add(((at(puzzle.initialSelection, i) - truthSlot + 6) % 6) - 1);
+        offsets.add(
+          ((at(puzzle.initialSelection, i) - truthSlot + VARIANTS_PER_BAND) % VARIANTS_PER_BAND) - 1,
+        );
       });
     }
-    expect([...offsets].sort()).toEqual([0, 1, 2, 3, 4]);
+    expect([...offsets].sort((a, b) => a - b)).toEqual(
+      Array.from({ length: VARIANTS_PER_BAND - 1 }, (_, k) => k),
+    );
   });
 
   it("the truth is always an eligible variant — the decoy composition holds per seed", () => {
