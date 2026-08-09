@@ -207,6 +207,20 @@ export const PORTRAIT_PROMPT_FAMILY = {
   //     rolls came back as crowned women in lace collars. The framing they
   //     carried is now "top of head and chin inside the sheet", which says
   //     the same geometry without naming anything wearable (brief §11.1).
+  //   • `skull` is GONE from this field too (it appeared THREE times: `constant
+  //     skull width`, `One unbroken closed skull outline`, `small ears flat to
+  //     the skull`). Same failure as `crown`, same cause: read literally it is
+  //     an OBJECT, and the model eventually drew one — Bertrand's contact sheet
+  //     came back with five actual skulls, orbits as flat black holes and a
+  //     stitched mouth (2026-08-09). The geometry is now carried by `head`,
+  //     which says the same thing and names nothing macabre. `scalp` is banned
+  //     for the same reason: the short-hair explorations that used `scalp
+  //     blank` / `scalp stub` produced bare crania.
+  //
+  //     The rule this makes explicit, because `crown` alone did not: NEVER name
+  //     a body part that is ALSO a standalone object the model can draw. Use
+  //     the whole-form word (`head`) and let the geometry clauses do the work.
+  //     `lintPromptFamily` now enforces the list rather than trusting a comment.
   //   • `one man's head` is a DATED CASTING DECISION (Bertrand, 2026-08-06,
   //     brief §11.3), not a stylistic accident. The gender token is a
   //     mandatory slot: it may be CHANGED, never EMPTIED — an empty slot is
@@ -227,8 +241,8 @@ export const PORTRAIT_PROMPT_FAMILY = {
   opening:
     "Black ink drawing on a printed sheet: one man's head facing forward, symmetrical about a " +
     "vertical centre line, both ears equal, both eyes the same size on one level line, constant " +
-    "skull width. One unbroken closed skull outline containing the hair, top of head and chin " +
-    "inside the sheet, blank white cheeks and forehead. ",
+    "head width. One unbroken closed outline around the head containing the hair, top of head " +
+    "and chin inside the sheet, blank white cheeks and forehead. ",
   // gabarit-01 hero face — subject + silhouette ONLY (no style, no ground, no
   // colour). Every feature is named as a flat, level volume so the three seam
   // ordinates (0.32 forehead / 0.52 above the nose bridge / 0.72 philtrum)
@@ -263,7 +277,7 @@ export const PORTRAIT_PROMPT_FAMILY = {
   prompt:
     "Hard weathered face, broad forehead, a hairline across it, eyes under a heavy level brow, " +
     "a nose, long flat philtrum, one thin level mouth line, square jaw, small ears flat to the " +
-    "skull, bare neck. ",
+    "head, bare neck. ",
   // Shared house tail, verbatim from the bible §1/§3 register: one constant
   // ink weight and one hatch angle (brief §1.3 — two weights or two angles
   // read as two draughtsmen), flat frontal light (no shadow crossing a seam),
@@ -296,6 +310,27 @@ export function lintPromptFamily(family) {
   const words = assembled.trim().split(/\s+/).filter(Boolean).length;
   if (words > 0 && words > 120) {
     errors.push(`assembled prompt is ${words} words — over the bible §3.3 ceiling of 120`);
+  }
+  // Body parts that are ALSO standalone objects the model can draw. Each entry is
+  // a measured failure, not a precaution: `crown`/`collarbone` returned crowned
+  // women in lace collars, `skull`/`scalp` returned actual skulls with hollow
+  // orbits. A comment already warned about `crown` and the same class of word got
+  // back in three times over — hence a check rather than prose.
+  for (const banned of ["crown", "collarbone", "skull", "scalp"]) {
+    if (new RegExp(`\\b${banned}s?\\b`, "i").test(assembled)) {
+      errors.push(
+        `assembled prompt contains "${banned}" — a body part that is also a drawable object; ` +
+          "use the whole-form word (`head`) and let the geometry clauses carry the framing",
+      );
+    }
+  }
+  // The gender token is a mandatory slot (brief §11.3): it may be CHANGED, never
+  // EMPTIED — an empty slot is what handed the casting to the model's prior.
+  if (!/\b(man|woman|man's|woman's)\b/i.test(assembled)) {
+    errors.push(
+      "assembled prompt names no gender — the casting slot may be changed but never emptied " +
+        "(brief §11.3)",
+    );
   }
   return { errors, warns };
 }
