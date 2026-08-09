@@ -443,7 +443,15 @@ async function generate(a) {
     return await resizeToTarget(t2i, a.width, a.height, `${a.key} (${PLATE_T2I_MODEL} t2i)`);
   }
   console.log(`  [seed] ${a.key} seed=${a.seed} (pinned) — flux`);
-  return fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
+  const flux = await fetchWithRetry(fluxUrl(a.prompt, a.seed, a.width, a.height));
+  // Same normalisation as the other three routes above (`resizeToTarget`'s own comment):
+  // flux can answer a matching-size request in JPEG too, not just the paid t2i/edit
+  // models — observed on this exact route (run 31317593493, commandant_table_apres:
+  // "provider response is not a PNG (no IHDR chunk found)"). This branch was the one
+  // route in the file that skipped the re-encode, so it was the one route that could
+  // still crash `assertDimensions` on a same-size-but-wrong-format response instead of
+  // silently shipping a broken PNG — root cause, not a per-asset retry.
+  return resizeToTarget(flux, a.width, a.height, `${a.key} (flux)`);
 }
 
 // Read width/height straight out of the PNG IHDR chunk (bytes 16-23, big-endian) —
