@@ -115,7 +115,7 @@ const BAND_TRAITS: Readonly<Record<PortraitBandId, readonly string[]>> = {
     "Cheveux plaqués, raie sur le côté.",
     "Nuque longue, dessus court.",
     "Crâne rasé de près.",
-    "Mèches folles qui dépassent."
+    "Mèches folles qui dépassent.",
   ],
   eyes: [
     "Yeux très rapprochés.",
@@ -127,7 +127,7 @@ const BAND_TRAITS: Readonly<Record<PortraitBandId, readonly string[]>> = {
     "Cernes marqués sous les yeux.",
     "Yeux enfoncés, très écartés.",
     "Sourcils droits, presque horizontaux.",
-    "Regard baissé, paupières tombantes."
+    "Regard baissé, paupières tombantes.",
   ],
   nose: [
     "Nez cassé, dévié à gauche.",
@@ -139,7 +139,7 @@ const BAND_TRAITS: Readonly<Record<PortraitBandId, readonly string[]>> = {
     "Nez large à la racine.",
     "Pointe du nez tombante.",
     "Nez busqué, arête haute.",
-    "Narines pincées, nez étroit."
+    "Narines pincées, nez étroit.",
   ],
   mouth: [
     "Lèvres pincées, presque une ligne.",
@@ -151,7 +151,7 @@ const BAND_TRAITS: Readonly<Record<PortraitBandId, readonly string[]>> = {
     "Lèvres serrées, mâchoire crispée.",
     "Bouche entrouverte, dents visibles.",
     "Coins de bouche creusés.",
-    "Menton large sous une bouche fine."
+    "Menton large sous une bouche fine.",
   ],
 };
 

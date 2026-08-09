@@ -73,8 +73,7 @@ describe("the shipped catalogue", () => {
       "LE NEZ",
       "LA BOUCHE",
     ]);
-    for (const band of FACE_CATALOGUE.bands)
-      expect(band.variants).toHaveLength(VARIANTS_PER_BAND);
+    for (const band of FACE_CATALOGUE.bands) expect(band.variants).toHaveLength(VARIANTS_PER_BAND);
   });
 });
 

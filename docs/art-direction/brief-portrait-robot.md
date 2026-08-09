@@ -1267,11 +1267,12 @@ frontalité au prix du médium.** Je promeus ce refus en règle de prompt de la 
 
 > **Règle de prompt (neuve, §11) — pas de token de médium concurrent.** Aucun mot qui nomme un
 > autre médium que l'impression photocopiée (`photograph`, `mugshot`, `passport photo`, `portrait
-> photography`, `render`, `3D`, `painting`) n'entre dans un prompt muf, **même pour acheter une
+photography`, `render`, `3D`, `painting`) n'entre dans un prompt muf, **même pour acheter une
 > propriété géométrique**. Toute propriété géométrique se décrit par une contrainte réfutable sur
 > le dessin. Un token de médium est un FAIL de prompt gate.
 
 **3. Les trois assouplissements — 2 PASS, 1 CONDITION.** Vérifié moi-même, pas déclaré :
+
 - `a hairline across it` (ex `under a straight low hairline`) : la ligne de cheveux n'est **pas** un
   ancrage (§10.2 ne la liste pas), elle vit à l'intérieur de la bande 1. Rendre sa forme à la graine
   ne coûte rien de mesurable. **PASS.**
@@ -1306,12 +1307,12 @@ de la maison exige les deux sols (papier + encre) : la révision n'en garde qu'u
 Trois conditions coûtent 5 mots (C1 : 1 · C2 : 4). Je les finance sans toucher une clause portante,
 et je rends 2 mots de marge :
 
-| Rachat                                                                                   | Gain | Motif                                                                                                                                             |
-| ---------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `with the top of the head and the chin inside the sheet` → `top of head and chin inside the sheet` | 4    | Même clause, mêmes deux ancres verticales, zéro objet portable. Style télégraphique = registre planche d'imprimeur.                              |
-| `Photocopied black ink drawing on white paper:` → `Black ink drawing on a printed sheet:` | 1    | `Photocopied` est déjà le premier mot de `style`, et le sol papier revient en hex par C2. On ne paie pas deux fois le même mot.                   |
-| `broad flat forehead` → `broad forehead`                                                 | 1    | `flat` est déjà porté par `blank white cheeks and forehead` (front sans trame) et par `flat frontal light`. Redondance, pas clause.               |
-| `wide-set` (déjà retiré par la révision)                                                 | 1    | Acté, proportion sans ancrage.                                                                                                                     |
+| Rachat                                                                                             | Gain | Motif                                                                                                                               |
+| -------------------------------------------------------------------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `with the top of the head and the chin inside the sheet` → `top of head and chin inside the sheet` | 4    | Même clause, mêmes deux ancres verticales, zéro objet portable. Style télégraphique = registre planche d'imprimeur.                 |
+| `Photocopied black ink drawing on white paper:` → `Black ink drawing on a printed sheet:`          | 1    | `Photocopied` est déjà le premier mot de `style`, et le sol papier revient en hex par C2. On ne paie pas deux fois le même mot.     |
+| `broad flat forehead` → `broad forehead`                                                           | 1    | `flat` est déjà porté par `blank white cheeks and forehead` (front sans trame) et par `flat frontal light`. Redondance, pas clause. |
+| `wide-set` (déjà retiré par la révision)                                                           | 1    | Acté, proportion sans ancrage.                                                                                                      |
 
 **Budget final : 56 + 35 + 27 = 118 mots. Deux mots de marge rendus à la lane**, comme en §8 et
 §10.1. La marge n'est pas décorative : c'est le droit de corriger ROLL 4 sans amputer une clause.
@@ -1469,13 +1470,13 @@ qu'en §10.2 : on recale sur un invariant possédé, pas sur une statistique.
 mesures faites **hors zone de coiffure** (la variante cheveux fait légitimement varier la densité
 locale — la mesurer serait rejeter une variation qu'on a commandée).
 
-| # | Grandeur                                                                                                  | Ce que ça attrape                                        | PASS         | Alerte      | Rejet de planche |
-| - | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------ | ----------- | ---------------- |
-| S1 | **Épaisseur médiane du trait de contour** (transformée de distance sur le contour du crâne, en px planche) | trait gras vs trait maigre — le tell nº 1                | **≤ 10 %**   | 10 – 15 %   | **≥ 15 %**       |
-| S2 | **Couverture d'encre globale** (% de pixels encrés dans la bbox du portrait, hors coiffure)               | une planche globalement plus sombre / plus vide          | **≤ 10 %**   | 10 – 20 %   | **≥ 20 %**       |
-| S3 | **Angle dominant de la trame** (pic directionnel, FFT ou Radon)                                           | deux dessinateurs — c'est déjà mon interdit §1.3         | **≤ 3°**     | 3 – 6°      | **≥ 6°**         |
-| S4 | **Pas de trame** (fréquence spatiale dominante du demi-ton)                                               | trame fine vs trame grossière à angle correct            | **≤ 10 %**   | 10 – 20 %   | **≥ 20 %**       |
-| S5 | **Fraction de gris intermédiaire** (pixels hors des 10 % extrêmes de luminance)                           | contraste mou vs contraste dur — le tell de l'« usure »  | **≤ 5 pts**  | 5 – 10 pts  | **≥ 10 pts**     |
+| #   | Grandeur                                                                                                   | Ce que ça attrape                                       | PASS        | Alerte     | Rejet de planche |
+| --- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------- | ---------- | ---------------- |
+| S1  | **Épaisseur médiane du trait de contour** (transformée de distance sur le contour du crâne, en px planche) | trait gras vs trait maigre — le tell nº 1               | **≤ 10 %**  | 10 – 15 %  | **≥ 15 %**       |
+| S2  | **Couverture d'encre globale** (% de pixels encrés dans la bbox du portrait, hors coiffure)                | une planche globalement plus sombre / plus vide         | **≤ 10 %**  | 10 – 20 %  | **≥ 20 %**       |
+| S3  | **Angle dominant de la trame** (pic directionnel, FFT ou Radon)                                            | deux dessinateurs — c'est déjà mon interdit §1.3        | **≤ 3°**    | 3 – 6°     | **≥ 6°**         |
+| S4  | **Pas de trame** (fréquence spatiale dominante du demi-ton)                                                | trame fine vs trame grossière à angle correct           | **≤ 10 %**  | 10 – 20 %  | **≥ 20 %**       |
+| S5  | **Fraction de gris intermédiaire** (pixels hors des 10 % extrêmes de luminance)                            | contraste mou vs contraste dur — le tell de l'« usure » | **≤ 5 pts** | 5 – 10 pts | **≥ 10 pts**     |
 
 Écarts **relatifs à la valeur héros** pour S1/S2/S4, **absolus** pour S3 (degrés) et S5 (points de
 pourcentage). Un sixième contrôle, hérité et non négociable : **blanc du papier** — médiane du fond
@@ -1488,7 +1489,7 @@ alertes réparties sur trois planches différentes du même batch = **le batch e
 regarde à l'œil avant de trancher.
 
 **Portée du rejet :** une planche hors tolérance **ne se re-génère pas seule à la graine suivante**
-jusqu'à ce qu'elle passe. C'est du *cherry-picking de graine*, et c'est exactement la fabrique des
+jusqu'à ce qu'elle passe. C'est du _cherry-picking de graine_, et c'est exactement la fabrique des
 quatre dessinateurs que la loi de famille interdit : on finirait avec six planches qui passent
 chacune contre le héros par des chemins différents. Une planche rejetée pour style **rouvre la
 question du véhicule (§12.3)**, elle ne rouvre pas la roulette.
@@ -1503,8 +1504,8 @@ une planche qui a « une autre main ».
 **Je le dis maintenant, avant le cap, parce que c'est ce qu'on m'a demandé de dire : non, N tirages
 indépendants ne peuvent pas garantir ma cohérence de famille. Ce n'est pas un risque de qualité,
 c'est une propriété du véhicule.** Le style d'un tirage FLUX est porté par des grandeurs continues
-que la graine échantillonne ; le prompt en fixe la *nature* (encre noire, trame 45°, xerox) et pas
-la *valeur*. Six échantillonnages indépendants d'une distribution donnent six valeurs — c'est la
+que la graine échantillonne ; le prompt en fixe la _nature_ (encre noire, trame 45°, xerox) et pas
+la _valeur_. Six échantillonnages indépendants d'une distribution donnent six valeurs — c'est la
 définition. `kontext` achetait exactement ça et rien d'autre : **le style transporté par les pixels
 au lieu d'être redemandé par les mots.** Le coordinateur le formule mieux que je ne l'avais fait,
 et il a raison.
@@ -1522,16 +1523,16 @@ plus simple, plus vieille, et déjà écrite en §5.2 :
 C'est la voie « planche + tranchage » de §5.2, et elle règle la consigne de Bertrand **exactement**,
 sans rien lui coûter de ce qu'il a simplifié : la question anatomique reste traitée par le prompt
 §11.2bis, tête par tête, et la question du style sort du prompt pour devenir une propriété du
-tirage. **Seuls les visages changent** devient vrai au sens fort : ils changent *dans la même
-image*.
+tirage. **Seuls les visages changent** devient vrai au sens fort : ils changent _dans la même
+image_.
 
 **Ordre de préférence, et je m'y tiens :**
 
-1. **Co-génération** (plusieurs têtes en un tirage) — la seule qui rende la consigne *vraie par
-   construction*. À privilégier dès que le cadrage le permet.
+1. **Co-génération** (plusieurs têtes en un tirage) — la seule qui rende la consigne _vraie par
+   construction_. À privilégier dès que le cadrage le permet.
 2. **Dérivation depuis la planche héros validée** (`kontext` / img2img) — le style transporté par
    les pixels. Deuxième choix, mécanisme éprouvé, coût outillage réel.
-3. **N tirages indépendants + §12.2** — *filet de sécurité*, pas garantie. Acceptable **uniquement**
+3. **N tirages indépendants + §12.2** — _filet de sécurité_, pas garantie. Acceptable **uniquement**
    si la mesure est en place et si l'on accepte d'avance qu'un rejet ne se rattrape pas à la graine
    suivante (§12.2). C'est la voie actuelle : je ne l'interdis pas, je refuse qu'on l'appelle une
    garantie.

@@ -352,7 +352,8 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
       const puzzle = drawPortraitPuzzle(TEST_CATALOGUE, seed);
       puzzle.truth.forEach((truthSlot, i) => {
         offsets.add(
-          ((at(puzzle.initialSelection, i) - truthSlot + VARIANTS_PER_BAND) % VARIANTS_PER_BAND) - 1,
+          ((at(puzzle.initialSelection, i) - truthSlot + VARIANTS_PER_BAND) % VARIANTS_PER_BAND) -
+            1,
         );
       });
     }

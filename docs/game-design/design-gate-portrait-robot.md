@@ -999,8 +999,8 @@ verrouiller un style par `imageUrl` ne verrouille rien.
 
 1. ~~**Graine constante, un descripteur changé.**~~ **MESURÉ ET RÉFUTÉ, 2026-08-09.** Six
    descripteurs de coupe incompatibles (`hair shaved at the sides and flat on top`, `hair combed
-   straight back`, `a high round mass of curly hair`, `a blunt bowl cut`, `a bald front and a
-   receding hairline`) sur la graine 4242, prompt identique au mot près par ailleurs : **les six
+straight back`, `a high round mass of curly hair`, `a blunt bowl cut`, `a bald front and a
+receding hairline`) sur la graine 4242, prompt identique au mot près par ailleurs : **les six
    images sont la même**. Écart moyen absolu à la référence : **0,00** pour trois d'entre elles,
    **1,30** pour les trois autres — soit du bruit de ré-encodage, pas une coiffure différente. Le
    descripteur n'a **aucun** effet ; l'identité ET la coiffure sont soudées à la graine.
@@ -1047,5 +1047,5 @@ qu'elle protège aussi contre un futur remplacement d'assets par des variantes m
 **Ce qui n'est PAS résolu par ce tour.** Le style reste photoréaliste : la DA maison
 (fanzine photocopié, trait encré) est hors de portée du prompt sur ce palier, trois pistes
 indépendantes l'ont établi. Et la matrice de difficulté reste un placebo — mais elle devient
-enfin *mesurable*, puisque les écarts entre variantes sont maintenant des paramètres connus
+enfin _mesurable_, puisque les écarts entre variantes sont maintenant des paramètres connus
 (`kx`, `ky`, `kz`) et non le hasard d'une graine.

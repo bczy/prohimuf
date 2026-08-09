@@ -5,11 +5,7 @@
     "width": 676,
     "height": 871
   },
-  "seams": [
-    0.32,
-    0.52,
-    0.72
-  ],
+  "seams": [0.32, 0.52, 0.72],
   "bands": {
     "hair": [
       {
@@ -181,12 +177,6 @@
     ]
   },
   "sourcePlate": "mugshot",
-  "bandRows": [
-    0,
-    279,
-    453,
-    627,
-    871
-  ],
+  "bandRows": [0, 279, 453, 627, 871],
   "derivation": "same-face warps, envelope zero at band edges (gate A19)"
 }
