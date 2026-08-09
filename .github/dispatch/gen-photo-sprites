@@ -76,3 +76,7 @@ run 22: rev.6 terrace pivot — dispatch the 11 new pose types (commandant_arriv
   retired keys (commandant_wait, pair_facing, exchange_close, berline_plate — abandoned
   envelope-handover fiction) and their PNGs are gone from disk and from levelArt.json, so
   this run only generates what's actually referenced.
+run 23: retry after fixing gen-photo-sprites.mjs's plain-flux route (root-cause fix — the
+  flux branch was the one route that never called resizeToTarget, so a same-size JPEG
+  response crashed assertDimensions on commandant_table_apres in run 22 instead of being
+  re-encoded like every other route already does).
