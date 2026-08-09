@@ -68,3 +68,11 @@ run 19: plate supprimée, t2i ideogram
 run 20: t2i ideogram + normalisation png
 run 20: t2i ideogram + normalisation png
 run 21: plate t2i
+run 22: rev.6 terrace pivot — dispatch the 11 new pose types (commandant_arrivee,
+  commandant_couple, commandant_table_apres, berline_double_file, berline_decoy,
+  decoy_table_a..f), all missing (structure wired in levelArt.json 88ed318d), all plain
+  `flux` text-to-image on the shared opening+prompt+style assembly, chroma-keyed magenta
+  (unchanged route). `plate`/stamps unaffected (already committed, not FORCE'd). The 4
+  retired keys (commandant_wait, pair_facing, exchange_close, berline_plate — abandoned
+  envelope-handover fiction) and their PNGs are gone from disk and from levelArt.json, so
+  this run only generates what's actually referenced.
