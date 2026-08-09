@@ -969,3 +969,42 @@ de gate : l'ordre de focus d'`EarlyExitButton` (`dev-r3f-render`, défaut), l'im
 reptation (`dev-r3f-render`, avec le hold de révélation remonté dans la scène pure — prescription
 M7), l'affordance armé/désarmé pointeur-seulement (`ux-designer`) et la transcription en ADR-0082
 (`tech-writer`).
+
+---
+
+## A19 — Les variantes d'une bande viennent du MÊME visage (Bertrand, 2026-08-09)
+
+**Consigne, non négociable.** Les 10 variantes d'une bande doivent être 10 versions du **même
+visage** — une coupe, un regard, un nez, une bouche déclinés sur une seule tête. Ce que la §3
+appelait déjà « un gabarit », mais qui n'avait jamais été énoncé comme un critère de recette.
+
+**Pourquoi c'est mécanique et pas cosmétique.** Assemblées, quatre bandes de quatre personnes
+différentes ne lisent pas comme un visage : elles lisent comme une chimère, avec des ruptures de
+carnation et de largeur à chaque couture. Le joueur n'apparie plus des traits, il repère la
+discontinuité. C'est le même vice que les fonds non uniformes (voir plus bas) : la scène devient
+soluble sans jamais regarder le visage.
+
+**État réel au 2026-08-09, à ne pas maquiller.** Les 40 assets livrés (`86bbdeb5`) sont tirés de
+**dix personnes différentes**, une par index de variante. C'est un pis-aller assumé, pas la cible :
+Bertrand a constaté l'effet chimère de lui-même (« les modèles sont faits de visages différents,
+c'est étrange »). La scène est jouable, elle n'est pas juste.
+
+**Pourquoi ce n'est pas déjà fait.** La §5.2 prévoyait de dériver les 5 variantes d'une planche
+validée par img2img (`kontext`), un descripteur nommé à la fois. Cette voie est **fermée** : le
+paramètre `image=` de `image.pollinations.ai` est ignoré en silence sur le palier anonyme — avec et
+sans référence, les images sortent identiques au pixel (meanAbsDiff 0,00). Tout script qui prétend
+verrouiller un style par `imageUrl` ne verrouille rien.
+
+**Les deux voies restantes**, à trancher par `lead-art` :
+
+1. **Graine constante, un descripteur changé.** La graine porte l'identité ; reste à vérifier
+   qu'elle la garde quand un seul mot de morphologie bouge. Non mesuré — le test a été lancé puis
+   arrêté (rate limit ~1 requête en file par IP). C'est la piste la moins chère.
+2. **Une clé de compte** (`enter.pollinations.ai`), qui débloque le vrai catalogue de modèles et
+   l'img2img, donc la dérivation prévue à l'origine. Demande une inscription côté Bertrand.
+
+**Critère de recette.** Une planche de contact des 10 variantes d'une même bande doit se lire comme
+**une seule personne** qui change de coupe (ou de regard, de nez, de bouche). Le jugement est celui
+de Bertrand : aucune métrique de ce dépôt ne mesure « est-ce la même personne », et prétendre le
+contraire serait répéter l'erreur du tamis de frontalité, qui a laissé passer cinq crânes et une
+pomme parce qu'il ne mesurait qu'une masse sombre symétrique.
