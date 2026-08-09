@@ -282,10 +282,17 @@ describe("assetManifest — belliard level manifest", () => {
   it("preloads the photo paparazzi set-piece plate + poses + stamps for belliard", () => {
     const photo = photoAssetPaths("belliard");
     expect(photo).toContain("assets/photoqte/plate.png");
-    expect(photo).toContain("assets/photoqte/commandant_wait.png");
-    expect(photo).toContain("assets/photoqte/pair_facing.png");
-    expect(photo).toContain("assets/photoqte/exchange_close.png");
-    expect(photo).toContain("assets/photoqte/berline_plate.png");
+    expect(photo).toContain("assets/photoqte/commandant_arrivee.png");
+    expect(photo).toContain("assets/photoqte/commandant_couple.png");
+    expect(photo).toContain("assets/photoqte/commandant_table_apres.png");
+    expect(photo).toContain("assets/photoqte/berline_double_file.png");
+    expect(photo).toContain("assets/photoqte/berline_decoy.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_a.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_b.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_c.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_d.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_e.png");
+    expect(photo).toContain("assets/photoqte/decoy_table_f.png");
     expect(photo).toContain("assets/photoqte/stamp_master.png");
     expect(photo).toContain("assets/photoqte/stamp_bonus.png");
     expect(photo).toContain("assets/photoqte/stamp_reject.png");

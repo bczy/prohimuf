@@ -229,13 +229,31 @@ async function loadSpec() {
  * Resolves a `sceneClock` time to the DELIVERED sprite's decoded frame: `{ decodedFrameAt(t):
  * Promise<{W,H,data}> }` (`decodedFrameAt` reuses `decodePng` from `e2e-lib.mjs`).
  *
- * The time->asset mapping is the structural correspondence §2.5's keyframe table already
- * states ("Drawn subject" column): K0/K1 -> `commandant_wait`, K2/K3 -> `pair_facing`,
- * K4/K5 -> `exchange_close`, K6/K7/K8 -> `berline_plate`. Derived from `track` (never a
- * hand-typed asset list) by walking its boundaries — `track[1].t`/`track[3].t`/`track[5].t`
- * are the three hold-segment ends the 9-keyframe shape (asserted in
- * `deriveDeclaredIntervals`) always produces, so every declared keyframe/interval sample
- * (which never crosses a hold boundary) resolves to exactly one asset.
+ * The time->asset mapping is the structural correspondence §2.5's keyframe table states,
+ * REWIRED for the Rev.6 terrace pivot (spec-photo-qte-paparazzi.md §A.13): K2/K3 ->
+ * `commandant_arrivee` (same 24.00x13.50 box as the retired `pair_facing` — §A13.1 "la
+ * géométrie est identique"), K4/K5 -> `commandant_couple` (same 17.00x9.56 box as the
+ * retired `exchange_close`), K6/K7/K8 -> `berline_double_file` (same 7.50x4.22 box as the
+ * retired `berline_plate`, still one PNG translated by the render — §A13.2 escalade n°5
+ * close). Derived from `track` (never a hand-typed asset list) by walking its boundaries —
+ * `track[1].t`/`track[3].t`/`track[5].t` are the three hold-segment ends the 9-keyframe
+ * shape (asserted in `deriveDeclaredIntervals`) always produces, so every declared
+ * keyframe/interval sample (which never crosses a hold boundary) resolves to exactly one
+ * asset.
+ *
+ * K0/K1 (the pre-ARRIVEE hold, formerly `commandant_wait`) has NO Rev.6 replacement wired:
+ * that key belonged to the abandoned envelope-handover fiction and was retired without a
+ * like-for-like successor, because the terrace pivot's `candidateTracks` (1 master + 6
+ * decoy, §A.2/§A.13.3, floors F16-F28) has not landed in `photoQteBelliard.ts` — it still
+ * exports the OLD single 9-keyframe `subjectTrack`. K0/K1 is left pointing at
+ * `commandant_arrivee` (the nearest authored master pose) as a DELIBERATE, NAMED stopgap:
+ * it will legitimately FAIL (not skip) on the K0/K1 box mismatch — 6.00x13.50 portrait
+ * authored vs. a 24.00x13.50 landscape delivered sprite — until dev-gameplay migrates
+ * `photoQteBelliard.ts`'s pre-roll keyframes to whatever the master's actual t=0..9.2s pose
+ * is on the terrace. That failure is the honest signal, not a bug in this script: it is
+ * cheaper to surface the gap loudly here than to invent a K0/K1 box this lane does not own.
+ * This gate cannot check the 6 `decoy_table_*` candidates or the `commandant_table_apres`
+ * swap at all yet — both need `candidateTracks`/`signalBindings` in game code first.
  *
  * Also asserts every pose type carries `levelArt.json`'s own `pxPerSu` (dev-tooling-assets'
  * per-asset density, ruling §1.3: "write the per-asset px/su into levelArt.json alongside the
@@ -251,15 +269,15 @@ function loadAssetScaleMap(track) {
   const boundary3 = track[3].t;
   const boundary5 = track[5].t;
   const keyFor = (t) => {
-    if (t <= boundary1) return "commandant_wait";
-    if (t <= boundary3) return "pair_facing";
-    if (t <= boundary5) return "exchange_close";
-    return "berline_plate";
+    if (t <= boundary1) return "commandant_arrivee"; // K0/K1 stopgap — see header comment
+    if (t <= boundary3) return "commandant_arrivee";
+    if (t <= boundary5) return "commandant_couple";
+    return "berline_double_file";
   };
 
   const missing = [];
   const noPxPerSu = [];
-  for (const key of ["commandant_wait", "pair_facing", "exchange_close", "berline_plate"]) {
+  for (const key of ["commandant_arrivee", "commandant_couple", "berline_double_file"]) {
     const entry = types[key];
     const file = entry && path.resolve(ROOT, "public", entry.asset);
     if (!entry?.asset || !fs.existsSync(file)) missing.push(key);
