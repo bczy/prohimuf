@@ -997,11 +997,21 @@ verrouiller un style par `imageUrl` ne verrouille rien.
 
 **Les deux voies restantes**, à trancher par `lead-art` :
 
-1. **Graine constante, un descripteur changé.** La graine porte l'identité ; reste à vérifier
-   qu'elle la garde quand un seul mot de morphologie bouge. Non mesuré — le test a été lancé puis
-   arrêté (rate limit ~1 requête en file par IP). C'est la piste la moins chère.
+1. ~~**Graine constante, un descripteur changé.**~~ **MESURÉ ET RÉFUTÉ, 2026-08-09.** Six
+   descripteurs de coupe incompatibles (`hair shaved at the sides and flat on top`, `hair combed
+   straight back`, `a high round mass of curly hair`, `a blunt bowl cut`, `a bald front and a
+   receding hairline`) sur la graine 4242, prompt identique au mot près par ailleurs : **les six
+   images sont la même**. Écart moyen absolu à la référence : **0,00** pour trois d'entre elles,
+   **1,30** pour les trois autres — soit du bruit de ré-encodage, pas une coiffure différente. Le
+   descripteur n'a **aucun** effet ; l'identité ET la coiffure sont soudées à la graine.
+
+   Corollaire à retenir, plus large que A19 : sur ce palier, **le prompt ne peut pas modifier un
+   trait à identité constante**. Donc les 40 assets livrés ne sont pas réparables en régénérant
+   avec de meilleurs mots — c'est un mur, pas un défaut de formulation.
+
 2. **Une clé de compte** (`enter.pollinations.ai`), qui débloque le vrai catalogue de modèles et
    l'img2img, donc la dérivation prévue à l'origine. Demande une inscription côté Bertrand.
+   **C'est désormais la SEULE voie connue** pour satisfaire A19.
 
 **Critère de recette.** Une planche de contact des 10 variantes d'une même bande doit se lire comme
 **une seule personne** qui change de coupe (ou de regard, de nez, de bouche). Le jugement est celui
