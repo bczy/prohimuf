@@ -1,6 +1,6 @@
 {
   "gabaritId": "gabarit-01",
-  "plateChecksum": "sha256:55d6d3b5d319bdfad67bc14d6edafad248d141b122c97217aa9c0a3f6350346e",
+  "plateChecksum": "sha256:e3b6c2cb9c106e28b4b0ebae66de78c3fe6cf166282e95ad8d3ede64cbada0e2",
   "portraitSize": {
     "width": 676,
     "height": 871
@@ -180,23 +180,13 @@
       }
     ]
   },
-  "sourcePlates": [
-    "mugshot",
-    "identikit",
-    "longs",
-    "base8042",
-    "serig8042",
-    "colorbook",
-    "chauve",
-    "plaque26",
-    "gomine",
-    "rase"
-  ],
+  "sourcePlate": "mugshot",
   "bandRows": [
     0,
     279,
     453,
     627,
     871
-  ]
+  ],
+  "derivation": "same-face warps, envelope zero at band edges (gate A19)"
 }

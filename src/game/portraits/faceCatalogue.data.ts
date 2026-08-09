@@ -179,16 +179,22 @@ export const FACE_CATALOGUE: FaceCatalogue = {
   // vacuous — the check exists to catch a catalogue that no longer matches the plate.
   // It moves with every real slicing run.
   //
-  // No longer a placeholder: the 40 bands come from TEN real plates, hand-registered by
-  // Bertrand on the red-line jig (uniform scale, so no distortion) and background-stripped,
-  // then cut at rows 279 / 453 / 627 of a 676×871 portrait. The variant INDEX is the plate
-  // index, identically across the four bands — so variant 3 of every band is the same
-  // person, which is what lets a combination read as one head rather than a chimera.
+  // The checksum of the ONE base plate every band is derived from (gate A19).
   //
-  // Variants 1-6 are the plates whose gradient-barrier strip came out clean; 7-10 are the
-  // four that did NOT (a black disc behind the shaved head, hair nicked on one, ragged
-  // edges on two). They ship because Bertrand asked for more bands, and they are LAST on
-  // purpose: dropping the count back to 6 removes exactly the imperfect ones.
-  plateChecksum: "sha256:55d6d3b5d319bdfad67bc14d6edafad248d141b122c97217aa9c0a3f6350346e",
+  // A19 requires a band's variants to be the same FACE. Generation cannot do it: img2img
+  // is silently ignored on this tier, and at constant seed a changed descriptor produces a
+  // byte-for-byte identical image (both measured, see the gate). So the variants are
+  // SYNTHESISED from one hand-registered, background-stripped plate — a feature moved or
+  // resized inside its band, which is what a real photofit kit does.
+  //
+  // The load-bearing detail: every warp is multiplied by an envelope that is ZERO at the
+  // band's top and bottom edges, and sampling reads the WHOLE plate rather than the band.
+  // So a vertical shift pulls content from the neighbouring band — the same face — instead
+  // of leaving a hole, and the seams stay pixel-exact. Warping without that envelope would
+  // have thrown away the one thing the manual registration bought.
+  //
+  // Variant 01 of every band is the UNWARPED face, so the intact portrait is always a
+  // reachable answer rather than an interpolation.
+  plateChecksum: "sha256:e3b6c2cb9c106e28b4b0ebae66de78c3fe6cf166282e95ad8d3ede64cbada0e2",
   bands: [band("hair"), band("eyes"), band("nose"), band("mouth")],
 };

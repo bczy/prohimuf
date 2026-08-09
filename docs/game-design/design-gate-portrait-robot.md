@@ -1018,3 +1018,34 @@ verrouiller un style par `imageUrl` ne verrouille rien.
 de Bertrand : aucune métrique de ce dépôt ne mesure « est-ce la même personne », et prétendre le
 contraire serait répéter l'erreur du tamis de frontalité, qui a laissé passer cinq crânes et une
 pomme parce qu'il ne mesurait qu'une masse sombre symétrique.
+
+### A19 — SATISFAITE le 2026-08-09, par fabrication et non par génération
+
+Les 40 variantes sont désormais dérivées d'**une seule planche** (`mugshot` : résidu de
+frontalité 7,4, le meilleur des 379 générées ; recalée à la main sur le gabarit, détourée).
+Chaque variante est le trait **déplacé ou redimensionné à l'intérieur de sa bande** — ce que
+fait un vrai kit de portrait-robot. Les dix variantes d'une bande sont donc dix versions du
+même visage, par construction et non par chance.
+
+**Le détail porteur, à ne jamais retirer.** Chaque déformation est multipliée par une
+enveloppe `sin(π·t)` **nulle aux bords haut et bas de la bande**, et l'échantillonnage lit la
+planche ENTIÈRE au lieu de la seule bande. Conséquences : un décalage vertical puise dans la
+bande voisine — le même visage — plutôt que de laisser un trou, et les coutures restent
+exactes au pixel. Déformer sans cette enveloppe aurait jeté le seul acquis du recalage
+manuel.
+
+**La variante 01 de chaque bande est le visage INTACT**, non déformé. Le portrait d'origine
+reste donc une réponse atteignable, pas une interpolation.
+
+**Ce que ça rend possible, et qui n'est pas encore décidé.** Puisque toutes les variantes
+sont la même personne, n'importe quelle combinaison est cohérente : la restriction « un seul
+index pour les quatre bandes » (commit `2940aa1b`) n'est plus nécessaire à la cohérence, et
+la lever rendrait 10 000 suspects au lieu de 10. Elle reste en place pour l'instant, parce
+qu'elle protège aussi contre un futur remplacement d'assets par des variantes multi-visages.
+**Arbitrage à rendre par Bertrand**, pas par une lane.
+
+**Ce qui n'est PAS résolu par ce tour.** Le style reste photoréaliste : la DA maison
+(fanzine photocopié, trait encré) est hors de portée du prompt sur ce palier, trois pistes
+indépendantes l'ont établi. Et la matrice de difficulté reste un placebo — mais elle devient
+enfin *mesurable*, puisque les écarts entre variantes sont maintenant des paramètres connus
+(`kx`, `ky`, `kz`) et non le hasard d'une graine.
