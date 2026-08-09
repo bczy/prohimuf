@@ -1,11 +1,15 @@
 {
   "gabaritId": "gabarit-01",
-  "plateChecksum": "placeholder:60ce334898907cb4",
+  "plateChecksum": "sha256:cb3035ad860dcc126b13491e133d4a3b9f36201bdb5e273308b029f303f1abfe",
   "portraitSize": {
-    "width": 768,
-    "height": 1024
+    "width": 676,
+    "height": 871
   },
-  "seams": [0.32, 0.52, 0.72],
+  "seams": [
+    0.32,
+    0.52,
+    0.72
+  ],
   "bands": {
     "hair": [
       {
@@ -112,5 +116,19 @@
       }
     ]
   },
-  "placeholder": true
+  "sourcePlates": [
+    "mugshot",
+    "identikit",
+    "longs",
+    "base8042",
+    "serig8042",
+    "colorbook"
+  ],
+  "bandRows": [
+    0,
+    279,
+    453,
+    627,
+    871
+  ]
 }

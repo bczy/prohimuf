@@ -121,7 +121,12 @@ export const FACE_CATALOGUE: FaceCatalogue = {
   // The checksum of the slicing run these 24 paths come from. AUTHORED, deliberately not
   // derived from `portraitPlate.generated.json`: deriving it would make `plate-provenance`
   // vacuous — the check exists to catch a catalogue that no longer matches the plate.
-  // It moves with every real slicing run (today: the placeholder plate).
-  plateChecksum: "placeholder:60ce334898907cb4",
+  // It moves with every real slicing run.
+  //
+  // No longer a placeholder: the 24 bands now come from SIX real plates, hand-registered
+  // by Bertrand on the red-line jig (uniform scale, so no distortion) and background-
+  // stripped, then cut at rows 279 / 453 / 627 of a 676×871 portrait. The variant INDEX
+  // is the plate index, identically across the four bands.
+  plateChecksum: "sha256:cb3035ad860dcc126b13491e133d4a3b9f36201bdb5e273308b029f303f1abfe",
   bands: [band("hair"), band("eyes"), band("nose"), band("mouth")],
 };
