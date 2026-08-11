@@ -178,9 +178,12 @@ export function validatePortrait(
     }
   });
 
-  // decoy-profile — at least one variant whose row is exactly 2 strong + 3 medium + 0
-  // fine. This is the one that matters for difficulty: it turns gate §3's composition
-  // from an intention into a CI-checkable property, and the draw picks only among those.
+  // decoy-profile — at least one variant whose row is exactly 2 strong, 0 fine, and
+  // medium everywhere else (`variantCount - 3` of them: 3 at six variants, 7 at ten).
+  // This is the one that matters for difficulty: it turns gate §3's composition from an
+  // intention into a CI-checkable property, and the draw picks only among those. The
+  // count is DERIVED here too — the message said "3 medium" long after the constant moved
+  // to 10, telling anyone debugging a failing catalogue to aim at the wrong composition.
   bands.forEach((band) => {
     const eligible = band.variants.filter((_, i) =>
       isEligibleTruth(band.distances, i, band.variants.length),
@@ -191,7 +194,7 @@ export function validatePortrait(
           "decoy-profile",
           "error",
           `bands.${band.id}.distances`,
-          "no variant has a row of exactly 2 strong + 3 medium + 0 fine — no eligible truth",
+          `no variant has a row of exactly 2 strong + ${String(band.variants.length - 3)} medium + 0 fine — no eligible truth`,
         ),
       );
     }

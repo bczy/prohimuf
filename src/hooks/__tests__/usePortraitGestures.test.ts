@@ -15,11 +15,17 @@ const BAND_HEIGHT_PX = 68;
  * A minimal stand-in for the joined band surface: four `[data-band]` rows, no gap.
  * `getBoundingClientRect` is stubbed because happy-dom lays nothing out.
  */
-function Harness({ onIntent }: { onIntent: (i: PortraitIntent) => void }): JSX.Element {
+function Harness({
+  onIntent,
+  enabled = true,
+}: {
+  onIntent: (i: PortraitIntent) => void;
+  enabled?: boolean;
+}): JSX.Element {
   const stackRef = useRef<HTMLDivElement>(null);
   usePortraitGestures({
     stackRef,
-    enabled: true,
+    enabled,
     focusedBand: "eyes",
     onIntent,
   });
@@ -32,13 +38,21 @@ function Harness({ onIntent }: { onIntent: (i: PortraitIntent) => void }): JSX.E
   );
 }
 
-function mount(): { el: HTMLDivElement; seen: PortraitIntent[]; unmount: () => void } {
+function mount(): {
+  el: HTMLDivElement;
+  seen: PortraitIntent[];
+  setEnabled: (next: boolean) => void;
+  unmount: () => void;
+} {
   const el = document.createElement("div");
   document.body.appendChild(el);
   const seen: PortraitIntent[] = [];
   const root = createRoot(el);
+  const push = (i: PortraitIntent): void => {
+    seen.push(i);
+  };
   act(() => {
-    root.render(createElement(Harness, { onIntent: (i) => seen.push(i) }));
+    root.render(createElement(Harness, { onIntent: push }));
   });
   for (const band of el.querySelectorAll("[data-band]")) {
     band.getBoundingClientRect = () => ({ height: BAND_HEIGHT_PX }) as DOMRect;
@@ -50,6 +64,13 @@ function mount(): { el: HTMLDivElement; seen: PortraitIntent[]; unmount: () => v
   return {
     el,
     seen,
+    // Re-renders with a new `enabled`, so a test can FREEZE the scene mid-gesture the way
+    // the rotate overlay does.
+    setEnabled: (next: boolean) => {
+      act(() => {
+        root.render(createElement(Harness, { onIntent: push, enabled: next }));
+      });
+    },
     unmount: () => {
       act(() => {
         root.unmount();
@@ -144,6 +165,28 @@ describe("usePortraitGestures — pointer", () => {
 });
 
 /** The keyboard socle — and the two bindings that must NOT exist (gate B1). */
+describe("usePortraitGestures — a frozen scene freezes the gesture too (panel MAJEUR)", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("banks nothing while paused, and emits nothing when the finger lifts after resuming", () => {
+    // Rotate the phone mid-drag: `enabled` goes false, and the pointer stays CAPTURED.
+    // `endGesture` reads `enabled` at RELEASE time, so without cancelling, every cran
+    // banked behind the overlay was emitted the moment the player straightened the phone
+    // and lifted — a band moved that the player never intentionally scrubbed.
+    const { el, seen, setEnabled, unmount } = mount();
+    const travel = DRAG_CRAN_DISTANCE * window.innerWidth * 3;
+    pointer(bandOf(el, "eyes"), "pointerdown", 100, 100, 0);
+    setEnabled(false);
+    pointer(bandOf(el, "eyes"), "pointermove", 100 + travel, 100, 200);
+    setEnabled(true);
+    pointer(bandOf(el, "eyes"), "pointerup", 100 + travel, 100, 400);
+    expect(seen).toEqual([]);
+    unmount();
+  });
+});
+
 describe("usePortraitGestures — keyboard", () => {
   afterEach(() => {
     document.body.innerHTML = "";

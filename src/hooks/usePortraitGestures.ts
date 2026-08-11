@@ -144,6 +144,19 @@ export function usePortraitGestures({
     const onPointerMove = (event: PointerEvent): void => {
       const g = gesture;
       if (g?.pointerId !== event.pointerId || g.cancelled) return;
+      // A gesture in flight when the scene FREEZES is dead, not merely ignored (panel
+      // MAJEUR). Two reasons to cancel rather than skip. First, `endGesture` reads
+      // `enabledRef` at RELEASE time: a finger still down when the player straightens the
+      // phone would emit every cran banked behind the rotate overlay — "a swipe made
+      // behind the overlay is not a swipe the player took", and the inbox clearing in
+      // `usePortraitRobot` only covers intents already pushed, not a gesture still being
+      // formed here. Second, `x`/`y` are normalised by `window.innerWidth`/`innerHeight`,
+      // which a rotation CHANGES: the first move after the resize would show a large
+      // fictitious `x - lastX` from the new denominator alone, with no finger motion.
+      if (!enabledRef.current) {
+        g.cancelled = true;
+        return;
+      }
       const x = event.clientX / window.innerWidth;
       const y = event.clientY / window.innerHeight;
       if (!g.engaged && Math.abs(y - g.startY) > g.bandHeight * PRE_ENGAGE_DRIFT_RATIO) {
