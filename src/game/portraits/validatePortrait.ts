@@ -121,7 +121,9 @@ export function validatePortrait(
     );
   }
 
-  // variant-count — 6 per band, a HARD ceiling (gate A5), not a minimum.
+  // variant-count — EXACTLY `VARIANTS_PER_BAND` per band, neither a floor nor a
+  // ceiling. The comment said "6" long after the constant moved to 10 (Copilot review,
+  // 2026-08-11); naming the constant is what keeps it true through the next change.
   bands.forEach((band) => {
     if (band.variants.length !== VARIANTS_PER_BAND) {
       issues.push(

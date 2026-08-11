@@ -94,7 +94,7 @@ describe("validatePortrait never throws and always returns issues", () => {
 });
 
 describe("the invariants (ADR-0080 D3)", () => {
-  it("variant-count — 6 is a hard ceiling, not a minimum", () => {
+  it("variant-count — exactly VARIANTS_PER_BAND, neither a floor nor a ceiling", () => {
     const short = withBand(1, (band) => ({ ...band, variants: band.variants.slice(0, 5) }));
     expect(codes(short)).toContain("variant-count");
 

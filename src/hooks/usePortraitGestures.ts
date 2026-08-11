@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
-import { PORTRAIT_BAND_ORDER } from "@game/systems/portraitRobotSystem";
+import { PORTRAIT_BAND_ORDER, VARIANTS_PER_BAND } from "@game/systems/portraitRobotSystem";
 import {
   DRAG_CRAN_DISTANCE,
   accumulateDrag,
@@ -58,7 +58,7 @@ export interface PortraitGestureOptions {
  * | horizontal drag on band `i` (desktop primary) | `CYCLE(i, ±crans)` |
  * | `↑` / `↓` | `FOCUS(prev/next)` |
  * | `←` / `→` | `CYCLE(focused, ∓1)` |
- * | `1`…`6` | `SET(focused, n-1)` |
+ * | `1`…`9`, `0` | `SET(focused, n-1)` — `0` adresse la 10ᵉ variante |
  * | `Escape` | `ABANDON` |
  *
  * There is no `Enter` row and no `SUBMIT`: B1 deleted the validation ACT, and a
@@ -237,8 +237,13 @@ export function usePortraitGestures({
         default:
           break;
       }
-      if (/^[1-6]$/.test(event.key)) {
-        emit({ kind: "SET", band, index: Number(event.key) - 1 });
+      // Sélection directe. Bornée par `VARIANTS_PER_BAND` et non par une plage écrite
+      // en dur : `[1-6]` est resté après le passage de 6 à 10 variantes, laissant les
+      // variantes 7 à 10 inatteignables autrement qu'en faisant défiler (relecture
+      // Copilot, 2026-08-11). `0` adresse la dixième, comme sur un pavé numérique.
+      if (/^[0-9]$/.test(event.key)) {
+        const index = event.key === "0" ? 9 : Number(event.key) - 1;
+        if (index < VARIANTS_PER_BAND) emit({ kind: "SET", band, index });
       }
     };
     window.addEventListener("keydown", onKey);

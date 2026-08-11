@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import { usePortraitGestures } from "@hooks/usePortraitGestures";
 import type { PortraitBandId, PortraitIntent } from "@game/types/portraitRobot";
 import { DRAG_CRAN_DISTANCE } from "@game/systems/swipeGestureSystem";
+import { VARIANTS_PER_BAND } from "@game/systems/portraitRobotSystem";
 
 const BAND_HEIGHT_PX = 68;
 
@@ -168,6 +169,18 @@ describe("usePortraitGestures — keyboard", () => {
       { kind: "SET", band: "eyes", index: 2 },
       { kind: "ABANDON" },
     ]);
+    unmount();
+  });
+
+  it("direct selection reaches EVERY variant — 1..9 then 0 (Copilot review)", () => {
+    // `[1-6]` survived the 6 → 10 move, so variants 7-10 were reachable only by cycling.
+    // `0` addresses the tenth, like a numeric keypad.
+    const { seen, unmount } = mount();
+    for (const key of ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]) press(key);
+    expect(seen.map((i) => (i.kind === "SET" ? i.index : null))).toEqual([
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ]);
+    expect(seen.every((i) => i.kind === "SET" && i.index < VARIANTS_PER_BAND)).toBe(true);
     unmount();
   });
 

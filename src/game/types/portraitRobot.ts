@@ -76,10 +76,11 @@ export interface PortraitBand {
   readonly id: PortraitBandId;
   /** Canonical player-facing label (gate A6) — the narrative lane owns the string. */
   readonly label: string;
-  /** Exactly 6 — a hard ceiling (gate A5), asserted by `validatePortrait`. */
+  /** Exactly `VARIANTS_PER_BAND` — asserted by `validatePortrait`. Neither a floor nor
+   * a ceiling; the literal said 6 for two days after the constant moved to 10. */
   readonly variants: readonly PortraitVariant[];
   /**
-   * Symmetric pairwise distances, upper triangle only: exactly 15 entries keyed
+   * Symmetric pairwise distances, upper triangle only: exactly C(VARIANTS_PER_BAND, 2) entries keyed
    * `"i:j"` with `i < j` (indices into `variants`). Completeness, the absence of
    * self-pairs and the decoy profile are `validatePortrait` invariants — this
    * type only says "a map of pairs".

@@ -366,10 +366,17 @@ scores that misprediction openly rather than hiding it in an estimate.
 
 **Resolution:**
 
-1. Verified 0082 free across local, index, origin/main.
-2. Renamed file: `docs/adr/0081-portrait-robot-input-and-presentation-layer.md` → `0082-…`
-3. Updated ADR header: renumbering note + collision timestamp.
-4. Replaced ADR-0081 → ADR-0083 in 64 references (12 TS files, 8 Markdown docs, 2 adjacent ADRs).
+1. **Première collision (2026-08-05).** 0081 pris par `0081-mcp-level-editor-server.md` sur
+   `main`. Vérifié 0082 libre en local, dans l'index et sur origin/main ; fichier renommé
+   `0081-portrait-robot-input-and-presentation-layer.md` → `0082-…` ; références 0081 → 0082.
+2. **Deuxième collision (2026-08-11), découverte à la fusion de `main`.** 0082 était pris par
+   `0082-flyer-cascade-session-key.md`, déjà Accepted. La vérification du 05 disait vrai le 05 :
+   `main` a pris le numéro entre-temps. Fichier renommé `0082-…` → `0083-…`.
+3. Renumérotation cadrée : vérifié D'ABORD qu'aucun fichier ne citait `ADR-0082` dans les deux
+   sens. Un seul le faisait (`docs/game-design/README.md`, qui porte des lignes des deux côtés),
+   résolu à la main pour ne pas renommer par erreur les références de `main` au flyer cascade.
+4. En-tête de l'ADR : titre, champ `Number:` et note documentant LES DEUX collisions — le panel
+   a relevé que le fichier portait encore 0082 à l'intérieur (MAJEUR, 2026-08-11).
 5. Merged origin/main; regenerated `docs/adr/README.md` and `public/adr/index.html` (conflicts on generated files resolved by script).
 6. Typecheck remains ✓ after merge.
 

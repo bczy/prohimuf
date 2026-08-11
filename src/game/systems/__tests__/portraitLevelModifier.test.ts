@@ -40,6 +40,16 @@ describe("no modifier ⇒ byte-identical to the pre-feature build", () => {
     expect(state.waveHoldRemaining).toBe(0);
     expect(state.wave).toBe(1);
   });
+  it("clamps a negative firstWaveDelaySeconds to 0 (Copilot review, 2026-08-11)", () => {
+    // The portrait verdict only ever produces 0/10/20, but an AUTHORED level can write
+    // this field, and a negative hold would be a duration the tick decrements forever
+    // without reaching. This layer is total by principle.
+    const state = createInitialState(FACADE_01, {
+      ...DEFAULT_LEVEL_PARAMS,
+      modifier: { energyDelta: 0, firstWaveDelaySeconds: -12, narrativeBeat: null, scoreDelta: 0 },
+    });
+    expect(state.waveHoldRemaining).toBe(0);
+  });
 });
 
 describe("energyDelta lands on the NEXT level's capital, through the existing clamp", () => {
@@ -167,6 +177,28 @@ describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
     expect(state.wave).toBe(2);
     expect(state.enemies.length).toBeGreaterThan(0);
     expect(state.enemies.every((e) => e.state !== "DEAD")).toBe(true);
+  });
+
+  it("the CRATE clock is frozen too — no crate on an empty street (panel MAJEUR)", () => {
+    // `tickLoot` took the raw delta while the other three level clocks took `levelDelta`.
+    // During the hold the street is empty, so the spawn guard is vacuously true for every
+    // column: the crate timer ran down and a crate appeared before wave 1's first enemy.
+    const withLoot = createInitialState(FACADE_01, {
+      ...DEFAULT_LEVEL_PARAMS,
+      loot: { spawnIntervalSeconds: 1, weapons: ["spread"] },
+      modifier: {
+        scoreDelta: 0,
+        energyDelta: 0,
+        firstWaveDelaySeconds: 5,
+        narrativeBeat: "IDENTIFIED",
+      },
+    });
+    let state = withLoot;
+    const timer0 = state.lootTimer;
+    for (let i = 0; i < 120; i += 1) state = tick(state);
+    expect(state.waveHoldRemaining).toBeGreaterThan(0);
+    expect(state.lootTimer).toBe(timer0);
+    expect(state.loot).toBeNull();
   });
 
   it("the hold never goes negative", () => {

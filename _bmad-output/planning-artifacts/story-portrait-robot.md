@@ -3,7 +3,7 @@
 **Epic:** direct request, Bertrand, 2026-08-05 · **Reference:** RoboCop (Ocean, 1988-89) photofit
 sequence, recon at `docs/research/research-photofit-robocop-atari-st.md` · **Type:** new
 interstitial mini-game, cross-boundary (game + render, new `AppPhase`). ADR reservations:
-ADR-0079 (scene/boundary), ADR-0080 (face-band data model), ADR-0082 (input & render layer) —
+ADR-0079 (scene/boundary), ADR-0080 (face-band data model), ADR-0083 (input & render layer) —
 tracking shard `docs/handoffs/story-portrait-robot.md`.
 
 ## Why
@@ -186,7 +186,7 @@ divergence, justified above, not an oversight.
     spec before PASS.
 - **`senior-architect`:** ADR-0079 (scene/`AppPhase` insertion boundary, once-per-run trigger
   plumbing), ADR-0080 (face-band data model: zones, variants, target/pool matching, determinism),
-  ADR-0082 (input & render layer, house-DA rendering approach, no photo-digitized asset pipeline
+  ADR-0083 (input & render layer, house-DA rendering approach, no photo-digitized asset pipeline
   per AC7). Lane cut for `dev-gameplay` (band/selection/timer state machine, `src/game`) and
   `dev-r3f-render` (band display, gesture handling, `src/render`) follows the tech plan.
 - **`qa-lead`:** quality gate + playtest verifying AC6's payoff is actually felt by a player, not

@@ -143,7 +143,11 @@ export function createInitialState(
   // effects, no third: the initial energy capital and the first-wave hold. Absent ⇒ both
   // are the pre-feature values.
   const modifier = params.modifier ?? null;
-  const waveHoldRemaining = modifier?.firstWaveDelaySeconds ?? 0;
+  // Borné à 0 : une valeur négative ferait porter à l'état une durée de maintien
+  // absurde, que le tick décrémenterait sans jamais l'atteindre. Le verdict du portrait
+  // ne produit que 0/10/20, mais un niveau AUTEUR peut écrire ce champ — et le reste de
+  // cette couche est total par principe (Copilot review, 2026-08-11).
+  const waveHoldRemaining = Math.max(0, modifier?.firstWaveDelaySeconds ?? 0);
   // Reset the crate-id counter per session (MINEUR-2): unlike bullet/courier ids
   // (identity only), the loot id is the RNG seed for the slot+weapon pick
   // (lootSystem), so resetting it makes the "deterministic, replay-safe" claim true
@@ -478,7 +482,13 @@ export function tickGameState(
     state.loot,
     state.lootSpec,
     state.lootTimer,
-    delta,
+    // `levelDelta`, NOT `delta`: the crate clock is a LEVEL script, so it freezes for
+    // the same reason and the same duration as `courierTimer` and `timeRemaining`
+    // during the wave hold. With the raw delta it kept counting, and since the street
+    // is empty during the hold the spawn guard is vacuously true for every column —
+    // a crate appeared on an empty street before wave 1's first enemy, contradicting
+    // ADR-0079 D4's "nothing the level scripts can happen yet" (panel MAJEUR).
+    levelDelta,
     activeEnemies,
     facade,
     _nextLootId,

@@ -369,8 +369,19 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
     // a shell-side nudge (ADR-0080 D4.4 / A7 / A8): offsetting off the truth slot by
     // 1..n-1 modulo n makes `initialSlot === truthSlot` UNREPRESENTABLE, so
     // `correctCount(initialSelection) === 0` holds for every seed by construction.
-    const initialSlot =
-      n === 1 ? 0 : (truthSlot + 1 + (portraitHash(seed, bandIndex, 2) % (n - 1))) % n;
+    if (n === 1) {
+      // A 1-variant band cannot start WRONG: its only slot is the truth. The old
+      // `n === 1 ? 0` made it start CORRECT, i.e. a free band, which broke this
+      // function's documented `correctCount(initialSelection) === 0` invariant on a
+      // degraded catalogue (panel MINEUR). It now degrades the same UNFAVOURABLE way
+      // the `n === 0` branch above does: no reachable truth, so the band counts as
+      // wrong forever. Degrading an invalid catalogue must never favour the player.
+      order.push(bandOrder);
+      truth.push(NO_TRUTH_SLOT);
+      initialSelection.push(0);
+      return;
+    }
+    const initialSlot = (truthSlot + 1 + (portraitHash(seed, bandIndex, 2) % (n - 1))) % n;
 
     order.push(bandOrder);
     truth.push(truthSlot);

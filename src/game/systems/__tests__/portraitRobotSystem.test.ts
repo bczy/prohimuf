@@ -314,6 +314,22 @@ describe("drawPortraitPuzzle — deterministic, all-wrong, gate-composed (ADR-00
     expect(boards.size).toBeGreaterThan(100);
   });
 
+  it("a 1-variant band is never a free band (panel MINEUR)", () => {
+    // Its single slot IS the truth, so it cannot start wrong; the old `n === 1 ? 0`
+    // therefore started it CORRECT and broke the all-wrong invariant on a degraded
+    // catalogue. It must degrade unfavourably, like the empty-band branch.
+    const single = {
+      ...TEST_CATALOGUE,
+      bands: TEST_CATALOGUE.bands.map((b, i) =>
+        i === 1 ? { ...b, variants: b.variants.slice(0, 1) } : b,
+      ),
+    };
+    for (let seed = 0; seed < 200; seed += 1) {
+      const puzzle = drawPortraitPuzzle(single, seed);
+      expect(correctCount(puzzle.initialSelection, puzzle.truth)).toBe(0);
+    }
+  });
+
   it("the truth is ONE face: the same variant index in all four bands (gate A19)", () => {
     // The variant index IS the source plate, so a per-band truth built the suspect out of
     // four different people — a chimera the player could solve by spotting the tone break

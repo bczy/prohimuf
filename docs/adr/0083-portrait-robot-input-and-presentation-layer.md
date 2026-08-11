@@ -1,13 +1,19 @@
-# 0082 — Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules
+# 0083 — Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules
 
 - **Status:** Proposed
 - **Date:** 2026-08-05
-- **Number:** 0082, allocated by producer (Marion) at story intake 2026-08-05. **File and title
+- **Number:** 0083. Twice renumbered, and both collisions are recorded here because the
+  project already lost a day to two ADR-0020s. Allocated as **0081** by producer (Marion) at
+  story intake 2026-08-05; moved to **0082** the same day when `main` merged
+  `0081-mcp-level-editor-server.md`; moved again to **0083** on 2026-08-11 when merging `main`
+  revealed `0082-flyer-cascade-session-key.md` — already Accepted — had taken 0082 too. The
+  lesson is in the number itself: a branch that lives 81 commits behind `main` cannot hold an
+  ADR number, and only merging tells you so. **File and title
   renamed** on 2026-08-05 from `0081-portrait-robot-input-and-atari-st-render.md` — the
   scaffold's "Atari ST render" framing is void: Bertrand arbitrated on 2026-08-05 that the DA
   stays **house BD-comics** (story AC7), and the ST source is historical grounding for the
-  _mise-en-scène_ only, never a production constraint. **Renumbered to 0082 on 2026-08-05 due to
-  collision with ADR-0081 (MCP level-editor server) merged to origin/main via PR #159.**
+  _mise-en-scène_ only, never a production constraint. **Renumbered twice — see the Number field above for both collisions.** First move on 2026-08-05 due to
+  collision with ADR-0081 (MCP level-editor server) merged to origin/main via PR #159.\*\*
 - **Author:** decision content by `senior-architect` (Winston), stage 3 TECH PLAN.
 - **Relates to:** ADR-0079 (the DOM phase this layer draws), ADR-0080 (the catalogue it
   displays), ADR-0046 (CSS Modules + `tokens.ts`→CSS-var bridge — the law this screen obeys),
@@ -133,7 +139,7 @@ The `tapGestureSystem.ts` precedent, extended:
   | tap on chevron ◀ ▶ of band `i`        | `CYCLE(i, ∓1)`               | affordance + accessibility target ≥44×44 (A4-bis) |
   | `↑` / `↓`                             | `FOCUS(prev/next band)`      | keyboard socle, acquired                          |
   | `←` / `→`                             | `CYCLE(focused, ∓1)`         | keyboard socle, acquired                          |
-  | `1`…`6`                               | `SET(focused, n-1)`          | keyboard direct addressing                        |
+  | `1`…`9`, `0`                          | `SET(focused, n-1)`          | keyboard direct addressing — `0` = 10ᵉ variante   |
   | `Escape` / Android back               | `ABANDON` (via confirmation) | acquired                                          |
   | ~~`Enter`~~                           | ~~`SUBMIT`~~                 | **removed — B1, no CTA to activate**              |
   | **horizontal mouse drag on band `i`** | `SET(i, index + crans)`      | **primary, desktop (B3)** — see D2bis             |
