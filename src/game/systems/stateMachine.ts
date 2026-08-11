@@ -361,7 +361,14 @@ export function tickGameState(
   // into an empty street, they simply do not spend the level for it.
   // Decremented HERE rather than at the spawn guard below so both readers see one value.
   const waveHoldRemaining = Math.max(0, state.waveHoldRemaining - delta);
-  const levelDelta = waveHoldRemaining > 0 ? 0 : delta;
+  // The frame is SPLIT at the hold's boundary, not resolved all-or-nothing. On the tick
+  // the hold expires it rarely lands on a frame edge — 0.01 s of hold left against a
+  // 0.02 s frame — and `waveHoldRemaining > 0 ? 0 : delta` then handed the level clocks
+  // the WHOLE frame, including the part that happened while the hold was still running.
+  // Up to one frame of the payoff paid for itself, on the very tick the comment above
+  // says the freeze must last "exactly" the hold's duration (panel MINEUR).
+  const holdConsumed = Math.min(delta, state.waveHoldRemaining);
+  const levelDelta = delta - holdConsumed;
 
   // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
   const elapsedSeconds = state.elapsedSeconds + levelDelta;

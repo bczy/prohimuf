@@ -355,6 +355,14 @@ export function App(): JSX.Element {
   // portrait phase, "the run's side-effects fired" and "the run's score is settled" are
   // two different instants, and collapsing them is what let the score be lost (below).
   const scoreSettledRef = useRef<number | null>(null);
+  /**
+   * What the portrait has ALREADY earned but not yet handed over. The scene resolves up
+   * to ~4.8 s before `onDone` (reveal walk + result hold), and the unload flush used to
+   * write a hard-coded 0 during that window — burning `scoreSettledRef`, so the real
+   * settlement became a no-op and a solved IDENTIFIED lost up to 1500 points (panel
+   * MAJEUR). Reset at every phase entry, next to the seed draw.
+   */
+  const earnedScoreRef = useRef(0);
 
   /**
    * Settle the run's score — the ONE place a run's final total is decided (ADR-0054 §2,
@@ -454,8 +462,11 @@ export function App(): JSX.Element {
     const flush = (event: PageTransitionEvent): void => {
       if (event.persisted) return;
       // No byline can be collected from a document that is unloading, so the entry is
-      // written now and anonymously — exactly what the pre-deferral behaviour did.
-      settleRunScore(0, false);
+      // written now and anonymously — exactly what the pre-deferral behaviour did. The
+      // delta is what the scene has already earned (0 outside a resolved portrait), never
+      // a literal: writing 0 here on a solved board threw away the player's points AND
+      // armed the idempotency guard against the real settlement.
+      settleRunScore(earnedScoreRef.current, false);
     };
     window.addEventListener("pagehide", flush);
     return () => {
@@ -619,6 +630,7 @@ export function App(): JSX.Element {
         // No post-level cutscene on this level — the scene is reached directly rather
         // than being silently skipped (see `portraitReachable`).
         portraitPlayedRef.current = gameKey;
+        earnedScoreRef.current = 0;
         setPortraitSeed(drawPortraitSeed());
         setAppPhase("PORTRAIT_ROBOT");
       } else {
@@ -849,6 +861,7 @@ export function App(): JSX.Element {
             // not insert the phase, it BOOTS in it (see the initial `appPhase` above).
             if (portraitReachable(selectedLevel.id)) {
               portraitPlayedRef.current = gameKey;
+              earnedScoreRef.current = 0;
               // The seed is drawn HERE, at phase entry — not once per module load, which
               // gave two runs in the same tab the same board (panel run-1 minor).
               setPortraitSeed(drawPortraitSeed());
@@ -895,6 +908,11 @@ export function App(): JSX.Element {
         isMobile={IS_MOBILE}
         paused={rotateBlocked}
         reducedMotion={reducedMotion}
+        onResolved={(modifier) => {
+          // The scene is decided; the reveal is only presentation. Record the points now
+          // so an unload during the reveal writes the score the player actually earned.
+          earnedScoreRef.current = modifier.scoreDelta;
+        }}
         onDone={(modifier) => {
           setPendingModifier(modifier);
           // On a `?preview=portrait` boot there is no run behind the scene and no next

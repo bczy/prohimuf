@@ -18,7 +18,7 @@
 ## Context
 
 The gate froze the shape of the problem: **4 bands** (`LA COUPE` / `LE REGARD` / `LE NEZ` /
-`LA BOUCHE`; internal ids `hair` / `eyes` / `nose` / `mouth`), **6 variants per band, hard
+`LA BOUCHE`; internal ids `hair` / `eyes` / `nose` / `mouth`), **`VARIANTS_PER_BAND` variants per band (6 at authoring, **10 since 2026-08-09** — révision 2), hard
 ceiling 6**, **1 gabarit** ⇒ 24 band assets, and a V1 difficulty composition of **1 truth + 2
 strong-class decoys + 3 medium-class decoys + 0 class-4 decoys**. The draw must be a pure hash
 of a `portraitSeed` — zero `Math.random`, zero `Date.now` in `src/game`.
@@ -97,11 +97,11 @@ export interface FaceCatalogue {
 }
 ```
 
-**Why the distance matrix is the decision.** With N = 6 = the whole pool, every variant of a
+**Why the distance matrix is the decision.** With N = `VARIANTS_PER_BAND` = the whole pool, every variant of a
 band is always on screen; the only free parameter is _which one is true_. The gate's
 composition rule ("2 strong + 3 medium + 0 fine") is therefore a statement about the **row of
 the truth** in a pairwise distance matrix — it cannot be expressed per variant, because a
-variant's class only exists relative to another. 15 authored values per band, 60 in total,
+variant's class only exists relative to another. C(N, 2) authored values per band — 15 at N = 6, **45 at N = 10** — 180 in total today,
 produced once from `game-graphist`'s comparison plate (his §7.2 pre-prod pass). In exchange,
 the difficulty rule becomes **data the validator can enforce**, and re-tuning difficulty never
 touches code.
@@ -121,7 +121,7 @@ Invariants, error unless noted:
 | code                | Checks                                                                                                                                                                                                                         |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `band-count`        | exactly 4 bands, ids exactly the four canonical ones, no duplicate                                                                                                                                                             |
-| `variant-count`     | exactly 6 variants per band (hard ceiling, gate A5)                                                                                                                                                                            |
+| `variant-count`     | exactly `VARIANTS_PER_BAND` variants per band (gate A5, raised 6 → 10 in révision 2)                                                                                                                                           |
 | `variant-id-unique` | ids unique within the catalogue                                                                                                                                                                                                |
 | `distance-complete` | all 15 pairs present per band, no unknown key, no self-pair                                                                                                                                                                    |
 | `decoy-profile`     | **at least one** variant whose row is exactly 2 `strong` + 3 `medium` + 0 `fine`; the draw picks only among those (D4)                                                                                                         |
@@ -198,9 +198,9 @@ Same seed ⇒ same puzzle, on every device, forever. The function is total: it n
 catalogue that passed `validatePortrait`, and its behaviour on an invalid one is the caller's
 problem (ADR-0074's gotcha, restated).
 
-### D5 — Assets: 24 sliced PNGs, atomic per gabarit, provenance-checked
+### D5 — Assets: one sliced PNG per band variant, atomic per gabarit, provenance-checked
 
-**24 separate PNGs, not an atlas** (answering `lead-art` §7.3 Q1). The atlas argument — "the
+**Separate PNGs, not an atlas** (4 × `VARIANTS_PER_BAND` = 40 today) (answering `lead-art` §7.3 Q1). The atlas argument — "the
 seam is guaranteed by construction" — is real but is _already_ satisfied by slicing from a
 single plate; what an atlas would additionally cost is a new loader, a new lint, exclusion from
 `useAssetPreloader`'s per-path progress, and a second asset convention beside the ~200
@@ -226,12 +226,12 @@ manifest builders). One new file format for one screen is not a trade worth maki
 the existing `useAssetPreloader` gate **during `NARRATIVE_POST`** — i.e. behind the framing
 lines, before the chrono can start. The scene never begins with a half-loaded face: warming is
 all-or-nothing at the phase boundary, which is also what makes the "no feedback, pure
-observation" contract (A9) honest. The 24 PNGs are **not** added to any level manifest, so a
+observation" contract (A9) honest. The band PNGs are **not** added to any level manifest, so a
 player who never reaches the scene never downloads them.
 
 ### D6 — The three blocking questions of the art brief §7.3, answered plainly
 
-1. **Atlas or PNGs?** → **24 PNGs**, sliced from one plate (D5). Seams in
+1. **Atlas or PNGs?** → **one PNG per band variant** (40 today), sliced from one plate (D5). Seams in
    `portraitPlate.generated.json`, emitted by the script, never authored by hand.
 2. **Atomicity?** → **Granted and mechanised**: one script, no per-band mode, a checksum, a
    consistency test. A single regenerated band is a red test.
@@ -256,7 +256,7 @@ board that now resolves itself.
 import-time-computable, side-effect-free and validated by its own module. A future MCP/tooling
 surface gets `validatePortrait` for free, exactly as story ③ got `validateLevel`.
 
-**C2 — 60 authored distance values are a real, new authoring burden**, and they are the price
+**C2 — the authored distance values are a real, new authoring burden** (60 at N = 6, **180 at N = 10**), and they are the price
 of making the difficulty rule executable. They come from a plate `game-graphist` already owes
 (§7.2 pre-prod pass), so the burden is _transcription_, not judgement — but if that plate slips,
 this is the item that blocks `dev-gameplay`, and a provisional matrix must be committed with the
@@ -266,7 +266,7 @@ placeholder assets so the lane is never idle.
 registration/normalisation pass before slicing. It is budgeted here as a first-class deliverable,
 not as a footnote of the art lane.
 
-**C4 — The 24 PNGs are a one-shot download at a phase boundary.** Sized in the house BD style
+**C4 — The band PNGs are a one-shot download at a phase boundary.** Sized in the house BD style
 they are small; but they are downloaded _between_ two levels, i.e. on a transition the player
 experiences as a pause. The `NARRATIVE_POST` pre-warm hides it behind text the player is reading.
 If the batch ever grows (a second gabarit), that hiding place is finite — flagged for the
@@ -322,6 +322,15 @@ the selection liseré.
 
 ## Révisions
 
+**2026-08-11 — révision 2 (arbitrage Bertrand du 2026-08-09, « plus de bandes » → gate A19).**
+Body edited in place (Status still `Proposed`).
+
+| Change                                                                                                                                                                                                                                                                          | Driver                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **`VARIANTS_PER_BAND` 6 → 10.** 40 PNG au lieu de 24, 45 distances par bande au lieu de 15 (180 au total). Le « plafond dur 6 » de la gate A5 était un budget de production, pas une mécanique                                                                                  | Bertrand, 2026-08-09                        |
+| **Règle d'éligibilité des leurres généralisée** — « 2 strong + 3 medium » devient « 2 strong, 0 fine, medium partout ailleurs », soit `variantCount - 3`. Laissée en dur, elle rendait TOUTE variante inéligible à N = 10 et la composition des leurres serait morte en silence | conséquence directe du changement de compte |
+| **Les chiffres de ce document renvoient désormais à la constante** plutôt qu'à un littéral — c'est ce qui l'a fait mentir pendant deux jours (panel BLOQUANT, 2026-08-11)                                                                                                       | panel stage 6                               |
+
 **2026-08-05 — révision 1 (post-gate §8, arbitrage Bertrand B1 → gate A14).** Body edited in
 place (Status still `Proposed`).
 
@@ -333,8 +342,8 @@ place (Status still `Proposed`).
 | Context gains fact 4: since B1 the draw is load-bearing for **safety**, not only difficulty                                                                                                                                                         | B1                                                                           |
 | New alternatives **A7** (rejection sampling) and **A8** (fix it in the scene shell), both rejected; D7 extended                                                                                                                                     | —                                                                            |
 
-**Not changed:** D1 (catalogue location and shape), D2 (the distance matrix), D5 (24 sliced
-PNGs, atomic script, `plateChecksum`, preload during `NARRATIVE_POST`), D6's three answers to
+**Not changed:** D1 (catalogue location and shape), D2 (the distance matrix), D5 (one sliced
+PNG per band variant, atomic script, `plateChecksum`, preload during `NARRATIVE_POST`), D6's three answers to
 the art brief, alternatives A1-A6. `confirmGuardSeconds` never appeared in this ADR, so
 nothing is deleted here — A14 _adds_ an obligation to the data model.
 

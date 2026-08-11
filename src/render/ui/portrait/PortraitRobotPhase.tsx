@@ -18,6 +18,18 @@ export interface PortraitRobotPhaseProps {
   readonly reducedMotion: boolean;
   /** Handed the scene's only residue — an opaque `LevelModifier` the shell carries. */
   readonly onDone: (modifier: LevelModifier) => void;
+  /**
+   * Fired the instant the scene RESOLVES, before the reveal walk and the result hold —
+   * so up to ~4.8 s before `onDone`. It exists for one reason: the shell's unload flush
+   * had no way to know what the player had just earned during that window and wrote a
+   * hard-coded 0, burning the idempotency guard so the real settlement became a no-op.
+   * A solved `IDENTIFIED` lost up to 1500 points — exactly the case the deferral was
+   * built to protect (panel MAJEUR).
+   *
+   * NOT a second hand-over: it never routes, never spends the modifier. `onDone` remains
+   * the single hand-over, and stays gated on the reveal.
+   */
+  readonly onResolved?: (modifier: LevelModifier) => void;
 }
 
 /**
@@ -46,6 +58,7 @@ export function PortraitRobotPhase({
   paused,
   reducedMotion,
   onDone,
+  onResolved,
 }: PortraitRobotPhaseProps): JSX.Element {
   const stackRef = useRef<HTMLDivElement>(null);
   const { scene, bands, targetBands, pushIntent, revealDone } = usePortraitRobot({
@@ -65,6 +78,14 @@ export function PortraitRobotPhase({
   const result = scene.result;
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  const onResolvedRef = useRef(onResolved);
+  onResolvedRef.current = onResolved;
+  const announcedRef = useRef(false);
+  useEffect(() => {
+    if (result === null || announcedRef.current) return;
+    announcedRef.current = true;
+    onResolvedRef.current?.(levelModifierFromPortrait(result));
+  }, [result]);
   const handedOverRef = useRef(false);
   useEffect(() => {
     if (result === null || !revealDone || handedOverRef.current) return;

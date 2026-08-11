@@ -179,6 +179,19 @@ describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
     expect(state.enemies.every((e) => e.state !== "DEAD")).toBe(true);
   });
 
+  it("splits the frame at the hold boundary — no free sliver on the expiry tick (panel MINEUR)", () => {
+    // A hold that does NOT land on a frame edge: 0.05 s left, 0.2 s of frame. The level
+    // clocks must advance by 0.15 s — the part after the release — not by the whole 0.2 s.
+    let state = held(0.25);
+    state = tick(state, 0.2);
+    expect(state.waveHoldRemaining).toBeCloseTo(0.05, 5);
+    expect(state.elapsedSeconds).toBe(0);
+    state = tick(state, 0.2);
+    expect(state.waveHoldRemaining).toBe(0);
+    expect(state.elapsedSeconds).toBeCloseTo(0.15, 5);
+    expect(state.timeRemaining).toBeCloseTo(DEFAULT_LEVEL_PARAMS.timeSeconds - 0.15, 5);
+  });
+
   it("the CRATE clock is frozen too — no crate on an empty street (panel MAJEUR)", () => {
     // `tickLoot` took the raw delta while the other three level clocks took `levelDelta`.
     // During the hold the street is empty, so the spawn guard is vacuously true for every
@@ -217,12 +230,17 @@ describe("firstWaveDelaySeconds holds wave 1 (gate A6/A10)", () => {
     expect(state.courierTimer).toBe(createInitialState(FACADE_01).courierTimer);
   });
 
-  it("the clocks resume on the tick the hold is released", () => {
+  it("the clocks resume on the tick the hold is released — for the POST-hold fraction only", () => {
+    // This test used to expect the WHOLE frame (`DT`) on a hold of `DT / 2`, i.e. it
+    // asserted the double-count the panel found: half of that frame happened while the
+    // hold was still running. The expectation moves to `DT / 2` because the behaviour was
+    // wrong, not because the assertion was inconvenient — the frame is now split at the
+    // boundary, so the clocks advance by exactly what elapsed after the release.
     let state = held(DT / 2);
     state = tick(state);
     expect(state.waveHoldRemaining).toBe(0);
-    expect(state.elapsedSeconds).toBeCloseTo(DT, 6);
-    expect(state.timeRemaining).toBeLessThan(DEFAULT_LEVEL_PARAMS.timeSeconds);
+    expect(state.elapsedSeconds).toBeCloseTo(DT / 2, 6);
+    expect(state.timeRemaining).toBeCloseTo(DEFAULT_LEVEL_PARAMS.timeSeconds - DT / 2, 6);
   });
 
   it("a zero hold is the legacy path — wave 1 is seated at creation", () => {
