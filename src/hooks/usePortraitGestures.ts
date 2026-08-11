@@ -121,6 +121,13 @@ export function usePortraitGestures({
 
     const onPointerDown = (event: PointerEvent): void => {
       if (!enabledRef.current || gesture !== null) return;
+      // Left button only, for a MOUSE. A right- or middle-drag was captured and classified
+      // exactly like a left one: someone right-clicking a band for the context menu and
+      // drifting a few pixels changed their board under the chrono, and the browser's own
+      // gesture was swallowed by `setPointerCapture` on top (panel MINEUR). Touch and pen
+      // report `button === 0` on contact, so they are unaffected; the check is scoped to
+      // `mouse` rather than to `button` alone so a future pointer type is not locked out.
+      if (event.pointerType === "mouse" && event.button !== 0) return;
       const band = bandAt(event.target);
       if (band === null) return;
       const x = event.clientX / window.innerWidth;

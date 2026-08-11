@@ -79,13 +79,24 @@ function mount(): {
   };
 }
 
-function pointer(el: Element, type: string, x: number, y: number, timeStamp = 0): void {
+function pointer(
+  el: Element,
+  type: string,
+  x: number,
+  y: number,
+  timeStamp = 0,
+  init: { button?: number; pointerType?: string } = {},
+): void {
   const event = new Event(type, { bubbles: true });
   Object.defineProperties(event, {
     pointerId: { value: 1 },
     clientX: { value: x },
     clientY: { value: y },
     timeStamp: { value: timeStamp },
+    // Absent by default so every existing case keeps describing touch/pen contact, where
+    // the button is 0 anyway.
+    ...(init.button === undefined ? {} : { button: { value: init.button } }),
+    ...(init.pointerType === undefined ? {} : { pointerType: { value: init.pointerType } }),
   });
   el.dispatchEvent(event);
 }
@@ -165,6 +176,34 @@ describe("usePortraitGestures — pointer", () => {
 });
 
 /** The keyboard socle — and the two bindings that must NOT exist (gate B1). */
+describe("usePortraitGestures — only the LEFT mouse button drives a band (panel MINEUR)", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("ignores a right-button drag, so the context menu is not swallowed", () => {
+    const { el, seen, unmount } = mount();
+    const travel = DRAG_CRAN_DISTANCE * window.innerWidth * 3;
+    const mouse = { button: 2, pointerType: "mouse" };
+    pointer(bandOf(el, "eyes"), "pointerdown", 100, 100, 0, mouse);
+    pointer(bandOf(el, "eyes"), "pointermove", 100 + travel, 100, 200, mouse);
+    pointer(bandOf(el, "eyes"), "pointerup", 100 + travel, 100, 300, mouse);
+    expect(seen).toEqual([]);
+    unmount();
+  });
+
+  it("still drives on the left button", () => {
+    const { el, seen, unmount } = mount();
+    const travel = DRAG_CRAN_DISTANCE * window.innerWidth * 3;
+    const mouse = { button: 0, pointerType: "mouse" };
+    pointer(bandOf(el, "eyes"), "pointerdown", 100, 100, 0, mouse);
+    pointer(bandOf(el, "eyes"), "pointermove", 100 + travel, 100, 200, mouse);
+    pointer(bandOf(el, "eyes"), "pointerup", 100 + travel, 100, 300, mouse);
+    expect(seen.length).toBeGreaterThan(0);
+    unmount();
+  });
+});
+
 describe("usePortraitGestures — a frozen scene freezes the gesture too (panel MAJEUR)", () => {
   afterEach(() => {
     document.body.innerHTML = "";
