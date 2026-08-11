@@ -43,7 +43,7 @@ import {
 export interface PortraitPlateManifest {
   /** The gabarit the plate was drawn on — informational for this validator. */
   readonly gabaritId: string;
-  /** Checksum of the plate the 24 PNGs were sliced from; must equal the catalogue's. */
+  /** Checksum of the plate the band PNGs were sliced from; must equal the catalogue's. */
   readonly plateChecksum: string;
   /** Portrait pixel size the bands were sliced at. */
   readonly portraitSize: { readonly width: number; readonly height: number };
@@ -286,7 +286,7 @@ export function validatePortrait(
           "plate-provenance",
           "error",
           "plateChecksum",
-          `catalogue checksum "${catalogue.plateChecksum}" does not match the generated plate "${plate.plateChecksum}" — the 24 bands must come from ONE slicing run`,
+          `catalogue checksum "${catalogue.plateChecksum}" does not match the generated plate "${plate.plateChecksum}" — every band must come from ONE slicing run`,
         ),
       );
     }

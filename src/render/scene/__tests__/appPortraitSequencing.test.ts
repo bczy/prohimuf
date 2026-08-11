@@ -175,6 +175,16 @@ async function mountIntoPlay(): Promise<void> {
 
 /** Win the level, sit through the post-level scene, and land in the portrait phase. */
 async function reachPortrait(hud: HudData = wonHud()): Promise<void> {
+  await reachPostLevelNarrative(hud);
+  click(button("NARRATIVE:belliard_post"));
+}
+
+/**
+ * Stops ON the post-level cutscene, one click short of the portrait. That screen sits
+ * INSIDE the deferred-settlement window — `settleRunScore` is skipped at LEVEL_COMPLETE
+ * when a portrait lies ahead — so it is exactly where a lost run hides.
+ */
+async function reachPostLevelNarrative(hud: HudData = wonHud()): Promise<void> {
   await mountIntoPlay();
   vi.useFakeTimers();
   act(() => {
@@ -183,7 +193,6 @@ async function reachPortrait(hud: HudData = wonHud()): Promise<void> {
   act(() => {
     vi.advanceTimersByTime(1500);
   });
-  click(button("NARRATIVE:belliard_post"));
 }
 
 beforeEach(() => {
@@ -312,6 +321,18 @@ describe("run-2 — the deferred settlement cannot lose the run", () => {
     pagehide(false);
     // The level's own 4200 lands on the board, anonymously — no NAME_ENTRY can be shown
     // to a document that is unloading, and a deferred score is a score lost.
+    expect(saveScore).toHaveBeenCalledTimes(1);
+    expect(saveScore.mock.calls[0]?.[1]).toMatchObject({ score: 4200 });
+  });
+
+  it("writes the run when the tab goes away on the CUTSCENE, before the scene (panel MAJEUR)", async () => {
+    // The flush was armed on PORTRAIT_ROBOT only, so the 1.5 s routing delay AND the whole
+    // post-level cutscene were unprotected. Closing the tab there lost the run from the
+    // board while the next-level unlock, persisted back at LEVEL_COMPLETE, survived.
+    nextModifier = modifierFor("IDENTIFIED");
+    await reachPostLevelNarrative();
+    expect(saveScore).not.toHaveBeenCalled();
+    pagehide(false);
     expect(saveScore).toHaveBeenCalledTimes(1);
     expect(saveScore.mock.calls[0]?.[1]).toMatchObject({ score: 4200 });
   });

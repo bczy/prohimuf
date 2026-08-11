@@ -421,12 +421,12 @@ function tutorialManifest(scene: NarrativeScene): readonly string[] {
 }
 
 /**
- * The 24 sliced band PNGs of the portrait-robot scene (ADR-0080 D5), read off the
+ * The 40 sliced band PNGs of the portrait-robot scene (ADR-0080 D5), read off the
  * catalogue so a path is never authored twice.
  *
  * The target face medallion needs NO extra asset: it is the truth composed from these
  * same bands (gate A8 — the target is visible permanently, drawn from the catalogue),
- * so nothing here depends on an art deliverable beyond the 24 files.
+ * so nothing here depends on an art deliverable beyond the 40 files.
  *
  * `App.tsx` preloads this through the existing `useAssetPreloader` gate during
  * `NARRATIVE_POST`, i.e. behind the framing lines and before the chrono can start: the
@@ -441,7 +441,7 @@ function portraitManifest(): readonly string[] {
 /**
  * The full de-duplicated, stably-ordered manifest to preload for a target:
  * - `"menu"` — just the menu backdrop.
- * - `"portrait-robot"` — the 24 sliced band PNGs (see `portraitManifest`).
+ * - `"portrait-robot"` — the 40 sliced band PNGs (see `portraitManifest`).
  * - `"tutorial-desktop"` / `"tutorial-mobile"` — the corresponding tutorial fork's
  *   assets (see `tutorialManifest`). The caller names the fork; this layer never
  *   looks at the device.

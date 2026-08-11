@@ -3,7 +3,7 @@
  * ADR-0080, ADR-0083; tuning canon: `docs/game-design/design-gate-portrait-robot.md` §3).
  *
  * The player reconstructs a face from four stacked bands (hair / eyes / nose /
- * mouth), six variants each, against a chrono. Placing the fourth correct band
+ * mouth), ten variants each, against a chrono. Placing the fourth correct band
  * ENDS the scene by itself — there is no validation act, no button, no
  * "submit": the lock-in test is a post-condition of the reducer (ADR-0079 D8.1),
  * so 4/4 reached in the same frame as the buzzer is `IDENTIFIED` on every device
@@ -33,7 +33,7 @@
  * the variant's `id` minus the extension, so a path and an id are derivable
  * from one another and neither is authored twice.
  *
- * 24 files, all written by `scripts/slice-portrait-plate.mjs` in ONE run from a
+ * 40 files, all written by `scripts/slice-portrait-plate.mjs` in ONE run from a
  * single plate — the script has no per-band mode, and that absence IS the
  * atomicity guarantee. Nothing else may write into this directory, and no band
  * may be hand-patched (`plateChecksum`, ADR-0080 D5).
@@ -71,7 +71,7 @@ export interface PortraitVariant {
   readonly trait: string;
 }
 
-/** One band of the catalogue: its six variants and the distances between them. */
+/** One band of the catalogue: its ten variants and the distances between them. */
 export interface PortraitBand {
   readonly id: PortraitBandId;
   /** Canonical player-facing label (gate A6) — the narrative lane owns the string. */
@@ -97,7 +97,7 @@ export interface PortraitBand {
 export interface FaceCatalogue {
   /** The single face template of V1 (gate A5). */
   readonly gabaritId: string;
-  /** Provenance of the plate the 24 PNGs were sliced from (ADR-0080 D5). */
+  /** Provenance of the plate the band PNGs were sliced from (ADR-0080 D5). */
   readonly plateChecksum: string;
   /** Exactly 4, in draw order. */
   readonly bands: readonly PortraitBand[];

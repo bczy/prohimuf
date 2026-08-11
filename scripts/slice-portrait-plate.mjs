@@ -15,7 +15,7 @@
  * plates (Bertrand, 2026-08-06 — "complète la collection"): there is no
  * per-band mode, no per-plate mode, and no "regenerate one variant/one seed"
  * flag — that absence IS the atomicity guarantee. A run fetches
- * `VARIANTS_PER_BAND` (6) independent WHOLE-face plates from the SAME prompt
+ * `VARIANTS_PER_BAND` (10) independent WHOLE-face plates from the SAME prompt
  * family (seeds `PORTRAIT_PROMPT_FAMILY.seed + i`), and either writes all 24
  * files (variant `i` of band `b` = seam-slice `b` of plate `i`) + the
  * manifest together, or writes nothing. A batch where ANY plate fails ANY
@@ -45,7 +45,7 @@
  *     ticks are abandoned), check every plate reproduces the others within
  *     `INTER_PLATE_TOLERANCE` (brief §10.3), slice each at the 3 seams with
  *     bleed removed at the ordinate, measure the 4 seam-tolerance grandeurs
- *     of §9.3 per plate per seam, and write all 24 files + the manifest ONLY
+ *     of §9.3 per plate per seam, and write all 40 files + the manifest ONLY
  *     if every plate passes every gate. FLUX generation is normally BLOCKED
  *     in the local sandbox (AGENTS.md) — this mode is exercised in CI
  *     (.github/workflows/gen-portrait-plate.yml).
@@ -61,7 +61,7 @@
  *     `measureControlAnchors` find per plate but never fails the job on a
  *     measurement problem — the point is to look at the images.
  *
- * `FORCE=1` regenerates even if all 24 files already exist. Without it, an
+ * `FORCE=1` regenerates even if all 40 files already exist. Without it, an
  * existing complete set is left untouched (idempotent).
  *
  * -----------------------------------------------------------------------
@@ -1294,7 +1294,7 @@ async function fetchAndRegisterOnePlate(plateArg, seed) {
 
 /** Batch production pipeline (Bertrand, 2026-08-06, "complète la collection"
  * — replaces the V1 "one gabarit, one hero plate" TODO this file used to
- * carry): `VARIANTS_PER_BAND` (6) independent whole-face plates, same
+ * carry): `VARIANTS_PER_BAND` (10) independent whole-face plates, same
  * `PORTRAIT_PROMPT_FAMILY`, seeds `PORTRAIT_PROMPT_FAMILY.seed + i` (the
  * exact scheme ROLL 3's validated pair used, extended) — sliced at the SAME
  * 3 seams, variant `i` of band `b` = seam-slice `b` of plate `i`. The

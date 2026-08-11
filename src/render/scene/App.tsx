@@ -436,7 +436,21 @@ export function App(): JSX.Element {
    * one entry.
    */
   useEffect(() => {
-    if (PREVIEW_SCREEN !== null || appPhase !== "PORTRAIT_ROBOT") return;
+    // The whole DEFERRED-SETTLEMENT window, not just its last screen (panel MAJEUR).
+    // The window opens at `LEVEL_COMPLETE` — where `settleRunScore` is deliberately
+    // SKIPPED when a portrait lies ahead — and stays open through the 1.5 s routing
+    // delay and the post-level cutscene before the portrait phase is even entered.
+    // Armed only on `PORTRAIT_ROBOT`, the flush left that entire stretch unprotected:
+    // closing the tab on the cutscene lost the run from the board while the next-level
+    // unlock (persisted earlier, at `LEVEL_COMPLETE`) survived — the exact "save says
+    // cleared, board says the run never happened" split this handler exists to prevent.
+    // `settleRunScore` is idempotent through `scoreSettledRef`, so arming it wider costs
+    // nothing on the paths where it has already run.
+    const settlementWindow =
+      appPhase === "PORTRAIT_ROBOT" ||
+      appPhase === "NARRATIVE_POST" ||
+      hudData.phase === "LEVEL_COMPLETE";
+    if (PREVIEW_SCREEN !== null || !settlementWindow) return;
     const flush = (event: PageTransitionEvent): void => {
       if (event.persisted) return;
       // No byline can be collected from a document that is unloading, so the entry is
@@ -447,7 +461,7 @@ export function App(): JSX.Element {
     return () => {
       window.removeEventListener("pagehide", flush);
     };
-  }, [appPhase, settleRunScore]);
+  }, [appPhase, hudData.phase, settleRunScore]);
 
   // Red vignette flash whenever a life is lost (shot, or shooting a civilian).
   const prevLivesRef = useRef(hudData.lives);
@@ -717,7 +731,7 @@ export function App(): JSX.Element {
       ? "menu"
       : appPhase === "TUTORIAL"
         ? TUTORIAL_FORK.manifestTarget
-        : // The 24 sliced band PNGs (ADR-0080). Gated on the phase itself rather than
+        : // The sliced band PNGs (ADR-0080). Gated on the phase itself rather than
           // warmed behind NARRATIVE_POST: one preloader, one target at a time, and the
           // scene must never open on half its bands — an untextured band would read as
           // a variant, i.e. as information, on a screen whose whole subject is what a
