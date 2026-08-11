@@ -308,21 +308,32 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
   //
   // Eligibility is intersected across bands: the index must be an eligible truth in EVERY
   // band, otherwise the decoy composition would silently hold in some bands and not others.
+  // Pools d'éligibilité, calculés UNE fois par bande et réutilisés plus bas. Ils l'étaient
+  // deux fois — ici pour l'intersection, puis à nouveau dans la boucle — sur la même bande
+  // et les mêmes distances, donc pour le même résultat. Sans effet visible à N = 10, mais
+  // `validatePortrait`'s SEED_SWEEP appelle cette fonction plus de 1000 fois (panel MINEUR).
+  const eligibleByBand: readonly (readonly number[])[] = catalogue.bands.map((band) => {
+    const n = band.variants.length;
+    if (n === 0) return [];
+    const eligible = band.variants
+      .map((_, i) => i)
+      .filter((i) => isEligibleTruth(band.distances, i, n));
+    // Une bande sans vérité éligible retombe sur tout son pool — le problème de l'appelant
+    // (ADR-0074), pas une raison de refuser le tirage.
+    return eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
+  });
+
   const commonPool = ((): readonly number[] => {
     const counts = new Map<number, number>();
     let bandsWithVariants = 0;
-    for (const band of catalogue.bands) {
-      const n = band.variants.length;
-      if (n === 0) continue;
+    eligibleByBand.forEach((pool) => {
+      if (pool.length === 0) return;
       bandsWithVariants += 1;
-      const eligible = band.variants
-        .map((_, i) => i)
-        .filter((i) => isEligibleTruth(band.distances, i, n));
-      const pool = eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
       for (const i of pool) counts.set(i, (counts.get(i) ?? 0) + 1);
-    }
-    // Present in every non-empty band. Falls back to whatever is shared by the most bands,
-    // then to index 0 — a degraded catalogue must never throw here (ADR-0080 D4 totality).
+    });
+    // Présent dans CHAQUE bande non vide. À défaut, ce que le plus de bandes partagent, puis
+    // l'index 0 — un catalogue dégradé ne doit jamais faire lever d'exception ici (ADR-0080
+    // D4, totalité).
     const shared = [...counts.entries()]
       .filter(([, c]) => c === bandsWithVariants)
       .map(([i]) => i)
@@ -355,11 +366,9 @@ export function drawPortraitPuzzle(catalogue: FaceCatalogue, seed: number): Port
     }
     // The SAME face for every band. A band shorter than `faceIndex` (only reachable on a
     // catalogue `validatePortrait` would already reject) falls back to its own pool rather
-    // than reading out of bounds.
-    const eligible = band.variants
-      .map((_, i) => i)
-      .filter((i) => isEligibleTruth(band.distances, i, n));
-    const pool = eligible.length > 0 ? eligible : band.variants.map((_, i) => i);
+    // than reading out of bounds. Le pool vient de `eligibleByBand` : même bande, mêmes
+    // distances, donc le recalculer ici donnait deux fois le même tableau.
+    const pool = eligibleByBand[bandIndex] ?? band.variants.map((_, i) => i);
     const truthIndex =
       faceIndex < n ? faceIndex : (pool[portraitHash(seed, bandIndex, 0) % pool.length] ?? 0);
     const bandOrder = seededShuffle(n, portraitHash(seed, bandIndex, 1));
