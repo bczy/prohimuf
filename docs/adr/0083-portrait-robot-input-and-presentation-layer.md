@@ -12,8 +12,7 @@
   renamed** on 2026-08-05 from `0081-portrait-robot-input-and-atari-st-render.md` — the
   scaffold's "Atari ST render" framing is void: Bertrand arbitrated on 2026-08-05 that the DA
   stays **house BD-comics** (story AC7), and the ST source is historical grounding for the
-  _mise-en-scène_ only, never a production constraint. **Renumbered twice — see the Number field above for both collisions.** First move on 2026-08-05 due to
-  collision with ADR-0081 (MCP level-editor server) merged to origin/main via PR #159.\*\*
+  _mise-en-scène_ only, never a production constraint.
 - **Author:** decision content by `senior-architect` (Winston), stage 3 TECH PLAN.
 - **Relates to:** ADR-0079 (the DOM phase this layer draws), ADR-0080 (the catalogue it
   displays), ADR-0046 (CSS Modules + `tokens.ts`→CSS-var bridge — the law this screen obeys),
