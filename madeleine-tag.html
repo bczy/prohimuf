@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Madeleine — tag live-paint</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #232327;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, sans-serif;
+      }
+      #stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+      }
+      svg#art {
+        width: min(96vw, 1300px);
+        height: auto;
+        overflow: visible;
+      }
+      .can {
+        filter: drop-shadow(0 0 10px currentColor);
+      }
+      button {
+        background: none;
+        border: 1px solid #39ff6a;
+        color: #39ff6a;
+        font: 13px/1 monospace;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #39ff6a;
+        color: #232327;
+      }
+      /* Un TAG : un seul geste au marqueur, pas une typo à empiler.
+         Le trait porte tout — pression variable, boucles, kicks, sortie en flèche. */
+      path.stroke {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: url(#marker);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <svg id="art" viewBox="0 0 1560 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- userSpaceOnUse: les régions en % s'effondrent sur un trait droit (bbox nulle) -->
+          <filter
+            id="marker"
+            filterUnits="userSpaceOnUse"
+            x="-90"
+            y="-90"
+            width="1740"
+            height="800"
+          >
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.05"
+              numOctaves="3"
+              result="n"
+              seed="4"
+            />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="7" />
+          </filter>
+        </defs>
+        <g id="tag"></g>
+        <circle class="can" r="7" opacity="0" id="canDot" fill="#fff" />
+      </svg>
+      <button id="replay">rejouer</button>
+    </div>
+
+    <script>
+      // Un tag s'écrit d'un geste : le mot est UNE polyligne continue, cursive,
+      // qui monte (~9°), avec des boucles fermées pour a/d/e et des kicks sous la
+      // ligne de base. Le trait est épais (fat marker) — la lisibilité vient du
+      // rythme des jambages, pas d'un contour.
+      const WORD_PATH = [
+        // M : jambage plongeant, deux pics, sortie haute
+        "M120,430 C118,360 130,300 150,268 C168,242 186,258 190,300 L196,392",
+        "M196,392 C200,318 214,268 236,250 C258,232 276,252 278,300 L282,398",
+        // a : boucle fermée + jambage
+        "M282,398 C316,352 352,330 372,346 C392,362 380,404 350,412 C322,420 306,398 316,372",
+        "M316,372 C332,344 356,336 366,354 L374,404",
+        // d : hampe qui monte haut puis redescend, boucle
+        "M374,404 C404,368 438,352 456,368 C472,382 460,414 432,420 C408,424 396,404 406,380",
+        "M470,180 C462,258 456,330 458,392 C459,412 466,420 478,412",
+        // e : oeil en boucle, sortie plate
+        "M478,412 C500,378 528,360 546,372 C560,382 552,404 528,406 C506,408 500,392 512,376",
+        "M512,376 C536,356 566,358 578,378 L590,404",
+        // l : hampe haute, kick sous la ligne
+        "M590,404 C606,340 616,268 626,208 C630,184 642,182 644,206 C648,272 646,346 650,394",
+        "M650,394 C660,412 678,414 694,400",
+        // e : deuxième oeil, plus rapide
+        "M694,400 C716,368 744,352 762,364 C776,374 768,396 744,398 C722,400 716,384 728,368",
+        "M728,368 C752,348 782,350 794,370 L806,396",
+        // i : jambage court + le point viendra après
+        "M806,396 C822,368 838,350 850,352 C860,354 862,372 858,394",
+        // n : deux jambages, épaule ronde
+        "M858,394 C876,356 898,338 916,346 C932,354 934,384 928,398",
+        "M928,398 C946,358 970,340 988,350 C1002,358 1004,386 998,400",
+        // e final : boucle + SORTIE EN FLÈCHE qui traverse tout le mot
+        "M998,400 C1020,368 1048,350 1066,362 C1080,372 1072,394 1048,396 C1026,398 1020,382 1032,366",
+        "M1032,366 C1058,344 1096,346 1112,368 C1126,388 1130,412 1150,414 C1200,418 1270,392 1330,344",
+      ];
+
+      // Passe 1 = le mot. Passes suivantes = ce qui fait un tag : le point du i,
+      // la flèche, le soulignement d'un geste, les coulures, la signature.
+      const ARROW = ["M1330,344 L1264,330", "M1330,344 L1310,404"];
+      const IDOT = ["M846,300 l3,3"];
+      const UNDERLINE = ["M1284,462 C900,540 480,528 190,470", "M258,442 L176,472 L262,506"];
+      const DRIPS = [
+        "M204,404 L210,494",
+        "M462,428 L468,528",
+        "M652,404 L658,516",
+        "M932,406 L938,486",
+      ];
+      const CROWN = ["M148,222 L176,150 L214,204 L252,142 L288,196 L318,138 L344,214"];
+
+      const PASSES = [
+        { d: WORD_PATH, color: "#ff3cdc", width: 26, speed: 1.5 },
+        { d: IDOT, color: "#ff3cdc", width: 26, speed: 10 },
+        { d: ARROW, color: "#ff3cdc", width: 20, speed: 1.2 },
+        { d: CROWN, color: "#39ff6a", width: 12, speed: 1.0 },
+        { d: UNDERLINE, color: "#39ff6a", width: 14, speed: 0.8 },
+        { d: DRIPS, color: "#ff3cdc", width: 8, speed: 2.6 },
+      ];
+
+      const gEl = document.getElementById("tag");
+      const can = document.getElementById("canDot");
+      const NS = "http://www.w3.org/2000/svg";
+      const all = [];
+
+      for (const pass of PASSES) {
+        for (const d of pass.d) {
+          const p = document.createElementNS(NS, "path");
+          p.setAttribute("d", d);
+          p.setAttribute("class", "stroke");
+          p.setAttribute("stroke", pass.color);
+          p.setAttribute("stroke-width", pass.width);
+          gEl.appendChild(p);
+          all.push({ p, color: pass.color, speed: pass.speed });
+        }
+      }
+      // pente du tag : ça monte, comme un vrai geste de poignet
+      gEl.setAttribute("transform", "rotate(-9 780 340)");
+
+      function reset() {
+        for (const { p } of all) {
+          const len = p.getTotalLength();
+          p.setAttribute("stroke-dasharray", `${len} ${len}`);
+          p.setAttribute("stroke-dashoffset", len);
+        }
+      }
+
+      let running = false;
+      async function play() {
+        if (running) return;
+        running = true;
+        reset();
+        can.setAttribute("opacity", "1");
+        for (const { p, color, speed } of all) {
+          can.setAttribute("fill", color);
+          const len = p.getTotalLength();
+          const duration = Math.max(90, len * speed);
+          const start = performance.now();
+          await new Promise((resolve) => {
+            function tick(now) {
+              const t = Math.min(1, (now - start) / duration);
+              const eased = 1 - Math.pow(1 - t, 2);
+              p.setAttribute("stroke-dashoffset", len * (1 - eased));
+              const tip = p.getPointAtLength(len * eased);
+              can.setAttribute("cx", tip.x);
+              can.setAttribute("cy", tip.y);
+              if (t < 1) requestAnimationFrame(tick);
+              else resolve();
+            }
+            requestAnimationFrame(tick);
+          });
+        }
+        can.setAttribute("opacity", "0");
+        running = false;
+      }
+
+      document.getElementById("replay").addEventListener("click", play);
+      play();
+    </script>
+  </body>
+</html>
