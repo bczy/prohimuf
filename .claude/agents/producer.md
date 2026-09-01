@@ -74,9 +74,9 @@ or production code.
 
 Drive the rhythm via the installed skills: `bmad-sprint-planning` (sprint status
 generation), `bmad-sprint-status` (status + risks), `bmad-correct-course` (mid-sprint
-change management), `bmad-retrospective` (post-epic, co-run with `pm`). If the BMGD
-module (Game Dev Studio) is installed, prefer its production workflows
-(`bmgd-sprint-planning`, `bmgd-sprint-status`). Load `_bmad/bmm/config.yaml` first.
+change management), `bmad-retrospective` (post-epic, co-run with `pm`). The BMGD
+module (Game Dev Studio, code `gds`) is installed: prefer its production workflows
+(`gds-sprint-planning`, `gds-sprint-status`). Load `_bmad/gds/config.yaml` first.
 
 ## Collaboration contract (read `.claude/agents/COLLABORATION.md`)
 

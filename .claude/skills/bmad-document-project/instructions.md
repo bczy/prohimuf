@@ -10,12 +10,7 @@
 <action>Check for existing state file at: {project_knowledge}/project-scan-report.json</action>
 
 <check if="project-scan-report.json exists">
-  <action>Read state file and extract: timestamps,
- mode,
- scan_level,
- current_step,
- completed_steps,
- project_classification</action>
+  <action>Read state file and extract: timestamps, mode, scan_level, current_step, completed_steps, project_classification</action>
   <action>Extract cached project_type_id(s) from state file if present</action>
   <action>Calculate age of state file (current time - last_updated)</action>
 
@@ -36,7 +31,6 @@
     3. **Cancel** - Exit without changes
 
     Your choice [1/2/3]:
-
 </ask>
 
   <check if="user selects 1">
@@ -46,8 +40,7 @@
     <action>Load cached project_type_id(s) from state file</action>
 
     <critical>CONDITIONAL CSV LOADING FOR RESUME:</critical>
-    <action>For each cached project_type_id,
- load ONLY the corresponding row from: ./documentation-requirements.csv</action>
+    <action>For each cached project_type_id, load ONLY the corresponding row from: ./documentation-requirements.csv</action>
     <action>Skip loading project-types.csv and architecture_registry.csv (not needed on resume)</action>
     <action>Store loaded doc requirements for use in remaining steps</action>
 
@@ -88,11 +81,8 @@
 <action>Check if {project_knowledge}/index.md exists</action>
 
 <check if="index.md exists">
-  <action>Read existing index.md to extract metadata (date,
- project structure,
- parts count)</action>
-  <action>Store as {{existing_doc_date}},
- {{existing_structure}}</action>
+  <action>Read existing index.md to extract metadata (date, project structure, parts count)</action>
+  <action>Store as {{existing_doc_date}}, {{existing_structure}}</action>
 
 <ask>I found existing documentation generated on {{existing_doc_date}}.
 
@@ -109,8 +99,7 @@ Your choice [1/2/3]:
     <action>Set workflow_mode = "full_rescan"</action>
     <action>Display: "Starting full project rescan..."</action>
     <action>Read fully and follow: ./workflows/full-scan-workflow.md</action>
-    <action>After sub-workflow completes,
- continue to Step 4</action>
+    <action>After sub-workflow completes, continue to Step 4</action>
   </check>
 
   <check if="user selects 2">
@@ -118,8 +107,7 @@ Your choice [1/2/3]:
     <action>Set scan_level = "exhaustive"</action>
     <action>Display: "Starting deep-dive documentation mode..."</action>
     <action>Read fully and follow: ./workflows/deep-dive-workflow.md</action>
-    <action>After sub-workflow completes,
- continue to Step 4</action>
+    <action>After sub-workflow completes, continue to Step 4</action>
   </check>
 
   <check if="user selects 3">
@@ -132,8 +120,7 @@ Your choice [1/2/3]:
   <action>Set workflow_mode = "initial_scan"</action>
   <action>Display: "No existing documentation found. Starting initial project scan..."</action>
   <action>Read fully and follow: ./workflows/full-scan-workflow.md</action>
-  <action>After sub-workflow completes,
- continue to Step 4</action>
+  <action>After sub-workflow completes, continue to Step 4</action>
 </check>
 
 </step>

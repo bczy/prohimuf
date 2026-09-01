@@ -20,9 +20,10 @@ Fall back to `yarn` if rtk is unavailable.
 
 ## AIDD setup
 
-This project runs on **BMAD-METHOD v6.3** (`_bmad/`, skills under `.claude/skills/bmad-*`,
-artifacts in `_bmad-output/`). BMAD config: `_bmad/bmm/config.yaml`
-(language = English, planning → `_bmad-output/planning-artifacts/`).
+This project runs on **BMAD-METHOD v6.10** (`_bmad/`, skills under `.claude/skills/bmad-*`
+and `.claude/skills/gds-*`, artifacts in `_bmad-output/`), with the **BMGD "Game Dev
+Studio" module** (code `gds`) installed. BMAD config: `_bmad/bmm/config.yaml` and
+`_bmad/gds/config.yaml` (language = English, planning → `_bmad-output/planning-artifacts/`).
 
 ### Subagent team (`.claude/agents/`)
 
@@ -31,22 +32,22 @@ in parallel but always coordinates there and logs in the sharded handoffs log
 (`docs/handoffs/`, index `docs/agent-handoffs.md`). Core crew,
 each fronting a BMAD persona:
 
-| Subagent             | Role                                  | BMAD bridge                             |
-| -------------------- | ------------------------------------- | --------------------------------------- |
-| `pm`                 | Product / PRD / stories / scope       | `bmad-agent-pm` (John)                  |
-| `producer`           | Pipeline execution, sprint status     | `bmad-sprint-planning/-status` (Marion) |
-| `senior-architect`   | Architecture, boundaries, sign-off    | `bmad-agent-architect` (Winston)        |
-| `tech-scout`         | Technical recon / feasibility (R&D)   | `bmad-agent-analyst` (Nadia/Mary)       |
-| `lead-game-designer` | Design gate + design/art/dev sync     | — (Karim)                               |
-| `game-designer`      | Mechanics, tuning, 3C specs           | BMGD `gds` module when installed        |
-| `narrative-designer` | Universe, cast, in-game text scripts  | BMGD `bmgd-narrative` when installed    |
-| `ux-designer`        | Screens/flows/HUD UX + accessibility  | `bmad-agent-ux-designer` (Tony)         |
-| `qa-lead`            | Test plans, regressions, quality gate | `bmad-qa-generate-e2e-tests` (Inès)     |
-| `gpu-specialist`     | Frame budget, perf verdicts (GPU)     | — (Ben)                                 |
-| `tech-writer`        | DOCS lane: ADRs, doc↔code coherence   | `bmad-agent-tech-writer` (Otis)         |
-| `dev-r3f-render`     | `src/render` + view hooks             | `bmad-agent-dev` (Amelia)               |
-| `dev-gameplay`       | `src/game` pure logic (TDD)           | `bmad-agent-dev` (Amelia)               |
-| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI       | `bmad-agent-dev` (Amelia)               |
+| Subagent             | Role                                  | BMAD bridge                              |
+| -------------------- | ------------------------------------- | ---------------------------------------- |
+| `pm`                 | Product / PRD / stories / scope       | `bmad-agent-pm` (John)                   |
+| `producer`           | Pipeline execution, sprint status     | `bmad-sprint-planning/-status` (Marion)  |
+| `senior-architect`   | Architecture, boundaries, sign-off    | `bmad-agent-architect` (Winston)         |
+| `tech-scout`         | Technical recon / feasibility (R&D)   | `bmad-agent-analyst` (Nadia/Mary)        |
+| `lead-game-designer` | Design gate + design/art/dev sync     | — (Karim)                                |
+| `game-designer`      | Mechanics, tuning, 3C specs           | BMGD `gds-gdd` / `gds-create-game-brief` |
+| `narrative-designer` | Universe, cast, in-game text scripts  | BMGD `gds-create-narrative`              |
+| `ux-designer`        | Screens/flows/HUD UX + accessibility  | `bmad-agent-ux-designer` (Tony)          |
+| `qa-lead`            | Test plans, regressions, quality gate | `bmad-qa-generate-e2e-tests` (Inès)      |
+| `gpu-specialist`     | Frame budget, perf verdicts (GPU)     | — (Ben)                                  |
+| `tech-writer`        | DOCS lane: ADRs, doc↔code coherence   | `bmad-agent-tech-writer` (Otis)          |
+| `dev-r3f-render`     | `src/render` + view hooks             | `bmad-agent-dev` (Amelia)                |
+| `dev-gameplay`       | `src/game` pure logic (TDD)           | `bmad-agent-dev` (Amelia)                |
+| `dev-tooling-assets` | `scripts/`, `levelArt.json`, CI       | `bmad-agent-dev` (Amelia)                |
 
 (The art crew — `lead-art`, `art-advisor`, `graphic-references`, `concept-artist`,
 `game-graphist` — and the

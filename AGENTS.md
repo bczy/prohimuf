@@ -105,8 +105,8 @@ Claude's.)
 
 ## AIDD context (informational — not required to use it)
 
-This repo is scaffolded with **BMAD-METHOD v6.3** (`_bmad/`, artifacts in
-`_bmad-output/`). The BMAD personas (John/Winston/Amelia/Otis/Sally/Mary/Paige) are
+This repo is scaffolded with **BMAD-METHOD v6.10** plus the BMGD "Game Dev Studio"
+module (`_bmad/`, artifacts in `_bmad-output/`). The BMAD personas (John/Winston/Amelia/Otis/Sally/Mary/Paige) are
 exposed to Claude Code as a full **subagent crew** (`.claude/agents/`) with a
 production pipeline; see `CLAUDE.md`. Any runtime that loads `.claude/agents/**`
 as delegable agents — Claude Code, and the **Copilot CLI/app** — is expected to

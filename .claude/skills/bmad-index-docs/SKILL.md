@@ -1,11 +1,12 @@
 ---
 name: bmad-index-docs
-description: "Generates or updates an index.md to reference all docs in the folder. Use if user requests to create or update an index of all files in a specific folder"
+description: 'Generates or updates an index.md to reference all docs in the folder. Use if user requests to create or update an index of all files in a specific folder'
 ---
 
 # Index Docs
 
 **Goal:** Generate or update an index.md to reference all docs in a target folder.
+
 
 ## EXECUTION
 
@@ -15,18 +16,16 @@ description: "Generates or updates an index.md to reference all docs in the fold
 
 ### Step 2: Group Content
 
-- Organize files by type,
- purpose,
- or subdirectory
+- Organize files by type, purpose, or subdirectory
 
 ### Step 3: Generate Descriptions
 
-- Read each file to understand its actual purpose and create brief (3-10 word) descriptions based on the content,
- not just the filename
+- Read each file to understand its actual purpose and create brief (3-10 word) descriptions based on the content, not just the filename
 
 ### Step 4: Create/Update Index
 
 - Write or update index.md with organized file listings
+
 
 ## OUTPUT FORMAT
 
@@ -50,10 +49,12 @@ description: "Generates or updates an index.md to reference all docs in the fold
 - **[file3.ext](./another-folder/file3.ext)** - Brief description
 ```
 
+
 ## HALT CONDITIONS
 
 - HALT if target directory does not exist or is inaccessible
 - HALT if user does not have write permissions to create index.md
+
 
 ## VALIDATION
 
