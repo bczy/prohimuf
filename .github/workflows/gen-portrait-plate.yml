@@ -1,0 +1,120 @@
+name: Generate portrait-robot plate
+
+# Regenerates the 24 sliced band PNGs of the portrait-robot mini-game
+# (ADR-0080 D5, docs/art-direction/brief-portrait-robot.md) from a single
+# generated face plate: fetch plate → recalage (registration on the eye-line /
+# nose-base ticks) → slice at the 3 seams → measure seam continuity (art brief
+# §1.2bis) → commit, or reject the WHOLE plate on a failed measurement
+# (ADR-0080 D5 atomicity — never a per-band regeneration).
+#
+# `slice-portrait-plate.mjs` is the ONLY writer of `public/assets/portrait/*.png`
+# and `src/game/portraits/portraitPlate.generated.json` — both are committed
+# here together, or neither is.
+#
+# Blocked until concept-artist fills PORTRAIT_PROMPT_FAMILY (script header,
+# `pending: true`) — the generator refuses to spend a FLUX call on empty
+# prose, so this workflow will fail loudly (not silently skip) until then.
+# `--placeholder` mode (24 flat, distinguishable, correctly-sized filler PNGs,
+# no network) is what actually unblocks `dev-r3f-render` in the meantime, and
+# is run locally / committed directly by dev-tooling-assets — it has no CI
+# workflow because it needs no network and no gate.
+#
+# Deliberate runs only: manual (workflow_dispatch) or by touching the dispatch
+# marker .github/dispatch/gen-portrait-plate (see docs/adr/0009).
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-portrait-plate"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gen-portrait-plate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install pngjs (recalage + slicing)
+        run: |
+          # Pinned to the package.json version; --no-save so the lockfile-less
+          # runner install never rewrites package.json. Same shape as
+          # gen-courier-sprites.yml's @napi-rs/canvas step — a targeted
+          # install of the one non-builtin import, before the paid FLUX call.
+          npm install --no-save --legacy-peer-deps --ignore-scripts pngjs@7.0.0
+
+      - name: Install @napi-rs/canvas (JPEG fallback decode, see ensurePngBuffer)
+        run: |
+          # Pollinations is known to serve a JPEG instead of the requested PNG
+          # depending on request parameters (RE-PANEL run 3995325a); pngjs only
+          # understands PNG, so slice-portrait-plate.mjs's ensurePngBuffer
+          # decodes/re-encodes a JPEG response via @napi-rs/canvas before it
+          # ever reaches PNG.sync.read. Pinned to the package.json version,
+          # same shape as gen-courier-sprites.yml's install step.
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate + slice + measure the portrait plate (FLUX)
+        # FORCE=1 so a re-dispatch overwrites a previously-rejected/committed
+        # set. No --plate flag: the real pipeline always fetches from FLUX in CI.
+        id: generate
+        run: FORCE=1 node scripts/slice-portrait-plate.mjs
+
+      - name: Commit sliced bands + generated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if compgen -G "public/assets/portrait/*.png" > /dev/null; then
+            git add -f public/assets/portrait/*.png
+          fi
+          git add -f src/game/portraits/portraitPlate.generated.json
+          if git diff --cached --quiet; then
+            echo "No new portrait assets to commit."
+          else
+            git commit -m "chore(assets): generate portrait-robot band plate"
+            pushed=0
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:$GITHUB_REF_NAME"; then
+                pushed=1
+                break
+              fi
+              echo "push attempt $attempt rejected — rebasing and retrying"
+              git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+            done
+            if [ "$pushed" != "1" ]; then
+              echo "::error::push rejected after 3 attempts"
+              exit 1
+            fi
+          fi
+
+      - name: Upload generated assets (generation succeeded, commit/push failed)
+        # Scoped to steps.generate.outcome == 'success': `failure()` alone also
+        # fires when the generate step itself dies (e.g. a missing dependency,
+        # as it did on the 79d30ea3 run) — at that point the working tree only
+        # holds whatever was checked out (the committed placeholders), and an
+        # artifact named "unpushed" containing those is a trap: it reads as a
+        # freshly generated plate that just failed to push. Only upload when a
+        # generation genuinely happened and it was the commit/push that failed.
+        if: failure() && steps.generate.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: portrait-plate-unpushed
+          path: |
+            public/assets/portrait/*.png
+            src/game/portraits/portraitPlate.generated.json
+          if-no-files-found: warn
+          retention-days: 14

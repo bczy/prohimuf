@@ -119,6 +119,17 @@ doubt on a borderline task, prefer the crew. To pause it for a session: `export 
 - **Local setup:** remote web sessions auto-provision both tools via the SessionStart
   hook; on a local machine run `scripts/setup-tooling.sh` once (idempotent) to install
   rtk + codegraph by hand.
+- **Figma — LE fichier du projet (ne jamais en créer un autre) :**
+  **`muf — Design System`**, file key **`8qSe8rjIllWRPjhBHXeaip`**
+  (<https://www.figma.com/design/8qSe8rjIllWRPjhBHXeaip/muf-%E2%80%94-Design-System>).
+  Toute maquette, tout écran, tout composant va **dans ce fichier**, sur sa page
+  appropriée — pages existantes : `Tokens · Foundations`, `Composants`,
+  `Écrans · Reference`, `Composants · print/`. Créer une nouvelle page dans CE fichier
+  est permis ; créer un nouveau **fichier** Figma ne l'est pas (règle Bertrand,
+  2026-08-05, après une maquette ouverte au mauvais endroit). Les tokens de rendu
+  restent définis par `src/render/ui/print/tokens.ts` — le Figma les reflète, il ne les
+  redéfinit pas. Outils : MCP Figma (`use_figma`, charger la skill `figma-use` avant
+  chaque appel).
 
 ### Claude-specific working rules (on top of AGENTS.md)
 

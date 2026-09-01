@@ -1,0 +1,76 @@
+/*
+ * Télécarte gauge (ADR-0046: zero hex, zero font stack, zero breakpoint here — every
+ * value is a print token var). The only runtime value is `--gauge-ratio`, set inline
+ * by the component.
+ *
+ * Paliers change TEXTURE and RULE THICKNESS, never hue alone (UX §5.2, art brief §4bis):
+ * a colour-blind player reads the same escalation as everyone else.
+ */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+/*
+ * The label yields before the rail does. Without `min-width: 0` a `nowrap` flex item
+ * cannot shrink past its text, so on the 390px mobile strip the label took the whole
+ * gauge and pushed the track OUT of its own box — a 4px rail rendered off the right
+ * edge of the viewport. The chrono is the rail; the word beside it is the caption.
+ */
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  letter-spacing: 0.24em;
+  color: var(--ink-black);
+  white-space: nowrap;
+}
+
+/* The card outline. It never shrinks — the ink inside it leaves. */
+.track {
+  position: relative;
+  flex: 1 1 auto;
+  /* A rail shorter than this is not a gauge, it is a dot. */
+  min-width: 44px;
+  height: var(--space-sm);
+  border: var(--keyline-width) solid var(--ink-black);
+  overflow: hidden;
+}
+
+.ink {
+  height: 100%;
+  width: calc(var(--gauge-ratio, 1) * 100%);
+  background: var(--ink-black);
+  transform-origin: left center;
+}
+
+/* URGENT: the rule thickens. LAST: the front is eaten by toner (repeating stripes). */
+.root[data-palier="URGENT"] .track {
+  border-width: calc(var(--keyline-width) * 2);
+}
+
+.root[data-palier="LAST"] .track {
+  border-width: calc(var(--keyline-width) * 3);
+}
+
+.root[data-palier="LAST"] .ink {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink-black) 0,
+    var(--ink-black) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+/*
+ * Frozen at lock-in (UX §2.5 point 3): the time stops because the test is over. A
+ * dashed outline says it in shape, not in hue.
+ */
+.root[data-frozen="true"] .track {
+  border-style: dashed;
+}

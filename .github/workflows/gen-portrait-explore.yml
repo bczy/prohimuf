@@ -1,0 +1,91 @@
+name: Explore portrait-robot faces (reconnaissance)
+
+# RECONNAISSANCE, not production (Bertrand, 2026-08-06) — separate on purpose
+# from gen-portrait-plate.yml, per "sépare-les proprement, ne relâche pas les
+# garde-fous du chemin de production": this workflow never touches
+# public/assets/, never touches the manifest, never commits, and never
+# fails on a registration/measurement problem. It exists for one question —
+# "à quoi ressemble ce que le prompt produit, et deux graines donnent-elles
+# deux têtes distinctes aux mêmes proportions" — generates N whole-face
+# plates (scripts/slice-portrait-plate.mjs --explore-faces N) from the SAME
+# prompt family with different seeds, and uploads the raw PNGs + a
+# best-effort measurement report as a CI artifact to look at.
+#
+# The strict production path (gen-portrait-plate.yml, `runReal`) is
+# untouched by this file.
+# `workflow_dispatch` only registers once the file lives on the default branch,
+# which it does not yet — so the marker push is the ONLY way to run this from a
+# feature branch today (same seam as gen-portrait-plate.yml, ADR-0009). Touch
+# `.github/dispatch/gen-portrait-explore` with a `ci(dispatch):` commit.
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Number of whole-face plates to generate"
+        required: false
+        default: "2"
+  push:
+    branches-ignore: ["main"]
+    paths:
+      - ".github/dispatch/gen-portrait-explore"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gen-portrait-explore-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    # Same guard as gen-portrait-plate.yml: a marker push only runs on an
+    # explicit `ci(dispatch):` commit, so an unrelated push touching the marker
+    # never spends a FLUX call.
+    if: github.ref_name != 'main' && (github.event_name != 'push' || startsWith(github.event.head_commit.message, 'ci(dispatch):'))
+    env:
+      POLLINATIONS_TOKEN: ${{ secrets.POLLINATIONS_TOKEN }}
+      # `inputs.count` is empty on a marker push — default to 2 there. Read
+      # through env rather than interpolated into `run:` (workflow-injection
+      # hygiene, same reason gen-portrait-plate.yml quotes $GITHUB_REF_NAME).
+      EXPLORE_COUNT: ${{ github.event.inputs.count || '2' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install pngjs (registration measurement)
+        run: |
+          # Pinned to the package.json version; --no-save so the lockfile-less
+          # runner install never rewrites package.json. Same shape as
+          # gen-portrait-plate.yml's own install step.
+          npm install --no-save --legacy-peer-deps --ignore-scripts pngjs@7.0.0
+
+      - name: Install @napi-rs/canvas (JPEG fallback decode, see ensurePngBuffer)
+        run: |
+          # Same reason as gen-portrait-plate.yml: Pollinations is known to
+          # serve a JPEG instead of the requested PNG depending on request
+          # parameters (RE-PANEL run 3995325a).
+          npm install --no-save --legacy-peer-deps --ignore-scripts @napi-rs/canvas@1.0.2
+
+      - name: Generate N whole-face plates + best-effort report (FLUX)
+        run: node scripts/slice-portrait-plate.mjs --explore-faces "$EXPLORE_COUNT"
+
+      - name: Upload the plates + report for a human to look at
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portrait-explore-faces
+          path: scripts/.dbg-portrait-explore/
+          # The output dir is DOT-prefixed (it is gitignored scratch), and
+          # upload-artifact skips hidden paths by default — run 31102896310
+          # generated both plates and uploaded nothing. Opt in explicitly.
+          include-hidden-files: true
+          # `warn` let that run go green with zero artifacts. The whole point of
+          # this workflow is to hand back images, so no files is a failure.
+          if-no-files-found: error
+          retention-days: 14

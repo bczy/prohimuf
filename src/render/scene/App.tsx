@@ -11,6 +11,8 @@ import { PauseScreen } from "@render/ui/PauseScreen";
 import { RotateOverlay } from "@render/ui/RotateOverlay";
 import { FullscreenButton } from "@render/ui/FullscreenButton";
 import { LoadingScreen } from "@render/ui/LoadingScreen";
+import { PortraitRobotPhase } from "@render/ui/portrait/PortraitRobotPhase";
+import { SCREEN_TITLE } from "@render/ui/portrait/copy";
 import {
   installBossCaptureSeam,
   isBossSeamShippedLevel,
@@ -18,6 +20,7 @@ import {
 } from "./bossHarness";
 import { installDeliveryCaptureSeam, resolveDeliveryPreviewLevel } from "./deliveryHarness";
 import { resolveGeneratedPreviewLevel } from "./generatedHarness";
+import { resolvePortraitSeed } from "./portraitHarness";
 import { nextLevelToUnlock } from "./levelProgress";
 import { useReducedMotionRoot } from "@render/ui/print";
 import { warm } from "./warmAssets";
@@ -41,10 +44,15 @@ import {
   savePlayerName,
 } from "@game/systems/highScoreSystem";
 import type { LevelParams } from "@game/systems/stateMachine";
+import type { LevelModifier } from "@game/types/levelModifier";
+import type { PortraitOutcome } from "@game/types/portraitRobot";
+import { PORTRAIT_TIMER_SECONDS } from "@game/systems/portraitRobotSystem";
+import { portraitCatalogueIsPlayable } from "@hooks/usePortraitRobot";
 import { DIFFICULTY_CONFIG } from "@game/levels/levels";
 import {
   PRE_LEVEL_NARRATIVE,
   POST_LEVEL_NARRATIVE,
+  PORTRAIT_ROBOT_NARRATIVE,
   TUTORIAL_NARRATIVE_DESKTOP,
   TUTORIAL_NARRATIVE_MOBILE,
 } from "@game/systems/narrativeSystem";
@@ -64,6 +72,7 @@ type AppPhase =
   | "NARRATIVE_PRE"
   | "PLAYING"
   | "NARRATIVE_POST"
+  | "PORTRAIT_ROBOT"
   | "NAME_ENTRY"
   | "END"
   | "TUTORIAL";
@@ -76,7 +85,7 @@ interface PendingScore {
   readonly date: string;
 }
 
-// Preview harness hook: `?preview=title|menu|narrative|end|nameentry|tutorial` boots
+// Preview harness hook: `?preview=title|menu|narrative|end|nameentry|tutorial|portrait` boots
 // straight into a screen so the screenshot tool can capture the front-end screens
 // without playing.
 const PREVIEW_SCREEN =
@@ -134,6 +143,27 @@ const BOSS_SEAM_SHIPPED_LEVEL = isBossSeamShippedLevel(BOSS_PREVIEW_SEARCH);
 // stays inert via the `PREVIEW_SCREEN !== null` guard + `BOSS_SEAM_SHIPPED_LEVEL`. See `bossHarness.ts`.
 installBossCaptureSeam();
 installDeliveryCaptureSeam();
+
+// Portrait-robot capture seam — `?preview=portrait` (see `portraitHarness.ts`), the house
+// convention every other screen already has. It boots straight into the interstitial phase
+// so the screenshot tool, the screen reviews and the "entry board is 0/4" check do not cost
+// a full playthrough.
+const PORTRAIT_HARNESS_PREVIEW = PREVIEW_SCREEN === "portrait";
+// Seed (ADR-0079 D3): supplied BY THE SHELL and frozen for the session, so a board is
+// replayable with `?portraitSeed=<n>` — the determinism proof `qa-lead` runs in the built
+// app, and it composes with the preview (`?preview=portrait&portraitSeed=42`). The pure
+// layer holds no `Math.random`; drawing the seed is the shell's job, and this is the one
+// place it happens.
+// Drawn ONCE PER PHASE ENTRY, not once per module load: computed at load, two runs in
+// the same tab replayed the identical board, which contradicts the whole draw (panel
+// run-1 minor). `?portraitSeed=` still pins it, so the determinism proof is unchanged.
+function drawPortraitSeed(): number {
+  return resolvePortraitSeed(
+    typeof window !== "undefined" ? window.location.search : "",
+    PORTRAIT_HARNESS_PREVIEW,
+    () => Math.floor(Math.random() * 0x7fffffff),
+  );
+}
 
 // Mobile mode is decided once at app load from the user agent (ADR-0003);
 // it never flips mid-session — devtools emulation needs a refresh.
@@ -202,7 +232,11 @@ function buildHudInitial(level: LevelConfig, prefs: Prefs): HudData {
   };
 }
 
-function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
+function buildLevelParams(
+  level: LevelConfig,
+  prefs: Prefs,
+  modifier: LevelModifier | null,
+): LevelParams {
   const diffCfg = DIFFICULTY_CONFIG[prefs.difficulty];
   return {
     lives: prefs.lives,
@@ -220,25 +254,43 @@ function buildLevelParams(level: LevelConfig, prefs: Prefs): LevelParams {
     // Per-level armament crates (ADR-0055 D8). Absent on a level ⇒ `null` ⇒ no crates
     // spawn and the weapon stays base/∞ (byte-identical to ADR-0040). Belliard-first.
     loot: level.loot ?? null,
+    // The interstitial scene's only residue (ADR-0079 D4). Absent ⇒ byte-identical
+    // to a run without any interstitial scene; the shell CARRIES this value and
+    // never interprets it — no `switch` on the outcome exists on this side.
+    modifier,
   };
+}
+
+/**
+ * Is the portrait-robot catalogue fit to open a scene on? (ADR-0080 D3, panel B4a.)
+ *
+ * Memoised because the answer cannot change within a session and the validator runs a
+ * 1000-seed sweep: asking once per run is free, asking per render is not.
+ */
+let portraitCataloguePlayable: boolean | null = null;
+function portraitPhaseAvailable(): boolean {
+  portraitCataloguePlayable ??= portraitCatalogueIsPlayable();
+  return portraitCataloguePlayable;
 }
 
 export function App(): JSX.Element {
   const [appPhase, setAppPhase] = useState<AppPhase>(
     BOSS_HARNESS_PREVIEW || DELIVERY_HARNESS_PREVIEW || GENERATED_HARNESS_PREVIEW
       ? "PLAYING"
-      : PREVIEW_SCREEN === "narrative"
-        ? "NARRATIVE_PRE"
-        : PREVIEW_SCREEN === "end"
-          ? "END"
-          : PREVIEW_SCREEN === "nameentry"
-            ? "NAME_ENTRY"
-            : PREVIEW_SCREEN === "tutorial"
-              ? "TUTORIAL"
-              : PREVIEW_SCREEN === "menu"
-                ? "MENU"
-                : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
-                  "TITLE",
+      : PORTRAIT_HARNESS_PREVIEW
+        ? "PORTRAIT_ROBOT"
+        : PREVIEW_SCREEN === "narrative"
+          ? "NARRATIVE_PRE"
+          : PREVIEW_SCREEN === "end"
+            ? "END"
+            : PREVIEW_SCREEN === "nameentry"
+              ? "NAME_ENTRY"
+              : PREVIEW_SCREEN === "tutorial"
+                ? "TUTORIAL"
+                : PREVIEW_SCREEN === "menu"
+                  ? "MENU"
+                  : // Cold load (no ?preview) and ?preview=title both boot the TITLE cover.
+                    "TITLE",
   );
   const [paused, setPaused] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -272,10 +324,155 @@ export function App(): JSX.Element {
   // Held when a run qualifies for the board; the single deferred saveScore reads it on
   // NAME_ENTRY resolution (ADR-0054 §2). `null` = nothing pending (non-high-score path).
   const [pendingScore, setPendingScore] = useState<PendingScore | null>(null);
+  // The portrait-robot verdict travelling to the NEXT level (ADR-0079 D4). Produced by
+  // `levelModifierFromPortrait` in the pure layer, carried here as an opaque value, spent
+  // exactly once at the next `createInitialState`. The shell reads two PRE-COMPUTED fields
+  // off it — `narrativeBeat` (which scene the next level owes, picked by key) and
+  // `scoreDelta` (handed to `settleRunScore`) — and derives NEITHER: ADR-0079 A5 forbids
+  // mapping an outcome to a number here, not reading a number the pure layer already
+  // wrote. No `switch` on `outcome` exists on this side, and that is the invariant.
+  const [pendingModifier, setPendingModifier] = useState<LevelModifier | null>(null);
+  const [runModifier, setRunModifier] = useState<LevelModifier | null>(null);
+  // One portrait-robot per run (gate A3). Armed on the run identity, like the persistence block.
+  const portraitPlayedRef = useRef<number | null>(null);
+  // The seed of the scene currently being played, drawn at phase entry.
+  const [portraitSeed, setPortraitSeed] = useState<number>(drawPortraitSeed);
+  // The obligatory pre-level beat the portrait-robot verdict owes the NEXT level
+  // (ADR-0079 D5, gate A1b, story AC6). Armed when the run's modifier is spent, played
+  // once at that level's NARRATIVE_PRE, then cleared. `null` ⇒ nothing owed.
+  const [pendingBeat, setPendingBeat] = useState<PortraitOutcome | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audio = useAudio();
   const isPortrait = useOrientation();
   const rotateBlocked = IS_MOBILE && isPortrait;
+
+  // What `settleRunScore` decided, for the routing timer below. A ref and not state:
+  // the 1500 ms timer reads it when it fires, and a re-render in between must not
+  // re-arm the effect.
+  const qualifiedRef = useRef(false);
+  // The `gameKey` of the run whose score has ALREADY been written or deferred. Distinct
+  // from `persistedRunRef` on purpose: since the settlement moved to the exit of the
+  // portrait phase, "the run's side-effects fired" and "the run's score is settled" are
+  // two different instants, and collapsing them is what let the score be lost (below).
+  const scoreSettledRef = useRef<number | null>(null);
+  /**
+   * What the portrait has ALREADY earned but not yet handed over. The scene resolves up
+   * to ~4.8 s before `onDone` (reveal walk + result hold), and the unload flush used to
+   * write a hard-coded 0 during that window — burning `scoreSettledRef`, so the real
+   * settlement became a no-op and a solved IDENTIFIED lost up to 1500 points (panel
+   * MAJEUR). Reset at every phase entry, next to the seed draw.
+   */
+  const earnedScoreRef = useRef(0);
+
+  /**
+   * Settle the run's score — the ONE place a run's final total is decided (ADR-0054 §2,
+   * hand-off §6.2). `scoreDelta` is the interstitial scene's contribution, `0` on every
+   * path that has no scene. Returns whether the total qualifies for the board.
+   *
+   * `canDeferByline` is `false` on the ONE path that has no future: the tab is going
+   * away (`pagehide`). A deferred `pendingScore` is a promise to write at NAME_ENTRY,
+   * and there is no NAME_ENTRY after the document unloads — so that path writes the
+   * entry now, anonymously, rather than qualifying it into oblivion.
+   *
+   * Idempotent per run: whichever of the two paths gets there first settles, the other
+   * is a no-op. `saveScore` de-duplicates nothing, so this guard is what keeps a single
+   * run from landing twice on the board.
+   */
+  const settleRunScore = useCallback(
+    (scoreDelta: number, canDeferByline = true): boolean => {
+      const isShipped =
+        LEVELS.findIndex((l) => l.id === selectedLevel.id) !== -1 && !BOSS_SEAM_SHIPPED_LEVEL;
+      if (!isShipped) {
+        qualifiedRef.current = false;
+        return false;
+      }
+      if (scoreSettledRef.current === gameKey) return qualifiedRef.current;
+      scoreSettledRef.current = gameKey;
+      const score = hudData.score + scoreDelta;
+      const qualifies = isHighScore(selectedLevel.id, score);
+      const date = new Date().toISOString();
+      // M1: a qualifying run DEFERS its single write to NAME_ENTRY so the byline can be
+      // attached; anything else is written now, silently and anonymously.
+      if (qualifies && canDeferByline) setPendingScore({ score, wave: hudData.wave, date });
+      else saveScore(selectedLevel.id, { score, wave: hudData.wave, date });
+      qualifiedRef.current = qualifies && canDeferByline;
+      return qualifiedRef.current;
+    },
+    [hudData.score, hudData.wave, selectedLevel.id, gameKey],
+  );
+
+  /**
+   * Will a portrait-robot scene still be played on this run? ONE predicate, read by the
+   * score-settlement effect and by the two hand-overs that route into the phase.
+   *
+   * It deliberately does NOT test `POST_LEVEL_NARRATIVE`. The scene used to be reachable
+   * only through the post-level cutscene, which made a copy table a silent on/off switch
+   * for the feature — it was simply absent on `niveau-final` and on every generated level,
+   * with nothing in the code saying so (panel run-1, undeclared dependency). The cutscene
+   * is now a step on the way, not the door.
+   */
+  function portraitReachable(levelId: string): boolean {
+    return (
+      PREVIEW_SCREEN === null &&
+      portraitPlayedRef.current !== gameKey &&
+      LEVELS.findIndex((l) => l.id === levelId) !== -1 &&
+      !BOSS_SEAM_SHIPPED_LEVEL &&
+      portraitPhaseAvailable()
+    );
+  }
+
+  /**
+   * The window the deferred settlement opened, closed (panel run-2 MAJEUR).
+   *
+   * Since the score is settled at the EXIT of the portrait phase (so a 1500-point
+   * `IDENTIFIED` can qualify for the board), a player who closes the tab or reloads
+   * during the scene's 30–56 s spent a run that is never written anywhere — while the
+   * next-level unlock, fired at `LEVEL_COMPLETE`, WAS written. Save state then says
+   * "level cleared" and the board says the run never happened.
+   *
+   * The chosen fix is a flush at `pagehide`, not a provisional write at
+   * `LEVEL_COMPLETE`: `saveScore` appends and de-duplicates nothing, so a provisional
+   * entry completed later means two rows for one run, and "arm `persistedRunRef` only
+   * once settled" would have left the unlock/funnel writes racing on a second guard
+   * without closing the loss window at all. This closes exactly the window that opened
+   * and leaves the nominal path byte-identical: one write, at the exit, with the
+   * scene's `scoreDelta`.
+   *
+   * `event.persisted` discriminates a real teardown from a bfcache freeze — a frozen
+   * page can come back and finish the scene, and settling it would rob the player of
+   * the portrait's points. If it comes back anyway, `scoreSettledRef` keeps the run to
+   * one entry.
+   */
+  useEffect(() => {
+    // The whole DEFERRED-SETTLEMENT window, not just its last screen (panel MAJEUR).
+    // The window opens at `LEVEL_COMPLETE` — where `settleRunScore` is deliberately
+    // SKIPPED when a portrait lies ahead — and stays open through the 1.5 s routing
+    // delay and the post-level cutscene before the portrait phase is even entered.
+    // Armed only on `PORTRAIT_ROBOT`, the flush left that entire stretch unprotected:
+    // closing the tab on the cutscene lost the run from the board while the next-level
+    // unlock (persisted earlier, at `LEVEL_COMPLETE`) survived — the exact "save says
+    // cleared, board says the run never happened" split this handler exists to prevent.
+    // `settleRunScore` is idempotent through `scoreSettledRef`, so arming it wider costs
+    // nothing on the paths where it has already run.
+    const settlementWindow =
+      appPhase === "PORTRAIT_ROBOT" ||
+      appPhase === "NARRATIVE_POST" ||
+      hudData.phase === "LEVEL_COMPLETE";
+    if (PREVIEW_SCREEN !== null || !settlementWindow) return;
+    const flush = (event: PageTransitionEvent): void => {
+      if (event.persisted) return;
+      // No byline can be collected from a document that is unloading, so the entry is
+      // written now and anonymously — exactly what the pre-deferral behaviour did. The
+      // delta is what the scene has already earned (0 outside a resolved portrait), never
+      // a literal: writing 0 here on a solved board threw away the player's points AND
+      // armed the idempotency guard against the real settlement.
+      settleRunScore(earnedScoreRef.current, false);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [appPhase, hudData.phase, settleRunScore]);
 
   // Red vignette flash whenever a life is lost (shot, or shooting a civilian).
   const prevLivesRef = useRef(hudData.lives);
@@ -355,6 +552,15 @@ export function App(): JSX.Element {
     // deterministic (`pendingScore` stays null → the NameEntry handlers no-op on storage).
     if (PREVIEW_SCREEN !== null) return;
     if (hudData.phase !== "GAME_OVER" && hudData.phase !== "LEVEL_COMPLETE") return;
+    // This effect acts on the run that is still ON SCREEN, and the terminal HUD push
+    // always lands while `appPhase === "PLAYING"`. Once it has routed away, the phase
+    // it routed to owns its own exit, and re-arming the 1500 ms timer from here is a
+    // trapdoor: a re-execution after `portraitPlayedRef.current === gameKey` is set
+    // makes `portraitAhead` false, and the `else` branch below would tear the player
+    // out of the portrait scene into END with the score never settled. Not reachable
+    // today (the canvas is unmounted, so no further HUD push exists) — which is
+    // precisely why nothing was stopping it (panel run-2 minor 3).
+    if (appPhase !== "PLAYING") return;
 
     // Persistence side-effects (high-score board, next-level unlock) are scoped to
     // SHIPPED levels only. `BOSS_QTE_DEV_HARNESS_LEVEL` is deliberately EXCLUDED from
@@ -370,11 +576,11 @@ export function App(): JSX.Element {
     const shippedIdx = LEVELS.findIndex((l) => l.id === selectedLevel.id);
     const isShippedLevel = shippedIdx !== -1 && !BOSS_SEAM_SHIPPED_LEVEL;
 
-    // M1 (ADR-0054 §2): when the run qualifies for the board, DEFER the single saveScore
-    // to NAME_ENTRY resolution so the player's byline can be attached; otherwise save now,
-    // silently and anonymously, byte-identical to before. The next-level unlock below is
-    // UNAFFECTED either way — it fires on today's schedule, never gated behind typing a name.
-    const qualifies = isShippedLevel && isHighScore(selectedLevel.id, hudData.score);
+    // WILL a portrait-robot scene still be played on this run? (hand-off §6.2.)
+    // It decides WHEN the run's score is settled, so it must be computed here, from the
+    // same three conditions the NARRATIVE_POST hand-over uses — one predicate, two call
+    // sites, so the two can never disagree about whether points are still coming.
+    const portraitAhead = hudData.phase === "LEVEL_COMPLETE" && portraitReachable(selectedLevel.id);
 
     // ONE pass per run: the persistence block is armed on the run identity, never
     // on the HUD push that revealed the terminal phase. Without it, a second
@@ -382,12 +588,15 @@ export function App(): JSX.Element {
     // wrote the score twice — `saveScore` de-duplicates nothing.
     if (isShippedLevel && persistedRunRef.current !== gameKey) {
       persistedRunRef.current = gameKey;
-      const dateStr = new Date().toISOString();
-      if (qualifies) {
-        setPendingScore({ score: hudData.score, wave: hudData.wave, date: dateStr });
-      } else {
-        saveScore(selectedLevel.id, { score: hudData.score, wave: hudData.wave, date: dateStr });
-      }
+
+      // THE SCORE IS SETTLED LAST (architect's arbitration, hand-off §6.2). When a
+      // portrait-robot is still ahead, the run is not over: its `scoreDelta` (up to
+      // 1500) is part of the final score, and qualifying for the board must be decided
+      // on that total. Settling here would have made an `IDENTIFIED` worth nothing on
+      // the board — a high-score bug. `settleRunScore` runs at the exit of the phase
+      // instead; on every other path it runs now, with a delta of 0, byte-identically
+      // to before.
+      if (!portraitAhead) settleRunScore(0);
 
       // Next-level unlock: pure decision (ADR-0059 §D4, AC3/AC4). Fires ONLY on a win —
       // a shipped level reaching GAME_OVER (lives/timer death, or a boss LOST once
@@ -414,12 +623,21 @@ export function App(): JSX.Element {
         hudData.phase === "LEVEL_COMPLETE" &&
         POST_LEVEL_NARRATIVE[selectedLevel.id] !== undefined
       ) {
-        // NARRATIVE_POST is told first; its onDone routes on to NAME_ENTRY when qualifying.
+        // NARRATIVE_POST is told first; its onDone routes on to the portrait, or on to
+        // NAME_ENTRY when the score qualifies.
         setAppPhase("NARRATIVE_POST");
-      } else if (qualifies) {
-        setAppPhase("NAME_ENTRY");
+      } else if (portraitAhead) {
+        // No post-level cutscene on this level — the scene is reached directly rather
+        // than being silently skipped (see `portraitReachable`).
+        portraitPlayedRef.current = gameKey;
+        earnedScoreRef.current = 0;
+        setPortraitSeed(drawPortraitSeed());
+        setAppPhase("PORTRAIT_ROBOT");
       } else {
-        setAppPhase("END");
+        // Not a portrait path, so `settleRunScore` already ran above and `pendingScore`
+        // holds its verdict — read it through the setter's own value rather than a
+        // second `isHighScore` call, so the board is consulted exactly once per run.
+        setAppPhase(qualifiedRef.current ? "NAME_ENTRY" : "END");
       }
     }, 1500);
     return () => {
@@ -429,8 +647,9 @@ export function App(): JSX.Element {
     // every terminal push) and `unlockedLevels` (a fresh Set after the unlock
     // write) are read inside but kept OUT — either one re-running this effect
     // tears down the 1500 ms routing timer and re-enters the persistence block.
-    // `gameKey` is the run identity the guard above is armed on.
-  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, gameKey]);
+    // `gameKey` is the run identity the guard above is armed on. `appPhase` is in
+    // because the effect must STOP once it has routed — see the guard at the top.
+  }, [hudData.phase, hudData.score, hudData.wave, selectedLevel.id, gameKey, appPhase]);
 
   // Prefetch the R3F/Three.js chunk as soon as the player reaches the MENU so
   // the dynamic import is already cached when "Play" is clicked (ADR-0068).
@@ -454,9 +673,22 @@ export function App(): JSX.Element {
       return;
     }
     setSelectedLevel(level);
+    // Spent exactly ONCE: the pending verdict becomes this run's modifier and the pending
+    // slot empties, so a restart or a second level never re-applies a scene played earlier.
+    setRunModifier(pendingModifier);
+    setPendingModifier(null);
+    // AC6 / gate A1b: the verdict OWES the next level a scene, and the shell picks it BY
+    // KEY — it never branches on what the verdict means (ADR-0079 A5). Without this the
+    // player lost 20 energy and nothing on screen ever said why: `narrativeBeat` was
+    // produced and had no consumer at all (panel B3).
+    const beat = pendingModifier?.narrativeBeat ?? null;
+    setPendingBeat(beat);
     setHudData(buildHudInitial(level, prefs));
     setGameKey((k) => k + 1);
-    if (PRE_LEVEL_NARRATIVE[levelId] !== undefined) {
+    // A level with no pre-level cutscene still owes the beat — routing on the copy table
+    // alone is how the portrait's own reachability got silently disabled (see
+    // `portraitReachable`), and the beat must not inherit that bug.
+    if (beat !== null || PRE_LEVEL_NARRATIVE[levelId] !== undefined) {
       setAppPhase("NARRATIVE_PRE");
     } else {
       setAppPhase("PLAYING");
@@ -511,7 +743,14 @@ export function App(): JSX.Element {
       ? "menu"
       : appPhase === "TUTORIAL"
         ? TUTORIAL_FORK.manifestTarget
-        : selectedLevel.id;
+        : // The sliced band PNGs (ADR-0080). Gated on the phase itself rather than
+          // warmed behind NARRATIVE_POST: one preloader, one target at a time, and the
+          // scene must never open on half its bands — an untextured band would read as
+          // a variant, i.e. as information, on a screen whose whole subject is what a
+          // band looks like.
+          appPhase === "PORTRAIT_ROBOT"
+          ? "portrait-robot"
+          : selectedLevel.id;
   // Targets warmed this session — a target skips its manifest once settled so
   // revisiting it (or advancing TITLE→MENU→level→END) never re-shows the loader.
   const loadedTargets = useRef<Set<string>>(new Set());
@@ -551,7 +790,9 @@ export function App(): JSX.Element {
         ? "MENU"
         : target === TUTORIAL_FORK.manifestTarget
           ? "Tutoriel"
-          : selectedLevel.name;
+          : target === "portrait-robot"
+            ? SCREEN_TITLE
+            : selectedLevel.name;
     return renderAppShell(
       <LoadingScreen label={label} progress={total ? loaded / total : 1} />,
       rotateBlocked,
@@ -566,6 +807,25 @@ export function App(): JSX.Element {
         reducedMotion={reducedMotion}
         onPlay={handlePlay}
         onSavePrefs={handleSavePrefs}
+      />,
+      rotateBlocked,
+    );
+  }
+
+  if (appPhase === "NARRATIVE_PRE" && pendingBeat !== null) {
+    // The portrait-robot recall, played BEFORE the level's own briefing (ADR-0079 D5).
+    return renderAppShell(
+      <NarrativeScreen
+        scene={PORTRAIT_ROBOT_NARRATIVE[pendingBeat]}
+        showSkipButton
+        onDone={() => {
+          setPendingBeat(null);
+          if (PRE_LEVEL_NARRATIVE[selectedLevel.id] === undefined) setAppPhase("PLAYING");
+        }}
+        onSkip={() => {
+          setPendingBeat(null);
+          if (PRE_LEVEL_NARRATIVE[selectedLevel.id] === undefined) setAppPhase("PLAYING");
+        }}
       />,
       rotateBlocked,
     );
@@ -594,7 +854,21 @@ export function App(): JSX.Element {
         <NarrativeScreen
           scene={scene}
           onDone={() => {
-            setAppPhase(pendingScore !== null ? "NAME_ENTRY" : "END");
+            // Interstitial insertion point (gate A2): LEVEL_COMPLETE → NARRATIVE_POST →
+            // PORTRAIT_ROBOT → the rest. Once per run, and never INSERTED on a `?preview=`
+            // boot — that guard stands: a `?preview=narrative` capture must not drift into
+            // another screen. `?preview=portrait` does not need it lifted, because it does
+            // not insert the phase, it BOOTS in it (see the initial `appPhase` above).
+            if (portraitReachable(selectedLevel.id)) {
+              portraitPlayedRef.current = gameKey;
+              earnedScoreRef.current = 0;
+              // The seed is drawn HERE, at phase entry — not once per module load, which
+              // gave two runs in the same tab the same board (panel run-1 minor).
+              setPortraitSeed(drawPortraitSeed());
+              setAppPhase("PORTRAIT_ROBOT");
+              return;
+            }
+            setAppPhase(qualifiedRef.current ? "NAME_ENTRY" : "END");
           }}
         />,
         rotateBlocked,
@@ -619,6 +893,40 @@ export function App(): JSX.Element {
         }}
         onSkip={handleBackToMenu}
         doneLabel="TERMINER"
+      />,
+      rotateBlocked,
+    );
+  }
+
+  if (appPhase === "PORTRAIT_ROBOT") {
+    // A DOM screen: no Canvas, no Three, no CRT (ADR-0079 D1). The chrono pauses behind
+    // the rotate overlay by simply not being folded (gate A7).
+    return renderAppShell(
+      <PortraitRobotPhase
+        seed={portraitSeed}
+        timerSeconds={PORTRAIT_TIMER_SECONDS[prefs.difficulty]}
+        isMobile={IS_MOBILE}
+        paused={rotateBlocked}
+        reducedMotion={reducedMotion}
+        onResolved={(modifier) => {
+          // The scene is decided; the reveal is only presentation. Record the points now
+          // so an unload during the reveal writes the score the player actually earned.
+          earnedScoreRef.current = modifier.scoreDelta;
+        }}
+        onDone={(modifier) => {
+          setPendingModifier(modifier);
+          // On a `?preview=portrait` boot there is no run behind the scene and no next
+          // level to spend the modifier on: we STAY on the resolved screen. Routing to
+          // END would show a run summary of a run nobody played, and re-entering the
+          // phase would loop the capture — a preview that loops is worse than none. The
+          // verdict tableau is also exactly what `lead-art` and `ux-designer` need to
+          // photograph, so staying is the useful behaviour, not just the safe one.
+          if (PORTRAIT_HARNESS_PREVIEW) return;
+          // THE RUN ENDS HERE, and so does its score. `scoreDelta` settles the scene
+          // that just played (hand-off §6.2), so the board is consulted on the total —
+          // a 1500-point IDENTIFIED can qualify, which is the whole finding B1.
+          setAppPhase(settleRunScore(modifier.scoreDelta) ? "NAME_ENTRY" : "END");
+        }}
       />,
       rotateBlocked,
     );
@@ -656,7 +964,7 @@ export function App(): JSX.Element {
     );
   }
 
-  const levelParams = buildLevelParams(selectedLevel, prefs);
+  const levelParams = buildLevelParams(selectedLevel, prefs, runModifier);
 
   return renderAppShell(
     <div

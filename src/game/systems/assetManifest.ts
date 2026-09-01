@@ -12,6 +12,7 @@ import {
 } from "@game/systems/narrativeSystem";
 import type { DiagramKind, GestureKind, NarrativeScene } from "@game/systems/narrativeSystem";
 import levelArt from "@game/levels/levelArt.json";
+import { FACE_CATALOGUE } from "@game/portraits";
 
 /**
  * Pure, deterministic asset manifest for the progressive loading screen. Builds
@@ -35,7 +36,12 @@ import levelArt from "@game/levels/levelArt.json";
  * not leak into `src/game` (ADR-0015), and a device must not preload the other fork's
  * panels. Any other string is a level id.
  */
-export type ManifestTarget = "menu" | "tutorial-desktop" | "tutorial-mobile" | (string & {});
+export type ManifestTarget =
+  | "menu"
+  | "tutorial-desktop"
+  | "tutorial-mobile"
+  | "portrait-robot"
+  | (string & {});
 
 // The three backdrop layers a level preloads, in draw order. Mirrors `LAYER_NAMES`
 // in levelArt.ts (and what LevelBackdrop actually loads) — duplicated as a local
@@ -415,8 +421,27 @@ function tutorialManifest(scene: NarrativeScene): readonly string[] {
 }
 
 /**
+ * The 40 sliced band PNGs of the portrait-robot scene (ADR-0080 D5), read off the
+ * catalogue so a path is never authored twice.
+ *
+ * The target face medallion needs NO extra asset: it is the truth composed from these
+ * same bands (gate A8 — the target is visible permanently, drawn from the catalogue),
+ * so nothing here depends on an art deliverable beyond the 40 files.
+ *
+ * `App.tsx` preloads this through the existing `useAssetPreloader` gate during
+ * `NARRATIVE_POST`, i.e. behind the framing lines and before the chrono can start: the
+ * scene never begins with a half-loaded face, which is what makes the "no feedback, pure
+ * observation" contract (gate A9/A16) honest. These paths are in NO level manifest, so a
+ * player who never reaches the scene never downloads them.
+ */
+function portraitManifest(): readonly string[] {
+  return dedupe(FACE_CATALOGUE.bands.flatMap((band) => band.variants.map((v) => v.asset)));
+}
+
+/**
  * The full de-duplicated, stably-ordered manifest to preload for a target:
  * - `"menu"` — just the menu backdrop.
+ * - `"portrait-robot"` — the 40 sliced band PNGs (see `portraitManifest`).
  * - `"tutorial-desktop"` / `"tutorial-mobile"` — the corresponding tutorial fork's
  *   assets (see `tutorialManifest`). The caller names the fork; this layer never
  *   looks at the device.
@@ -434,6 +459,7 @@ export function manifestFor(target: ManifestTarget): readonly string[] {
   }
   if (target === "tutorial-desktop") return tutorialManifest(TUTORIAL_NARRATIVE_DESKTOP);
   if (target === "tutorial-mobile") return tutorialManifest(TUTORIAL_NARRATIVE_MOBILE);
+  if (target === "portrait-robot") return portraitManifest();
 
   const level = levelConfigFor(target);
   const paths: string[] = [

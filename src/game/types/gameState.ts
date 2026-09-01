@@ -25,6 +25,17 @@ export interface GameState {
   readonly playerInvulnRemaining: number;
   readonly timeRemaining: number;
   readonly wave: number;
+  /**
+   * Seconds the FIRST wave is still held for (ADR-0079 D4) — the portrait-robot's
+   * payoff, made mechanical. Read once from `LevelParams.modifier.firstWaveDelaySeconds`
+   * at `createInitialState`, decremented by `dt`, and it gates the SINGLE wave-spawn
+   * branch of `tickGameState`: while it is live neither the spawn nor the wave rollover
+   * fires, so an empty street cannot silently inflate `wave`.
+   *
+   * `0` means "no hold", i.e. today's behaviour — a level built without a modifier is
+   * byte-for-byte the pre-feature build (the ADR-0051 D4 identity property).
+   */
+  readonly waveHoldRemaining: number;
   // Seconds elapsed since the level started (drives the scripted delivery
   // trigger). Deterministic accumulator, independent of `timeRemaining`.
   readonly elapsedSeconds: number;
