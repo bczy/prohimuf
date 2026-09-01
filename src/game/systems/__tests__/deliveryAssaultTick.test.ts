@@ -36,14 +36,6 @@ import { levelFacade } from "../../levels/__tests__/levelFacade";
 
 const DT = 1 / 60;
 const noFire = false;
-
-/**
- * A wave that was PLAYED and cleared — the only thing that rolls a wave over since the
- * panel's B2 fix (an empty enemy array satisfies `every()` vacuously and no longer counts).
- */
-function wiped(enemies: readonly Enemy[]): readonly Enemy[] {
-  return enemies.map((e) => ({ ...e, state: "DEAD" as const }));
-}
 const fire = true;
 
 function levelById(id: string): LevelConfig {
@@ -673,10 +665,10 @@ describe("AC12 — the reservation holds at every slot consumer (K-8)", () => {
       const level = levelById(id);
       const field = fieldFor(id);
       const reserved = reservedAssaultSlots(facade, spec);
-      const fresh = createInitialState(facade, paramsForLevel(level), level.roster);
-      // A CLEARED wave, not an empty street: since the panel's B2 fix an empty enemy
-      // array no longer rolls the wave over (`every()` on `[]` is vacuously true).
-      let state: GameState = { ...fresh, enemies: wiped(fresh.enemies) };
+      let state: GameState = {
+        ...createInitialState(facade, paramsForLevel(level), level.roster),
+        enemies: [],
+      };
       for (let wave = 2; wave <= 21; wave++) {
         state = tickGameState(
           state,
@@ -696,7 +688,7 @@ describe("AC12 — the reservation holds at every slot consumer (K-8)", () => {
         expect(state.wave).toBe(wave);
         expect(state.enemies.some((e) => reserved.includes(e.slotIndex))).toBe(false);
         // Next rollover.
-        state = { ...state, enemies: wiped(state.enemies) };
+        state = { ...state, enemies: [] };
       }
     },
   );
@@ -775,7 +767,7 @@ describe("AC12 — the reservation holds at every slot consumer (K-8)", () => {
     const state = tickGameState(
       {
         ...createInitialState(facade, paramsForLevel(level), level.roster),
-        enemies: wiped(createInitialState(facade, paramsForLevel(level), level.roster).enemies),
+        enemies: [],
         loot: crate,
       },
       noFire,

@@ -1,5 +1,3 @@
-import type { PortraitOutcome } from "@game/types/portraitRobot";
-
 /**
  * Intent token for a code-drawn animated gesture illustration (ADR-0020). Pure data:
  * the four values map 1:1 to render-side icons in `src/render/ui/GestureIcon.tsx`. The
@@ -454,54 +452,6 @@ export const POST_LEVEL_NARRATIVE: Record<string, NarrativeScene> = {
       { speaker: "DISPATCH", text: "Minuit dans deux minutes. Écoute la ville." },
       { speaker: "MUF", text: "...ça tient.", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
       { speaker: "DISPATCH", text: "Bonne année, Muf." },
-    ],
-  },
-};
-
-/**
- * The three OBLIGATORY portrait-robot recalls (ADR-0079 D5, gate A1b/A10), played in the
- * pre-level scene of the level that FOLLOWS the scene, before the usual DISPATCH
- * briefing. They are the playable proof that the scene served something: without them
- * gate A11 cuts the feature.
- *
- * Keyed by `PortraitOutcome` so the render lane picks *a scene by key* and never branches
- * on what the verdict MEANS (ADR-0079 A5). ≤ 4 lines each, skippable like any cutscene.
- *
- * Copy is `narrative-designer`'s, transcribed verbatim from
- * `docs/game-design/spec-portrait-robot-fiction.md` §5.3 — never paraphrased. No score
- * recap, no "tu as échoué", no energy figure in words (the HUD does that job), and
- * nobody triumphs.
- */
-export const PORTRAIT_ROBOT_NARRATIVE: Record<PortraitOutcome, NarrativeScene> = {
-  // The door turns him away — payoff: the next level's first wave is held.
-  IDENTIFIED: {
-    id: "portrait_robot_identified",
-    lines: [
-      { speaker: "KENZA", text: "Le type de l'autre fois s'est pointé à la porte." },
-      { speaker: "KENZA", text: "Le gars avait la page 23 dans la poche. Il l'a pas fait entrer." },
-      { speaker: "DISPATCH", text: "Ils sont sourds ce soir. Profite, ça durera pas." },
-    ],
-  },
-  // The door hesitates. Two lines, not three: a half result has no right to a full story.
-  PARTIAL: {
-    id: "portrait_robot_partial",
-    lines: [
-      { speaker: "KENZA", text: "La page 23 est sortie. La tête est à moitié bonne." },
-      { speaker: "DISPATCH", text: "Les portes regardent deux fois. C'est déjà ça." },
-    ],
-  },
-  // The beat that makes this scene not a cop's game: the network hurt ITSELF. Obligatory
-  // (gate A1b) — a regular refused at his own door, and the man got in.
-  FAILED: {
-    id: "portrait_robot_failed",
-    lines: [
-      { speaker: "KENZA", text: "Ils ont refusé Sam hier. À sa propre porte." },
-      {
-        speaker: "KENZA",
-        text: "Il vient depuis trois ans. Il avait juste la gueule de la page 23.",
-      },
-      { speaker: "MUF", text: "Et l'autre ?", image: MUF_RIDER_IMAGE, imageAlt: MUF_RIDER_ALT },
-      { speaker: "KENZA", text: "L'autre est entré. Il est resté jusqu'au jour." },
     ],
   },
 };

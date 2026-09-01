@@ -35,9 +35,6 @@ coverage/
 scripts/.dbg-*.jpg
 # Per-window crop evidence from the align-windows harness verification
 scripts/.dbg-crops/
-# scripts/slice-portrait-plate.mjs --explore-faces output — reconnaissance
-# only, uploaded as a CI artifact, never committed
-scripts/.dbg-portrait-explore/
 
 # CodeGraph local index (rebuilt per machine via `codegraph index`)
 .codegraph/
@@ -68,13 +65,3 @@ style-test-out/
 
 # Isolated worktrees created by background agents (transient)
 .claude/worktrees/
-
-# Sondes de recherche de prompt (transitoires, jamais du code de production).
-# `.plate-score.mjs` est le scoreur COMMUN d'une vague d'exploration : il génère
-# une planche depuis un prompt + graine et la note contre les gates de production
-# (fond, silhouette, mèches débordantes, front blanc, coutures). Les `.probe-NN.mjs`
-# sont les sondes d'une lane, une par hypothèse. Ils vivent le temps d'une vague et
-# sont supprimés après — s'ils s'avèrent durablement utiles, ils remontent dans
-# `scripts/` avec des tests, ils ne restent pas à la racine.
-.plate-score.mjs
-.probe-*.mjs

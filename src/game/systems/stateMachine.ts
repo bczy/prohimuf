@@ -41,7 +41,6 @@ import { applyEnergy, ENERGY_INITIAL } from "@game/systems/energySystem";
 import { createRunStats, foldRunStats } from "@game/systems/runStatsSystem";
 import { WEAPON_SPECS } from "@game/types/weapon";
 import type { LootSpec } from "@game/types/loot";
-import type { LevelModifier } from "@game/types/levelModifier";
 import { CORE_ARCHETYPES, archetype, buildWeightedFrom } from "@game/types/enemyTypes";
 import type { LevelRoster } from "@game/levels/levels";
 import { hostageBossMarginIssue, deliveryBossMarginIssue } from "@game/levels/validateLevel";
@@ -107,16 +106,6 @@ export interface LevelParams {
    * byte-for-byte identical to ADR-0040. Belliard-first for V1.
    */
   loot?: LootSpec | null;
-  /**
-   * The verdict of the interstitial scene that preceded this level (ADR-0079 D4).
-   * Absent / null ⇒ the build is BYTE-IDENTICAL to a run without any interstitial scene.
-   *
-   * The shell carries a value it never interprets; the only two effects it can have are
-   * spelled out in `createInitialState` below and nowhere else — `src/render` never maps
-   * an outcome to a number (ADR-0079 A5). It cannot cost a life: `LevelModifier` has no
-   * field for one (gate A1, story AC5).
-   */
-  modifier?: LevelModifier | null;
 }
 
 export const DEFAULT_LEVEL_PARAMS: LevelParams = {
@@ -139,15 +128,6 @@ export function createInitialState(
   const hostageQteSpec = params.hostageQte ?? null;
   const bossQteSpec = params.bossQte ?? null;
   const lootSpec = params.loot ?? null;
-  // The interstitial scene's residue (ADR-0079 D4), spent exactly once, here. Two
-  // effects, no third: the initial energy capital and the first-wave hold. Absent ⇒ both
-  // are the pre-feature values.
-  const modifier = params.modifier ?? null;
-  // Borné à 0 : une valeur négative ferait porter à l'état une durée de maintien
-  // absurde, que le tick décrémenterait sans jamais l'atteindre. Le verdict du portrait
-  // ne produit que 0/10/20, mais un niveau AUTEUR peut écrire ce champ — et le reste de
-  // cette couche est total par principe (Copilot review, 2026-08-11).
-  const waveHoldRemaining = Math.max(0, modifier?.firstWaveDelaySeconds ?? 0);
   // Reset the crate-id counter per session (MINEUR-2): unlike bullet/courier ids
   // (identity only), the loot id is the RNG seed for the slot+weapon pick
   // (lootSystem), so resetting it makes the "deterministic, replay-safe" claim true
@@ -197,30 +177,24 @@ export function createInitialState(
     // included (D2.8 / K-8): the ignore case never rolls a wave over (no kills ⇒
     // `allDead` false), so wave 1's seating IS the seating the objective runs
     // against. No delivery ⇒ no reservation ⇒ the legacy `spawnWave` path.
-    // Held first wave (ADR-0079 D4): the street starts EMPTY and the same guard that
-    // gates the tick's spawn branch decides when wave 1 seats. Seeding a wave here and
-    // hiding it would be a second rule.
-    enemies:
-      waveHoldRemaining > 0
-        ? []
-        : spawnWave(1, facade, windowPoolFor(roster), reservedAssaultSlots(facade, deliverySpec)),
+    enemies: spawnWave(
+      1,
+      facade,
+      windowPoolFor(roster),
+      reservedAssaultSlots(facade, deliverySpec),
+    ),
     bullets: [],
     score: 0,
     lives: params.lives,
     playerInvulnRemaining: 0,
     timeRemaining: params.timeSeconds,
     wave: 1,
-    waveHoldRemaining,
     elapsedSeconds: 0,
     kills: 0,
     couriers: [],
     courierTimer: FIRST_COURIER_DELAY,
     couriersSpawned: 0,
-    // The existing clamp is REUSED (ADR-0079 D4), so a malus can never produce a
-    // negative or out-of-range capital — and a hypothetical bonus would be silently
-    // clamped away, which is precisely why gate A1c deleted the reward rather than
-    // making it ineffective.
-    energy: applyEnergy(ENERGY_INITIAL, modifier?.energyDelta ?? 0),
+    energy: ENERGY_INITIAL,
     qteSpec: hostageQteSpec,
     qte: null,
     bossQteSpec: bossQteSpec,
@@ -352,26 +326,8 @@ export function tickGameState(
     };
   }
 
-  // The held first wave (ADR-0079 D4) is a GIFT OF TIME: it must not be paid for with the
-  // level's own clock, or the payoff funds itself and the reward is nil. So while the hold
-  // runs, the THREE level clocks — `elapsedSeconds` (the delivery/QTE script), `timeRemaining`
-  // (the level timer) and `courierTimer` (the street's spawn clock) — are frozen, exactly as
-  // they are during a QTE beat: the street is empty, nothing the level scripts can happen yet.
-  // Everything else keeps ticking (crosshair, bullets, energy): the player may move and shoot
-  // into an empty street, they simply do not spend the level for it.
-  // Decremented HERE rather than at the spawn guard below so both readers see one value.
-  const waveHoldRemaining = Math.max(0, state.waveHoldRemaining - delta);
-  // The frame is SPLIT at the hold's boundary, not resolved all-or-nothing. On the tick
-  // the hold expires it rarely lands on a frame edge — 0.01 s of hold left against a
-  // 0.02 s frame — and `waveHoldRemaining > 0 ? 0 : delta` then handed the level clocks
-  // the WHOLE frame, including the part that happened while the hold was still running.
-  // Up to one frame of the payoff paid for itself, on the very tick the comment above
-  // says the freeze must last "exactly" the hold's duration (panel MINEUR).
-  const holdConsumed = Math.min(delta, state.waveHoldRemaining);
-  const levelDelta = delta - holdConsumed;
-
   // Deterministic elapsed-time accumulator, drives the scripted delivery trigger.
-  const elapsedSeconds = state.elapsedSeconds + levelDelta;
+  const elapsedSeconds = state.elapsedSeconds + delta;
 
   // 1. Update crosshair
   const crosshair = moveCrosshair(mouseX, mouseY);
@@ -440,37 +396,19 @@ export function tickGameState(
   // level with no delivery, so those levels stay on the legacy paths.
   const reservedSlots = reservedAssaultSlots(facade, state.deliverySpec);
 
-  // 3. Spawn new wave if all enemies dead — unless the first wave is still HELD
-  // (ADR-0079 D4). ONE guard on ONE branch: while the hold is live neither the spawn nor
-  // the wave rollover fires, both of which sit downstream of `allDead`, so an empty
-  // street cannot silently inflate `wave` to 4 before the first enemy appears. The hold
-  // is decremented above and the guard reads the POST-decrement value, so the wave seats on
-  // the tick the hold reaches 0 rather than one frame later.
-  //
-  // `tickedEnemies.length > 0` is NOT belt-and-braces: `every()` on an EMPTY array is `true`,
-  // so on the tick the hold expires the still-empty street read as "all dead" and rolled the
-  // wave over — the level the player EARNED started at wave 2 and the payoff became a
-  // punishment. A wave rollover requires a wave that was actually played.
-  const allDead =
-    waveHoldRemaining <= 0 &&
-    tickedEnemies.length > 0 &&
-    tickedEnemies.every((e) => e.state === "DEAD");
-  // The hold's own release: the tick it reaches 0, wave 1 SEATS — same wave number, the
-  // one `createInitialState` refused to seat. It is a distinct event from a rollover
-  // precisely because it must not increment `wave`.
-  const holdReleased = state.waveHoldRemaining > 0 && waveHoldRemaining <= 0;
+  // 3. Spawn new wave if all enemies dead
+  const allDead = tickedEnemies.every((e) => e.state === "DEAD");
   const newWave = allDead ? state.wave + 1 : state.wave;
   // On a wave rollover, exclude the live crate's slot so a fresh enemy never seats
   // on it (ADR-0055 D5 co-location guard, direction b). `state.loot` is the pre-tick
   // crate; its slot is stable across the tick. The assault's reserved slots are
   // excluded ALONGSIDE it — a UNION, never a replacement, or D5 reopens in silence.
-  const activeEnemies: readonly Enemy[] =
-    allDead || holdReleased
-      ? spawnWave(newWave, facade, windowPoolFor(roster), [
-          ...(state.loot !== null ? [state.loot.slotIndex] : []),
-          ...reservedSlots,
-        ])
-      : tickedEnemies;
+  const activeEnemies: readonly Enemy[] = allDead
+    ? spawnWave(newWave, facade, windowPoolFor(roster), [
+        ...(state.loot !== null ? [state.loot.slotIndex] : []),
+        ...reservedSlots,
+      ])
+    : tickedEnemies;
 
   // 3b. Armament crate (ADR-0055 D5 / ADR-0056): advance / spawn the LOOT crate.
   // Runs only on the normal-tick path, so a QTE freeze never spawns or resolves a
@@ -489,13 +427,7 @@ export function tickGameState(
     state.loot,
     state.lootSpec,
     state.lootTimer,
-    // `levelDelta`, NOT `delta`: the crate clock is a LEVEL script, so it freezes for
-    // the same reason and the same duration as `courierTimer` and `timeRemaining`
-    // during the wave hold. With the raw delta it kept counting, and since the street
-    // is empty during the hold the spawn guard is vacuously true for every column —
-    // a crate appeared on an empty street before wave 1's first enemy, contradicting
-    // ADR-0079 D4's "nothing the level scripts can happen yet" (panel MAJEUR).
-    levelDelta,
+    delta,
     activeEnemies,
     facade,
     _nextLootId,
@@ -516,7 +448,7 @@ export function tickGameState(
   let couriersSpawned = state.couriersSpawned;
   if (courierField !== undefined) {
     couriers = tickCouriers(couriers, delta, courierField);
-    courierTimer -= levelDelta;
+    courierTimer -= delta;
     // Per-level roster gate: only spawn couriers when this level's street roster
     // includes "courier" (absent roster ⇒ legacy courier-only behaviour).
     if (courierTimer <= 0 && streetSpawnsCourier(roster?.streetSpawns)) {
@@ -747,7 +679,6 @@ export function tickGameState(
       lives: 0,
       score: newScore,
       wave: newWave,
-      waveHoldRemaining,
       phase: "GAME_OVER",
       weapon: trigger.weapon,
       loot: trigger.loot,
@@ -759,7 +690,7 @@ export function tickGameState(
   }
 
   // 9. Tick timer (bonus enemies add seconds back)
-  const timeRemaining = tickTimer(state.timeRemaining, levelDelta) + trigger.timeDelta;
+  const timeRemaining = tickTimer(state.timeRemaining, delta) + trigger.timeDelta;
   if (timeRemaining <= 0) {
     // Timer expired. On a BOSS level (spec authored, none fired yet) the boss is the level's
     // TIMED FINALE (ADR-0059): CREATE it and stay in-play (phase PLAYING, timeRemaining 0) so the
@@ -794,7 +725,6 @@ export function tickGameState(
       lives: newLives,
       score: newScore,
       wave: newWave,
-      waveHoldRemaining,
       timeRemaining: 0,
       phase: finaleSpec !== null ? "PLAYING" : "GAME_OVER",
       weapon: trigger.weapon,
@@ -841,7 +771,6 @@ export function tickGameState(
     lives: newLives,
     timeRemaining,
     wave: newWave,
-    waveHoldRemaining,
     // Weapon+loot resolved this tick (ADR-0055): active weapon / stock / burst,
     // the crate channel, and the one-tick empty flag.
     weapon: trigger.weapon,
