@@ -37,95 +37,6 @@ function authHeaders(url) {
   return {};
 }
 
-// HTTP statuses that no amount of retrying fixes: a rejected/authenticated
-// request stays rejected until a HUMAN acts (recharge the account, fix the
-// token, fix the prompt). Backoff exists for transient failures — real 5xx,
-// timeouts, dropped connections — and burning it on one of these just delays
-// the actionable message. 402 heads this list because it's the one that
-// actually happened (empty Pollinations balance, see PollinationsFetchError
-// below for the wrinkle in how it's reported).
-const NON_RETRYABLE_STATUSES = new Set([400, 401, 402, 403]);
-
-// One-line, human-actionable summaries for the statuses in
-// NON_RETRYABLE_STATUSES. Anything not listed here falls back to a generic
-// "won't retry" line that still includes the raw body for diagnosis.
-const NON_RETRYABLE_ADVICE = {
-  400: "request rejected as malformed (400 Bad Request) — check the prompt/URL, no retry will fix this",
-  401: "authentication rejected (401 Unauthorized) — POLLINATIONS_TOKEN is missing or invalid, no retry will fix this",
-  402: "Pollinations account balance is empty (402 Payment Required) — recharge the account; no image was generated",
-  403: "authentication rejected (403 Forbidden) — POLLINATIONS_TOKEN lacks access, no retry will fix this",
-};
-
-/** Thrown by `fetchImage` on any non-2xx response. Carries both the literal
- * HTTP status and the "real" status the API actually meant — see
- * `extractRealStatus` — so `fetchWithRetry` can decide retryable vs. not
- * without callers re-parsing the message string. */
-export class PollinationsFetchError extends Error {
-  constructor(message, { httpStatus, realStatus, retryable }) {
-    super(message);
-    this.name = "PollinationsFetchError";
-    this.httpStatus = httpStatus;
-    this.realStatus = realStatus;
-    this.retryable = retryable;
-  }
-}
-
-// The API has been observed wrapping a real error status INSIDE an HTTP 500
-// body — and NOT as a flat string. The actual observed shape (CI run
-// 4be9944c) is a JSON object whose `message` field is itself a string
-// containing prose plus a SECOND, JSON.stringify-escaped JSON object:
-//   {"error":"Internal Server Error",
-//    "message":"Gen Sana request failed with 402: {\"success\":false,\"error\":{...},\"status\":402}",
-//    "debug":null,...}
-// A single regex over the raw body (`"status":\d+`) never matches, because
-// the actual bytes are `\"status\":402` (escaped) — an unescaping regex
-// patch would work today and break at the next nesting level the service
-// decides to add. So this parses properly instead: JSON.parse the body, and
-// whenever a string VALUE looks like it contains embedded JSON, JSON.parse
-// that too, recursively, bounded, with try/catch collapsing to "not found"
-// at every level rather than throwing.
-const MAX_JSON_UNWRAP_DEPTH = 4;
-
-function parseEmbeddedJson(str) {
-  const start = str.indexOf("{");
-  const end = str.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) return undefined;
-  try {
-    return JSON.parse(str.slice(start, end + 1));
-  } catch {
-    return undefined;
-  }
-}
-
-function findStatusField(node, depth) {
-  if (depth > MAX_JSON_UNWRAP_DEPTH || node == null) return undefined;
-  if (typeof node === "string") {
-    const embedded = parseEmbeddedJson(node);
-    return embedded === undefined ? undefined : findStatusField(embedded, depth + 1);
-  }
-  if (typeof node !== "object") return undefined;
-  if (!Array.isArray(node) && typeof node.status === "number") return node.status;
-  for (const value of Object.values(node)) {
-    const found = findStatusField(value, depth + 1);
-    if (found !== undefined) return found;
-  }
-  return undefined;
-}
-
-function extractRealStatus(httpStatus, body) {
-  let root;
-  try {
-    root = JSON.parse(body);
-  } catch {
-    // Body isn't valid JSON on its own (e.g. truncated, or prose-prefixed
-    // like the inner `message` string) — fall back to hunting for an
-    // embedded object directly in the raw text.
-    root = parseEmbeddedJson(body);
-  }
-  const found = findStatusField(root, 0);
-  return found === undefined ? httpStatus : found;
-}
-
 export function fetchImage(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     const req = https
@@ -149,50 +60,14 @@ export function fetchImage(url, redirects = 0) {
           const errChunks = [];
           res.on("data", (c) => errChunks.push(c));
           res.on("end", () => {
-            // Extract from the FULL body — the embedded-JSON status can sit
-            // past the 500-char display cap — then truncate only what goes
-            // into the human-facing message.
-            const fullBody = Buffer.concat(errChunks).toString("utf8");
-            const body = fullBody.slice(0, 500);
-            const realStatus = extractRealStatus(res.statusCode, fullBody);
-            const retryable = !NON_RETRYABLE_STATUSES.has(realStatus);
-            const advice = NON_RETRYABLE_ADVICE[realStatus];
-            const message = advice
-              ? advice
-              : `HTTP ${res.statusCode}${realStatus !== res.statusCode ? ` (real status ${realStatus} in body)` : ""}` +
-                `${body ? ` — ${body}` : ""}`;
-            reject(
-              new PollinationsFetchError(message, {
-                httpStatus: res.statusCode,
-                realStatus,
-                retryable,
-              }),
-            );
+            const body = Buffer.concat(errChunks).toString("utf8").slice(0, 500);
+            reject(new Error(`HTTP ${res.statusCode}${body ? ` — ${body}` : ""}`));
           });
           return;
         }
         const chunks = [];
         res.on("data", (c) => chunks.push(c));
-        res.on("end", () => {
-          const buf = Buffer.concat(chunks);
-          // Attached as plain own properties, not a new return shape: a
-          // Buffer is still a Buffer to every existing caller (fs.writeFile,
-          // PNG.sync.read, @napi-rs/canvas's loadImage, …), none of which
-          // enumerate or care about extra properties. This is how a 200
-          // response's httpStatus/Content-Type reach a caller that needs to
-          // validate the body BEFORE handing it to a format-specific decoder
-          // (see slice-portrait-plate.mjs's ensurePngBuffer) without changing
-          // fetchImage/fetchWithRetry's contract for the other 15 call sites.
-          buf.httpStatus = res.statusCode;
-          buf.contentType = res.headers["content-type"];
-          // Full response headers, same attach-as-own-property pattern — RE-
-          // PANEL 2026-08-06: distinguishing "the service ignored our prompt"
-          // from "we didn't send what we think we sent" needs the response's
-          // own cache signals (x-cache/age/cf-cache-status) alongside the
-          // request URL, not just content-type.
-          buf.responseHeaders = res.headers;
-          resolve(buf);
-        });
+        res.on("end", () => resolve(Buffer.concat(chunks)));
       })
       .on("error", reject);
     req.setTimeout(120000, () => req.destroy(new Error("request timeout")));
@@ -204,12 +79,6 @@ export async function fetchWithRetry(url, retries = 5) {
     try {
       return await fetchImage(url);
     } catch (e) {
-      if (e instanceof PollinationsFetchError && !e.retryable) {
-        // A payment/auth/malformed-request rejection is not transient —
-        // retrying just spends the backoff budget (previously up to 3m30s
-        // across 4 waits) waiting out an error that never resolves itself.
-        throw e;
-      }
       if (i < retries - 1) {
         const wait = (i + 1) * 8000;
         console.log(`  [retry ${i + 1}] ${e.message} — wait ${wait / 1000}s`);
