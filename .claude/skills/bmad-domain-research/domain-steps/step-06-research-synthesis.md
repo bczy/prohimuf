@@ -5,16 +5,12 @@
 - 🛑 NEVER generate content without web search verification
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C',
- ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
 - ✅ Search the web to verify and supplement your knowledge with current facts
-- 📋 YOU ARE A DOMAIN RESEARCH STRATEGIST,
- not content generator
+- 📋 YOU ARE A DOMAIN RESEARCH STRATEGIST, not content generator
 - 💬 FOCUS on comprehensive synthesis and authoritative conclusions
 - 🔍 WEB SEARCH REQUIRED - verify current facts against live sources
-- 📄 PRODUCE COMPREHENSIVE DOCUMENT with narrative intro,
- TOC,
- and summary
+- 📄 PRODUCE COMPREHENSIVE DOCUMENT with narrative intro, TOC, and summary
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
 
 ## EXECUTION PROTOCOLS:
@@ -22,34 +18,22 @@
 - 🎯 Show web search analysis before presenting findings
 - ⚠️ Present [C] complete option after synthesis content generation
 - 💾 ONLY save when user chooses C (Complete)
-- 📖 Update frontmatter `stepsCompleted: [1,
- 2,
- 3,
- 4,
- 5,
- 6]` before completing workflow
+- 📖 Update frontmatter `stepsCompleted: [1, 2, 3, 4, 5, 6]` before completing workflow
 - 🚫 FORBIDDEN to complete workflow until C is selected
-- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro,
- TOC,
- and summary
+- 📚 GENERATE COMPLETE DOCUMENT STRUCTURE with intro, TOC, and summary
 
 ## CONTEXT BOUNDARIES:
 
 - Current document and frontmatter from previous steps are available
 - **Research topic = "{{research_topic}}"** - comprehensive domain analysis
 - **Research goals = "{{research_goals}}"** - achieved through exhaustive research
-- All domain research sections have been completed (analysis,
- regulatory,
- technical)
+- All domain research sections have been completed (analysis, regulatory, technical)
 - Web search capabilities with source verification are enabled
 - This is the final synthesis step producing the complete research document
 
 ## YOUR TASK:
 
-Produce a comprehensive,
- authoritative research document on **{{research_topic}}** with compelling narrative introduction,
- detailed TOC,
- and executive summary based on exhaustive domain research.
+Produce a comprehensive, authoritative research document on **{{research_topic}}** with compelling narrative introduction, detailed TOC, and executive summary based on exhaustive domain research.
 
 ## COMPREHENSIVE DOCUMENT SYNTHESIS:
 
@@ -86,8 +70,7 @@ Produce a comprehensive,
 - Establish research significance and timeliness
 - Outline comprehensive research methodology
 - Preview key findings and strategic implications
-- Set professional,
- authoritative tone
+- Set professional, authoritative tone
 
 **Web Search for Introduction Context:**
 Search the web: "{{research_topic}} significance importance"
@@ -313,9 +296,7 @@ _Methodology Transparency: [Complete transparency about research approach]_
 ### Detailed Data Tables
 
 [Comprehensive data tables supporting research findings]
-_Market Data Tables: [Detailed market size,
- growth,
- and segmentation data]_
+_Market Data Tables: [Detailed market size, growth, and segmentation data]_
 _Technology Adoption Data: [Detailed technology adoption and trend data]_
 _Regulatory Reference Tables: [Complete regulatory requirements and compliance data]_
 
@@ -358,8 +339,7 @@ _This comprehensive research document serves as an authoritative reference on {{
 
 **Document Completion Presentation:**
 
-"I've completed the **comprehensive research document synthesis** for **{{research_topic}}**,
- producing an authoritative research document with:
+"I've completed the **comprehensive research document synthesis** for **{{research_topic}}**, producing an authoritative research document with:
 
 **Document Features:**
 
@@ -393,22 +373,15 @@ _This comprehensive research document serves as an authoritative reference on {{
 
 #### If 'C' (Complete Research):
 
-- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope,
- key findings,
- and a pointer to the full executive summary in the Research Synthesis section
+- **Replace** the template placeholder `[Research overview and methodology will be appended here]` in the `## Research Overview` section near the top of the document with a concise 2-3 paragraph overview summarizing the research scope, key findings, and a pointer to the full executive summary in the Research Synthesis section
 - Append the complete document to the research file
-- Update frontmatter: `stepsCompleted: [1,
- 2,
- 3,
- 4,
- 5]`
+- Update frontmatter: `stepsCompleted: [1, 2, 3, 4, 5]`
 - Complete the domain research workflow
 - Provide final document delivery confirmation
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C',
- append the complete comprehensive research document using the full structure above. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
+When user selects 'C', append the complete comprehensive research document using the full structure above. Also replace the `[Research overview and methodology will be appended here]` placeholder in the Research Overview section at the top of the document.
 
 ## SUCCESS METRICS:
 
@@ -454,9 +427,7 @@ When 'C' is selected:
 
 - All domain research steps completed (1-5)
 - Comprehensive domain research document generated
-- Professional document structure with intro,
- TOC,
- and summary
+- Professional document structure with intro, TOC, and summary
 - All sections appended with source citations
 - Domain research workflow status updated to complete
 - Final comprehensive research document delivered to user
@@ -469,5 +440,11 @@ Complete authoritative research document on {{research_topic}} that:
 - Provides strategic insights for informed decision-making
 - Serves as reference document for continued use
 - Maintains highest research quality standards
+
+## On Complete
+
+Run: `python3 {project-root}/_bmad/scripts/resolve_customization.py --skill {skill-root} --key workflow.on_complete`
+
+If the resolved `workflow.on_complete` is non-empty, follow it as the final terminal instruction before exiting.
 
 Congratulations on completing comprehensive domain research! 🎉

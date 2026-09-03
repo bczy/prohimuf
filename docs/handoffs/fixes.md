@@ -8,6 +8,20 @@ One line per fix-lane cycle (COLLABORATION.md §fix lane). Newest first.
 
 ---
 
+- 2026-09-01 · claude/install-fmk-bmad-gds-da76fa · dev-tooling-assets · installed the
+  BMGD "Game Dev Studio" module (`gds` v0.7.2, npm `bmad-game-dev-studio`, sha-pinned in
+  `_bmad/_config/manifest.yaml`) via `npx bmad-method@6.10.0 install --modules bmm,gds
+--tools claude-code --action update -y` — core/bmm untouched (6.10.0, "no change"), 33
+  new `gds-*` skills + regenerated `bmad-*` skills under `.claude/skills/` (new 6.10
+  generation format; the old copies dated from an earlier CLI). Hand-fixed the generated
+  `_bmad/gds/config.yaml` (project_name `prohimuf`, not the worktree name;
+  primary_platform `other` — muf is a web/R3F game, not Unity/Unreal/Godot). Realigned
+  the fiches to the REAL skill names: the module ships `gds-*`, not the `bmgd-*` names
+  the fiches anticipated (`game-designer` → `gds-create-game-brief`/`gds-gdd`,
+  `narrative-designer` → `gds-create-narrative`, `producer` →
+  `gds-sprint-planning`/`-status`) + CLAUDE.md/AGENTS.md version bump to v6.10 · checks:
+  crew-sync re-pin, check-agents-infographic FRESH (23 sources); no src/ change so no
+  tsc/vitest · review: pending (branch PR)
 - 2026-07-30 · fix/delivery-boss-guard (PR #152) · dev-gameplay · authoring guard: a
   timed-finale boss can no longer orphan a delivery in flight (root cause: the `bossQte`
   branch of `tickGameState` early-returns before the delivery block and

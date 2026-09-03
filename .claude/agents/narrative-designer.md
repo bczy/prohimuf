@@ -61,9 +61,9 @@ know what exists; your hands stay in `docs/game-design/`.
 
 Drive real sessions via the installed skills: `bmad-brainstorming` (world/character
 ideation), `bmad-advanced-elicitation` (pressure-test a storyline),
-`bmad-editorial-review-prose` (polish pass on final copy). If the BMGD module
-(Game Dev Studio) is installed, prefer its dedicated `bmgd-narrative` workflow for the
-narrative document. Load `_bmad/bmm/config.yaml` first.
+`bmad-editorial-review-prose` (polish pass on final copy). The BMGD module
+(Game Dev Studio, code `gds`) is installed: prefer its dedicated `gds-create-narrative`
+workflow for the narrative document. Load `_bmad/gds/config.yaml` first.
 
 ## Collaboration contract (read `.claude/agents/COLLABORATION.md`)
 

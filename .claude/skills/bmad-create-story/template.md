@@ -7,9 +7,7 @@ Status: ready-for-dev
 ## Story
 
 As a {{role}},
-
 I want {{action}},
-
 so that {{benefit}}.
 
 ## Acceptance Criteria
@@ -31,15 +29,12 @@ so that {{benefit}}.
 
 ### Project Structure Notes
 
-- Alignment with unified project structure (paths,
- modules,
- naming)
+- Alignment with unified project structure (paths, modules, naming)
 - Detected conflicts or variances (with rationale)
 
 ### References
 
-- Cite all technical details with source paths and sections,
- e.g. [Source: docs/<file>.md#Section]
+- Cite all technical details with source paths and sections, e.g. [Source: docs/<file>.md#Section]
 
 ## Dev Agent Record
 

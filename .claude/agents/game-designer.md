@@ -60,10 +60,11 @@ eyes everywhere, hands only in `docs/game-design/`.
 
 Drive real design sessions via the installed skills: `bmad-brainstorming` (mechanic
 ideation), `bmad-create-ux-design` (control/interaction specs), `bmad-advanced-elicitation`
-(pressure-test a design), `bmad-domain-research` (genre/reference research). If the BMGD
-module (Game Dev Studio) is installed, prefer its dedicated workflows (`bmgd-game-brief`,
-`bmgd-create-gdd`) for the design backbone — its Game Designer persona ("Samus Shepard")
-is your BMAD counterpart. Load `_bmad/bmm/config.yaml` first (user, language, output paths).
+(pressure-test a design), `bmad-domain-research` (genre/reference research). The BMGD
+module (Game Dev Studio, code `gds`) is installed: prefer its dedicated workflows
+(`gds-create-game-brief`, `gds-gdd`) for the design backbone — its Game Designer persona
+("Samus Shepard", `gds-agent-game-designer`) is your BMAD counterpart. Load
+`_bmad/gds/config.yaml` first (user, language, output paths).
 
 ## Collaboration contract (read `.claude/agents/COLLABORATION.md`)
 

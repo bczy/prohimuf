@@ -5,11 +5,9 @@
 - 🛑 NEVER generate content without user confirmation
 
 - 📖 CRITICAL: ALWAYS read the complete step file before taking any action - partial understanding leads to incomplete decisions
-- 🔄 CRITICAL: When loading next step with 'C',
- ensure the entire file is read and understood before proceeding
+- 🔄 CRITICAL: When loading next step with 'C', ensure the entire file is read and understood before proceeding
 - ✅ FOCUS EXCLUSIVELY on confirming technical research scope and approach
-- 📋 YOU ARE A TECHNICAL RESEARCH PLANNER,
- not content generator
+- 📋 YOU ARE A TECHNICAL RESEARCH PLANNER, not content generator
 - 💬 ACKNOWLEDGE and CONFIRM understanding of technical research goals
 - 🔍 This is SCOPE CONFIRMATION ONLY - no web research yet
 - ✅ YOU MUST ALWAYS SPEAK OUTPUT In your Agent communication style with the config `{communication_language}`
@@ -43,22 +41,11 @@ Start with technical scope understanding:
 
 **Technical Research Scope:**
 
-- **Architecture Analysis**: System design patterns,
- frameworks,
- and architectural decisions
-- **Implementation Approaches**: Development methodologies,
- coding patterns,
- and best practices
-- **Technology Stack**: Languages,
- frameworks,
- tools,
- and platforms relevant to {{research_topic}}
-- **Integration Patterns**: APIs,
- communication protocols,
- and system interoperability
-- **Performance Considerations**: Scalability,
- optimization,
- and performance patterns
+- **Architecture Analysis**: System design patterns, frameworks, and architectural decisions
+- **Implementation Approaches**: Development methodologies, coding patterns, and best practices
+- **Technology Stack**: Languages, frameworks, tools, and platforms relevant to {{research_topic}}
+- **Integration Patterns**: APIs, communication protocols, and system interoperability
+- **Performance Considerations**: Scalability, optimization, and performance patterns
 
 **Research Approach:**
 
@@ -72,24 +59,13 @@ Start with technical scope understanding:
 Present clear scope confirmation:
 "**Technical Research Scope Confirmation:**
 
-For **{{research_topic}}**,
- I will research:
+For **{{research_topic}}**, I will research:
 
-✅ **Architecture Analysis** - design patterns,
- frameworks,
- system architecture
-✅ **Implementation Approaches** - development methodologies,
- coding patterns
-✅ **Technology Stack** - languages,
- frameworks,
- tools,
- platforms
-✅ **Integration Patterns** - APIs,
- protocols,
- interoperability
-✅ **Performance Considerations** - scalability,
- optimization,
- patterns
+✅ **Architecture Analysis** - design patterns, frameworks, system architecture
+✅ **Implementation Approaches** - development methodologies, coding patterns
+✅ **Technology Stack** - languages, frameworks, tools, platforms
+✅ **Integration Patterns** - APIs, protocols, interoperability
+✅ **Performance Considerations** - scalability, optimization, patterns
 
 **All claims verified against current public sources.**
 
@@ -106,8 +82,7 @@ For **{{research_topic}}**,
 
 ## APPEND TO DOCUMENT:
 
-When user selects 'C',
- append scope confirmation:
+When user selects 'C', append scope confirmation:
 
 ```markdown
 ## Technical Research Scope Confirmation
@@ -117,21 +92,11 @@ When user selects 'C',
 
 **Technical Research Scope:**
 
-- Architecture Analysis - design patterns,
- frameworks,
- system architecture
-- Implementation Approaches - development methodologies,
- coding patterns
-- Technology Stack - languages,
- frameworks,
- tools,
- platforms
-- Integration Patterns - APIs,
- protocols,
- interoperability
-- Performance Considerations - scalability,
- optimization,
- patterns
+- Architecture Analysis - design patterns, frameworks, system architecture
+- Implementation Approaches - development methodologies, coding patterns
+- Technology Stack - languages, frameworks, tools, platforms
+- Integration Patterns - APIs, protocols, interoperability
+- Performance Considerations - scalability, optimization, patterns
 
 **Research Methodology:**
 
@@ -167,8 +132,6 @@ When user selects 'C',
 
 ## NEXT STEP:
 
-After user selects 'C',
- load `./step-02-technical-overview.md` to begin technology stack analysis.
+After user selects 'C', load `./step-02-technical-overview.md` to begin technology stack analysis.
 
-Remember: This is SCOPE CONFIRMATION ONLY - no actual technical research yet,
- just confirming the research approach and scope!
+Remember: This is SCOPE CONFIRMATION ONLY - no actual technical research yet, just confirming the research approach and scope!
