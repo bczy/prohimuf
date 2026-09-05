@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>muf — Registre des ADR</title>
+    <!--
+      Page statique GÉNÉRÉE par scripts/gen-adr-index.mjs à partir des fichiers
+      docs/adr/NNNN-*.md. NE PAS ÉDITER À LA MAIN : lancer `node scripts/gen-adr-index.mjs --write`.
+      La CI (`--check`) échoue si cette page ou l'index du README est périmé.
+    -->
+    <style>
+      :root {
+        --paper: #f2f0e9;
+        --paper-2: #e8e5da;
+        --ink: #0a0a0a;
+        --grey: #6f6a5f;
+        --hair: #cfc9b8;
+        --cyan: #00c9c0;
+        --magenta: #ff2bd6;
+        --acid: #9fe000;
+        --rule: #0a0a0a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: ui-sans-serif, "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: clamp(20px, 4vw, 48px) clamp(14px, 4vw, 36px) 72px; }
+      header {
+        border: 3px solid var(--rule);
+        background: var(--paper);
+        box-shadow: 8px 8px 0 var(--rule);
+        padding: clamp(16px, 3vw, 28px);
+      }
+      .eyebrow {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--grey);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+        justify-content: space-between;
+      }
+      h1 {
+        margin: 0.28em 0 0.14em;
+        font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 800;
+        font-stretch: condensed;
+        text-transform: uppercase;
+        letter-spacing: -0.01em;
+        line-height: 0.92;
+        font-size: clamp(36px, 8vw, 78px);
+      }
+      h1 .neon { background: var(--acid); color: #0a0a0a; padding: 0 0.12em; }
+      .dek { max-width: 62ch; color: var(--grey); margin: 8px 0 0; }
+      .dek code, td code { font-family: ui-monospace, monospace; font-size: 0.86em; background: #0000000f; padding: 0 3px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 24px 0 12px; }
+      .search { flex: 1 1 240px; display: flex; align-items: center; gap: 8px; border: 2px solid var(--rule); background: var(--paper); padding: 8px 12px; }
+      .search input { border: 0; background: transparent; color: var(--ink); font: inherit; width: 100%; outline: none; }
+      .legend { display: flex; flex-wrap: wrap; gap: 8px; }
+      .pill {
+        font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+        padding: 4px 9px; border: 1.5px solid var(--rule); display: inline-flex; align-items: center; gap: 6px; background: var(--paper);
+      }
+      .pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--dot, var(--ink)); }
+      .pill.accepted { --dot: var(--acid); }
+      .pill.proposed { --dot: var(--cyan); }
+      .pill.superseded { --dot: var(--magenta); }
+      .tablecard { border: 3px solid var(--rule); box-shadow: 8px 8px 0 var(--rule); background: var(--paper); overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; min-width: 720px; }
+      thead th {
+        position: sticky; top: 0; background: var(--ink); color: var(--paper); text-align: left;
+        font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+        padding: 11px 15px; border-bottom: 3px solid var(--rule);
+      }
+      tbody td { padding: 12px 15px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+      tbody tr:last-child td { border-bottom: 0; }
+      tbody tr:nth-child(even) { background: var(--paper-2); }
+      tbody tr:hover { background: #9fe0002e; }
+      td.num { width: 96px; white-space: nowrap; }
+      a.num {
+        font-family: ui-monospace, monospace; font-weight: 700; color: var(--ink); text-decoration: none;
+        border: 2px solid var(--rule); padding: 3px 8px; display: inline-flex; gap: 5px; background: var(--paper); box-shadow: 2px 2px 0 var(--rule);
+      }
+      a.num:hover, a.num:focus-visible { background: var(--acid); outline: none; }
+      td.title { width: 26%; font-weight: 650; }
+      .summary { color: var(--grey); font-size: 13.5px; }
+      td.status { width: 190px; }
+      .empty { padding: 26px 15px; color: var(--grey); font-family: ui-monospace, monospace; }
+      footer { margin-top: 22px; font-family: ui-monospace, monospace; font-size: 12px; color: var(--grey); display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
+      footer a { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="eyebrow">
+          <span><strong>muf</strong> — Prohibition, Paris clandestin '98</span>
+          <span>Architecture Decision Records</span>
+        </div>
+        <h1>Registre des <span class="neon">ADR</span></h1>
+        <p class="dek">
+          Généré automatiquement depuis <code>docs/adr/</code>. Un ADR en brouillon apparaît dès que son fichier existe
+          (statut <code>Proposed</code>). Le numéro ouvre le fichier sur GitHub.
+        </p>
+      </header>
+      <div class="controls">
+        <label class="search">
+          <span aria-hidden="true">▚</span>
+          <input id="q" type="text" placeholder="Filtrer par numéro, titre, mot-clé…" autocomplete="off" aria-label="Filtrer" />
+          <span id="count" style="font-family: ui-monospace, monospace; color: var(--grey); font-size: 13px"></span>
+        </label>
+        <div class="legend" aria-hidden="true">
+          <span class="pill accepted">Accepted</span>
+          <span class="pill proposed">Proposed / brouillon</span>
+          <span class="pill superseded">Superseded</span>
+        </div>
+      </div>
+      <div class="tablecard">
+        <table>
+          <thead>
+            <tr><th>ADR</th><th>Titre</th><th>Résumé (extrait du Context)</th><th>Statut</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <footer>
+        <span id="foot"></span>
+        <span>Source : <a href="https://github.com/bczy/prohimuf/tree/main/docs/adr">bczy/prohimuf · docs/adr</a></span>
+      </footer>
+    </div>
+    <script>
+      const BASE = "https://github.com/bczy/prohimuf/blob/main/docs/adr/";
+      // [num, file, title, status, statusClass, summary] — generated, do not edit.
+      const DATA = [
+  ["0001","0001-github-pages-deployment.md","GitHub Pages deployment via `gh-pages` branch","Accepted","accepted","muf is a static client-side build (Vite) that needs free public hosting for a playable demo."],
+  ["0002","0002-cargo-delivery-core-loop-state.md","Cargo delivery in core game state","Accepted","accepted","The core loop `Récupérer → Livrer → Éviter` needs a first, playable slice: a single cargo the player collects at one point and drops at another."],
+  ["0003","0003-mobile-touch-controls-and-camera-pan.md","Mobile support: touch controls, forced landscape, inertial camera pan","Accepted (amended)","accepted","muf ships as a static GitHub Pages demo (ADR-0001), and a meaningful share of visitors arrive on phones."],
+  ["0004","0004-enemies-car-hostage-taker.md","New enemy entities: drive-by car, hostage taker, per-level roster, and the `energy` stat","Accepted","accepted","The shooting-gallery prototype has two spawn modalities today:"],
+  ["0005","0005-dynamic-verification-harness.md","Dynamic & interactive verification harness (evolve the render farm)","Accepted (amended)","accepted","The render farm we have today is a single static frame per level:"],
+  ["0006","0006-directional-sprite-generation.md","Directional, mirrored multi-pose sprite generation for car & hostage entities","Superseded by 0030","superseded","ADR-0004 added two new enemies that are mobile, directional street actors: the drive-by `car` (D1) and the street/window `hostagetaker` (D4)."],
+  ["0007","0007-shared-harness-library.md","Shared harness library, and rejection of a \"harness that creates harnesses\"","Accepted","accepted","The asset-generation tooling has grown to six-plus generator scripts that each independently reimplement the same four pieces of boilerplate."],
+  ["0008","0008-two-axis-pan-and-fullscreen.md","Two-axis swipe pan and fullscreen toggle","Accepted","accepted","ADR-0003 made muf playable on phones: a blocking rotate overlay, a two-finger tap-to-shoot / one-finger drag-to-pan touch model, and inertial camera pan as a pure game system."],
+  ["0009","0009-push-marker-workflow-dispatch.md","Push-marker dispatch for manual workflows","Accepted","accepted","The manual workflows (`gen-sprites.yml`, `gen-vehicle-sprites.yml`, `deploy-preview.yml`) were `workflowdispatch`-only."],
+  ["0010","0010-art-direction-pipeline.md","Art-direction pipeline: gated prompts, seeded generation, CI style gates","Accepted","accepted","Generated sprite quality was inconsistent: FLUX ignored negation-heavy prompts (sedans instead of hatchbacks, photoreal drift, white grounds), sets lacked family consistency, and nothing reviewed…"],
+  ["0011","0011-render-side-neon-rim.md","Render-side emissive neon rim for vehicles (decouple from baked art)","Accepted","accepted","The art direction's first law — la loi du glow (`docs/art-direction.md` §2.1): every interactive object carries a luminous neon rim in its assigned accent hue (orange `#FF8C14`, cyan `#28F0FF`,…"],
+  ["0012","0012-optional-scripted-tutorial-stage.md","Optional scripted tutorial stage before Rue Belliard","Accepted","accepted","muf currently has no onboarding."],
+  ["0013","0013-enclosed-island-cutout-pass.md","Enclosed-island pass in the shared sprite keyer","Accepted","accepted","The delivery courier sprite (`public/assets/enemycivilian.png`, the \"livreur en vélo\") rendered with white speckle inside the silhouette: the bike-frame triangle, the arm/torso gap and the wheel…"],
+  ["0014","0014-sprite-integrity-gate-and-retouch.md","Post-cutout sprite-integrity gate and deterministic per-sprite retouch","Accepted","accepted","The delivery courier sprite (`public/assets/enemycivilian.png`, the \"livreur en vélo\") shipped with an AI-generation anatomy defect."],
+  ["0015","0015-device-forked-tutorial-script.md","Device-forked tutorial script (desktop vs mobile controls)","Accepted","accepted","ADR-0012 D4 §2 specified a single controls panel pair meant to serve both input schemes at once."],
+  ["0016","0016-flipbook-frame-files.md","Enemy sprite flipbook as separate frame files","Accepted","accepted","The enemy sprites (base cops and their variants, riot/CRS, motorcycle cop, delivery civilian, bonus figure) are static single-frame PNGs."],
+  ["0017","0017-layered-courier-flipbook-strip-and-slice.md","Layered courier flipbook: strip-and-slice generation","Accepted (amended)","accepted","The street courier (livreur) needs to read as a figure pedaling a bike as it crosses the street, not a static cut-out."],
+  ["0018","0018-staffed-production-pipeline.md","Staffed production pipeline: design, production, audio and QA lanes with blocking gates","Accepted","accepted","The subagent crew (ADR-0010 staffed the art side) had no game designer, no producer, no sound designer and no QA owner: gameplay tuning and fiction were decided de facto inside the dev lanes,…"],
+  ["0019","0019-flash-halo-background-remnant-cleanup.md","Flash-halo background-remnant cleanup on the enemy shooting sprites","Accepted","accepted","Bertrand: \"rectangle visible autour des personnages ingame, cela devrait être transparent.\" The enemy shooting sprites carry OPAQUE dark background remnants — torn-paper-shaped near-black /…"],
+  ["0020","0020-code-drawn-gesture-icons.md","Code-drawn animated gesture icons on the tutorial control panels","Accepted","accepted","The tutorial stage exists because the controls — above all the mobile gestures — are not discoverable (ADR-0012 Context)."],
+  ["0021","0021-pre-game-print-system-and-title-phase.md","Pre-game print system: a render-layer TITLE phase and a single-source print-token module","Accepted","accepted","The pre-game experience (title → menu → briefing) is being redesigned from a prototype admin panel into the fanzine world it promises (story `story-pre-game-experience-redesign.md`, design gate…"],
+  ["0022","0022-asset-preloading-and-loading-gate.md","Asset preloading with a progressive loading gate","Accepted","accepted","Committed sprites (enemies, courier, delivery vehicle) pop in as untextured fallbacks/squares on the first frames of a scene because their module caches are cold at mount; level backdrops appear…"],
+  ["0023","0023-narrative-scene-location-backdrop.md","Optional per-scene location décor behind the NarrativeScreen transcript","Accepted","accepted","The pre/post-level briefings render through `NarrativeScreen` on a newsprint print ground (ADR-0021)."],
+  ["0024","0024-pregame-landscape-layout.md","Responsive pre-game layout for mobile landscape (short-height reflow)","Accepted","accepted","ADR-0003 D2 blocks only portrait on mobile: `rotateBlocked = ISMOBILE && isPortrait` (`src/render/scene/App.tsx:125`) mounts `RotateOverlay` when `useOrientation()` reports portrait."],
+  ["0025","0025-live-hue-enemy-neon-rim-shader.md","Live-hue enemy neon rim via a 1-tap ShaderMaterial","Accepted","accepted","Enemies read poorly against the busy fanzine facade (\"on ne les voit pas assez\"), and the shooting-gallery loop gives the player no at-a-glance sense of how long a pop-up has been exposed — i.e."],
+  ["0026","0026-mobile-pinch-zoom-out.md","Mobile pinch-to-zoom-out (two-finger spread controls the framing)","Accepted","accepted","ADR-0003 zooms the mobile camera in past the desktop cover framing (`MOBILEZOOMFACTOR = 1.7`) so targets stay finger-sized, and reaches the resulting overflow with a one-finger inertial pan."],
+  ["0027","0027-audio-in-loading-gate.md","Audio in the level loading gate","Accepted","accepted","ADR-0022 D6 put audio out of scope for the loading gate v1, noting a future Howler-warmed group."],
+  ["0028","0028-window-alignment-harness.md","Rendered-scene window-alignment harness for belliard","Accepted (amended)","accepted","Belliard's enemy/railing slots come from `windowZones.generated.json`, produced by snapping a fixed 7×3 grid to warm-window centroids (`scripts/gen-window-zones.mjs`)."],
+  ["0029","0029-retire-enemy-civilian-sprite.md","Retire the legacy `enemy_civilian.png` courier sprite","Accepted","accepted","The street courier (livreur) used to be drawn from a single-frame sprite, `public/assets/enemycivilian.png` — the same \"livreur en vélo\" art the civilian enemy archetype pointed at."],
+  ["0030","0030-hostage-taker-feature-and-sprite.md","Hostage-taker cinematic QTE (freeze + progressive zoom + body-part shooting)","Accepted (partially superseded)","accepted","An earlier iteration of this ADR shipped (on this branch, unmerged) a double-hitbox hostage taker: a window/street pop-up where the player aimed a narrow \"kidnapper\" head band (reward) vs."],
+  ["0031","0031-crt-post-process-composite-pass.md","CRT post-process as a hand-rolled multi-pass composite (no postprocessing dep)","Accepted","accepted","Bertrand asked for a CRT-TV post-process over the in-game world (`story-crt-post-process.md`)."],
+  ["0032","0032-two-tier-pipeline-and-process-amendments.md","Two-tier pipeline, merged review stage, sharded handoffs log, producer-allocated ADR numbers","Accepted","accepted","A review of the agent-team flow (requested by Bertrand, 2026-07-17) confirmed the staffed pipeline of ADR-0018 works — gates catch real defects (e.g."],
+  ["0033","0033-remote-session-provisioning.md","Remote session provisioning via SessionStart hook (pinned rtk + codegraph)","Accepted","accepted","The project standardizes on two token-saving tools for AI agent sessions (CLAUDE.md): rtk (compressed `tsc`/`vitest`/`grep`/`git` output) and codegraph (local code knowledge graph served over MCP,…"],
+  ["0034","0034-hostage-qte-duel-porte-cochere.md","Hostage QTE rework: \"Le duel de la porte cochère\" (living tableau + shot rules)","Accepted (amended)","accepted","ADR-0030 shipped the hostage QTE as a static tableau: the scene freezes, the camera zooms, then a 5 s window (`windowSeconds`) opens on a captor standing still at a fixed `anchor`, with a 4-HP…"],
+  ["0035","0035-hostage-qte-difficulty-curve.md","Hostage QTE per-level difficulty curve for the duel (F3)","Accepted","accepted","ADR-0034 makes the hostage QTE a live duel but leaves its intensity as fixed defaults."],
+  ["0036","0036-hostage-qte-accomplice.md","Hostage QTE: the accomplice (second shooter) (F4)","Accepted","accepted","The session kept the accomplice (idea #8) as the late-level escalation but explicitly deferred it: it needs a new entity and a new sprite lane, and the duel (F1+F2) must ship and prove itself first."],
+  ["0037","0037-crew-extension-ux-gpu-docs.md","Crew extension: UX design lane, GPU/perf verdict, staffed DOCS lane","Accepted","accepted","The staffed pipeline (ADR-0018, fifteen agents) left three seats empty, each evidenced in the handoffs log (now sharded under `docs/handoffs/`, pre-shard history in…"],
+  ["0038","0038-agent-capability-upgrade.md","Agent capability upgrade: MCP toolsets, per-agent models, curated references","Accepted","accepted","An audit of the eighteen crew agents (`.claude/agents/`) surfaced four gaps, none of which touch game/render/hooks behaviour but all of which weaken the agents as tools:"],
+  ["0039","0039-maison-skills-backlog.md","\"Maison\" skills backlog: repeated procedures to package as skills","Accepted","accepted","The crew leans well on installed skills — BMAD (`bmad-`) for process, plus the project skills `verify`, `sprite-hole-audit` and now `flux-prompt`."],
+  ["0040","0040-render-transient-impact-effects.md","Player-shot hitscan resolution + render-transient impact effects (explosion, tracer, wall marks)","Accepted","accepted","The player shot in the shooting-gallery phase spawns a `Bullet` at the crosshair with `velocity.y = +20` and resolves hits along the rising path each tick (`bulletSystem.ts`)."],
+  ["0041","0041-generated-adr-registry.md","Generated ADR registry with a CI freshness gate","Accepted","accepted","The ADR index (`## Index` in `docs/adr/README.md`) was maintained entirely by hand."],
+  ["0042","0042-crew-extension-tech-scout-recon-lane.md","Crew extension: tech-scout technical-reconnaissance / feasibility lane (Nadia)","Accepted","accepted","The staffed pipeline (ADR-0018, then ADR-0037 which brought the crew to eighteen) still had no owner for prior-art surveys and feasibility spikes."],
+  ["0043","0043-validated-reference-promotion-loop.md","Validated-reference promotion loop (internal hero → style-lock family derivation)","Accepted","accepted","ADR-0044 shipped the ad-hoc half of the reference loop: an operator drops a photo, hosts it, runs one manual `kontext` img2img generation conditioned on it (`gen-from-reference.mjs`,…"],
+  ["0044","0044-adhoc-reference-conditioned-asset-iteration.md","Ad-hoc kontext reference-conditioned asset iteration (gen-from-reference)","Accepted","accepted","muf's asset pipeline is manifest-driven: every sprite/backdrop is a curated entry in `src/game/levels/levelArt.json` with a pinned seed, generated in CI by a per-family script…"],
+  ["0045","0045-embedded-ofl-webfonts.md","Embedded self-hosted OFL webfonts via a single `FONT` token","Accepted","accepted","muf shipped its UI type on system fonts — `Impact`/`Arial Narrow` for ransom-note display, `Courier New` for typewriter info blocks, `cursive` for handwritten annotations — declared across ~12…"],
+  ["0046","0046-render-css-modules-and-token-bridge.md","Render-layer CSS Modules + tokens.ts→CSS-var bridge; hud-css skill","Accepted","accepted","The entire render UI layer (`src/render/ui/`) is styled with inline `style={{…}}` — ~172 sites, 25 blocks / 43 `style=` sites in `HUD.tsx` alone, which stacks 9 distinct widgets in one 515-line file."],
+  ["0047","0047-near-foreground-parallax-layer.md","Near-foreground differential-parallax décor layer","Proposed","proposed","muf's street currently has two depth strata: a slow-parallax sky and a world-locked facade/street (`LevelBackdrop.tsx`)."],
+  ["0048","0048-troncon-sequence-backdrop-mode.md","Tronçon-sequence backdrop mode + variable-width gameplay grid (Rue Belliard décor v2)","Proposed","proposed","Rue Belliard's backdrop today is one repeating `facade.png` laid as N = 4 identical fixed-width panels by `LevelBackdrop.tsx`, with the left edge of every panel after the first alpha-feathered…"],
+  ["0049","0049-nearfg-generated-sprites-with-procedural-fallback.md","Near-foreground props: generated gptimage sprites with procedural fallback","Proposed","proposed","ADR-0047 shipped the near-foreground décor layer with its eight Parisian street-furniture props (horodateur, réverbère, fontaine Wallace, feu tricolore, potelet, scooter, banc, panneau) code-drawn…"],
+  ["0050","0050-flyer-occlusion-shadow-exception.md","Flyer occlusion-shadow exception & breakpoint-dependent roving axis","Proposed","proposed","Story `flyer-paper-materiality` (Bertrand: the NIVEAUX flyers read as flat colour squares, and the desktop layout renders as full-width horizontal bands instead of an A5 portrait sheet; the tape…"],
+  ["0051","0051-boss-qte-encounter-system.md","Boss QTE encounter system (\"le Commandant\"): phase-sequenced spatial-colour duel + non-shipped dev-harness","Accepted","accepted","The competitive veille (`docs/game-design/veille-concurrentielle-shooters.md` §3 Tier A idea #6) proposed a Time-Crisis/House-of-the-Dead capstone: \"un chef de brigade protégé, vulnérable…"],
+  ["0052","0052-boss-qte-differentiation-levers.md","Boss QTE differentiation pack (5 levers): in-tableau extension of the ADR-0051 duel, no freeze-law exception","Accepted","accepted","Bertrand's playtest of the ADR-0051 V1 dev-harness returned a structural verdict: \"c'est limite au même gameplay que l'otage sans l'otage.\" ADR-0051 D1 conceded the point in advance — the boss and…"],
+  ["0053","0053-niveau-final-live-boss-level.md","\"Le Commandant\" goes live: the Niveau Final level ships the frozen boss system as pure DATA","Accepted","accepted","`story-boss-niveau-final-live` (opened on Bertrand's direct instruction, \"n'oublie pas d'inclure le boss dans le stage\") ships the ADR-0051/0052 boss system LIVE for the first time — canon,…"],
+  ["0054","0054-menus-ui-completion-scope-and-contracts.md","Menus/UI completion scope, `NAME_ENTRY` phase, `reducedMotion` live-union authority, and the OPTIONS/PAUSE shared-options contract","Accepted (amended)","accepted","The `menus/UI-completion` cycle (`epic-menus-ui-completion`) audited `src/render/ui` against the shipped game and scoped three stories past the `lead-game-designer` design gate…"],
+  ["0055","0055-weapons-pickup-system.md","Multi-weapon pickup system (roster A-B-C): weapon state, N-resolution hitscan, LOOT crate","Accepted (amended)","accepted","The shipped player shot is an instant hitscan resolved at one crosshair world point (ADR-0040, `resolvePlayerShot` in `bulletSystem.ts`): nearest-eligible enemy within `HITRADIUS = 0.8` (tie →…"],
+  ["0056","0056-loot-crate-sidewalk-placement.md","LOOT crate moves to the sidewalk: street-y placement + FLUX sprite with drawn fallback","Accepted","accepted","ADR-0055 D5 landed the armament crate as a new entity (not an `EnemyKind`) that seats in a window slot and is resolved/rendered at that slot's `screenPosition` (window row)."],
+  ["0057","0057-single-wide-backdrop-belliard.md","Single-wide backdrop mode (belliard décor image unique)","Accepted","accepted","Rue Belliard's décor was planned as four variable-width tronçons (sequence `a, c, b, c`) per ADR-0048, tiling side-by-side with a separate parallax sky showing through rooflines and inter-building…"],
+  ["0058","0058-grille-overlay-single-wide.md","Grille overlay on single-wide backdrop (foreground.png window grilles)","Accepted","accepted","ADR-0057 moved Rue Belliard onto the `single-wide` backdrop: the whole décor — sky, buildings, street, and the balcony grilles — baked into one opaque `street-wide.png` plane."],
+  ["0059","0059-belliard-boss-gated-shipped-level.md","\"Le Commandant\" gates Rue Belliard: a boss-gated SHIPPED level with a failable ending (supersedes ADR-0051 D4)","Accepted","accepted","ADR-0051 D4 deliberately kept the boss OUT of the shipped `LEVELS` array — reachable only via the non-shipped `BOSSQTEDEVHARNESSLEVEL` behind the `?preview=boss` dev seam — so \"Belliard's live…"],
+  ["0060","0060-boss-qte-shield-break-tempo-lever.md","Boss QTE lever 6 \"cran de sûreté\" (shield-break tempo shot): a third per-window read, extends ADR-0052 in place","Accepted","accepted","The differentiation pack (ADR-0052) added five levers; the game-designer then scoped a sixth (story `story-boss-shield-tempo-shot`, design-gated spec Rev."],
+  ["0061","0061-tech-writer-in-verification-loops.md","tech-writer active in verification loops (DOCS-PLAN, DOC GATE, coherence sweep)","Accepted","accepted","Bertrand flagged (2026-07-23) two coupled symptoms:"],
+  ["0062","0062-vendor-neutral-agent-orientation.md","Vendor-neutral agent orientation: AGENTS.md canonical + thin overlays (proposed)","Proposed","proposed","Until 2026-07 the multi-agent orientation for muf lived in a single file, `CLAUDE.md`, tuned for Claude Code (subagent crew, BMAD skills, `rtk` / `codegraph`)."],
+  ["0063","0063-ci-run-code-review-panel.md","ADR-0063 — CI-run code-review panel (portable merge gate)","Proposed","proposed","The mandatory merge gate defined in `.claude/agents/COLLABORATION.md:206-233` is a 4-reviewer code-review panel — four orthogonal review skills run in parallel over `git diff origin/main...HEAD`,…"],
+  ["0064","0064-copilot-runtime-split-crew-orchestration.md","Copilot runtime split: the CLI/app orchestrates the crew, the Coding Agent does not","Proposed","proposed","ADR-0062 established `.github/copilot-instructions.md` as the Copilot overlay, written at a time when \"Copilot\" meant exactly one runtime: the Copilot Coding Agent on github.com, which has no…"],
+  ["0065","0065-enemy-bullet-generated-model-with-fallback.md","Enemy bullet: generated textured GLB with procedural fallback","Proposed","proposed","`BulletSprite.tsx` renders enemy return-fire projectiles (player shots are instant hitscan, ADR-0040, and never enter `state.bullets`) as a code-drawn Three.js primitive: a `cylinderGeometry` body…"],
+  ["0066","0066-fractional-lives-per-archetype-damage.md","Fractional lives: per-archetype bullet damage in quarter-heart steps","Proposed","proposed","Enemy return fire cost a flat one heart per hit, and a level starts with 3 hearts."],
+  ["0067","0067-panel-provider-fallback-degraded-verdict.md","ADR-0067 — Panel provider fallback + DEGRADED verdict (the gate must not fail open)","Proposed (partially superseded by 0070)","proposed","On PR #130 the merge gate published a green verdict:"],
+  ["0068","0068-lazy-load-threejs-r3f.md","ADR-0068 — Lazy-load du runtime Three.js/R3F","Accepted","accepted","The Vite production build shipped a single JS chunk of 1 425 kB (408 kB gzip), dominated by Three.js + @react-three/fiber (~700 kB)."],
+  ["0069","0069-energy-rim-signalling-contract.md","Energy-rim signalling contract","Accepted","accepted","`story-street-graphics-effects` shipped an energy aura on the QTE entities (hostage-taker captor, boss, LOOT crate): a peripheral, on-world read of the same `GameState.energy` scalar the HUD gauge…"],
+  ["0070","0070-ci-panel-subscription-auth-claude-code-action.md","CI code-review panel moves to subscription auth via `claude-code-action`, retires the GitHub Models fallback","Accepted","accepted","The Anthropic account backing the panel's metered API key ran out of credit a second time (`Your credit balance is too low to access the Anthropic API`)."],
+  ["0071","0071-offscreen-enemies-frozen.md","Un ennemi hors-champ est gelé : il ne peut pas tirer","Proposed","proposed","La façade d'un niveau est nettement plus large que le cadre : `FACADE01` s'étale sur ~38 unités monde pour un viewport de `VIEWW = 18`, et les niveaux livrés composent leurs slots depuis les zones…"],
+  ["0072","0072-delivery-assault-reserved-slots.md","Assaut de livraison : slots réservés au niveau et identité par plage d'id","Proposed","proposed","ADR-0071 gèle les ennemis hors-champ."],
+  ["0073","0073-tutorial-immersion-narrative-contract.md","Tutorial immersion narrative contract (decor context + mechanic cue diagrams)","Accepted","accepted","The current tutorial contract is intentionally simple:"],
+  ["0074","0074-level-data-module-and-validate-level.md","Level catalogue as an import-time-computable data module, and `validateLevel` as the single source of `LevelConfig` invariants","Proposed","proposed","The level catalogue module mixed three unrelated concerns in one 441-line file, which blocks the whole level-editor track that follows it."],
+  ["0075","0075-level-plan-composable-generated-levels.md","Un level est un objet composable : table d'archétypes scindée, kinds namespacés, seam `generated/`","Proposed","proposed","The level harness (SP1 of three sub-projects) needs a level to be describable entirely as data: backdrop, per-level enemy skins, at most one level-authored archetype, per-level props, tuning, fiction."],
+  ["0076","0076-run-stats-system-local-first.md","Run stats system (local-first)","Accepted","accepted","The game ends a run with one line (`SCORE FINAL : 4200 | VAGUE 3`) that vanishes when the tab closes."],
+  ["0077","0077-couverture-tsc-eslint-scripts.md","Couvrir scripts/ par tsc et ESLint via tsconfig.node.json et @types/node explicite","Accepted","accepted","Les 104 fichiers du dossier scripts (103 modules .mjs et un script TypeScript) étaient invisibles pour tout l'outillage de qualité du repo : `tsconfig.json` n'inclut que `src`, `eslint.config.ts`…"],
+  ["0078","0078-sp2-paid-generation-ci-surface.md","La surface CI de génération SP2 : dispatch privilégié, exécution dynamique de plan, et comptabilité du cap payé","Proposed","proposed","SP2 (spec `spec-level-harness-sp2.md`) rend chaque phase de matérialisation d'un `LevelPlan` exécutable seule en CI."],
+  ["0079","0079-portrait-robot-interstitial-scene-shell.md","Portrait-robot as an interstitial DOM phase: where the scene lives, and how its verdict reaches the next level","Proposed","proposed","The design gate (A2) places « TÊTE À CONNAÎTRE » between levels and forbids the two things that would have made it cheap to build:"],
+  ["0080","0080-portrait-robot-face-data-model.md","Portrait-robot face data model: one atomic gabarit, sliced PNGs, a distance matrix, and `validatePortrait`","Proposed","proposed","The gate froze the shape of the problem: 4 bands (`LA COUPE` / `LE REGARD` / `LE NEZ` / `LA BOUCHE`; internal ids `hair` / `eyes` / `nose` / `mouth`), `VARIANTSPERBAND` variants per band (6 at…"],
+  ["0081","0081-mcp-level-editor-server.md","Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur","Proposed","proposed","Les levels générés sont désormais entièrement descriptibles comme données (ADR-0075), mais aucun agent ne peut les travailler sans lire le repo à la main : rien ne valide un plan avant de…"],
+  ["0082","0082-flyer-cascade-session-key.md","Clé de session pour l'entrée du mur de flyers","Accepted","accepted","L'animation d'entrée de l'écran NIVEAUX ne doit jouer qu'une fois par session, décision bloquante rendue par `ux-designer` : `FlyerWall` se démonte à chaque changement de rubrique, si bien qu'un…"],
+  ["0083","0083-portrait-robot-input-and-presentation-layer.md","Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules","Proposed","proposed","The input question is unsettled on one axis and one only."]
+      ];
+      const rows = document.getElementById("rows");
+      const q = document.getElementById("q");
+      const count = document.getElementById("count");
+      const rich = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/`([^`]+)`/g, "<code>$1</code>");
+      function render() {
+        const f = (q.value || "").trim().toLowerCase();
+        rows.innerHTML = "";
+        let n = 0;
+        for (const [num, file, title, status, cls, summary] of DATA) {
+          if (f && !(num + " " + title + " " + summary + " " + status).toLowerCase().includes(f)) continue;
+          n++;
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td class="num"><a class="num" href="' + BASE + file + '" target="_blank" rel="noopener">' + num + " ↗</a></td>" +
+            '<td class="title">' + rich(title) + "</td>" +
+            '<td><span class="summary">' + (summary ? rich(summary) : "—") + "</span></td>" +
+            '<td class="status"><span class="pill ' + cls + '">' + rich(status) + "</span></td>";
+          rows.appendChild(tr);
+        }
+        if (!n) rows.innerHTML = '<tr><td colspan="4" class="empty">Aucun ADR ne correspond.</td></tr>';
+        count.textContent = n + "/" + DATA.length;
+      }
+      document.getElementById("foot").textContent = DATA.length + " ADR consignés · généré depuis docs/adr/";
+      q.addEventListener("input", render);
+      render();
+    </script>
+  </body>
+</html>
