@@ -78,6 +78,15 @@ Bertrand decides (see Open Questions).
 - A written, repeatable **smoke-test procedure** (steps a human follows on each OS) is
   itself part of this ticket's deliverable, not an afterthought.
 
+**Process artefact already delivered**
+
+- `docs/unity-bootstrap/pull_request_template.md` — the Unity project's PR template,
+  ready to copy verbatim to `.github/pull_request_template.md` wherever the project
+  lands. It gates what this project can actually get wrong: a build that compiles but
+  never launches, an untested OS silently ticked, a lost `.meta`, an unintended editor
+  upgrade via `ProjectVersion.txt`, a committed `Library/`, a third-party asset with no
+  licence. `muf`'s own template is untouched — different project, different risks.
+
 ## Acceptance criteria
 
 | # | Given | When | Then |

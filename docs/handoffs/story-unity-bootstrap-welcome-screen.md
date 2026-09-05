@@ -33,6 +33,23 @@ cycle, and no Unity code anywhere in this repo.
   ratifies or rejects the track. File List: the story file above + this shard +
   the index row in `docs/agent-handoffs.md`.
 
+## stage-1b. PROCESS — pm — 2026-09-05
+
+- claim: Bertrand rejects `muf`'s PR template for the Unity track ("non pas ce template
+  de PR, refais une template pour ce jeu en question") and asks for one built for the
+  Unity project. Scope confirmed with him: the Unity project only — `muf`'s
+  `.github/pull_request_template.md` stays untouched.
+- release: `docs/unity-bootstrap/pull_request_template.md` (copy-ready, no header to
+  strip) + `docs/unity-bootstrap/README.md` saying where it goes and why it does not
+  apply to this repo's PRs. Gates chosen for THIS project's failure modes, not `muf`'s:
+  per-OS smoke test with its own trap noted inline (Windows SmartScreen, macOS Gatekeeper
+  on a second machine, Linux exec bit through the archive), an explicit
+  `ProjectVersion.txt` guard against a silent editor upgrade, Unity repo hygiene
+  (`.meta` pairing, no `Library/`, LFS, text serialization), EditMode/PlayMode tests,
+  third-party asset licensing, and a "what I did NOT verify" section. No CI-gate
+  checkboxes are carried over from `muf` — the Unity project has no CI yet, and open
+  question #4 is whether it gets any in V1.
+
 ## Next
 
 Stage 1 is where this stops on purpose — the ticket is the deliverable. Nothing
