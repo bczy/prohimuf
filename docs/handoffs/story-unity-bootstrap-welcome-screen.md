@@ -50,10 +50,46 @@ cycle, and no Unity code anywhere in this repo.
   checkboxes are carried over from `muf` — the Unity project has no CI yet, and open
   question #4 is whether it gets any in V1.
 
+## stage-1c. DÉCISIONS CEO — Bertrand — 2026-09-05
+
+Les 6 questions ouvertes sont tranchées. Verbatim :
+
+1. Emplacement du dépôt : **sous-dossier `unity/` dans ce dépôt** — inverse de la
+   recommandation écrite dans la story (dépôt séparé). La décision du CEO s'applique ; la
+   story ne re-litige pas, elle chiffre le coût.
+2. Licence Unity : **Personal** — sous réserve de vérification d'éligibilité, non
+   vérifiable ici (unity.com bloqué par l'egress). Ça engage une société.
+3. Architecture macOS : **Apple Silicon uniquement** — un Mac Intel n'est plus une machine
+   de smoke test valide (impacte AC3/AC4).
+4. CI : **dans le V1** — AC9 cesse d'être optionnel.
+5. Dev : **trambz** (compte GitHub `trambz` vérifié). Aucun lane C#/Unity dans le crew.
+6. Suite : **piste suivie ⇒ ADR** écrit maintenant.
+
+- release (pm) : story mise à jour — section « Decisions taken » remplaçant « Open
+  questions », scope `unity/` avec son coût nommé (ignores ancrés à re-scoper,
+  `prettier --check .` qui balaie tout le dépôt, filtres `paths:` dans les deux sens,
+  zéro partage de code entre `unity/` et `src/`), AC9 rendu obligatoire, **AC10** (la CI
+  web reste intacte sur une PR `src/`-only, la CI Unity ne se déclenche pas pour rien, et
+  aucun check requis ne reste bloqué à « jamais rapporté ») et **AC11** (aucun artefact
+  Unity tracké par git, vérifié au `git status` après une vraie session d'éditeur, pas
+  supposé depuis le texte du pattern) ajoutés, file map ré-attribuée.
+- ADR : délégué à `senior-architect` (numéro alloué via la skill `adr-new`).
+
 ## Next
 
-Stage 1 is where this stops on purpose — the ticket is the deliverable. Nothing
-proceeds to `senior-architect` (lane cut) until Bertrand answers the open
-questions, above all **repo location** (separate repo recommended) and **Unity
-licence eligibility for the studio**. No design gate and no art gate are involved:
-the welcome screen is a build test harness, not a title screen.
+Le ticket n'est plus bloqué : les 6 décisions sont prises et l'ADR est en cours. Ce qui
+reste avant qu'une ligne de C# existe :
+
+1. **Vérifier l'éligibilité Unity Personal** sur unity.com (seuils + splash screen). C'est
+   le seul point qui engage juridiquement le studio et il n'a pas pu être vérifié d'ici.
+   Si le studio ne qualifie pas, la décision 2 change et la CI d'activation avec.
+2. **Lire les inconnues Unity restantes** au kickoff (version LTS, template/render
+   pipeline, noms des modules Hub, UI Toolkit vs uGUI) — section « Uncertainties » de la
+   story, volontairement non devinées.
+3. **`dev-tooling-assets`** : intégration `unity/` dans ce dépôt (ignores re-scopés,
+   `.prettierignore`, filtres `paths:` des workflows, LFS) — c'est ce que vérifient AC10
+   et AC11.
+4. **trambz** : le projet Unity lui-même.
+
+Aucun design gate ni art gate : le welcome screen est un banc d'essai de build, pas un
+écran-titre.

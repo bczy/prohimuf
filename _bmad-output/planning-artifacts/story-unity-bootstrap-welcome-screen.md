@@ -37,15 +37,24 @@ That test does not apply here — it is a *game feature* filter, and this ticket
 
 ## Scope (V1)
 
-**Repo location — decision needed from Bertrand before kickoff, not a fait accompli:**
+**Location — DECIDED (Bertrand, 2026-09-05): a `unity/` subfolder in THIS repo.**
 
-| Option | Pros | Cons |
-| --- | --- | --- |
-| **Separate repo** (e.g. `bczy/muf-unity-bootstrap`) — **recommended** | No collision with `muf`'s CI workflows, root `.gitignore`, `check-*` gates, or the `src/game`/`src/render` boundary law. Clean history; easy to archive/delete if the spike is abandoned. | A second repo to create, grant access to, and (later) decide whether to keep. |
-| `unity/` subfolder in this monorepo | One place to look. | Unity's own `.gitignore` needs (`Library/`, `Temp/`, `Obj/`, `Build/`, `Builds/`, `Logs/`, `UserSettings/`, `*.csproj`, `*.sln`, `.vs/`) must coexist with the Vite/Yarn root config without leaking into `muf`'s CI matrix or gates; `check-*` scripts would need explicit exclusions. |
+This overrides the separate-repo recommendation this story originally carried. The
+decision stands; what follows is the cost that comes with it, which the kickoff has to
+pay rather than discover:
 
-This ticket is tracked here regardless of the answer; implementation happens wherever
-Bertrand decides (see Open Questions).
+- Unity's canonical ignores use root-anchored patterns (`/[Ll]ibrary/`, `/[Tt]emp/`, …)
+  that do **not** work as-is from the repo root for a subfolder — they must be re-scoped
+  to `unity/` without masking anything elsewhere.
+- `yarn format:check` runs `prettier --check .` over the **whole** repo and will meet
+  Unity-generated `.json`/`.yml`/`.md` under `unity/`.
+- Web CI must not be triggered by a `unity/`-only change, and the (costly) Unity build
+  must not be triggered by a `src/`-only change — both directions need `paths:` filters,
+  with care that a *required* check which never runs blocks a PR forever.
+- No code is shared between `unity/` and `src/`: two games, one repo, zero coupling.
+
+The exact file-by-file consequences are the ADR's job (mandated by decision 6), not this
+story's.
 
 **Unity project setup**
 
@@ -73,8 +82,9 @@ Bertrand decides (see Open Questions).
 
 **Cross-platform build**
 
-- Build targets: Windows (x64), macOS, Linux (x64). Whether macOS needs Apple Silicon,
-  Intel, or a Universal binary is an open question (see below).
+- Build targets: Windows (x64), **macOS Apple Silicon** (DECIDED — Apple Silicon only:
+  no Intel build, no Universal binary; an Intel Mac is therefore not a supported smoke-test
+  machine), Linux (x64).
 - A written, repeatable **smoke-test procedure** (steps a human follows on each OS) is
   itself part of this ticket's deliverable, not an afterthought.
 
@@ -99,7 +109,9 @@ Bertrand decides (see Open Questions).
 | AC6 | The Linux build artifact, extracted with executable bit intact | It is launched on a clean Linux machine | The welcome screen appears (title text + the 3D element visibly rendering); `Quit` closes the process cleanly (no orphaned process, no crash log). |
 | AC7 | Any of the three launched builds | The 3D element is observed | It is unambiguously a rendered 3D object (lighting/shading and, ideally, motion/rotation visible), not a flat sprite or 2D UI panel — proves the 3D pipeline, not just UI Toolkit/uGUI. |
 | AC8 | The smoke-test procedure document | Someone who was not involved in building it follows it | They can independently reproduce "build launches, welcome screen shown, Quit works" on each OS without asking the author a question. |
-| AC9 | CI, if set up for this project (optional for V1) | A commit is pushed | CI proves **the build compiles for all three targets** (using `game-ci/unity-builder`, pinned to `v5`) — this is explicitly *not* proof the game was seen running; that proof is the manual smoke test (AC1–AC8). Any automated launch/screenshot check is best-effort/optional and must not be presented as a substitute for the manual pass. |
+| AC9 | CI — **in scope for V1** (decision #4) | A commit touching `unity/` is pushed | CI proves **the build compiles for all three targets** (`game-ci/unity-builder`, pinned to `v5`) — explicitly *not* proof the game was seen running; that proof stays the manual smoke test (AC1–AC8). Any automated launch/screenshot check is best-effort and must never be presented as a substitute for the manual pass. |
+| AC10 | The `unity/` subfolder exists in this repo (decision #1) | The existing web CI runs on a PR that touches **only** `src/` | It behaves exactly as it does today — `Lint · Typecheck · Test` (including `prettier --check .`), `E2E`, the preview build and every `check-*` gate stay green, and no Unity job is triggered. Symmetrically, a PR touching **only** `unity/` triggers the Unity build and does not run the web CI. No required check is left in a state where it can never report on a PR. |
+| AC11 | A build produced by CI or locally | The repo is inspected afterwards | No Unity build output, `Library/`, `Temp/`, `Obj/`, `Logs/` or `UserSettings/` is tracked by git — the `unity/`-scoped ignore rules actually hold from the repo root, verified with `git status` after a real editor session, not assumed from the pattern text. |
 
 ## File map (lane assignment hint for Winston)
 
@@ -108,11 +120,12 @@ it is a brand-new project, most likely in a brand-new repo (see Scope). There is
 overlap with any existing `muf` file, so there is no cross-lane collision to arbitrate in
 the usual sense. What still needs an owner:
 
-| Concern | Likely owner | Note |
+| Concern | Owner | Note |
 | --- | --- | --- |
-| Repo creation / CI wiring (if any) | `dev-tooling-assets` or whoever Bertrand assigns | Closest existing skillset (CI, packaging, cross-platform scripting) even though the repo is Unity/C#, not this repo's Vite/Yarn stack. |
-| ADR recording the HORS-STACK decision once this spike concludes | `senior-architect` | Required before any Unity code is treated as more than a spike (see Cahier des charges check). |
-| Unity scene/scripting itself | Out of the current crew's normal lanes (no C#/Unity dev lane exists yet) | Flag explicitly to Bertrand at kickoff — this may need a contractor/new hire or Bertrand's own hands-on time. |
+| Unity project, scene, welcome screen, C# | **trambz** (decision #5) | No C#/Unity lane exists in `.claude/agents/**`; this work sits outside the crew's gates. |
+| `unity/` integration into this repo — ignore scoping, `.prettierignore`, workflow `paths:` filters, LFS | `dev-tooling-assets` | The monorepo choice (#1) makes this real work, not a formality: it is what AC10 and AC11 verify. |
+| Unity CI wiring (`game-ci/unity-builder` `v5`, Personal licence activation secrets) | `dev-tooling-assets` with trambz | Decision #4 puts it in V1. The licence secret is nominative — a governance question the ADR raises. |
+| ADR for the track | `senior-architect` | Mandated by decision #6, written alongside this update. |
 
 ## Out of scope (V1)
 
@@ -124,30 +137,41 @@ the usual sense. What still needs an owner:
 - Any gameplay, menu logic beyond `Quit`, save data, settings, or input remapping.
 - Automated proof that a built player visually launched and displayed correctly across
   all three OSes — CI can prove compilation; it cannot reliably prove a window appeared.
-- Any decision about whether this Unity track continues past the spike, replaces or
-  complements `muf`, or gets its own roadmap — that is a separate, later conversation once
-  the bootstrap works.
+- Whether the Unity track eventually replaces or complements `muf`, and what its own
+  roadmap looks like — decision #6 says the track continues and gets an ADR, not that its
+  product direction is settled. That conversation is still ahead.
 - Changes to `PROJECT_GUIDELINES.md` §3 — this ticket does not amend the stack lock; that
   would be a distinct, deliberate follow-up if the spike leads anywhere.
 
-## Open questions
+## Decisions taken (Bertrand, CEO — 2026-09-05)
 
-1. **Repo location** — separate repo (recommended, e.g. `bczy/muf-unity-bootstrap`) or a
-   `unity/` subfolder in this monorepo? Affects CI wiring and gitignore layout.
-2. **Licence eligibility** — is Bertrand's studio eligible for **Unity Personal**, or does
-   using Unity as a company push this into **Unity Pro** territory? This must be checked
-   against Unity's current published thresholds before any project is created commercially
-   — it affects a company, not a hobby project, and could carry a cost or a mandatory
-   splash screen. Explicit go/no-go input needed from Bertrand.
-3. **macOS target architecture** — Apple Silicon, Intel, or a Universal build? Depends on
-   which Mac(s) are available for the build machine and the smoke test.
-4. **Is CI in scope for V1 at all**, or is a manual local build on each OS sufficient to
-   close this ticket? (AC9 is written as optional/best-effort to leave this open.)
-5. **Who actually writes the Unity project** — is this Bertrand himself, a contractor, or
-   does it wait for a Unity-capable hire? No dev lane in the current crew covers C#/Unity.
-6. **Longevity of the spike** — once the three builds are proven, does this become a
-   tracked parallel project (needs the ADR from the Cahier des charges check), or is it
-   archived as "toolchain confirmed, shelved for now"?
+All six questions this story opened are now closed. They are recorded here as given; the
+architectural consequences of #1 and #4 are the ADR's subject (mandated by #6).
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | Repo location | **`unity/` subfolder in this repo** — overrides this story's separate-repo recommendation. |
+| 2 | Unity licence | **Personal** — see the eligibility caveat below. |
+| 3 | macOS target architecture | **Apple Silicon only** — no Intel build, no Universal binary. |
+| 4 | CI in V1 | **Yes** — in scope. AC9 is therefore no longer optional (see AC9). |
+| 5 | Who writes the Unity project | **trambz.** No C#/Unity lane exists in `.claude/agents/**`; the crew does not cover this work. |
+| 6 | Longevity of the spike | **Track continues** ⇒ an ADR is written now, not deferred. |
+
+**Caveat carried forward on #2 — this is not a verified compliance, it is a CEO decision
+awaiting a check.** Unity Personal's eligibility thresholds (revenue/funding caps) and
+whether the Unity splash screen is still mandatory on Personal could **not** be verified:
+`unity.com` and `docs.unity3d.com` are refused by this environment's egress policy. This
+engages a company, not a hobby project. Someone must read the current terms off unity.com
+and confirm eligibility **before** the project is created — if the studio turns out not to
+qualify, the licence decision changes and so does the CI activation flow.
+
+**Consequence of #3 on acceptance:** an Intel Mac is not a valid smoke-test machine. AC3
+and AC4 must be run on Apple Silicon hardware.
+
+**Consequence of #5:** `trambz` owns the Unity implementation. The `muf` crew's dev lanes
+(`dev-gameplay`, `dev-r3f-render`, `dev-tooling-assets`) do not cover C#/Unity, so their
+gates do not apply to `unity/` code; what does apply is the PR template shipped with this
+story and the CI decided in #4.
 
 ## Uncertainties / to verify at kickoff
 
