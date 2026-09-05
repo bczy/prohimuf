@@ -139,5 +139,6 @@ the old one `Superseded by ADR-XXXX`.
 | [0081](./0081-mcp-level-editor-server.md) | Serveur MCP level-editor : un process stdio de dev, cinq outils fermés, un seul cœur pur | Proposed |
 | [0082](./0082-flyer-cascade-session-key.md) | Clé de session pour l'entrée du mur de flyers | Accepted |
 | [0083](./0083-portrait-robot-input-and-presentation-layer.md) | Portrait-robot input & presentation layer: gesture-agnostic intents, house BD-comics DA, CSS Modules | Proposed |
+| [0084](./0084-unity-track-in-repo-boundary-and-tooling-isolation.md) | The Unity track lives in this repo under `unity/`: boundary, tooling isolation, CI | Proposed |
 
 <!-- ADR-INDEX:END -->
