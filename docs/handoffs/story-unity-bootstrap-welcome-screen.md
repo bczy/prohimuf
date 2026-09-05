@@ -75,6 +75,36 @@ Les 6 questions ouvertes sont tranchées. Verbatim :
   supposé depuis le texte du pattern) ajoutés, file map ré-attribuée.
 - ADR : délégué à `senior-architect` (numéro alloué via la skill `adr-new`).
 
+## stage-2. ADR — senior-architect (Winston) — 2026-09-05
+
+- claim: acter la piste Unity dans ce dépôt et concevoir son isolation (mandat : décision 6).
+- release: **ADR-0084** `docs/adr/0084-unity-track-in-repo-boundary-and-tooling-isolation.md`
+  (numéro auto-alloué via la skill `adr-new` — aucun numéro `producer` n'existe pour cette
+  piste hors-épique ; vérifié contre le local, `origin/main:docs/adr` et l'index, **à
+  re-vérifier au merge**, le dépôt ayant déjà livré deux ADR-0020). Index régénéré,
+  `gen-adr-index.mjs --check` = `fresh — 84 ADR, registry in sync`. Statut `Proposed`, dont
+  la portée est explicitée : les 6 arbitrages du CEO sont finaux, `Proposed` ne couvre que
+  le design d'isolation (D1-D8), qu'aucune CI verte n'a encore prouvé.
+- 8 décisions : `unity/` scellé sans partage de code avec `src/` · toolchain web rendue
+  aveugle **par configuration** (4 fichiers) · gitignore Unity **local à `unity/`** (les
+  ancres `/[Ll]ibrary/` ne matchent pas depuis la racine, et les dés-ancrer ferait matcher
+  `Logs/`/`*.csproj` partout) · workflow Unity path-filtré tandis que `ci.yml` garde
+  volontairement **zéro `paths-ignore`** (un check requis filtré ne rapporte jamais et
+  coince la PR à vie) · secret de licence nominatif en dépôt d'entreprise · pas de LFS en
+  V1 derrière une barrière « aucun binaire avant l'appel LFS » (`git lfs migrate` réécrit
+  tous les SHA, or les branches de preview et `gh-pages` sont indexées sur l'historique).
+- Faux risques écartés et documentés comme tels (gates de fraîcheur, Vitest, tsconfig,
+  entrées Vite) pour que personne ne les « durcisse ». Vrai piège trouvé : `public/` est
+  copié tel quel dans `dist/`.
+- Non affirmé, porté en questions ouvertes : cross-compile macOS-arm64 depuis un runner
+  Linux (game.ci/unity.com bloqués — si un runner `macos-latest` est requis, c'est un
+  arbitrage de coût pour Bertrand), noms exacts des secrets game-ci, éligibilité Unity
+  Personal + splash (décision CEO **sous réserve de vérification**, zéro seuil inventé),
+  liste réelle des checks requis sur `main` (`gh` absent de l'environnement).
+- Écart de qualité nommé par l'ADR lui-même : aucun lane C#/Unity dans `.claude/agents/**`
+  (vérifié, zéro occurrence), donc `trambz` est aujourd'hui seul reviewer de son propre
+  domaine et le panel de merge ne rend sur `unity/**` qu'un verdict de code générique.
+
 ## Next
 
 Le ticket n'est plus bloqué : les 6 décisions sont prises et l'ADR est en cours. Ce qui

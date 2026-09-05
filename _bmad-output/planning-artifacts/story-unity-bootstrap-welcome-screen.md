@@ -56,6 +56,32 @@ pay rather than discover:
 The exact file-by-file consequences are the ADR's job (mandated by decision 6), not this
 story's.
 
+**ADR-0084 has now done that job** (`docs/adr/0084-unity-track-in-repo-boundary-and-tooling-isolation.md`).
+The shared-config edits it imposes, all in the bootstrap PR, all owned by
+`dev-tooling-assets` so `trambz`'s `unity/**` lane stays non-overlapping:
+
+| # | File | Action |
+| --- | --- | --- |
+| 1 | `.prettierignore` | add `unity/` — `format:check` is `prettier --check .` over the whole tree, and Prettier reads `.prettierignore` only, **never** `.gitignore`. |
+| 2 | `eslint.config.ts` | add `"unity/**"` to `ignores` — `eslint .` has no `includeIgnoreFile`, so any `.js`/`.ts` under `unity/` hits the type-aware parser and blocks every commit. |
+| 3 | `unity/.gitignore` (new) | canonical `Unity.gitignore` **verbatim, in a `unity/`-local file**. Its `/[Ll]ibrary/` anchors do not match `unity/Library/` from the root, and de-anchoring them would make `Logs/`, `Builds/`, `Obj/`, `*.csproj` match repo-wide. No blanket `*.meta` ignore. |
+| 4 | `.editorconfig` | add a `[unity/**]` / `[*.cs]` section — the single `[*]` block otherwise forces 2-space indent on C#. |
+| 5 | `package.json` (`lint-staged`) | **verify, scope only if proven necessary** — its globs match at any depth, so `unity/Packages/manifest.json` would route through `prettier --write`. Untested; ADR open question 5. |
+| 6 | `.github/workflows/unity-build.yml` (new) | `game-ci/unity-builder@v5`, **with** `paths: ["unity/**", ".github/workflows/unity-build.yml"]`. Must pass `yarn workflows:check`. |
+| 7 | `.github/workflows/ci.yml` | **no change — deliberately no `paths-ignore`.** A required check filtered out never reports and wedges the PR forever. The asymmetry is the decision. |
+| 8 | branch protection | do **not** make `unity-build` a required check while it carries a `paths:` filter — same wedge, other direction. |
+
+**Verified negatives — do not "harden" these, they are already safe:** the
+`check-agents-infographic` / `check-harness-infographics` gates hash enumerated paths, not
+repo globs, so `unity/` cannot make them STALE; `vitest.config.ts` `include` is an explicit
+`src/**` + `scripts/**/*.test.mjs` list; `tsconfig.json` is `include: ["src"]`;
+`vite.config.ts` builds from explicit HTML entries. **The one real trap found:** `public/`
+is copied wholesale into `dist/`, so Unity build output must never land there.
+
+**No Git LFS in V1, behind a hard gate:** no binary over ~1 MB enters `unity/` before the
+LFS call is made. `git lfs migrate` after the fact rewrites every SHA, and this repo has
+live preview branches and `gh-pages` keyed on history.
+
 **Unity project setup**
 
 - Create a new, empty Unity **3D** project. Pin an **LTS release** (not a Tech Stream
